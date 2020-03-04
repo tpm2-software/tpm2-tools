@@ -52,6 +52,12 @@ If _FILE_ is not specified, defaults to *stdin*.
     first, optionally followed by a colon ":" and the output iv path. This
     output iv can be saved for subsequent calls when chaining.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the input file path _FILE_
     of the data to encrypt or decrypt.
 

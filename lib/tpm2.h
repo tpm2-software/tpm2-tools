@@ -257,7 +257,7 @@ tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *encryption_key_obj, TPMI_YES_NO decrypt,
         TPMI_ALG_SYM_MODE mode, const TPM2B_IV *iv_in,
         const TPM2B_MAX_BUFFER *input_data, TPM2B_MAX_BUFFER **output_data,
-        TPM2B_IV **iv_out, ESYS_TR shandle1, unsigned *version);
+        TPM2B_IV **iv_out, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_hierarchycontrol(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy, TPMI_RH_ENABLES enable,

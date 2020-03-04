@@ -1990,20 +1990,79 @@ tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *encryption_key_obj, TPMI_YES_NO decrypt,
         TPMI_ALG_SYM_MODE mode, const TPM2B_IV *iv_in,
         const TPM2B_MAX_BUFFER *input_data, TPM2B_MAX_BUFFER **output_data,
-        TPM2B_IV **iv_out, ESYS_TR shandle1, unsigned *version) {
+        TPM2B_IV **iv_out, TPM2B_DIGEST *cp_hash) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+    encryption_key_obj->tr_handle, encryption_key_obj->session, &shandle1);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
+    }
+
+    /* Keep track of which version you ran for error reporting.*/
+    unsigned version = 2;
+
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = NULL;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_EncryptDecrypt2_Prepare(sys_context,
+        encryption_key_obj->handle, input_data, decrypt, mode, iv_in);
+        if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
+            version = 1;
+            rval = Tss2_Sys_EncryptDecrypt_Prepare(sys_context,
+            encryption_key_obj->handle, decrypt, mode, iv_in, input_data);
+        }
+
+        if (rval != TPM2_RC_SUCCESS) {
+            if (version == 2) {
+                LOG_PERR(Tss2_Sys_EncryptDecrypt2_Prepare, rval);
+            } else {
+                LOG_PERR(Tss2_Sys_EncryptDecrypt_Prepare, rval);
+            }
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(esys_context, encryption_key_obj->tr_handle,
+            &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_encryptdecrypt_free_name1;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(
+            tpm2_session_get_authhash(encryption_key_obj->session));
+        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
+            tpm2_session_get_authhash(encryption_key_obj->session), cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+tpm2_encryptdecrypt_free_name1:
+        Esys_Free(name1);
+        goto tpm2_encryptdecrypt_skip_esapi_call;
+    }
 
     TSS2_RC rval = Esys_EncryptDecrypt2(esys_context,
             encryption_key_obj->tr_handle, shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
             input_data, decrypt, mode, iv_in, output_data, iv_out);
     if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
-        *version = 1;
+        version = 1;
         rval = Esys_EncryptDecrypt(esys_context, encryption_key_obj->tr_handle,
                 shandle1, ESYS_TR_NONE, ESYS_TR_NONE, decrypt, mode, iv_in,
                 input_data, output_data, iv_out);
     }
 
     if (rval != TPM2_RC_SUCCESS) {
-        if (*version == 2) {
+        if (version == 2) {
             LOG_PERR(Esys_EncryptDecrypt2, rval);
         } else {
             LOG_PERR(Esys_EncryptDecrypt, rval);
@@ -2011,7 +2070,8 @@ tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_encryptdecrypt_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_hierarchycontrol(ESYS_CONTEXT *esys_context,

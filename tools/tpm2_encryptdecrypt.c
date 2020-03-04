@@ -40,6 +40,9 @@ struct tpm_encrypt_decrypt_ctx {
         char *in;
         char *out;
     } iv;
+
+    TPM2B_IV iv_start;
+    char *cp_hash_path;
 };
 
 static tpm_encrypt_decrypt_ctx ctx = {
@@ -47,6 +50,7 @@ static tpm_encrypt_decrypt_ctx ctx = {
     .input_data_size = MAX_INPUT_DATA_SIZE,
     .padded_block_len = TPM2_MAX_SYM_BLOCK_SIZE,
     .is_padding_option_enabled = false,
+    .iv_start = { .size = sizeof(ctx.iv_start.buffer), .buffer = { 0 } },
 };
 
 static tool_rc readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
@@ -128,16 +132,14 @@ static void strip_pkcs7_padding_data_from_output(uint8_t *pad_data,
     out_data->size -= *pad_data;
 }
 
-static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
+static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_general_error;
 
     /*
      * try EncryptDecrypt2 first, and if the command is not supported by the TPM
-     * fall back to EncryptDecrypt. Keep track of which version you ran,
-     * for error reporting.
+     * fall back to EncryptDecrypt.
      */
-    unsigned version = 2;
 
     UINT16 data_offset = 0;
     bool result = true;
@@ -149,26 +151,39 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
         return tool_rc_general_error;
     }
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc tmp_rc = tpm2_auth_util_get_shandle(ectx,
-            ctx.encryption_key.object.tr_handle,
-            ctx.encryption_key.object.session, &shandle1);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-        LOG_ERR("Failed to get shandle");
-        goto out;
-    }
-
     TPM2B_MAX_BUFFER *out_data = NULL;
     TPM2B_MAX_BUFFER in_data;
     TPM2B_IV *iv_out = NULL;
-    TPM2B_IV *iv_in = iv_start;
+    TPM2B_IV *iv_in = &ctx.iv_start;
     uint8_t pad_data = 0;
 
     uint16_t remaining_bytes = ctx.input_data_size;
     if (ctx.mode == TPM2_ALG_ECB) {
         iv_in = NULL;
     }
+
+    if (ctx.cp_hash_path) {
+        in_data.size = remaining_bytes;
+        append_pkcs7_padding_data_to_input(&pad_data, &in_data.size,
+                    &remaining_bytes);
+        memcpy(in_data.buffer, ctx.input_data, in_data.size);
+        LOG_WARN("Calculating cpHash. Exiting without performing encryptdecrypt.");
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_encryptdecrypt(ectx, &ctx.encryption_key.object,
+        ctx.is_decrypt, ctx.mode, iv_in, &in_data, &out_data, &iv_out,
+        &cp_hash);
+        if (rc != tool_rc_success) {
+            LOG_ERR("CpHash calculation failed!");
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
     while (remaining_bytes > 0) {
         in_data.size =
                 remaining_bytes > TPM2_MAX_DIGEST_BUFFER ?
@@ -183,7 +198,7 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
 
         rc = tpm2_encryptdecrypt(ectx, &ctx.encryption_key.object,
                 ctx.is_decrypt, ctx.mode, iv_in, &in_data, &out_data, &iv_out,
-                shandle1, &version);
+                NULL);
         if (rc != tool_rc_success) {
             goto out;
         }
@@ -250,31 +265,7 @@ static void parse_iv(char *value) {
     }
 }
 
-static bool setup_alg_mode_and_iv_and_padding(ESYS_CONTEXT *ectx, TPM2B_IV *iv) {
-
-    bool result;
-    if (ctx.iv.in) {
-        unsigned long file_size;
-        result = files_get_file_size_path(ctx.iv.in, &file_size);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-
-        if (file_size != iv->size) {
-            LOG_ERR("Iv should be 16 bytes, got %lu", file_size);
-            return tool_rc_general_error;
-        }
-
-        result = files_load_bytes_from_path(ctx.iv.in, iv->buffer, &iv->size);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-
-    }
-
-    if (!ctx.iv.in) {
-        LOG_WARN("Using a weak IV, try specifying an IV");
-    }
+static bool setup_alg_mode(ESYS_CONTEXT *ectx) {
 
     TPM2B_PUBLIC *public;
     tool_rc rc = readpub(ectx, &public);
@@ -331,6 +322,9 @@ static bool on_option(char key, char *value) {
     case 'e':
         ctx.is_padding_option_enabled = true;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -358,6 +352,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "output",      required_argument, NULL, 'o' },
         { "key-context", required_argument, NULL, 'c' },
         { "pad",         no_argument,       NULL, 'e' },
+        { "cphash",      required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("p:edi:o:c:G:t:", ARRAY_LEN(topts), topts,
@@ -366,12 +361,59 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
+static bool is_input_options_args_valid(void) {
+
+    if (!ctx.encryption_key.ctx_path) {
+        LOG_ERR("Expected a context file or handle, got none.");
+        return false;
+    }
+
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+            ctx.input_path, &ctx.input_data_size, ctx.input_data);
+    if (!result) {
+        LOG_ERR("Failed to read in the input.");
+        return result;
+    }
+
+    if (!ctx.iv.in) {
+        LOG_WARN("Using a weak IV, try specifying an IV");
+    }
+
+    if (ctx.iv.in) {
+        unsigned long file_size;
+        result = files_get_file_size_path(ctx.iv.in, &file_size);
+        if (!result) {
+            LOG_ERR("Could not retrieve iv file size.");
+            return false;
+        }
+
+        if (file_size != ctx.iv_start.size) {
+            LOG_ERR("Iv should be 16 bytes, got %lu", file_size);
+            return false;
+        }
+
+        result = files_load_bytes_from_path(ctx.iv.in, ctx.iv_start.buffer,
+        &ctx.iv_start.size);
+        if (!result) {
+            LOG_ERR("Could not load the iv from the file.");
+            return false;
+        }
+    }
+
+    if (ctx.cp_hash_path && ctx.input_data_size > TPM2_MAX_DIGEST_BUFFER) {
+        LOG_ERR("Cannot calculate cpHash for buffer larger than max digest buffer.");
+        return false;
+    }
+
+    return true;
+}
+
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (!ctx.encryption_key.ctx_path) {
-        LOG_ERR("Expected a context file or handle, got none.");
+    bool retval = is_input_options_args_valid();
+    if (!retval) {
         return tool_rc_option_error;
     }
 
@@ -383,20 +425,13 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
-            ctx.input_path, &ctx.input_data_size, ctx.input_data);
+    bool result = setup_alg_mode(ectx);
     if (!result) {
+        LOG_ERR("Failure to setup key mode.");
         return tool_rc_general_error;
     }
 
-    TPM2B_IV iv = { .size = sizeof(iv.buffer), .buffer = { 0 } };
-    result = setup_alg_mode_and_iv_and_padding(ectx, &iv);
-    if (!result) {
-        LOG_ERR("Failure to setup key mode and or pkcs7 padding scheme.");
-        return tool_rc_general_error;
-    }
-
-    return encrypt_decrypt(ectx, &iv);
+    return encrypt_decrypt(ectx);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
