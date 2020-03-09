@@ -26,6 +26,7 @@ struct tpm_hmac_ctx {
     char *ticket_path;
     TPMI_ALG_HASH halg;
     bool hex;
+    char *cp_hash_path;
 };
 
 static tpm_hmac_ctx ctx;
@@ -54,11 +55,33 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result,
             LOG_ERR("Error reading input file!");
             return tool_rc_general_error;
         }
+
+        if (ctx.cp_hash_path) {
+            LOG_WARN("Exiting without performing HMAC when calculating cpHash");
+            TPM2B_DIGEST cp_hash = { .size = 0 };
+            tool_rc rc = tpm2_hmac(ectx, &ctx.hmac_key.object, ctx.halg,
+            &buffer, result, &cp_hash);
+            if (rc != tool_rc_success) {
+                return rc;
+            }
+
+            bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+            if (!result) {
+                rc = tool_rc_general_error;
+            }
+            return rc;
+        }
         /*
          * hash algorithm specified in the key's scheme is used as the
          * hash algorithm for the HMAC
          */
-        return tpm2_hmac(ectx, &ctx.hmac_key.object, ctx.halg, &buffer, result);
+        return tpm2_hmac(ectx, &ctx.hmac_key.object, ctx.halg, &buffer, result,
+        NULL);
+    }
+
+    if (ctx.cp_hash_path) {
+        LOG_ERR("Cannot calculate cpHash for buffers requiring HMAC sequence.");
+        return tool_rc_general_error;
     }
 
     ESYS_TR sequence_handle;
@@ -139,7 +162,7 @@ static tool_rc do_hmac_and_output(ESYS_CONTEXT *ectx) {
     FILE *out = stdout;
 
     tool_rc rc = tpm_hmac_file(ectx, &hmac_out, &validation);
-    if (rc != tool_rc_success) {
+    if (rc != tool_rc_success || ctx.cp_hash_path) {
         goto out;
     }
 
@@ -212,6 +235,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.hex = true;
         break;
+    case 1:
+        ctx.cp_hash_path = value;
+        break;
         /* no default */
     }
 
@@ -244,6 +270,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "hash-algorithm", required_argument, NULL, 'g' },
         { "ticket",         required_argument, NULL, 't' },
         { "hex",            no_argument,       NULL,  0  },
+        { "cphash",         required_argument, NULL,  1  },
     };
 
     ctx.input = stdin;

@@ -663,4 +663,17 @@ setup_authorized_policycphash
 tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat:iv2.dat \
 -p "session:session.ctx" > secret2.dat
 
+# Test tpm2_hmac
+create_authorized_policy
+tpm2_createprimary -Q -C o -c prim.ctx
+tpm2_create -Q -C prim.ctx -c key.ctx -u key.pub -r key.priv -G hmac \
+-L authorized.policy
+echo "testdata" > plain.txt
+tpm2_hmac -c key.ctx plain.txt --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_hmac -c key.ctx plain.txt -o hmac.bin -p "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
