@@ -265,7 +265,7 @@ tool_rc tpm2_hierarchycontrol(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_hmac(ESYS_CONTEXT *esys_context, tpm2_loaded_object *hmac_key_obj,
         TPMI_ALG_HASH halg, const TPM2B_MAX_BUFFER *input_buffer,
-        TPM2B_DIGEST **out_hmac);
+        TPM2B_DIGEST **out_hmac, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_hmac_start(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *hmac_key_obj, TPMI_ALG_HASH halg,
