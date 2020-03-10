@@ -163,7 +163,7 @@ tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
     bool result = true;
     TPM2B_DIGEST approved_policy = { .size = 0 };
     if (policy_digest_path) {
-        approved_policy.size = UINT16_MAX;
+        approved_policy.size = sizeof(TPMU_HA);
         result = files_load_bytes_from_path(policy_digest_path,
             approved_policy.buffer, &approved_policy.size);
     }
