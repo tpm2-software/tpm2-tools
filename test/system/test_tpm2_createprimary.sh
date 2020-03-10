@@ -73,7 +73,7 @@ import yaml
 
 with open("$2") as f:
 	try:
-		y = yaml.load(f)
+		y = yaml.load(f, Loader=yaml.BaseLoader)
 		found = "$1" in y
 		if (not found):
 			sys.stderr.write('Could not find index 0x%X\n' % ("$1"))

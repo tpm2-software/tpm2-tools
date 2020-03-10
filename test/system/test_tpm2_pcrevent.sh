@@ -59,7 +59,7 @@ import yaml
 with open("$1", 'r') as stream:
 
     try:
-        y = yaml.load(stream)
+        y = yaml.load(stream, Loader=yaml.BaseLoader)
         alg = y["$2"]
         value = alg[$3]
         print(value)
