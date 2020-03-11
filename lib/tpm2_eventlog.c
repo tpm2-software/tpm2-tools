@@ -94,6 +94,7 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
         {
             UEFI_PLATFORM_FIRMWARE_BLOB *data =
                 (UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event;
+            UNUSED(data);
             if (event->EventSize < sizeof(*data)) {
                 LOG_ERR("size is insufficient for UEFI FW blob data");
                 return false;
@@ -105,6 +106,7 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
     case EV_EFI_RUNTIME_SERVICES_DRIVER:
         {
             UEFI_IMAGE_LOAD_EVENT *data = (UEFI_IMAGE_LOAD_EVENT*)event->Event;
+            UNUSED(data);
             if (event->EventSize < sizeof(*data)) {
                 LOG_ERR("size is insufficient for UEFI image load event");
                 return false;
