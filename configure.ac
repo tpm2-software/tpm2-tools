@@ -121,24 +121,25 @@ AS_IF(
     [],
     [AC_MSG_WARN([Required executable bash not found, system tests require a bash shell!])])
 
-AC_CHECK_PROG([PYTHON],[python],[yes])
+AC_CHECK_PROG([PYTHON3],[python3],[yes])
 AS_IF(
-    [test "x${PYTHON}" = x"yes"],
+    [test "x${PYTHON3}" = x"yes"],
     [],
-    [AC_MSG_WARN([Required executable python not found, some system tests will fail!])])
+    [AC_MSG_WARN([Required executable python3 not found, some system tests will fail!])])
 
-dnl macro that checks for specific modules in python
-AC_DEFUN([AC_PYTHON_MODULE],
-[AC_MSG_CHECKING([for module $1 in python])
-  echo "import $1" | python -
+dnl macro that checks for specific modules in python3
+AC_DEFUN([AC_PYTHON3_MODULE],
+[AC_MSG_CHECKING([for module $1 in python3])
+  echo "import $1" | python3 -
   if test $? -ne 0 ; then
     AC_MSG_RESULT([not found])
     AC_MSG_WARN([System tests require pyyaml, some tests will fail!])
+  else
+    AC_MSG_RESULT(found)
   fi
-AC_MSG_RESULT(found)
 ])
 
-AC_PYTHON_MODULE([yaml])
+AC_PYTHON3_MODULE([yaml])
 
 AC_SUBST([EXTRA_CFLAGS])
 AC_SUBST([EXTRA_LDFLAGS])

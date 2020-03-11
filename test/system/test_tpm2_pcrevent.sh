@@ -50,9 +50,7 @@ trap cleanup EXIT
 
 function yaml_get() {
 
-python << pyscript
-from __future__ import print_function
-
+python3 << pyscript
 import sys
 import yaml
 
