@@ -81,7 +81,10 @@ static bool convert_keyvalue_to_operand_buffer(const char *value,
     }
 
     ctx.operand_b.size = size;
-    memcpy(ctx.operand_b.buffer, &data.b, size);
+    size_t i = 0;
+    for (i = 0; i < size; i++) {
+        ctx.operand_b.buffer[i] = *(&data.b + size - i - 1);
+    }
 
     return true;
 }
