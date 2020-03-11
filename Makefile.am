@@ -526,14 +526,14 @@ EXTRA_DIST_IGNORE = \
 
 EXTRA_DIST = \
     bootstrap \
-    AUTHORS.md \
-    CHANGELOG.md \
-    CONTRIBUTING.md \
-    INSTALL.md \
-    LICENSE \
-    MAINTAINERS.md \
+    doc/AUTHORS.md \
+    doc/CHANGELOG.md \
+    doc/CONTRIBUTING.md \
+    doc/INSTALL.md \
+    doc/LICENSE \
+    doc/MAINTAINERS.md \
     README.md \
-    RELEASE.md \
+    doc/RELEASE.md \
     man \
     scripts \
     test
