@@ -226,6 +226,7 @@ bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
     bytes_to_str(data->DevicePath, size - sizeof(*data), buf, devpath_len);
     tpm2_tool_output("      DevicePath: %s\n", buf);
 
+    free(buf);
     return true;
 }
 #define EVENT_BUF_MAX BYTES_TO_HEX_STRING_SIZE(1024)
@@ -295,8 +296,8 @@ bool yaml_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size,
 }
 void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
 
-    /* digest is 20 bytes, 2 chars / byte */
-    char digest_hex[40] = { '\0', };
+    /* digest is 20 bytes, 2 chars / byte and null terminator for string*/
+    char digest_hex[41] = { '\0', };
     bytes_to_str(event->digest, sizeof(event->digest), digest_hex, sizeof(digest_hex));
 
     tpm2_tool_output("- Event[%zu]:\n"
@@ -359,6 +360,7 @@ bool yaml_specid_vendor(TCG_VENDOR_INFO *vendor) {
     bytes_to_str(vendor->vendorInfo, vendor->vendorInfoSize, vendinfo_str,
                  vendor->vendorInfoSize * 2 + 1);
     tpm2_tool_output("      vendorInfo: %s\n", vendinfo_str);
+    free(vendinfo_str);
     return true;
 }
 bool yaml_specid_event(TCG_EVENT const *event, size_t *count) {
