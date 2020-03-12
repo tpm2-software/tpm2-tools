@@ -1,6 +1,6 @@
 ## Changelog
 
-### next
+### 4.2-RC0 - 2020-03-12
 
  * tpm2_createek: Drop the unused -p or --ek-auth option
 
