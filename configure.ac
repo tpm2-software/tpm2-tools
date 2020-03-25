@@ -151,6 +151,10 @@ AS_IF([test "x$enable_unit" != xno], [
     AS_IF([test $MKTEMP = missing],
           [AC_MSG_ERROR([Required executable mktemp not found, some system tests will fail!])])
 
+    AC_CHECK_PROG([EXPECT], [expect], yes, no)
+    AS_IF([test $EXPECT = missing],
+          [AC_MSG_ERROR([Required executable expect not found, some system tests will fail!])])
+
     unit_test_tool_report="- tpm2_abrmd: $tpm2_abrmd
     - tpm_server: $tpm_server
     - bash: $BASH_SHELL
@@ -158,7 +162,8 @@ AS_IF([test "x$enable_unit" != xno], [
     - xxd: $XXD
     - ss: $SS
     - shasum: $SHASUM
-    - mktemp: $MKTEMP"
+    - mktemp: $MKTEMP
+    - expect: $EXPECT"
 ])
 
 AC_ARG_ENABLE([dlclose],
