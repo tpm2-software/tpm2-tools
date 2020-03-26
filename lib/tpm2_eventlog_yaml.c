@@ -148,9 +148,8 @@ static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
     }
 
     char *var_data = calloc (1, VAR_DATA_HEX_SIZE(data));
-    uint8_t *variable_data = (uint8_t*)((uintptr_t)data->UnicodeName +
-                                        data->UnicodeNameLength *
-                                        sizeof(char16_t));
+    uint8_t *variable_data = (uint8_t*)&data->UnicodeName[
+        data->UnicodeNameLength];
     if (var_data == NULL) {
         LOG_ERR("failled to allocate data: %s\n", strerror(errno));
         return false;
