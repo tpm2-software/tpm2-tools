@@ -411,7 +411,12 @@ int open_read_and_close (const char *path, void **input, size_t *size) {
     }
 
     struct stat stat_;
-    fstat (fileno, &stat_);
+    errno = 0;
+    if (fstat (fileno, &stat_)) {
+        printf("\nfstat error: [%s]\n",strerror(errno));
+        close(fileno);
+        return 1;
+    }
     if (size)
         *size = stat_.st_size;
     *input = malloc (stat_.st_size + 1);
