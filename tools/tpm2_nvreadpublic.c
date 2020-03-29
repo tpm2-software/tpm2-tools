@@ -41,6 +41,7 @@ static tool_rc print_nv_public(ESYS_CONTEXT *context, TPMI_RH_NV_INDEX index, TP
     rc = tpm2_tr_get_name(context, tr_handle,
             &name);
     if (rc != tool_rc_success) {
+        free(attrs);
         return rc;
     }
 
