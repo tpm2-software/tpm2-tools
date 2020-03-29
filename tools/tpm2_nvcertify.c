@@ -80,6 +80,7 @@ static bool set_signature_format(char *value) {
 static bool on_option(char key, char *value) {
 
     bool result = true;
+    uint32_t input_value;
 
     switch (key) {
     case 'C':
@@ -110,17 +111,29 @@ static bool on_option(char key, char *value) {
         ctx.policy_qualifier_arg = value;
         break;
     case 0:
-        result = tpm2_util_string_to_uint32(value, (uint32_t*)&ctx.size);
+        result = tpm2_util_string_to_uint32(value, &input_value);
         if (!result) {
             LOG_ERR("Could not convert size to number, got: \"%s\"", value);
             return false;
         }
+        if (input_value > UINT16_MAX) {
+            LOG_ERR("Specified size is larger than that allowed by command");
+            return false;
+        } else {
+            ctx.size = input_value;
+        }
         break;
     case 1:
-        result = tpm2_util_string_to_uint32(value, (uint32_t*)&ctx.offset);
+        result = tpm2_util_string_to_uint32(value, &input_value);
         if (!result) {
             LOG_ERR("Could not convert offset to number, got: \"%s\"", value);
             return false;
+        }
+        if (input_value > UINT16_MAX) {
+            LOG_ERR("Specified offset is larger than that allowed by command");
+            return false;
+        } else {
+            ctx.offset = input_value;
         }
         break;
     case 2:
