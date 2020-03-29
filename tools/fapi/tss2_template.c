@@ -123,6 +123,7 @@ static tpm2_option_code tss2_handle_options (
             TSS2_RC ret = Fapi_GetInfo(fctx, &fapi_version);
             if (ret != TSS2_RC_SUCCESS) {
                 fprintf (stderr, "Fapi_GetInfo returned %u\n", ret);
+                free(prog_name);
                 goto out;
             }
             char* target = strndup(fapi_version, 50); // TODO: Extract correct version
@@ -364,6 +365,7 @@ int open_write_and_close(const char* path, bool overwrite, const void *output,
     ssize_t bytes_written = write (fileno, output, length);
     if (bytes_written == -1) {
         fprintf (stderr, "write(2) %s failed: %m\n", path);
+        close (fileno);
         return 1;
     }
     if (bytes_written - length) {
@@ -422,11 +424,13 @@ int open_read_and_close (const char *path, void **input, size_t *size) {
     *input = malloc (stat_.st_size + 1);
     if (!*input) {
         fprintf (stderr, "malloc(2) failed: %m\n");
+        close (fileno);
         return 1;
     }
     if (-1 == read (fileno, *input, stat_.st_size)) {
         fprintf (stderr, "read(2) %s failed with: %m\n", path);
         free (*input);
+        close (fileno);
         return 1;
     }
     ((char*)(*input))[stat_.st_size] = '\0';
