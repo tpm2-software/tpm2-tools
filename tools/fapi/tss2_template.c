@@ -348,17 +348,17 @@ int open_write_and_close(const char* path, bool overwrite, const void *output,
         putchar ('\n');
         return 0;
     }
+
+    int oflags = O_CREAT | O_WRONLY | O_TRUNC ;
     if (!overwrite) {
-        struct stat stat_;
-        if (!stat (path, &stat_)) {
-            fprintf (stderr, "File %s already exists, use --force to "\
-                "overwrite it\n", path);
-            return 1;
-        }
+        oflags |= O_EXCL;
     }
-    int fileno = open (path, O_CREAT | O_WRONLY | O_TRUNC, S_IWUSR | S_IRUSR);
+
+    int fileno = open (path, oflags, S_IWUSR | S_IRUSR);
     if (fileno == -1) {
-        fprintf (stderr, "open(2) %s failed: %m\n", path);
+        if (errno == EEXIST) {
+            fprintf (stderr, "open(2) %s failed: %m\n", path);
+        }
         return 1;
     }
 
