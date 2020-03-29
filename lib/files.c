@@ -607,9 +607,7 @@ bool files_load_bytes_from_buffer_or_file_or_stdin(const char *input_buffer,
         return true;
     }
 
-//    printf("Reading file: %s\n", path);
-//    printf("size: %u\n", *size);
-
+    bool retval = true;
     /* Read from stdin */
     if (!input_buffer && !path) {
         UINT16 read_bytes = 0;
@@ -640,10 +638,10 @@ bool files_load_bytes_from_buffer_or_file_or_stdin(const char *input_buffer,
             return true;
         }
     } else if (path) {
-        return files_load_bytes_from_path(path, buf, size);
+        retval = files_load_bytes_from_path(path, buf, size);
     }
 
-    return false;
+    return retval;
 }
 
 tool_rc files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path) {
