@@ -174,6 +174,7 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx) {
         &cp_hash);
         if (rc != tool_rc_success) {
             LOG_ERR("CpHash calculation failed!");
+            fclose(out_file_ptr);
             return rc;
         }
 
