@@ -66,6 +66,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UINT16 size_tmp = size;
     ret = files_load_bytes_from_path(filename, eventlog, &size_tmp);
     if (!ret) {
+        free(eventlog);
         return tool_rc_general_error;
     }
 
