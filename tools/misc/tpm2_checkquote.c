@@ -213,7 +213,7 @@ static tool_rc init(void) {
 
     TPM2B_ATTEST *msg = NULL;
     TPML_PCR_SELECTION pcr_select;
-    tpm2_pcrs pcrs;
+    tpm2_pcrs * pcrs;
     tool_rc return_value = tool_rc_general_error;
 
     if (ctx.flags.msg) {
@@ -246,8 +246,11 @@ static tool_rc init(void) {
     }
 
     if (ctx.flags.pcr) {
-        if (!pcrs_from_file(ctx.pcr_file_path, &pcr_select, &pcrs)) {
+        tpm2_pcrs temp_pcrs;
+        if (pcrs_from_file(ctx.pcr_file_path, &pcr_select, &temp_pcrs)) {
             /* pcrs_from_file() logs specific error no need to here */
+            pcrs = &temp_pcrs;
+        } else {
             goto err;
         }
 
@@ -259,12 +262,12 @@ static tool_rc init(void) {
             if (pcr_select.pcrSelections[i].hash == TPM2_ALG_ERROR)
             goto err;
 
-        if (!tpm2_openssl_hash_pcr_banks(ctx.halg, &pcr_select, &pcrs,
+        if (!tpm2_openssl_hash_pcr_banks(ctx.halg, &pcr_select, pcrs,
                 &ctx.pcr_hash)) {
             LOG_ERR("Failed to hash PCR values related to quote!");
             goto err;
         }
-        if (!pcr_print_pcr_struct(&pcr_select, &pcrs)) {
+        if (!pcr_print_pcr_struct(&pcr_select, pcrs)) {
             LOG_ERR("Failed to print PCR values related to quote!");
             goto err;
         }
