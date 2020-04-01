@@ -84,6 +84,10 @@ static tpm2_option_code tss2_handle_options (
         return tpm2_option_code_err;
     }
     /* Get the options from the tool */
+    if (!*tool_opts || !(*tool_opts)->callbacks.on_opt) {
+        fprintf (stderr, "Unknown option found\n");
+        goto out;
+    }
     tpm2_option_handler on_opt = (*tool_opts)->callbacks.on_opt;
     tpm2_arg_handler on_arg = (*tool_opts)->callbacks.on_arg;
     if (!tpm2_options_cat (tool_opts, opts))
@@ -144,10 +148,6 @@ static tpm2_option_code tss2_handle_options (
         case '?':
             goto out;
         default:
-            if (!*tool_opts || !(*tool_opts)->callbacks.on_opt) {
-                fprintf (stderr, "Unknown option found: %c\n", c);
-                goto out;
-            }
             if (!(*tool_opts)->callbacks.on_opt(c, optarg))
                 goto out;
         }
@@ -157,7 +157,7 @@ static tpm2_option_code tss2_handle_options (
     int tool_argc = argc - optind;
 
     /* have args and no handler, error condition */
-    if (tool_argc && (!*tool_opts || !(*tool_opts)->callbacks.on_arg)) {
+    if (tool_argc && !(*tool_opts)->callbacks.on_arg) {
         char *prog_name = strdup (argv[0]);
         if (!prog_name) {
             fprintf (stderr, "Not enough memory\n");
