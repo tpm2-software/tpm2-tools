@@ -1,6 +1,14 @@
 ## Changelog
 
-### 4.2-RC0 - 2020-03-12
+### 4.2-RC1 - 2020-04-01
+
+ * Fix various issues reported by static analysis tools.
+
+ * Add integration test for ECC based getekcertificate.
+
+ * Fix for issue #1959 where ARM builds were failing.
+
+ * Add a check in autotools to add "expect" as a package dependency for fapi tools.
 
  * tpm2_createek: Drop the unused -p or --ek-auth option
 
