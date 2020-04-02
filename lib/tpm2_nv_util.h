@@ -71,7 +71,12 @@ static inline tool_rc tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
         return rc;
     }
 
-    *size = cap_data->data.tpmProperties.tpmProperty[0].value;
+    if ( cap_data->data.tpmProperties.tpmProperty[0].property == TPM2_PT_NV_BUFFER_MAX ) {
+        *size = cap_data->data.tpmProperties.tpmProperty[0].value;
+    } else {
+        /* TPM2_PT_NV_BUFFER_MAX is not part of the module spec <= 0.98*/
+        *size = NV_DEFAULT_BUFFER_SIZE;
+    }
 
     free(cap_data);
 
