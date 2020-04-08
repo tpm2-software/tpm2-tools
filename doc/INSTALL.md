@@ -12,7 +12,7 @@ git clone https://github.com/tpm2-software/tpm2-tools
 
 To build and install the tpm2-tools software the following software is required:
 
-  * GNU Autoconf
+  * GNU Autoconf (version >= 2019.01.06)
   * GNU Automake
   * GNU Libtool
   * pkg-config
@@ -58,7 +58,7 @@ your distros package manager.
 The packages in the below command can be ascertained via the package manager.
 
 ```
-sudo apt-get install autoconf autoconf-archive automake libtool pkg-config gcc \
+sudo apt-get install autoconf automake libtool pkg-config gcc \
     libssl-dev libcurl4-gnutls-dev uuid-dev python-yaml
 ```
 **Notes**:
@@ -70,6 +70,8 @@ sudo apt-get install autoconf autoconf-archive automake libtool pkg-config gcc \
       * `libcurl4-openssl-dev 7.47.0-1ubuntu2.2`
       * `libcurl4-nss-dev 7.47.0-1ubuntu2.2`
       * `libcurl4-gnutls-dev 7.47.0-1ubuntu2.2`
+  * One needs autoconf archive, which is too old in the packagemanager. You can get
+    working version from [here](http://ftpmirror.gnu.org/autoconf-archive/autoconf-archive-2019.01.06.tar.xz)
 
 **tpm2 Userspace Dependencies**:
 
