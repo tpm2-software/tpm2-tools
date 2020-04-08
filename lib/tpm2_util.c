@@ -546,7 +546,7 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
         break;
     case TPM2_ALG_RSA: {
         TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
-        tpm2_tool_output("%sexponent: 0x%x\n", indent, r->exponent);
+        tpm2_tool_output("%sexponent: %u\n", indent, r->exponent ? r->exponent : 65537);
         tpm2_tool_output("%sbits: %u\n", indent, r->keyBits);
 
         print_rsa_scheme(&r->scheme, indent);
