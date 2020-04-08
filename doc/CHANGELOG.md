@@ -1,6 +1,6 @@
 ## Changelog
 
-### 4.2-RC1 - 2020-04-01
+### 4.2 2020-04-08
 
  * Fix various issues reported by static analysis tools.
 
