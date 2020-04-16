@@ -53,7 +53,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    eventlog = calloc(1, size);
+    UINT16 size_tmp = UINT16_MAX;
+    eventlog = calloc(1, size_tmp);
     if (eventlog == NULL){
         LOG_ERR("failed to allocate %lu bytes: %s", size, strerror(errno));
         return tool_rc_general_error;
@@ -63,7 +64,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         LOG_WARN("event log exceeds %" PRIu16 " and will be truncated",
                  UINT16_MAX);
     }
-    UINT16 size_tmp = size;
     ret = files_load_bytes_from_path(filename, eventlog, &size_tmp);
     if (!ret) {
         free(eventlog);
