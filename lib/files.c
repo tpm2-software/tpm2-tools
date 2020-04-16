@@ -33,6 +33,57 @@ static const UINT32 MAGIC = 0xBADCC0DE;
         } \
     } while(0)
 
+/**
+ * Writes size bytes to a file, continuing on EINTR short writes.
+ * @param f
+ *  The file to write to.
+ * @param data
+ *  The data to write.
+ * @param size
+ *  The size, in bytes, of that data.
+ * @return
+ *  True on success, False otherwise.
+ */
+static bool writex(FILE *f, UINT8 *data, size_t size) {
+
+    size_t wrote = 0;
+    size_t index = 0;
+    do {
+        wrote = fwrite(&data[index], 1, size, f);
+        if (wrote != size) {
+            if (errno != EINTR) {
+                return false;
+            }
+            /* continue on EINTR */
+        }
+        size -= wrote;
+        index += wrote;
+    } while (size > 0);
+
+    return true;
+}
+
+/**
+ * Reads size bytes from a file, continuing on EINTR short reads.
+ * @param f
+ *  The file to read from.
+ * @param data
+ *  The data buffer to read into.
+ * @param size
+ *  The size of the buffer, which is also the amount of bytes to read.
+ * @return
+ *  The number of bytes that have been read.
+ */
+static size_t readx(FILE *f, UINT8 *data, size_t size) {
+
+    size_t bread = 0;
+    do {
+        bread += fread(&data[bread], 1, size-bread, f);
+    } while (bread < size && !feof(f) && errno == EINTR);
+
+    return bread;
+}
+
 bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
 
     long current = ftell(fp);
@@ -95,15 +146,18 @@ bool file_read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
         return false;
     }
 
-    result = files_read_bytes(f, buf, file_size);
-    if (!result) {
+    /* The reported file size is not always correct, e.g. for sysfs files
+       generated on the fly by the kernel when they are read, which appear as
+       having size 0. Read as many bytes as we can until EOF is reached or the
+       provided buffer is full. As a small sanity check, fail if the number of
+       bytes read is smaller than the reported file size. */
+    *size = readx(f, buf, *size);
+    if (*size < file_size) {
         if (path) {
             LOG_ERR("Could not read data from file \"%s\"", path);
         }
         return false;
     }
-
-    *size = file_size;
 
     return true;
 }
@@ -464,66 +518,6 @@ bool files_get_file_size_path(const char *path, unsigned long *file_size) {
     return result;
 }
 
-/**
- * Writes size bytes to a file, continuing on EINTR short writes.
- * @param f
- *  The file to write to.
- * @param data
- *  The data to write.
- * @param size
- *  The size, in bytes, of that data.
- * @return
- *  True on success, False otherwise.
- */
-static bool writex(FILE *f, UINT8 *data, size_t size) {
-
-    size_t wrote = 0;
-    size_t index = 0;
-    do {
-        wrote = fwrite(&data[index], 1, size, f);
-        if (wrote != size) {
-            if (errno != EINTR) {
-                return false;
-            }
-            /* continue on EINTR */
-        }
-        size -= wrote;
-        index += wrote;
-    } while (size > 0);
-
-    return true;
-}
-
-/**
- * Reads size bytes from a file, continuing on EINTR short reads.
- * @param f
- *  The file to read from.
- * @param data
- *  The data buffer to read into.
- * @param size
- *  The size of the buffer, which is also the amount of bytes to read.
- * @return
- *  True on success, False otherwise.
- */
-static bool readx(FILE *f, UINT8 *data, size_t size) {
-
-    size_t bread = 0;
-    size_t index = 0;
-    do {
-        bread = fread(&data[index], 1, size, f);
-        if (bread != size) {
-            if (feof(f) || (errno != EINTR)) {
-                return false;
-            }
-            /* continue on EINTR */
-        }
-        size -= bread;
-        index += bread;
-    } while (size > 0);
-
-    return true;
-}
-
 #define BE_CONVERT(value, size) \
     do { \
         if (!tpm2_util_is_big_endian()) { \
@@ -542,7 +536,7 @@ static bool readx(FILE *f, UINT8 *data, size_t size) {
     bool files_read_##size(FILE *out, UINT##size *data) { \
 	    BAIL_ON_NULL("FILE", out); \
 	    BAIL_ON_NULL("data", data); \
-        bool res = readx(out, (UINT8 *)data, sizeof(*data)); \
+        bool res = (readx(out, (UINT8 *)data, sizeof(*data)) == sizeof(*data)); \
         if (res) { \
             BE_CONVERT(*data, size); \
         } \
@@ -565,7 +559,7 @@ bool files_read_bytes(FILE *out, UINT8 bytes[], size_t len) {
 
     BAIL_ON_NULL("FILE", out);
     BAIL_ON_NULL("bytes", bytes);
-    return readx(out, bytes, len);
+    return (readx(out, bytes, len) == len);
 }
 
 bool files_write_bytes(FILE *out, uint8_t bytes[], size_t len) {
