@@ -660,7 +660,7 @@ cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat --cphash cp.hash
 generate_policycphash
 sign_and_verify_policycphash
 setup_authorized_policycphash
-tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat:iv2.dat \
+echo "plaintext" | tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat:iv2.dat \
 -p "session:session.ctx" > secret2.dat
 
 # Test tpm2_hmac
