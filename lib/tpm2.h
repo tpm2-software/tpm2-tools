@@ -436,6 +436,10 @@ tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
         TPMT_SIGNATURE **signature,
         TPM2B_DIGEST *cp_hash);
 
+tool_rc tpm2_setcommandcodeaudit(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *auth_entity_obj, TPMI_ALG_HASH hash_algorithm,
+    const TPML_CC *setlist, const TPML_CC *clearlist);
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context);
 
