@@ -193,7 +193,7 @@ static bool convert_pubkey_ECC(TPMT_PUBLIC *public,
         goto out;
     }
 
-    int rc = EC_POINT_set_affine_coordinates_GFp(group, point, x, y, NULL);
+    int rc = EC_POINT_set_affine_coordinates_tss(group, point, x, y, NULL);
     if (!rc) {
         print_ssl_error("Could not set affine coordinates");
         goto out;
