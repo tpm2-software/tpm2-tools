@@ -745,7 +745,7 @@ static bool load_public_ECC_from_key(EC_KEY *k, TPM2B_PUBLIC *pub) {
      */
     const EC_POINT *point = EC_KEY_get0_public_key(k);
 
-    int ret = EC_POINT_get_affine_coordinates_GFp(group, point, x, y, NULL);
+    int ret = EC_POINT_get_affine_coordinates_tss(group, point, x, y, NULL);
     if (!ret) {
         LOG_ERR("Could not get X and Y affine coordinates");
         goto out;

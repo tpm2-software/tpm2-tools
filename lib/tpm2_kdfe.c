@@ -93,7 +93,7 @@ static EC_POINT * tpm2_get_EC_public_key(TPM2B_PUBLIC *public) {
         goto out;
     }
 
-    rval = EC_POINT_set_affine_coordinates_GFp(group, q, bn_qx, bn_qy, NULL);
+    rval = EC_POINT_set_affine_coordinates_tss(group, q, bn_qx, bn_qy, NULL);
     if (rval == false) {
         LOG_ERR("Could not set affine_coordinates");
         EC_POINT_free(q);
@@ -127,7 +127,7 @@ static bool get_public_key_from_ec_key(EC_KEY *key, TPMS_ECC_POINT *point) {
         goto out;
     }
 
-    EC_POINT_get_affine_coordinates_GFp(EC_KEY_get0_group(key),
+    EC_POINT_get_affine_coordinates_tss(EC_KEY_get0_group(key),
             pubkey, x, y, NULL);
     nbx = BN_num_bytes(x);
     nby = BN_num_bytes(y);
