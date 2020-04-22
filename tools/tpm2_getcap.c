@@ -295,7 +295,8 @@ static void dump_tpm_properties_fixed(TPMS_TAGGED_PROPERTY properties[],
             break;
         case TPM2_PT_REVISION:
             tpm2_tool_output("TPM2_PT_REVISION:\n"
-                    "  value: %.2f\n", (float )value / 100);
+                    "  raw: 0x%X\n"
+                    "  value: %.2f\n", value, (float )value / 100);
             break;
         case TPM2_PT_DAY_OF_YEAR:
             tpm2_tool_output("TPM2_PT_DAY_OF_YEAR:\n"
