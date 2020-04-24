@@ -440,6 +440,11 @@ tool_rc tpm2_setcommandcodeaudit(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_entity_obj, TPMI_ALG_HASH hash_algorithm,
     const TPML_CC *setlist, const TPML_CC *clearlist);
 
+tool_rc tpm2_getcommandauditdigest(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *privacy_object, tpm2_loaded_object *sign_object,
+        TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA *qualifying_data,
+        TPM2B_ATTEST **audit_info, TPMT_SIGNATURE **signature);
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context);
 
