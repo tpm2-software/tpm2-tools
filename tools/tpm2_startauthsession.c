@@ -18,6 +18,10 @@ struct tpm2_startauthsession_ctx {
     struct {
         const char *path;
     } output;
+
+    tpm2_session_data *session_data;
+    TPMA_SESSION attrs;
+    bool is_session_encryption_required;
 };
 
 static tpm2_startauthsession_ctx ctx = {
@@ -67,31 +71,71 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
-
-    UNUSED(flags);
-
-    tool_rc rc = tool_rc_general_error;
-
-    /*
-     * attempt to set up the encryption parameters for this, we load an ESYS_TR from disk for
-     * transient objects and we load from tpm public for persistent objects. Deserialized ESYS TR
-     * objects are checked.
-     */
-    bool has_key = false;
+static tool_rc is_input_options_valid(void) {
 
     if (!ctx.output.path) {
         LOG_ERR("Expected option -S");
         return tool_rc_option_error;
     }
 
+    if (ctx.session.type == TPM2_SE_TRIAL &&
+    ctx.session.key_context_arg_str) {
+        LOG_ERR("Trial sessions cannot be additionally used as encrypt/decrypt "
+                "session");
+        return tool_rc_option_error;
+    }
+
+    return tool_rc_success;
+}
+
+static tool_rc setup_session_data(void) {
+
+    ctx.session_data = tpm2_session_data_new(ctx.session.type);
+    if (!ctx.session_data) {
+        LOG_ERR("oom");
+        return tool_rc_general_error;
+    }
+
+    tpm2_session_set_path(ctx.session_data, ctx.output.path);
+
+    tpm2_session_set_authhash(ctx.session_data, ctx.session.halg);
+
+    /* if it has an encryption key, set it as both the encryption key and bind key */
+    if (ctx.is_session_encryption_required) {
+        tpm2_session_set_key(ctx.session_data,
+                ctx.session.key_context_object.tr_handle);
+        tpm2_session_set_bind(ctx.session_data,
+                ctx.session.key_context_object.tr_handle);
+
+        TPMT_SYM_DEF sym = { .algorithm = TPM2_ALG_AES, .keyBits =
+                { .aes = 128 }, .mode = { .aes = TPM2_ALG_CFB } };
+
+        tpm2_session_set_symmetric(ctx.session_data, &sym);
+
+        ctx.attrs = TPMA_SESSION_CONTINUESESSION | \
+                    TPMA_SESSION_DECRYPT | \
+                    TPMA_SESSION_ENCRYPT;
+        tpm2_session_set_attrs(ctx.session_data, ctx.attrs);
+    }
+
+    return tool_rc_success;
+}
+
+static tool_rc process_input_data(ESYS_CONTEXT *ectx) {
+
+    /*
+     * attempt to set up the encryption parameters for this, we load an ESYS_TR from disk for
+     * transient objects and we load from tpm public for persistent objects. Deserialized ESYS TR
+     * objects are checked.
+     */
     if (ctx.session.key_context_arg_str) {
-        tool_rc tmp_rc = tpm2_util_object_load(ectx,
+        tool_rc rc = tpm2_util_object_load(ectx,
                 ctx.session.key_context_arg_str,
                 &ctx.session.key_context_object, TPM2_HANDLE_ALL_W_NV);
-        if (tmp_rc != tool_rc_success) {
-            return tmp_rc;
+        if (rc != tool_rc_success) {
+            return rc;
         }
+        ctx.is_session_encryption_required = true;
 
         /* if the loaded object has a handle then it must be a persistent object */
         if (ctx.session.key_context_object.handle) {
@@ -102,43 +146,34 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
                 LOG_WARN("check public key portion manually");
             }
         }
-
-        has_key = true;
     }
 
-    tpm2_session_data *session_data = tpm2_session_data_new(ctx.session.type);
-    if (!session_data) {
-        LOG_ERR("oom");
-        return rc;
-    }
+    return setup_session_data();
+}
 
-    tpm2_session_set_path(session_data, ctx.output.path);
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    tpm2_session_set_authhash(session_data, ctx.session.halg);
+    UNUSED(flags);
 
-    /* if it has an encryption key, set it as both the encryption key and bind key */
-    if (has_key) {
-        tpm2_session_set_key(session_data,
-                ctx.session.key_context_object.tr_handle);
-        tpm2_session_set_bind(session_data,
-                ctx.session.key_context_object.tr_handle);
-
-        TPMT_SYM_DEF sym = { .algorithm = TPM2_ALG_AES, .keyBits =
-                { .aes = 128 }, .mode = { .aes = TPM2_ALG_CFB } };
-
-        tpm2_session_set_symmetric(session_data, &sym);
-
-        TPMA_SESSION attrs = TPMA_SESSION_CONTINUESESSION | TPMA_SESSION_DECRYPT
-                | TPMA_SESSION_ENCRYPT;
-
-        tpm2_session_set_attrs(session_data, attrs);
-    }
-
-    tpm2_session *s = NULL;
-    rc = tpm2_session_open(ectx, session_data, &s);
+    //Check input options
+    tool_rc rc = is_input_options_valid();
     if (rc != tool_rc_success) {
         return rc;
     }
 
+    //Process inputs
+    rc = process_input_data(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    //ESAPI call to start session
+    tpm2_session *s = NULL;
+    rc = tpm2_session_open(ectx, ctx.session_data, &s);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    //Process outputs
     return tpm2_session_close(&s);
 }
