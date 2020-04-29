@@ -32,6 +32,11 @@ This will work with direct TPM access, but note that internally this calls a
     **NOTE**: A *trial* session is used when building a policy and a *policy*
     session is used when authenticating with a policy.
 
+  * **\--audit-session**:
+
+    Start an HMAC session to be used as an audit session. Default without
+    this option is **TPM2_SE_TRIAL**.
+
   * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm used in computation of the policy digest.

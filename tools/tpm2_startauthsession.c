@@ -21,7 +21,9 @@ struct tpm2_startauthsession_ctx {
 
     tpm2_session_data *session_data;
     TPMA_SESSION attrs;
+    bool is_real_policy_session;
     bool is_session_encryption_required;
+    bool is_session_audit_required;
 };
 
 static tpm2_startauthsession_ctx ctx = {
@@ -35,7 +37,10 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 0:
-        ctx.session.type = TPM2_SE_POLICY;
+        ctx.is_real_policy_session = true;
+        break;
+    case 1:
+        ctx.is_session_audit_required = true;
         break;
     case 'g':
         ctx.session.halg = tpm2_alg_util_from_optarg(value,
@@ -60,6 +65,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         { "policy-session", no_argument,       NULL,  0 },
+        { "audit-session",  no_argument,       NULL,  1 },
         { "key-context",    required_argument, NULL, 'c'},
         { "hash-algorithm", required_argument, NULL, 'g'},
         { "session",        required_argument, NULL, 'S'},
@@ -78,17 +84,35 @@ static tool_rc is_input_options_valid(void) {
         return tool_rc_option_error;
     }
 
-    if (ctx.session.type == TPM2_SE_TRIAL &&
+    if (!ctx.is_real_policy_session && !ctx.is_session_audit_required &&
     ctx.session.key_context_arg_str) {
         LOG_ERR("Trial sessions cannot be additionally used as encrypt/decrypt "
                 "session");
         return tool_rc_option_error;
     }
 
+    if (ctx.is_real_policy_session && ctx.is_session_audit_required) {
+        LOG_ERR("Policy sessions cannot be additionally used for audit");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.is_session_audit_required) {
+        LOG_WARN("Starting an HMAC session for use with auditing.");
+    }
+
     return tool_rc_success;
 }
 
 static tool_rc setup_session_data(void) {
+
+    if (ctx.is_real_policy_session) {
+        ctx.session.type = TPM2_SE_POLICY;
+    }
+
+    if (ctx.is_session_audit_required) {
+        ctx.session.type = TPM2_SE_HMAC;
+    }
+
 
     ctx.session_data = tpm2_session_data_new(ctx.session.type);
     if (!ctx.session_data) {
@@ -115,6 +139,12 @@ static tool_rc setup_session_data(void) {
         ctx.attrs = TPMA_SESSION_CONTINUESESSION | \
                     TPMA_SESSION_DECRYPT | \
                     TPMA_SESSION_ENCRYPT;
+    }
+
+    ctx.attrs |= ctx.is_session_audit_required ?
+                 TPMA_SESSION_CONTINUESESSION|TPMA_SESSION_AUDIT : 0;
+
+    if (ctx.is_session_audit_required || ctx.is_session_encryption_required) {
         tpm2_session_set_attrs(ctx.session_data, ctx.attrs);
     }
 
