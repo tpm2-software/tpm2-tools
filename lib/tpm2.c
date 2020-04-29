@@ -11,6 +11,7 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_openssl.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "config.h"
 
@@ -3766,10 +3767,34 @@ tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx,
     return tool_rc_success;
 }
 
-tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
-        TPM2B_DIGEST **random) {
+static tool_rc evaluate_sessions_for_audit(ESYS_CONTEXT *ectx,
+ESYS_TR audit_session_handle) {
 
-    TSS2_RC rval = Esys_GetRandom(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+    //Check if session is an audit session from the attributes
+    TPMA_SESSION attrs;
+    tool_rc rc = tpm2_sess_get_attributes(ectx, audit_session_handle,
+    &attrs);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+    if (!(attrs & TPMA_SESSION_AUDIT)) {
+        LOG_ERR("Session does not have audit attributes setup.");
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
+        TPM2B_DIGEST **random, ESYS_TR audit_session_handle) {
+
+    tool_rc rc = audit_session_handle == ESYS_TR_NONE ? tool_rc_success :
+    evaluate_sessions_for_audit(ectx, audit_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_GetRandom(ectx, audit_session_handle, ESYS_TR_NONE,
         ESYS_TR_NONE, count, random);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetRandom, rval);
