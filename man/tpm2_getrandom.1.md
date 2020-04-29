@@ -39,6 +39,11 @@ Output defaults to *stdout* and binary format unless otherwise specified with
     - Requested size is within the hash size limit of the TPM.
     - Number of retrieved random bytes matches requested amount.
 
+  * **-S**, **\--session**=_FILE_:
+
+    An HMAC session to be used as an audit session. The session can
+    be created using **tpm2_startauthsession**.
+
 * **ARGUMENT** the command line argument specifies the size of the output.
 
 ## References

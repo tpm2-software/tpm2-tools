@@ -19,15 +19,29 @@ struct tpm_random_ctx {
     UINT16 num_of_bytes;
     bool force;
     bool hex;
+    tpm2_session *audit_session;
+    const char *audit_session_path;
 };
 
 static tpm_random_ctx ctx;
 
 static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
 
-    TPM2B_DIGEST *random_bytes;
+    ESYS_TR audit_session_handle = ESYS_TR_NONE;
 
-    tool_rc rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &random_bytes);
+    if (ctx.audit_session_path) {
+            tool_rc rc = tpm2_session_restore(ectx, ctx.audit_session_path,
+            false, &ctx.audit_session);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Could not restore audit session");
+            return rc;
+        }
+        audit_session_handle = tpm2_session_get_handle(ctx.audit_session);
+    }
+
+    TPM2B_DIGEST *random_bytes;
+    tool_rc rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &random_bytes,
+    audit_session_handle);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -88,6 +102,10 @@ static bool on_option(char key, char *value) {
         break;
     case 0:
         ctx.hex = true;
+        break;
+    case 'S':
+        ctx.audit_session_path = value;
+        break;
         /* no default */
     }
 
@@ -137,12 +155,13 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "output",     required_argument, NULL, 'o' },
-        { "force",      required_argument, NULL, 'f' },
-        { "hex",        no_argument,       NULL,  0  },
+        { "output",       required_argument, NULL, 'o' },
+        { "force",        required_argument, NULL, 'f' },
+        { "hex",          no_argument,       NULL,  0  },
+        { "session",      required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("o:f", ARRAY_LEN(topts), topts, on_option, on_args,
+    *opts = tpm2_options_new("S:o:f", ARRAY_LEN(topts), topts, on_option, on_args,
             0);
 
     return *opts != NULL;
@@ -178,4 +197,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     return get_random_and_save(ectx);
+}
+
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    if (ctx.audit_session_path) {
+        return tpm2_session_close(&ctx.audit_session);
+    }
+    return tool_rc_success;
 }
