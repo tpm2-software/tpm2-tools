@@ -4109,6 +4109,60 @@ tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_sapi_getrphash(TSS2_SYS_CONTEXT *sys_context,
+TSS2_RC response_code, TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH halg) {
+
+    uint8_t command_code[4];
+    TSS2_RC rval = Tss2_Sys_GetCommandCode(sys_context, &command_code[0]);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_GetCommandCode, rval);
+        return tool_rc_general_error;
+    }
+
+    const uint8_t *response_parameters;
+    size_t response_parameters_size;
+    rval = Tss2_Sys_GetRpBuffer(sys_context, &response_parameters_size,
+        &response_parameters);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_GetRpBuffer, rval);
+        return tool_rc_general_error;
+    }
+
+    uint16_t to_hash_len = sizeof(response_code) +
+                           sizeof(command_code) +
+                           response_parameters_size;
+
+    uint8_t *to_hash = malloc(to_hash_len);
+    if (!to_hash) {
+        LOG_ERR("oom");
+        return tool_rc_general_error;
+    }
+
+    //Response-Code
+    memcpy(to_hash, (uint8_t *)&response_code, sizeof(response_code));
+    uint16_t offset = sizeof(response_code);
+
+
+    //Command-Code
+    memcpy(to_hash + offset, command_code, sizeof(command_code));
+    offset += sizeof(command_code);
+
+    //RpBuffer
+    memcpy(to_hash + offset, response_parameters, response_parameters_size);
+
+    //rpHash
+    tool_rc rc = tool_rc_success;
+    bool result = tpm2_openssl_hash_compute_data(halg, to_hash, to_hash_len,
+        rp_hash);
+    free(to_hash);
+    if (!result) {
+        LOG_ERR("Failed rpHash digest calculation.");
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
+}
+
 tool_rc tpm2_sapi_getcphash(TSS2_SYS_CONTEXT *sys_context,
     const TPM2B_NAME *name1, const TPM2B_NAME *name2, const TPM2B_NAME *name3,
     TPMI_ALG_HASH halg, TPM2B_DIGEST *cp_hash) {
