@@ -3786,7 +3786,8 @@ ESYS_TR audit_session_handle) {
 }
 
 tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
-        TPM2B_DIGEST **random, ESYS_TR audit_session_handle) {
+        TPM2B_DIGEST **random, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
+        ESYS_TR audit_session_handle, TPMI_ALG_HASH param_hash_algorithm) {
 
     tool_rc rc = audit_session_handle == ESYS_TR_NONE ? tool_rc_success :
     evaluate_sessions_for_audit(ectx, audit_session_handle);
@@ -3794,14 +3795,54 @@ tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
         return rc;
     }
 
-    TSS2_RC rval = Esys_GetRandom(ectx, audit_session_handle, ESYS_TR_NONE,
+    TSS2_SYS_CONTEXT *sys_context = NULL;
+    TSS2_RC rval;
+    if (cp_hash || rp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        rc = tpm2_getsapicontext(ectx, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+    }
+
+    if (cp_hash) {
+        rval = Tss2_Sys_GetRandom_Prepare(sys_context, count);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_GetRandom_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(param_hash_algorithm);
+        rc = tpm2_sapi_getcphash(sys_context, NULL, NULL, NULL,
+        param_hash_algorithm, cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+        /*
+         * Exit here without making the ESYS call since if we only need cpHash
+         */
+        if (!rp_hash) {
+            goto tpm2_getrandom_skip_esapi_call;
+        }
+    }
+
+    rval = Esys_GetRandom(ectx, audit_session_handle, ESYS_TR_NONE,
         ESYS_TR_NONE, count, random);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetRandom, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+    if (rp_hash) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+        param_hash_algorithm);
+    }
+
+tpm2_getrandom_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_startup(ESYS_CONTEXT *ectx, TPM2_SU startup_type) {

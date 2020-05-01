@@ -44,6 +44,18 @@ Output defaults to *stdout* and binary format unless otherwise specified with
     An HMAC session to be used as an audit session. The session can
     be created using **tpm2_startauthsession**.
 
+  * **\--cphash**=_FILE_:
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, in absence of rphash
+    option, The tool will not actually execute the command, it simply returns a
+    cpHash.
+
+  * **\--rphash**=_FILE_:
+
+    File path to record the hash of the response parameters. This is commonly
+    termed as rpHash.
+
 * **ARGUMENT** the command line argument specifies the size of the output.
 
 ## References

@@ -21,6 +21,8 @@ struct tpm_random_ctx {
     bool hex;
     tpm2_session *audit_session;
     const char *audit_session_path;
+    const char *cp_hash_path;
+    const char *rp_hash_path;
 };
 
 static tpm_random_ctx ctx;
@@ -28,6 +30,7 @@ static tpm_random_ctx ctx;
 static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
 
     ESYS_TR audit_session_handle = ESYS_TR_NONE;
+    TPMI_ALG_HASH param_hash_algorithm = TPM2_ALG_SHA256;
 
     if (ctx.audit_session_path) {
             tool_rc rc = tpm2_session_restore(ectx, ctx.audit_session_path,
@@ -37,13 +40,29 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
             return rc;
         }
         audit_session_handle = tpm2_session_get_handle(ctx.audit_session);
+        param_hash_algorithm = tpm2_session_get_authhash(ctx.audit_session);
     }
+
+    FILE *out = stdout;
+    bool res = true;
+
+    TPM2B_DIGEST *cp_hash = ctx.cp_hash_path ?
+                                calloc(1, sizeof(TPM2B_DIGEST)) : NULL;
+    TPM2B_DIGEST *rp_hash = ctx.rp_hash_path ?
+                                calloc(1, sizeof(TPM2B_DIGEST)) : NULL;
 
     TPM2B_DIGEST *random_bytes;
     tool_rc rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &random_bytes,
-    audit_session_handle);
+    cp_hash, rp_hash, audit_session_handle, param_hash_algorithm);
     if (rc != tool_rc_success) {
         return rc;
+    }
+
+    if (ctx.cp_hash_path) {
+        res = files_save_digest(cp_hash, ctx.cp_hash_path);
+        if (!ctx.rp_hash_path) {
+            goto out;
+        }
     }
 
     /* ensure we got the expected number of bytes unless force is set */
@@ -55,13 +74,10 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
         return tool_rc_general_error;
     }
 
-    bool res = true;
-
     /*
      * Either open an output file, or if stdout, do nothing as -Q
      * was specified.
      */
-    FILE *out = stdout;
     if (ctx.output_file) {
         out = fopen(ctx.output_file, "wb+");
         if (!out) {
@@ -79,13 +95,23 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
     }
 
     res = files_write_bytes(out, random_bytes->buffer, random_bytes->size);
+    if (!res) {
+        goto out;
+    }
+
+    if (ctx.rp_hash_path) {
+        res = files_save_digest(rp_hash, ctx.rp_hash_path);
+    }
 
 out:
     if (out && out != stdout) {
         fclose(out);
     }
+    if (ctx.rp_hash_path || !ctx.cp_hash_path)
+        free(random_bytes);
+    free(cp_hash);
+    free(rp_hash);
 
-    free(random_bytes);
     return res == true ? tool_rc_success : tool_rc_general_error;
 }
 
@@ -102,6 +128,12 @@ static bool on_option(char key, char *value) {
         break;
     case 0:
         ctx.hex = true;
+        break;
+    case 1:
+        ctx.cp_hash_path = value;
+        break;
+    case 2:
+        ctx.rp_hash_path = value;
         break;
     case 'S':
         ctx.audit_session_path = value;
@@ -159,6 +191,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "force",        required_argument, NULL, 'f' },
         { "hex",          no_argument,       NULL,  0  },
         { "session",      required_argument, NULL, 'S' },
+        { "cphash",       required_argument, NULL,  1  },
+        { "rphash",       required_argument, NULL,  2  }
     };
 
     *opts = tpm2_options_new("S:o:f", ARRAY_LEN(topts), topts, on_option, on_args,
