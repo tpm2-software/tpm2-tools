@@ -373,7 +373,8 @@ tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx, ESYS_TR pcr, tpm2_session *session,
         const TPM2B_EVENT *event_data, TPML_DIGEST_VALUES **digests);
 
 tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
-        TPM2B_DIGEST **random, ESYS_TR audit_session_handle);
+        TPM2B_DIGEST **random, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
+        ESYS_TR audit_session_handle, TPMI_ALG_HASH param_hash_algorithm) ;
 
 tool_rc tpm2_startup(ESYS_CONTEXT *ectx, TPM2_SU startup_type);
 
@@ -451,5 +452,8 @@ tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_sapi_getcphash(TSS2_SYS_CONTEXT *sys_context,
     const TPM2B_NAME *name1, const TPM2B_NAME *name2, const TPM2B_NAME *name3,
     TPMI_ALG_HASH halg, TPM2B_DIGEST *cp_hash);
+
+tool_rc tpm2_sapi_getrphash(TSS2_SYS_CONTEXT *sys_context,
+    TSS2_RC response_code, TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH halg);
 
 #endif /* LIB_TPM2_H_ */
