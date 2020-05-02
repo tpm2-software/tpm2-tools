@@ -46,7 +46,7 @@ static bool print_pcr_values(void) {
                 return false;
             }
 
-            tpm2_tool_output("  %-2d: 0x", pcr_id);
+            tpm2_tool_output("  %-2d: ", pcr_id);
 
             int k;
             for (k = 0; k < ctx.pcrs.pcr_values[vi].digests[di].size; k++) {
