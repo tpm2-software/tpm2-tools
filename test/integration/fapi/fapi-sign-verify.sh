@@ -175,4 +175,7 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
+tpm2_sign -Q -c "tss2:${KEY_PATH}" -g sha1 \
+    -o "${DIGEST_FILE}.sig" "${DIGEST_FILE}"
+
 exit 0

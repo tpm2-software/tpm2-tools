@@ -25,7 +25,7 @@ AM_LDFLAGS   := $(EXTRA_LDFLAGS) $(CODE_COVERAGE_LIBS)
 
 LDADD = \
     $(LIB_COMMON) $(TSS2_ESYS_LIBS) $(TSS2_MU_LIBS) $(CRYPTO_LIBS) $(TSS2_TCTILDR_LIBS) \
-    $(TSS2_RC_LIBS) $(TSS2_SYS_LIBS) $(UUID_LIBS)
+    $(TSS2_RC_LIBS) $(TSS2_SYS_LIBS) $(UUID_LIBS) $(TSS2_FAPI_LIBS)
 
 AM_DISTCHECK_CONFIGURE_FLAGS = --with-bashcompdir='$$(datarootdir)/bash-completion/completions'
 
@@ -172,7 +172,7 @@ bin_PROGRAMS += \
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
-lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS)
+lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS) $(FAPI_CFLAGS)
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_fapi_tss2_decrypt_CFLAGS = $(FAPI_CFLAGS)

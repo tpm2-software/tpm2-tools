@@ -3,6 +3,9 @@
 The type of a context object, whether it is a handle or file name, is
 determined according to the following logic *in-order*:
 
+  * If the argument is prefixed *tss2:* then the FAPI keystore is queried for this object.
+    (Note: Only available for FAPI >= 3.0)
+
   * If the argument is a file path, then the file is loaded as a restored TPM transient object.
 
   * If the argument is a *prefix* match on one of:
