@@ -849,6 +849,67 @@ tool_rc tpm2_getcommandauditdigest(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+static tool_rc evaluate_sessions_for_audit(ESYS_CONTEXT *ectx,
+ESYS_TR audit_session_handle) {
+
+    //Check if session is an audit session from the attributes
+    TPMA_SESSION attrs;
+    tool_rc rc = tpm2_sess_get_attributes(ectx, audit_session_handle,
+    &attrs);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+    if (!(attrs & TPMA_SESSION_AUDIT)) {
+        LOG_ERR("Session does not have audit attributes setup.");
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_getsessionauditdigest(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *privacy_object, tpm2_loaded_object *sign_object,
+        TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA *qualifying_data,
+        TPM2B_ATTEST **audit_info, TPMT_SIGNATURE **signature,
+        ESYS_TR audit_session_handle) {
+
+    tool_rc rc = audit_session_handle == ESYS_TR_NONE ? tool_rc_general_error :
+    evaluate_sessions_for_audit(esys_context, audit_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    ESYS_TR privacy_object_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(esys_context,
+            privacy_object->tr_handle, privacy_object->session,
+            &privacy_object_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get auth entity obj session");
+        return rc;
+    }
+
+    ESYS_TR sign_object_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(esys_context,
+            sign_object->tr_handle, sign_object->session,
+            &sign_object_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get auth entity obj session");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_GetSessionAuditDigest(esys_context,
+    privacy_object->tr_handle, sign_object->tr_handle,
+    audit_session_handle, privacy_object_session_handle,
+    sign_object_session_handle, ESYS_TR_NONE, qualifying_data, in_scheme,
+    audit_info, signature);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_GetCommandAuditDigest, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_policy_nv_written(ESYS_CONTEXT *esys_context,
         ESYS_TR policy_session, ESYS_TR shandle1, ESYS_TR shandle2,
         ESYS_TR shandle3, TPMI_YES_NO written_set) {
@@ -3762,24 +3823,6 @@ tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx,
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PCR_Event, rval);
         return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
-}
-
-static tool_rc evaluate_sessions_for_audit(ESYS_CONTEXT *ectx,
-ESYS_TR audit_session_handle) {
-
-    //Check if session is an audit session from the attributes
-    TPMA_SESSION attrs;
-    tool_rc rc = tpm2_sess_get_attributes(ectx, audit_session_handle,
-    &attrs);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-    if (!(attrs & TPMA_SESSION_AUDIT)) {
-        LOG_ERR("Session does not have audit attributes setup.");
-        return tool_rc_general_error;
     }
 
     return tool_rc_success;

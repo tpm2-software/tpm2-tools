@@ -446,6 +446,12 @@ tool_rc tpm2_getcommandauditdigest(ESYS_CONTEXT *esys_context,
         TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA *qualifying_data,
         TPM2B_ATTEST **audit_info, TPMT_SIGNATURE **signature);
 
+tool_rc tpm2_getsessionauditdigest(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *privacy_object, tpm2_loaded_object *sign_object,
+        TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA *qualifying_data,
+        TPM2B_ATTEST **audit_info, TPMT_SIGNATURE **signature,
+        ESYS_TR audit_session_handle);
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context);
 

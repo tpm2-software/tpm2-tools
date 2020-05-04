@@ -167,7 +167,8 @@ bin_PROGRAMS += \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature \
     tools/tpm2_setcommandauditstatus \
-    tools/tpm2_getcommandauditdigest
+    tools/tpm2_getcommandauditdigest \
+    tools/tpm2_getsessionauditdigest
 
 
 noinst_LIBRARIES = $(LIB_COMMON)
@@ -413,6 +414,7 @@ tools_tpm2_nvextend_SOURCES = tools/tpm2_nvextend.c $(TOOL_SRC)
 tools_tpm2_gettime_SOURCES = tools/tpm2_gettime.c $(TOOL_SRC)
 tools_tpm2_setcommandauditstatus_SOURCES = tools/tpm2_setcommandauditstatus.c $(TOOL_SRC)
 tools_tpm2_getcommandauditdigest_SOURCES = tools/tpm2_getcommandauditdigest.c $(TOOL_SRC)
+tools_tpm2_getsessionauditdigest_SOURCES = tools/tpm2_getsessionauditdigest.c $(TOOL_SRC)
 
 if UNIT
 TESTS += $(check_PROGRAMS)
@@ -642,7 +644,8 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1 \
     man/man1/tpm2_setcommandauditstatus.1 \
-    man/man1/tpm2_getcommandauditdigest.1
+    man/man1/tpm2_getcommandauditdigest.1 \
+    man/man1/tpm2_getsessionauditdigest.1
 
 if HAVE_FAPI
 dist_man1_MANS += \
