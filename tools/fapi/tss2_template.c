@@ -194,27 +194,40 @@ out:
     return rc;
 }
 
+char *password = NULL;
+
 TSS2_RC auth_callback(
+#ifdef FAPI_3_0
+    __attribute__((unused)) char const *objectPath,
+    char const                   *description,
+    char const                  **auth,
+#else /* FAPI_3_0 */
     __attribute__((unused)) FAPI_CONTEXT *fapi_context,
     char const                   *description,
     char                        **auth,
+#endif /* FAPI_3_0 */
     __attribute__((unused)) void *userdata)
 {
+    if (password != NULL) {
+        free(password);
+        password = NULL;
+    }
+
     struct termios new;
     tcgetattr (STDIN_FILENO, &old);
     new = old;
     new.c_lflag &= ~(ICANON | ECHO);
+    /* TODO: For new CLI-Break add use of objectPath here. */
     printf ("Authorize object %s: ", description);
     tcsetattr (STDIN_FILENO, TCSANOW, &new);
-    *auth = NULL; /* because the caller does not set this to NULL, and because
-                     getline allocates space for *auth, if it was NULL */
+
     size_t input_size = 0;
     struct sigaction signal_action;
     memset (&signal_action, 0, sizeof signal_action);
     signal_action.sa_handler = signal_termio_restore;
     sigaction (SIGTERM, &signal_action, NULL);
     sigaction (SIGINT, &signal_action, NULL);
-    ssize_t getline_ret = getline (auth, &input_size, stdin);
+    ssize_t getline_ret = getline (&password, &input_size, stdin);
     /* It is intentional, that auth can contain null bytes, and from
      * FAPI’s perspective these terminate the password. */
     tcsetattr (STDIN_FILENO, TCSANOW, &old);
@@ -224,23 +237,33 @@ TSS2_RC auth_callback(
     printf ("\n");
     if (getline_ret == -1) {
         fprintf (stderr, "getline() failed: %m\n");
-        free (*auth);
-        *auth = NULL;
+        free (password);
+        password = NULL;
         return TSS2_TCTI_RC_GENERAL_FAILURE;
     }
-    (*auth)[getline_ret - 1] = '\0';
+    password[getline_ret - 1] = '\0';
 
+#ifdef FAPI_3_0
+    *auth = password;
+#else /* FAPI_3_0 */
+    *auth = strdup(password);
+#endif /* FAPI_3_0 */
     return TSS2_RC_SUCCESS;
 }
 
 TSS2_RC branch_callback(
-    __attribute__((unused)) FAPI_CONTEXT        *fapi_context,
+#ifdef FAPI_3_0
+    __attribute__((unused)) char const *objectPath,
+#else /* FAPI_3_0 */
+    __attribute__((unused)) FAPI_CONTEXT *fapi_context,
+#endif /* FAPI_3_0 */
     char                    const  *description,
     char                    const **branchNames,
     size_t                          numBranches,
     size_t                         *selectedBranch,
     __attribute__((unused)) void   *userData)
 {
+    /* TODO: For new CLI-Break add use of objectPath here. */
     printf ("Select a branch for %s\n", description);
     for (size_t i = 0; i < numBranches; i++) {
         printf ("%4zu %s\n", i + 1, branchNames[i]);
@@ -286,12 +309,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     int ret = 1;
-    char *password = NULL;
     FAPI_CONTEXT *fctx = ctx_init (NULL);
     if (!fctx)
         goto free_opts;
 
-    TSS2_RC r = Fapi_SetAuthCB (fctx, auth_callback, &password);
+    TSS2_RC r = Fapi_SetAuthCB (fctx, auth_callback, NULL);
     if (r != TSS2_RC_SUCCESS) {
         fprintf (stderr, "Fapi_SetAuthCB returned %u\n", r);
         Fapi_Finalize (&fctx);
@@ -443,22 +465,45 @@ int open_read_and_close (const char *path, void **input, size_t *size) {
 }
 
 char* ask_for_password() {
-    char *pw1, *pw2;
-    if (auth_callback (NULL, "Password", &pw1, NULL))
-        return NULL;
+#ifdef FAPI_3_0
+    const char *pw;
+#else /* FAPI_3_0 */
+    char *pw;
+#endif /* FAPI_3_0 */
+    char *password = NULL;
 
-    if (auth_callback (NULL, "Retype password", &pw2, NULL)) {
-        free (pw1);
+    if (auth_callback (NULL, "Password", &pw, NULL))
+        goto error;
+
+#ifdef FAPI_3_0
+    password = strdup(pw);
+    if (!password) {
+        fprintf (stderr, "OOM\n");
         return NULL;
     }
-    if (strcmp (pw1, pw2)) {
+#else
+    password = pw;
+#endif /* FAPI_3_0 */
+
+    if (auth_callback (NULL, "Retype password", &pw, NULL))
+        goto error;
+
+    bool eq = !strcmp (password, pw);
+#ifndef FAPI_3_0
+    free(pw);
+#endif
+    if (!eq) {
         fprintf (stderr, "Passwords do not match.\n");
-        free (pw1);
-        free (pw2);
-        return NULL;
+        goto error;
     }
-    free (pw1);
-    return pw2;
+
+    return password;
+
+error:
+    if (password)
+        free(password);
+
+    return NULL;
 }
 
 void LOG_PERR(const char *func, TSS2_RC rc) {
