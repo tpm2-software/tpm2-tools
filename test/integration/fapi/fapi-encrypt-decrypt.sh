@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 source helpers.sh
 
@@ -22,6 +21,8 @@ PCR_POLICY_DATA=$TEMP_DIR/pol_pcr16_0.json
 POLICY_PCR=policy/pcr-policy
 
 echo -n "Secret Text!" > $PLAIN_TEXT
+
+set -x
 
 tss2_provision
 
