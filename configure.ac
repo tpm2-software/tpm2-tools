@@ -40,6 +40,9 @@ AS_IF([test "$enable_fapi" = yes -o "$enable_fapi" = check],
          AS_IF([test "$enable_fapi" = yes], [AC_MSG_ERROR([Required module tss2-fapi not found])])
          enable_fapi=no
          ])
+       PKG_CHECK_MODULES([TSS2_FAPI_3_0], [tss2-fapi >= 3.0],
+                         [AC_DEFINE([FAPI_3_0], [1], [fapi3.0.0])],
+                         [true])
       ])
 AM_CONDITIONAL([HAVE_FAPI], [test "$enable_fapi" = yes])
 
