@@ -22,6 +22,8 @@ SIGNATURE_FILE=$TEMP_DIR/signature.file
 PUBLIC_KEY_FILE=$TEMP_DIR/public_key.file
 IMPORTED_KEY_NAME=importedPubKey
 
+set -x
+
 tss2_provision
 echo 0123456789012345678 > $DIGEST_FILE
 tss2_createkey --path $KEY_PATH --type "noDa, sign" --authValue $PW1
