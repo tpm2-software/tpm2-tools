@@ -114,6 +114,7 @@ bin_PROGRAMS += \
     tools/tpm2_load \
     tools/tpm2_loadexternal \
     tools/tpm2_makecredential \
+    tools/tpm2_netlisten \
     tools/tpm2_nvdefine \
     tools/tpm2_nvextend \
     tools/tpm2_nvincrement \
@@ -416,6 +417,10 @@ tools_tpm2_setcommandauditstatus_SOURCES = tools/tpm2_setcommandauditstatus.c $(
 tools_tpm2_getcommandauditdigest_SOURCES = tools/tpm2_getcommandauditdigest.c $(TOOL_SRC)
 tools_tpm2_getsessionauditdigest_SOURCES = tools/tpm2_getsessionauditdigest.c $(TOOL_SRC)
 
+# TODO configure time
+tools_tpm2_netlisten_LDFLAGS = -ltss2-tcti-network
+tools_tpm2_netlisten_SOURCES = tools/tpm2_netlisten.c $(TOOL_SRC)
+
 if UNIT
 TESTS += $(check_PROGRAMS)
 check_PROGRAMS = \
@@ -589,6 +594,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_load.1 \
     man/man1/tpm2_loadexternal.1 \
     man/man1/tpm2_makecredential.1 \
+    man/man1/tpm2_netlisten.1 \
     man/man1/tpm2_nvdefine.1 \
     man/man1/tpm2_nvextend.1 \
     man/man1/tpm2_nvincrement.1 \
