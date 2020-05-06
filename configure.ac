@@ -192,7 +192,8 @@ AS_IF([test x"$enable_hardening" != x"no"], [
   AC_DEFUN([add_hardened_c_flag], [
     AX_CHECK_COMPILE_FLAG([$1],
       [EXTRA_CFLAGS="$EXTRA_CFLAGS $1"],
-      [AC_MSG_ERROR([Cannot enable $1, consider configuring with --disable-hardening])]
+      [AC_MSG_ERROR([Cannot enable $1, consider configuring with --disable-hardening])],
+      [-Werror]
     )
   ])
 
