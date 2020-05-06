@@ -277,7 +277,7 @@ function start_sim() {
         # just continue up to 10 retries
         # (See : https://github.com/tpm2-software/tpm2-tss/blob/master/src/tss2-tcti/tcti-mssim.c:559)
         if [ -z "$TPM2_SIMPORT" ]; then
-            tpm2_sim_port="$(shuf -i 2321-65534 -n 1)"
+            tpm2_sim_port="$(od -A n -N 2 -t u2 /dev/urandom | awk -v min=2321 -v max=65534 '{print ($1 % (max - min)) + min}')"
         else
             tpm2_sim_port=$TPM2_SIMPORT
         fi
