@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
+if [ `uname` == "FreeBSD" ]; then
+        exit 77
+fi
+
 source helpers.sh
 
 cleanup() {
