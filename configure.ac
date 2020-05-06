@@ -119,6 +119,17 @@ AC_DEFUN([AC_PYTHON_MODULE],
   fi
 ])
 
+# Check OS and set library and compile flags accordingly
+case "${host_os}" in
+    *bsd* | *BSD*)
+        HOSTOS='BSD'
+        ;;
+    *)
+        #Assume linux
+        HOSTOS='Linux'
+        ;;
+esac
+
 AS_IF([test "x$enable_unit" != xno], [
     PKG_CHECK_MODULES([CMOCKA],[cmocka])
 
@@ -143,10 +154,11 @@ AS_IF([test "x$enable_unit" != xno], [
     AC_CHECK_PROG([XXD], [xxd], yes, no)
     AS_IF([test $XXD = missing],
           [AC_MSG_ERROR([Required executable xxd not found, some system tests will fail!])])
-
-    AC_CHECK_PROG([SS], [ss], yes, no)
+    AS_IF([test "$HOSTOS" = "Linux"],
+           [AC_CHECK_PROG([SS], [ss], [yes], [no])],
+           [AC_CHECK_PROG([SS], [sockstat], [yes], [no])])
     AS_IF([test $SS = missing],
-          [AC_MSG_ERROR([Required executable ss not found, some system tests will fail!])])
+          [AC_MSG_ERROR([Required executable ss/sockstat not found, some system tests will fail!])])
 
     AC_CHECK_PROG([SHASUM], [shasum], yes, no)
     AS_IF([test $SHASUM = missing],
@@ -219,7 +231,6 @@ AS_IF([test x"$enable_hardening" != x"no"], [
   add_hardened_c_flag([-Wstack-protector])
   add_hardened_c_flag([-fstack-protector-all])
   add_hardened_c_flag([-Wstrict-overflow=5])
-  add_hardened_c_flag([-Wbool-compare])
 
   add_hardened_c_flag([-O2])
   AX_ADD_FORTIFY_SOURCE
@@ -250,11 +261,14 @@ AC_DEFUN([add_c_flag], [
 add_c_flag([-D_GNU_SOURCE], [AC_MSG_ERROR([Cannot enable -D_GNU_SOURCE])])
 
 # Best attempt compiler options that are on newer versions of GCC that
-# we can't widely enforce without killing other peoples builds
-add_c_flag([-Wstringop-overflow=4])
-add_c_flag([-Wstringop-truncation])
-add_c_flag([-Wduplicated-branches])
-add_c_flag([-Wduplicated-cond])
+# we can't widely enforce without killing other peoples builds.
+# Works with gcc only. Needs to be disabled on BSD and clang
+AS_IF([test "$HOSTOS" = "Linux"],
+      [add_c_flag([-Wstringop-overflow=4])
+       add_c_flag([-Wstringop-truncation])
+       add_c_flag([-Wduplicated-branches])
+       add_c_flag([-Wduplicated-cond])
+       add_hardened_c_flag([-Wbool-compare])],[])
 
 # Best attempt, strip unused stuff from the binary to reduce size.
 # Rather than nesting these and making them ugly just use a counter.
