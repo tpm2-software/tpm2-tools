@@ -61,7 +61,7 @@ TSS2_RC __wrap_Tss2_TctiLdr_Initialize(const char *nameConf,
     return rc;
 }
 
-static TSS2_TCTI_CONTEXT_COMMON_V2 tcti_instance = { 0, };
+static TSS2_TCTI_CONTEXT_COMMON_V2 tcti_instance;
 
 static void common_prelude(void) {
     /*
