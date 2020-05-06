@@ -42,6 +42,7 @@ sha256 :
 
     The output file to write the PCR values in binary format, optional.
 
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
