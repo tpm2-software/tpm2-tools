@@ -111,11 +111,6 @@ void tpm2_options_free(tpm2_options *opts) {
     free(opts);
 }
 
-static inline const char *fixup_name(const char *name) {
-
-    return !strcmp(name, "abrmd") ? "tabrmd" : name;
-}
-
 static bool execute_man(char *prog_name, bool show_errors) {
 
     pid_t pid;
