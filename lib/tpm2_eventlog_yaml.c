@@ -119,7 +119,9 @@ bool yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data) {
 
     int ret = 0;
     char *mbstr = NULL, *tmp = NULL;
-    mbstate_t st = { 0, };
+    mbstate_t st;
+
+    memset(&st, '\0', sizeof(st));
 
     mbstr = tmp = calloc(data->UnicodeNameLength + 1, MB_CUR_MAX);
     if (mbstr == NULL) {
