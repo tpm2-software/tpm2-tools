@@ -48,9 +48,16 @@ static tpm_loadexternal_ctx ctx = {
 static tool_rc load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
         TPM2B_SENSITIVE *priv, bool has_priv, TPM2B_NAME **name) {
 
+    uint32_t hierarchy;
+    TSS2_RC rval = fix_esys_hierarchy(ctx.hierarchy_value, &hierarchy);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_ERR("Unknown hierarchy");
+        return tool_rc_from_tpm(rval);
+    }
+
     tool_rc rc = tpm2_loadexternal(ectx,
             has_priv ? priv : NULL, pub,
-            fix_esys_hierarchy(ctx.hierarchy_value), &ctx.handle);
+            hierarchy, &ctx.handle);
     if (rc != tool_rc_success) {
         return rc;
     }
