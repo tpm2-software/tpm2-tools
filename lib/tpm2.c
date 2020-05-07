@@ -933,39 +933,51 @@ tpm2_evictcontrol_skip_esapi_call:
 }
 
 /* This function addresses ESAPI change that changes parameter type from
- * Esys_TR to TPMI_RH_HIERARCHY and breaks backwards compatibility.
+ * Esys_TR to TPMI_RH_HIERARCHY or TPMI_RH_ENABLES and breaks backwards
+ * compatibility.
  * To keep the tools parameters consistent after v4.0 release we need to
  * map the values to appropriate type based on the version of the ESYS API.
  * Note: the mapping is based on the ESYS version recognized at compile time.
  * The TSS change can be found here:
  * https://github.com/tpm2-software/tpm2-tss/pull/1531
  */
-uint32_t fix_esys_hierarchy(TPMI_RH_HIERARCHY hierarchy)
+TSS2_RC fix_esys_hierarchy(uint32_t in, uint32_t *out)
 {
 #if defined(ESYS_3_0)
-    switch (hierarchy) {
+    switch (in) {
         case ESYS_TR_RH_NULL:
+            /* FALLTHRU */
         case ESYS_TR_RH_OWNER:
+            /* FALLTHRU */
         case ESYS_TR_RH_ENDORSEMENT:
+            /* FALLTHRU */
         case ESYS_TR_RH_PLATFORM:
+            /* FALLTHRU */
         case ESYS_TR_RH_PLATFORM_NV:
-            return hierarchy;
+            *out = in;
+            return TSS2_RC_SUCCESS;
         case TPM2_RH_NULL:
-            return ESYS_TR_RH_NULL;
+            *out = ESYS_TR_RH_NULL;
+            return TSS2_RC_SUCCESS;
         case TPM2_RH_OWNER:
-            return ESYS_TR_RH_OWNER;
+            *out = ESYS_TR_RH_OWNER;
+            return TSS2_RC_SUCCESS;
         case TPM2_RH_ENDORSEMENT:
-            return ESYS_TR_RH_ENDORSEMENT;
+            *out = ESYS_TR_RH_ENDORSEMENT;
+            return TSS2_RC_SUCCESS;
         case TPM2_RH_PLATFORM:
-            return ESYS_TR_RH_PLATFORM;
+            *out = ESYS_TR_RH_PLATFORM;
+            return TSS2_RC_SUCCESS;
         case TPM2_RH_PLATFORM_NV:
-            return ESYS_TR_RH_PLATFORM_NV;
+            *out = ESYS_TR_RH_PLATFORM_NV;
+            return TSS2_RC_SUCCESS;
         default:
-            LOG_ERR("An unknown hierarchy handle was passed: 0x%08x", hierarchy);
-            return 0xffffffff;
+            LOG_ERR("An unknown hierarchy handle was passed: 0x%08x", in);
+            return TSS2_ESYS_RC_BAD_VALUE;
     }
 #elif defined(ESYS_2_3)
-    return hierarchy;
+    *out = in;
+    return TSS2_RC_SUCCESS;
 #else
 #error "Need to define either ESYS_3_0 or ESYS_2_3"
 #endif
@@ -976,8 +988,14 @@ tool_rc tpm2_hash(ESYS_CONTEXT *esys_context, ESYS_TR shandle1, ESYS_TR shandle2
         TPMI_RH_HIERARCHY hierarchy, TPM2B_DIGEST **out_hash,
         TPMT_TK_HASHCHECK **validation) {
 
-    TSS2_RC rval = Esys_Hash(esys_context, shandle1, shandle2, shandle3, data,
-            hash_alg, fix_esys_hierarchy(hierarchy), out_hash, validation);
+    TSS2_RC rval = fix_esys_hierarchy(hierarchy, &hierarchy);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_ERR("Unknown hierarchy");
+        return tool_rc_from_tpm(rval);
+    }
+
+    rval = Esys_Hash(esys_context, shandle1, shandle2, shandle3, data,
+            hash_alg, hierarchy, out_hash, validation);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_Hash, rval);
         return tool_rc_from_tpm(rval);
@@ -1017,9 +1035,15 @@ tool_rc tpm2_sequence_complete(ESYS_CONTEXT *esys_context,
         TPMI_RH_HIERARCHY hierarchy, TPM2B_DIGEST **result,
         TPMT_TK_HASHCHECK **validation) {
 
-    TSS2_RC rval = Esys_SequenceComplete(esys_context, sequence_handle,
+    TSS2_RC rval = fix_esys_hierarchy(hierarchy, &hierarchy);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_ERR("Unknown hierarchy");
+        return tool_rc_from_tpm(rval);
+    }
+
+    rval = Esys_SequenceComplete(esys_context, sequence_handle,
             ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE, buffer,
-            fix_esys_hierarchy(hierarchy), result, validation);
+            hierarchy, result, validation);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_SequenceComplete, rval);
         return tool_rc_from_tpm(rval);
@@ -2132,9 +2156,14 @@ tpm2_hierarchycontrol_free_name1:
         goto tpm2_hierarchycontrol_skip_esapi_call;
     }
 
-    TSS2_RC rval = Esys_HierarchyControl(esys_context, auth_hierarchy->tr_handle,
-            shandle, ESYS_TR_NONE, ESYS_TR_NONE,
-            fix_esys_hierarchy(enable), state);
+    TSS2_RC rval = fix_esys_hierarchy(enable, &enable);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_ERR("Unknown hierarchy");
+        return tool_rc_from_tpm(rval);
+    }
+
+    rval = Esys_HierarchyControl(esys_context, auth_hierarchy->tr_handle,
+            shandle, ESYS_TR_NONE, ESYS_TR_NONE, enable, state);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
         LOG_PERR(Esys_HierarchyControl, rval);
         return tool_rc_from_tpm(rval);
@@ -2269,9 +2298,17 @@ tool_rc tpm2_hmac_sequencecomplete(ESYS_CONTEXT *esys_context,
         return rc;
     }
 
-    TPM2_RC rval = Esys_SequenceComplete(esys_context, sequence_handle,
+    uint32_t hierarchy;
+
+    TSS2_RC rval = fix_esys_hierarchy(TPM2_RH_NULL, &hierarchy);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_ERR("Unknown hierarchy");
+        return tool_rc_from_tpm(rval);
+    }
+
+    rval = Esys_SequenceComplete(esys_context, sequence_handle,
             hmac_key_obj_shandle, ESYS_TR_NONE, ESYS_TR_NONE, input_buffer,
-            fix_esys_hierarchy(TPM2_RH_NULL), result, validation);
+            hierarchy, result, validation);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_HMAC, rval);
         return tool_rc_from_tpm(rval);
@@ -3681,9 +3718,15 @@ tool_rc tpm2_loadexternal(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE *private,
         const TPM2B_PUBLIC *public, TPMI_RH_HIERARCHY hierarchy,
         ESYS_TR *object_handle) {
 
-    TSS2_RC rval = Esys_LoadExternal(ectx,
+    TSS2_RC rval = fix_esys_hierarchy(hierarchy, &hierarchy);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_ERR("Unknown hierarchy");
+        return tool_rc_from_tpm(rval);
+    }
+
+    rval = Esys_LoadExternal(ectx,
             ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-            private, public, fix_esys_hierarchy(hierarchy),
+            private, public, hierarchy,
             object_handle);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_LoadExternal, rval);
