@@ -1,5 +1,9 @@
 ## Changelog
 
+### 4.1.2-RC0 - Next
+
+* Fix missing handle maps for ESY3 handle breaks. See #1994.
+
 ### 4.1.1 - 2020-01-21
 
 * tpm2\_certify: Fix output of attestation data including size field. Now outputs just bytes.
