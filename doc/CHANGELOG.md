@@ -1,5 +1,9 @@
 ## Changelog
 
+### next
+
+ * Fix missing handle maps for ESY3 handle breaks. See #1994.
+
 ### 4.2 2020-04-08
 
  * Fix various issues reported by static analysis tools.
