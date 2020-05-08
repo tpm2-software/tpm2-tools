@@ -470,25 +470,25 @@ char* ask_for_password() {
 #else /* FAPI_3_0 */
     char *pw;
 #endif /* FAPI_3_0 */
-    char *password = NULL;
+    char *ret_pw = NULL;
 
     if (auth_callback (NULL, "Password", &pw, NULL))
         goto error;
 
 #ifdef FAPI_3_0
-    password = strdup(pw);
-    if (!password) {
+    ret_pw = strdup(pw);
+    if (!ret_pw) {
         fprintf (stderr, "OOM\n");
         return NULL;
     }
 #else
-    password = pw;
+    ret_pw = pw;
 #endif /* FAPI_3_0 */
 
     if (auth_callback (NULL, "Retype password", &pw, NULL))
         goto error;
 
-    bool eq = !strcmp (password, pw);
+    bool eq = !strcmp (ret_pw, pw);
 #ifndef FAPI_3_0
     free(pw);
 #endif
@@ -497,11 +497,11 @@ char* ask_for_password() {
         goto error;
     }
 
-    return password;
+    return ret_pw;
 
 error:
-    if (password)
-        free(password);
+    if (ret_pw)
+        free(ret_pw);
 
     return NULL;
 }
