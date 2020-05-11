@@ -9,6 +9,7 @@ compiler:
 
 env:
   - DOCKER_TAG=ubuntu-18.04
+  - DOCKER_TAG=ubuntu-20.04
   - DOCKER_TAG=fedora-30
   - DOCKER_TAG=opensuse-leap
   - DOCKER_TAG=ubuntu-18.04 TPM2_TSS_VERSION=master
