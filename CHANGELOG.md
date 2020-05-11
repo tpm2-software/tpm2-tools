@@ -1,6 +1,6 @@
 ## Changelog
 
-### 4.1.2-RC0 - Next
+### 4.1.2-RC0 - 2020-05-11
 
 * Fix missing handle maps for ESY3 handle breaks. See #1994.
 
