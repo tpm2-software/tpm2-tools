@@ -2,7 +2,7 @@
 
 # NAME
 
-**tpm2_sign**(1) - Sign a hash using the TPM.
+**tpm2_sign**(1) - Sign a hash or message using the TPM.
 
 # SYNOPSIS
 
@@ -10,12 +10,19 @@
 
 # DESCRIPTION
 
-**tpm2_sign**(1) - Signs an externally provided message or hash with the
-specified symmetric or asymmetric signing key.
+**tpm2_sign**(1) - Generates signature of specified message or message-digest
+using the specified symmetric or asymmetric signing key.
 
-If the signing key is a restricted signing key, then validation can be provided
-via the **-t** output. The ticket indicates that the TPM performed the hash of
-the message.
+When signing a message, **tpm2_sign** utility first calculates the digest of the
+message similar to the **tpm2_hash** command. It also generates a validation
+ticket under TPM2_RH_NULL or TPM2_RH_OWNER hierarchies respectively for
+unrestricted or the restricted signing keys.
+
+While signing messages is a provision in this tool it is recommended to use the
+**tpm2_hash** tool first and pass the digest and validation ticket.
+
+NOTE: If the signing key is a restricted signing key, then validation and digest
+must be provided via the **-t** input. The ticket indicates that the TPM performed the hash of the message.
 
 # OPTIONS
 

@@ -88,50 +88,42 @@ out:
 
 static tool_rc init(ESYS_CONTEXT *ectx) {
 
-    bool option_fail = false;
-
-    if (ctx.cp_hash_path && ctx.output_path) {
-        LOG_ERR("Cannout output signature when calculating cpHash");
-        return tool_rc_option_error;
-    }
-
-    if (!ctx.signing_key.ctx_path) {
-        LOG_ERR("Expected option c");
-        option_fail = true;
-    }
-
-    if (!ctx.flags.o && !ctx.cp_hash_path) {
-        LOG_ERR("Expected option o");
-        option_fail = true;
-    }
-
-    if (option_fail) {
-        return tool_rc_option_error;
-    }
-
-    if (ctx.flags.d && ctx.flags.t) {
-        LOG_WARN("When using a pre-computed digest the validation ticket"
-                " is ignored.");
-    }
-
-    if (ctx.flags.d || !ctx.flags.t) {
-        ctx.validation.tag = TPM2_ST_HASHCHECK;
-        ctx.validation.hierarchy = TPM2_RH_NULL;
-        memset(&ctx.validation.digest, 0, sizeof(ctx.validation.digest));
-    }
-
     /*
-     * Set signature scheme for key type, or validate chosen scheme is allowed for key type.
+     * Set signature scheme for key type, or validate chosen scheme is
+     * allowed for key type.
      */
     tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx,
             ctx.signing_key.object.tr_handle, ctx.halg, ctx.sig_scheme,
             &ctx.in_scheme);
     if (rc != tool_rc_success) {
-        LOG_ERR("bad signature scheme for key type!");
+        LOG_ERR("Invalid signature scheme for key type!");
         return rc;
     }
 
-    /* Process the msg file if needed */
+    if (ctx.cp_hash_path && ctx.output_path) {
+        LOG_ERR("Cannot output signature when calculating cpHash");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.signing_key.ctx_path) {
+        LOG_ERR("Expected option c");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.flags.o && !ctx.cp_hash_path) {
+        LOG_ERR("Expected option o");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.flags.d && ctx.flags.t) {
+        LOG_WARN("Ignoring the specified validation ticket since no TPM "
+                 "calculated digest specified.");
+    }
+
+    /*
+     * Applicable when input data is not a digest, rather the message to sign.
+     * A digest is calculated first in this case.
+     */
     if (!ctx.flags.d) {
         FILE *input = ctx.input_file ? fopen(ctx.input_file, "rb") : stdin;
         if (!input) {
@@ -139,19 +131,28 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
             return tool_rc_general_error;
         }
 
-        rc = tpm2_hash_file(ectx, ctx.halg, TPM2_RH_NULL, input, &ctx.digest,
-                NULL);
+        TPMT_TK_HASHCHECK *temp_validation_ticket;
+        rc = tpm2_hash_file(ectx, ctx.halg, TPM2_RH_OWNER, input, &ctx.digest,
+                &temp_validation_ticket);
         if (input != stdin) {
             fclose(input);
         }
         if (rc != tool_rc_success) {
             LOG_ERR("Could not hash input");
         }
+
+        ctx.validation = *temp_validation_ticket;
+        free(temp_validation_ticket);
+
+        /*
+         * we don't need to perform the digest, just read it
+         */
         return rc;
-        /* we don't need to perform the digest, just read it */
     }
 
-    /* else process it as a pre-computed digest */
+    /*
+     * else process it as a pre-computed digest
+     */
     ctx.digest = malloc(sizeof(TPM2B_DIGEST));
     if (!ctx.digest) {
         LOG_ERR("oom");
@@ -163,6 +164,17 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
             ctx.input_file, &ctx.digest->size, ctx.digest->buffer);
     if (!result) {
         return tool_rc_general_error;
+    }
+
+    /*
+     * Applicable to un-restricted signing keys
+     * NOTE: When digests without tickets are specified for restricted keys,
+     * the sign operation will fail.
+     */
+    if (ctx.flags.d && !ctx.flags.t) {
+        ctx.validation.tag = TPM2_ST_HASHCHECK;
+        ctx.validation.hierarchy = TPM2_RH_NULL;
+        memset(&ctx.validation.digest, 0, sizeof(ctx.validation.digest));
     }
 
     return tool_rc_success;
