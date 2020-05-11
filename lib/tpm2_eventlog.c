@@ -37,7 +37,8 @@ bool foreach_digest2(TCG_DIGEST2 const *digest, size_t count, size_t size,
 
     bool ret = true;
 
-    for (size_t i = 0; i < count; ++i) {
+    size_t i;
+    for (i = 0; i < count; ++i) {
         if (size < sizeof(*digest)) {
             LOG_ERR("insufficient size for digest header");
             return false;
@@ -240,7 +241,8 @@ bool specid_event(TCG_EVENT const *event, size_t size,
         return false;
     }
 
-    for (size_t i = 0; i < sizeof(event->digest); ++i) {
+    size_t i;
+    for (i = 0; i < sizeof(event->digest); ++i) {
         if (event->digest[i] != 0) {
             LOG_ERR("SpecID digest data malformed");
             return false;
