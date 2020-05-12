@@ -54,7 +54,7 @@ static bool execute_man(char *prog_name, bool show_errors) {
         char *manpage = basename(prog_name);
         execlp("man", "man", manpage, NULL);
     } else {
-        if ((pid = waitpid(pid, &status, 0)) == -1) {
+        if (waitpid(pid, &status, 0) == -1) {
             LOG_ERR("Waiting for child process that executes man failed, error:"
                     " %s", strerror(errno));
             return false;
