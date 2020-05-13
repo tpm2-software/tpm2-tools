@@ -165,6 +165,29 @@ static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
     return true;
 }
 /*
+ * TCG PC Client FPF section 2.3.4.1 and 9.4.1:
+ * Usage of the event type EV_POST_CODE:
+ * - If a combined event is measured, the event field SHOULD
+ * be the string "POST CODE" in all caps. ...
+ * - Embedded SMM code and the code that sets it up SHOULD use
+ * the string "SMM CODE" in all caps...
+ * - BIS code (eclusing the BIS Certificate) should use event
+ * field string of "BIS CODE" in all caps. ...
+ * - ACPI flash data prior to any modifications ... should use
+ * event field string of "ACPI DATA" in all caps.
+ */
+static bool yaml_uefi_post_code(const char * data, size_t len)
+{
+    tpm2_tool_output(
+        "  Event:\n"
+        "    - Length: %zu\n"
+        "      String: '%.*s'\n",
+        len,
+        (int) len,
+        data);
+    return true;
+}
+/*
  * TCG PC Client FPF section 9.2.6
  * The tpm2_eventlog module validates the event structure but nothing within
  * the event data buffer so we must do that here.
@@ -247,6 +270,7 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
     case EV_EFI_VARIABLE_AUTHORITY:
         return yaml_uefi_var((UEFI_VARIABLE_DATA*)event->Event);
     case EV_POST_CODE:
+        return yaml_uefi_post_code((const char*)event->Event, event->EventSize);
     case EV_S_CRTM_CONTENTS:
     case EV_EFI_PLATFORM_FIRMWARE_BLOB:
         return yaml_uefi_platfwblob((UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event);
