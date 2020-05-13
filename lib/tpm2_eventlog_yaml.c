@@ -329,7 +329,7 @@ void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
     bytes_to_str(event->digest, sizeof(event->digest), digest_hex, sizeof(digest_hex));
 
     tpm2_tool_output("- Event[%zu]:\n"
-                     "  pcrIndex: %" PRIu32 "\n"
+                     "  PCRIndex: %" PRIu32 "\n"
                      "  eventType: %s\n"
                      "  digest: %s\n"
                      "  eventDataSize: %" PRIu32 "\n", (*count)++, event->pcrIndex,
