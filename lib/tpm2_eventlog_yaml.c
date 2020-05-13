@@ -171,13 +171,16 @@ static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
  * be the string "POST CODE" in all caps. ...
  * - Embedded SMM code and the code that sets it up SHOULD use
  * the string "SMM CODE" in all caps...
- * - BIS code (eclusing the BIS Certificate) should use event
+ * - BIS code (excluding the BIS Certificate) should use event
  * field string of "BIS CODE" in all caps. ...
  * - ACPI flash data prior to any modifications ... should use
  * event field string of "ACPI DATA" in all caps.
  */
-static bool yaml_uefi_post_code(const char * data, size_t len)
+static bool yaml_uefi_post_code(const TCG_EVENT2 * const event)
 {
+    const char * const data = (const char *) event->Event;
+    const size_t len = event->EventSize;
+
     tpm2_tool_output(
         "  Event:\n"
         "    - Length: %zu\n"
@@ -270,7 +273,7 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
     case EV_EFI_VARIABLE_AUTHORITY:
         return yaml_uefi_var((UEFI_VARIABLE_DATA*)event->Event);
     case EV_POST_CODE:
-        return yaml_uefi_post_code((const char*)event->Event, event->EventSize);
+        return yaml_uefi_post_code(event);
     case EV_S_CRTM_CONTENTS:
     case EV_EFI_PLATFORM_FIRMWARE_BLOB:
         return yaml_uefi_platfwblob((UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event);
