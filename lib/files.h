@@ -361,6 +361,18 @@ bool files_load_encrypted_seed(const char *path,
         TPM2B_ENCRYPTED_SECRET *encrypted_seed);
 
 /**
+ * Serializes a TPMS_ALGORITHM_DETAIL_ECC to the file path provided.
+ * @param parameters
+ *  The TPMS_ALGORITHM_DETAIL_ECC to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_ecc_details(TPMS_ALGORITHM_DETAIL_ECC *parameters,
+    const char *path);
+
+/**
  * Checks a file for existence.
  * @param path
  *  The file to check for existence.

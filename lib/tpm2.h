@@ -452,6 +452,9 @@ tool_rc tpm2_getsessionauditdigest(ESYS_CONTEXT *esys_context,
         TPM2B_ATTEST **audit_info, TPMT_SIGNATURE **signature,
         ESYS_TR audit_session_handle);
 
+tool_rc tpm2_geteccparameters(ESYS_CONTEXT *esys_context,
+    TPMI_ECC_CURVE curve_id, TPMS_ALGORITHM_DETAIL_ECC **parameters);
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context);
 
