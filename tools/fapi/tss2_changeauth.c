@@ -54,7 +54,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         ctx.authValue = ask_for_password ();
         has_asked_for_password = true;
         if (!ctx.authValue){
-            free (ctx.authValue);
             return 1; /* User entered two different passwords */
         }
     }
