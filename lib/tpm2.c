@@ -4232,6 +4232,19 @@ tpm2_gettime_skip_esapi_call:
     return rc;
 }
 
+tool_rc tpm2_geteccparameters(ESYS_CONTEXT *esys_context,
+    TPMI_ECC_CURVE curve_id, TPMS_ALGORITHM_DETAIL_ECC **parameters) {
+
+    TSS2_RC rval = Esys_ECC_Parameters(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
+        ESYS_TR_NONE, curve_id, parameters);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_ECC_Parameters, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context) {
 

@@ -746,6 +746,8 @@ LOAD_TYPE(TPM2B_PRIVATE, private)
 SAVE_TYPE(TPM2B_ENCRYPTED_SECRET, encrypted_seed)
 LOAD_TYPE(TPM2B_ENCRYPTED_SECRET, encrypted_seed)
 
+SAVE_TYPE(TPMS_ALGORITHM_DETAIL_ECC, ecc_details)
+
 tool_rc files_tpm2b_attest_to_tpms_attest(TPM2B_ATTEST *quoted, TPMS_ATTEST *attest) {
 
     size_t offset = 0;
