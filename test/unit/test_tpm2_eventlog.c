@@ -266,7 +266,7 @@ static void test_parse_event2body_uefivar_badlength(void **state){
 
     assert_false(parse_event2body(event, EV_EFI_VARIABLE_DRIVER_CONFIG));
 }
-static void test_parse_event2body_postcode_badlength(void **state){
+static void test_parse_event2body_firmware_blob_badlength(void **state){
 
     (void)state;
 
@@ -465,7 +465,7 @@ int main(void) {
         cmocka_unit_test(test_foreach_event2_parse_event2body_fail),
         cmocka_unit_test(test_parse_event2body_uefivar_badsize),
         cmocka_unit_test(test_parse_event2body_uefivar_badlength),
-        cmocka_unit_test(test_parse_event2body_postcode_badlength),
+        cmocka_unit_test(test_parse_event2body_firmware_blob_badlength),
         cmocka_unit_test(test_specid_event_nohdr),
         cmocka_unit_test(test_specid_event_badeventtype),
         cmocka_unit_test(test_specid_event_badpcrindex),
