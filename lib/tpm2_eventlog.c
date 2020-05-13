@@ -88,8 +88,11 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
             }
         }
         break;
-    /* TCG PC Client FPF section 9.2.5 */
+    /* TCG PC Client FPF section 2.3.4.1 and 9.4.1 */
     case EV_POST_CODE:
+        // the event is a string, so there are no length requirements.
+        break;
+    /* TCG PC Client FPF section 9.2.5 */
     case EV_S_CRTM_CONTENTS:
     case EV_EFI_PLATFORM_FIRMWARE_BLOB:
         {
