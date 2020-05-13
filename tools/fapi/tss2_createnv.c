@@ -81,7 +81,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         ctx.authValue = ask_for_password ();
         has_asked_for_password = true;
         if (!ctx.authValue){
-            free (ctx.authValue);
             return 1; /* User entered two different passwords */
         }
     }
@@ -94,6 +93,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             free (ctx.authValue);
         }
         LOG_PERR ("Fapi_CreateNv", r);
+        return 1;
     }
 
     if(has_asked_for_password){
