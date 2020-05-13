@@ -182,10 +182,7 @@ static bool yaml_uefi_post_code(const TCG_EVENT2 * const event)
     const size_t len = event->EventSize;
 
     tpm2_tool_output(
-        "  Event:\n"
-        "    - Length: %zu\n"
-        "      String: '%.*s'\n",
-        len,
+        "  Event: '%.*s'\n",
         (int) len,
         data);
     return true;
@@ -225,11 +222,7 @@ bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
 /* TCG PC Client PFP section 9.4.4 */
 bool yaml_uefi_action(UINT8 const *action, size_t size) {
 
-    /* longest string permitted by spec is 47 chars */
-    char buf[50] = { '\0', };
-
-    memcpy (buf, action, size);
-    tpm2_tool_output("  Event: %s\n", buf);
+    tpm2_tool_output("  Event: '%.*s'\n", (int) size, action);
 
     return true;
 }
