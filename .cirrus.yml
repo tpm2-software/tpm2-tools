@@ -29,8 +29,7 @@ task:
     - cd tpm2-tss && ./bootstrap && ./configure --disable-doxygen-doc --disable-dependency-tracking && gmake install
     - cd ../../ && rm -rf tss
     - mkdir rm
-    - cd rm && git clone https://github.com/tpm2-software/tpm2-abrmd.git
-    - cd tpm2-abrmd && wget https://patch-diff.githubusercontent.com/raw/tpm2-software/tpm2-abrmd/pull/711.patch -O - | git apply
+    - cd rm && git clone https://github.com/tpm2-software/tpm2-abrmd.git && cd tpm2-abrmd
     - ./bootstrap && ./configure --disable-dependency-tracking && gmake install
     - cd ../../ && rm -rf rm
   script:
