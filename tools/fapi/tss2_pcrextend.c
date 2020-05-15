@@ -57,13 +57,9 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         fprintf (stderr, "No event data provided, use --data\n");
         return -1;
     }
-    if (!ctx.logData) {
-        fprintf (stderr, "No log data provided, use --logData\n");
-        return -1;
-    }
 
     /* Read event data and log data from file */
-    uint8_t *data;
+    uint8_t *data = NULL;
     size_t eventDataSize;
     TSS2_RC r = open_read_and_close (ctx.data, (void**)&data,
         &eventDataSize);
@@ -71,12 +67,15 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         LOG_PERR ("open_read_and_close data", r);
         return -1;
     }
-    char *logData;
-    r = open_read_and_close (ctx.logData, (void**)&logData, 0);
-    if (r){
-        LOG_PERR ("open_read_and_close logData", r);
-        Fapi_Free (data);
-        return -1;
+
+    char *logData = NULL;
+    if (ctx.logData) {
+        r = open_read_and_close (ctx.logData, (void**)&logData, 0);
+        if (r) {
+            LOG_PERR ("open_read_and_close logData", r);
+            Fapi_Free (data);
+            return -1;
+        }
     }
 
     /* Execute FAPI command with passed arguments */
@@ -87,7 +86,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         return 1;
     }
 
-    Fapi_Free (data);
+    free (data);
     free (logData);
 
     return 0;

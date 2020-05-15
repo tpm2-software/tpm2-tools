@@ -40,6 +40,12 @@ bool tss2_tool_onstart(tpm2_options **opts) {
 
 /* Execute specific tool */
 int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
+    /* Check availability of required parameters */
+    if (!ctx.info) {
+        fprintf (stderr, "info parameter is missing, pass --info\n");
+        return -1;
+    }
+
     /* Execute FAPI command with passed arguments */
     char *info;
     TSS2_RC r = Fapi_GetInfo (fctx, &info);

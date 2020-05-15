@@ -59,11 +59,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         return -1;
     }
 
-    if (!ctx.keyType) {
-        fprintf (stderr, "key type missing, use --type\n");
-        return -1;
-    }
-
     /* If no authValue was given, prompt the user interactively */
     if (!ctx.authValue) {
         ctx.authValue = ask_for_password ();

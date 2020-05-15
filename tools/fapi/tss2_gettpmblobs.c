@@ -60,25 +60,13 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         fprintf (stderr, "path missing, use --path\n");
         return -1;
     }
-    if (!ctx.tpm2bPublic) {
-        fprintf (stderr, "public missing, use --tpm2bPublic\n");
-        return -1;
-    }
-    if (!ctx.tpm2bPrivate) {
-        fprintf (stderr, "private missing, use --tpm2bPrivate\n");
-        return -1;
-    }
-    if (!ctx.policy) {
-        fprintf (stderr, "policy missing, use --policy\n");
-        return -1;
-    }
 
     /* Execute FAPI command with passed arguments */
     uint8_t *tpm2bPublic;
     size_t  tpm2bPublicSize;
     uint8_t *tpm2bPrivate;
     size_t  tpm2bPrivateSize;
-    char *policy = NULL;
+    char *policy;
     TSS2_RC r = Fapi_GetTpmBlobs (fctx, ctx.path, &tpm2bPublic,
         &tpm2bPublicSize, &tpm2bPrivate, &tpm2bPrivateSize, &policy);
     if (r != TSS2_RC_SUCCESS) {
@@ -87,32 +75,39 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     /* Write returned data to file(s) */
-    r = open_write_and_close (ctx.tpm2bPublic, ctx.overwrite, tpm2bPublic,
-        tpm2bPublicSize);
-    if (r){
-        LOG_PERR ("open_write_and_close tpm2bPublic", r);
-        return 1;
+    if (ctx.tpm2bPublic) {
+        r = open_write_and_close (ctx.tpm2bPublic, ctx.overwrite, tpm2bPublic,
+            tpm2bPublicSize);
+        if (r) {
+            LOG_PERR ("open_write_and_close tpm2bPublic", r);
+            return 1;
+        }
     }
-    r = open_write_and_close (ctx.tpm2bPrivate, ctx.overwrite, tpm2bPrivate,
-        tpm2bPrivateSize);
-    if (r){
-        LOG_PERR ("open_write_and_close tpm2bPrivate", r);
-        Fapi_Free (tpm2bPublic);
-        return 1;
+
+    if (ctx.tpm2bPrivate) {
+        r = open_write_and_close (ctx.tpm2bPrivate, ctx.overwrite, tpm2bPrivate,
+            tpm2bPrivateSize);
+        if (r) {
+            LOG_PERR ("open_write_and_close tpm2bPrivate", r);
+            Fapi_Free (tpm2bPublic);
+            return 1;
+        }
     }
-    if (policy){
+
+    if (ctx.policy) {
         r = open_write_and_close (ctx.policy, ctx.overwrite, policy,
             strlen(policy));
-        if (r){
+        if (r) {
             LOG_PERR ("open_write_and_close policy", r);
             Fapi_Free (tpm2bPublic);
             Fapi_Free (tpm2bPrivate);
             return 1;
         }
-        Fapi_Free(policy);
     }
 
+    Fapi_Free (policy);
     Fapi_Free (tpm2bPublic);
     Fapi_Free (tpm2bPrivate);
+
     return 0;
 }

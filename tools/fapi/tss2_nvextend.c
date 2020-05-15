@@ -68,11 +68,10 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         TSS2_RC r = open_read_and_close (ctx.logData, (void**)&logData, 0);
         if (r){
             LOG_PERR ("open_read_and_close logData", r);
-            Fapi_Free (data);
+            free (data);
             return 1;
         }
     }
-
 
     /* Execute FAPI command with passed arguments */
     r = Fapi_NvExtend(fctx, ctx.nvPath, data, data_len, logData);
@@ -80,10 +79,8 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         LOG_PERR("Fapi_NvExtend", r);
         return 1;
     }
-    Fapi_Free (data);
-    if (logData){
-        Fapi_Free (logData);
-    }
+    free (data);
+    free (logData);
 
     return 0;
 }

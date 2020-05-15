@@ -53,23 +53,22 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         &certificatesSize);
     if (r != TSS2_RC_SUCCESS) {
         LOG_PERR ("Fapi_GetPlatformCertificates", r);
-        if (certificatesSize>0){
-            Fapi_Free (certificates);
-        }
+        Fapi_Free (certificates);
         return 1;
     }
 
     /* Write returned data to file(s) */
-    if (certificatesSize>0){
+    if (certificatesSize && certificatesSize > 0) {
         r = open_write_and_close (ctx.certificates, ctx.overwrite,
             certificates, certificatesSize);
-        if (r){
+        if (r) {
             LOG_PERR ("open_write_and_close certificates", r);
             Fapi_Free (certificates);
             return 1;
         }
-        Fapi_Free (certificates);
     }
+
+    Fapi_Free (certificates);
 
     return 0;
 }

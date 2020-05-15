@@ -59,16 +59,6 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
-expect <<EOF
-# Try with missing type
-spawn tss2_createkey --path $KEY_PATH --authValue abc
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    send_user "Command has not failed as expected\n"
-    exit 1
-}
-EOF
-
 tss2_import --path $POLICY_PCR --importData $PCR_POLICY_DATA
 
 expect <<EOF
