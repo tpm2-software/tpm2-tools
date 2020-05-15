@@ -48,7 +48,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"cipherText",  required_argument, NULL, 'o'},
         {"force",       no_argument      , NULL, 'f'},
     };
-    return (*opts = tpm2_options_new ("f:P:o:p:i:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("fP:o:p:i:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 

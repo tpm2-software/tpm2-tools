@@ -48,7 +48,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"force"         , no_argument      , NULL, 'f'},
         {"pcrLog"       , required_argument, NULL, 'l'}
     };
-    return (*opts = tpm2_options_new ("o:x:f:l:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("o:x:fl:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 
