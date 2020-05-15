@@ -56,16 +56,6 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 EOF
 
 expect <<EOF
-# Try with missing logData
-spawn tss2_pcrextend --pcr 16 --data $PCR_EVENT_DATA
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
-
-expect <<EOF
 # Try with wrong pcr
 spawn tss2_pcrextend --pcr abc --data $PCR_EVENT_DATA \
     --logData $PCR_LOG_FILE_WRITE

@@ -69,16 +69,6 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 EOF
 
 expect <<EOF
-# Try with missing cert
-spawn tss2_setcertificate --path $KEY_PATH
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
-
-expect <<EOF
 # Try with missing path
 spawn tss2_getcertificate --x509certData $READ_CERTIFICATE_FILE --force
 set ret [wait]

@@ -66,17 +66,6 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 EOF
 
 expect <<EOF
-# Try with multiple stdins with publicKey and without certificate
-spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
-    --signature=- --publicKey=-
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
-
-expect <<EOF
 # Try with multiple stdins with publicKey and with certificate
 spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
     --signature=- --publicKey=- --certificate=-
@@ -102,28 +91,6 @@ expect <<EOF
 # Try with missing digest file
 spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest abc \
     --signature $SIGNATURE_FILE --publicKey $PUBLIC_KEY_FILE
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
-
-expect <<EOF
-# Try with missing signature file
-spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
-    --signature abc --publicKey $PUBLIC_KEY_FILE
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
-
-expect <<EOF
-# Try with missing public key file
-spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
-    --signature $SIGNATURE_FILE --publicKey abc
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"

@@ -60,11 +60,11 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     r = Fapi_Import (fctx, ctx.path, importData);
     if (r != TSS2_RC_SUCCESS){
         LOG_PERR("Fapi_Import", r);
-        Fapi_Free (importData);
+        free (importData);
         return 1;
     }
 
-    Fapi_Free (importData);
+    free (importData);
 
     return 0;
 }

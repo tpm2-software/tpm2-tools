@@ -47,10 +47,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         fprintf (stderr, "path is missing, use --path\n");
         return -1;
     }
-    if (!ctx.description) {
-        fprintf (stderr, "description is missing, use --description\n");
-        return -1;
-    }
 
     /* Execute FAPI command with passed arguments */
     TSS2_RC r = Fapi_SetDescription (fctx, ctx.path, ctx.description);

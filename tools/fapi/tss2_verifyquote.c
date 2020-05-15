@@ -55,11 +55,6 @@ bool tss2_tool_onstart(tpm2_options **opts) {
 /* Execute specific tool */
 int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Check availability of required parameters */
-    if (!ctx.qualifyingData) {
-        fprintf (stderr, "qualifying data parameter not provided, use "\
-            "--qualifyingData\n");
-        return -1;
-    }
     if (!ctx.quoteInfo) {
         fprintf (stderr, "quote info parameter not provided, use "\
             "--quoteInfo\n");
@@ -75,45 +70,72 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             " --signature\n");
         return -1;
     }
-    if (!ctx.pcrLog) {
-        fprintf (stderr, "pcrLog parameter not provided, use"\
-            " --pcrLog\n");
-        return -1;
+    if (ctx.qualifyingData && ctx.pcrLog) {
+        if (!strcmp (ctx.signature, "-") + !strcmp(ctx.qualifyingData, "-") +
+            !strcmp(ctx.quoteInfo, "-") + !strcmp(ctx.pcrLog, "-") > 1) {
+                fprintf (stderr, "At most one of --signature, "\
+                    "--qualifyingData, --quoteInfo and --pcrLog can "\
+                    "be '-' (standard output)\n");
+                return -1;
+        }
     }
-    if (!strcmp (ctx.signature, "-") + !strcmp(ctx.qualifyingData, "-") +
-        !strcmp(ctx.quoteInfo, "-") + !strcmp(ctx.pcrLog, "-") > 1) {
-            fprintf (stderr, "At most one of --signature, "\
-                "--qualifyingData, --quoteInfo and --pcrLog can "\
-                "be '-' (standard output)\n");
-            return -1;
+
+    if (!ctx.qualifyingData && ctx.pcrLog) {
+        if (!strcmp (ctx.signature, "-") + !strcmp(ctx.quoteInfo, "-") +
+            !strcmp(ctx.pcrLog, "-") > 1) {
+                fprintf (stderr, "At most one of --signature, "\
+                    " --quoteInfo and --pcrLog can be '-' (standard output)\n");
+                return -1;
+        }
+    }
+
+    if (ctx.qualifyingData && !ctx.pcrLog) {
+        if (!strcmp (ctx.signature, "-") + !strcmp(ctx.qualifyingData, "-") +
+            !strcmp(ctx.quoteInfo, "-") > 1) {
+                fprintf (stderr, "At most one of --signature, "\
+                    "--qualifyingData and --quoteInfo can "\
+                    "be '-' (standard output)\n");
+                return -1;
+        }
     }
 
     /* Read qualifyingData, signature, quoteInfo and pcrLog from file */
-    uint8_t *qualifyingData;
-    size_t qualifyingDataSize;
-    TSS2_RC r = open_read_and_close (ctx.qualifyingData,
-        (void**)&qualifyingData, &qualifyingDataSize);
-    if (r){
-        LOG_PERR ("open_read_and_close qualifyingData", r);
-        return -1;
+    TSS2_RC r;
+    uint8_t *qualifyingData = NULL;
+    size_t qualifyingDataSize = 0;
+    if (ctx.qualifyingData) {
+        r = open_read_and_close (ctx.qualifyingData,
+            (void**)&qualifyingData, &qualifyingDataSize);
+        if (r) {
+            LOG_PERR ("open_read_and_close qualifyingData", r);
+            return -1;
+        }
     }
-    uint8_t *signature;
-    size_t signatureSize;
-    r = open_read_and_close (ctx.signature, (void**)&signature, &signatureSize);
-    if (r) {
-        LOG_PERR ("open_read_and_close signature", r);
-        free (qualifyingData);
-        return -1;
+
+    uint8_t *signature = NULL;
+    size_t signatureSize = 0;
+    if (ctx.signature) {
+        r = open_read_and_close (ctx.signature, (void**)&signature, &signatureSize);
+        if (r) {
+            LOG_PERR ("open_read_and_close signature", r);
+            free (qualifyingData);
+            return -1;
+        }
     }
-    char *quoteInfo, *pcrLog = NULL;
-    r = open_read_and_close (ctx.quoteInfo, (void**)&quoteInfo, NULL);
-    if (r) {
-        LOG_PERR ("open_read_and_close quoteInfo", r);
-        free (qualifyingData);
-        free (signature);
-        return -1;
+
+    char *quoteInfo = NULL;
+    if (ctx.quoteInfo) {
+        r = open_read_and_close (ctx.quoteInfo, (void**)&quoteInfo, NULL);
+        if (r) {
+            LOG_PERR ("open_read_and_close quoteInfo", r);
+            free (qualifyingData);
+            free (signature);
+            return -1;
+        }
     }
-    if (pcrLog){
+
+    char *pcrLog = NULL;
+    if (ctx.pcrLog) {
         r = open_read_and_close (ctx.pcrLog, (void**)&pcrLog, NULL);
         if (r) {
             LOG_PERR ("open_read_and_close pcrLog", r);

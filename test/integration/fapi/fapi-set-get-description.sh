@@ -45,16 +45,6 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 EOF
 
 expect <<EOF
-# Try with missing description
-spawn tss2_setdescription --path $KEY_PATH
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
-
-expect <<EOF
 # Try with missing path
 spawn tss2_getdescription --description $DESCRIPTION_FILE
 set ret [wait]
