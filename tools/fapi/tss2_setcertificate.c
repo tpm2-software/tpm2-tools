@@ -43,19 +43,18 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         fprintf (stderr, "path missing, use --path\n");
         return -1;
     }
-    if (!ctx.x509cert) {
-        fprintf (stderr, "x509certData missing, use --x509certData\n");
-        return -1;
-    }
 
     /* Read x509 certificate from file */
-    char* x509certData;
+    TSS2_RC r;
+    char* x509certData = NULL;
     size_t x509certSize;
-    TSS2_RC r = open_read_and_close (ctx.x509cert, (void**)&x509certData,
-        &x509certSize);
-    if (r){
-        LOG_PERR("open_read_and_close x509cert", r);
-        return 1;
+    if (ctx.x509cert) {
+        r = open_read_and_close (ctx.x509cert, (void**)&x509certData,
+            &x509certSize);
+        if (r) {
+            LOG_PERR("open_read_and_close x509cert", r);
+            return 1;
+        }
     }
 
     /* Execute FAPI command with passed arguments */

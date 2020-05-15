@@ -65,6 +65,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         LOG_PERR ("Fapi_NvWrite", r);
         return 1;
     }
-    Fapi_Free (data);
+    free (data);
     return 0;
 }

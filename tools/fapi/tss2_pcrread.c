@@ -59,18 +59,13 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         fprintf (stderr, "No PCR index provided, use --pcrIndex\n");
         return -1;
     }
-    if (!ctx.pcrValue) {
-        fprintf (stderr, "No PCR value provided, use --pcrValue\n");
-        return -1;
-    }
-    if (!ctx.pcrLog) {
-        fprintf (stderr, "No PCR log provided, use --pcrLog\n");
-        return -1;
-    }
-    if (!strcmp (ctx.pcrLog, "-") && !strcmp (ctx.pcrValue, "-")) {
-        fprintf (stderr, "Only one of --pcrLog and --pcrIndex can print to "\
-            "standard output");
-        return -1;
+
+    if (ctx.pcrLog && ctx.pcrValue) {
+        if (!strcmp (ctx.pcrLog, "-") && !strcmp (ctx.pcrValue, "-")) {
+            fprintf (stderr, "Only one of --pcrLog and --pcrValue "\
+                "can read from standard input");
+            return -1;
+        }
     }
 
     /* Execute FAPI command with passed arguments */
@@ -85,30 +80,27 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     /* Write returned data to file(s) */
-    r = open_write_and_close (ctx.pcrValue, ctx.overwrite, pcrValue,
-        pcrValueSize);
-    if (r){
-        LOG_PERR ("open_write_and_close pcrValue", r);
-        return 1;
-    }
-    if (pcrLog){
-        r =  open_write_and_close (ctx.pcrLog, ctx.overwrite, pcrLog, 0);
-    }
-    else {
-        r =  open_write_and_close (ctx.pcrLog, ctx.overwrite, "", 0);
-    }
-    if (r){
-        LOG_PERR ("open_write_and_close pcrLog", r);
-        Fapi_Free (pcrValue);
-        if (pcrLog){
+    if (ctx.pcrValue) {
+        r = open_write_and_close (ctx.pcrValue, ctx.overwrite, pcrValue,
+            pcrValueSize);
+        if (r) {
             Fapi_Free (pcrLog);
+            LOG_PERR ("open_write_and_close pcrValue", r);
+            return 1;
         }
-        return 1;
+    }
+
+    if (ctx.pcrLog) {
+        r =  open_write_and_close (ctx.pcrLog, ctx.overwrite, pcrLog, 0);
+        if (r) {
+            Fapi_Free (pcrValue);
+            LOG_PERR ("open_write_and_close pcrLog", r);
+            return 1;
+        }
     }
 
     Fapi_Free (pcrValue);
-    if (pcrLog){
-        Fapi_Free (pcrLog);
-    }
+    Fapi_Free (pcrLog);
+
     return r;
 }

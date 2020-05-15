@@ -50,16 +50,6 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
-expect <<EOF
-# Try with missing type
-spawn tss2_createseal --path $KEY_PATH --data $SEALED_DATA_FILE --authValue ""
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
-
 tss2_import --path $POLICY_PCR --importData $PCR_POLICY_DATA
 
 tss2_createseal --path $KEY_PATH --policyPath $POLICY_PCR --type "noDa" \
@@ -87,16 +77,6 @@ fi
 expect <<EOF
 # Try with missing path
 spawn tss2_unseal --data $UNSEALED_DATA_FILE --force
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
-
-expect <<EOF
-# Try with missing data
-spawn tss2_unseal --path $KEY_PATH --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"

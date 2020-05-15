@@ -70,23 +70,26 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         LOG_PERR ("Fapi_NvRead", r);
         return 1;
     }
-    else {
-        /* Write returned data to file(s) */
-        r = open_write_and_close (ctx.data, ctx.overwrite, data, data_len);
-        if (r){
-            LOG_PERR ("open_write_and_close data", r);
+
+    /* Write returned data to file(s) */
+    r = open_write_and_close (ctx.data, ctx.overwrite, data, data_len);
+    if (r) {
+        LOG_PERR ("open_write_and_close data", r);
+        return 1;
+    }
+
+    if (ctx.logData && logData) {
+        r = open_write_and_close (ctx.logData, ctx.overwrite, logData,
+            strlen(logData));
+        if (r) {
+            Fapi_Free (data);
+            LOG_PERR ("open_write_and_close logData", r);
             return 1;
         }
-        if (logData){
-            r = open_write_and_close (ctx.logData, ctx.overwrite, logData, strlen(logData));
-            if (r){
-                Fapi_Free (data);
-                LOG_PERR ("open_write_and_close logData", r);
-                return 1;
-            }
-            Fapi_Free (logData);
-        }
-        Fapi_Free (data);
     }
+
+    Fapi_Free (logData);
+    Fapi_Free (data);
+
     return 0;
 }

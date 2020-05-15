@@ -63,10 +63,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         fprintf (stderr, "key path missing, use --path\n");
         return -1;
     }
-    if (!ctx.keyType) {
-        fprintf (stderr, "key type missing, use --type\n");
-        return -1;
-    }
     if (!ctx.data) {
         fprintf (stderr, "data to seal missing, use --data\n");
         return -1;

@@ -115,9 +115,8 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         free (ctx.pcrList);
         return -1;
     }
-    if (!ctx.qualifyingData) {
-        fprintf (stderr, "No qualifying data provided, use "\
-            "--qualifyingData\n");
+    if (!ctx.quoteInfo) {
+        fprintf (stderr, "No quoteInfo provided, use --quoteInfo\n");
         free (ctx.pcrList);
         return -1;
     }
@@ -126,38 +125,28 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         free (ctx.pcrList);
         return -1;
     }
-    if (!ctx.pcrLog) {
-        fprintf (stderr, "No PCR event log provided, use --pcrLog\n");
-        free (ctx.pcrList);
-        return -1;
-    }
-    if (!ctx.certificate) {
-        fprintf (stderr, "No Certificate provided, use --certificate\n");
-        free (ctx.pcrList);
-        return -1;
-    }
-    if (!ctx.quoteInfo) {
-        fprintf (stderr, "No quoteInfo provided, use --quoteInfo\n");
-        free (ctx.pcrList);
-        return -1;
-    }
-    if (!strcmp (ctx.quoteInfo, "-") + !strcmp (ctx.pcrLog, "-") +
-        !strcmp (ctx.signature, "-") + !strcmp (ctx.certificate, "-") > 1) {
+    if (ctx.qualifyingData && ctx.pcrLog && ctx.certificate) {
+        if (!strcmp (ctx.keyPath, "-") + !strcmp (ctx.quoteInfo, "-") +
+            !strcmp (ctx.signature, "-") + !strcmp (ctx.qualifyingData, "-") +
+            !strcmp (ctx.pcrLog, "-") + !strcmp (ctx.certificate, "-") > 1) {
             fprintf (stderr, "Only one of --quoteInfo, --pcrLog, "\
-                "--signature and --certificate can print to standard "\
-                "output");
+            "--signature and --certificate can print to standard output");
             free (ctx.pcrList);
-        return -1;
+            return -1;
+        }
     }
 
     /* Read qualifyingData file */
-    uint8_t *qualifyingData;
-    size_t qualifyingDataSize;
-    TSS2_RC r = open_read_and_close (ctx.qualifyingData, (void*)&qualifyingData,
-        &qualifyingDataSize);
-    if (r) {
-      free (ctx.pcrList);
-      return 1;
+    TSS2_RC r;
+    uint8_t *qualifyingData = NULL;
+    size_t qualifyingDataSize = 0;
+    if (ctx.qualifyingData) {
+        r = open_read_and_close (ctx.qualifyingData,
+            (void*)&qualifyingData, &qualifyingDataSize);
+        if (r) {
+          free (ctx.pcrList);
+          return 1;
+        }
     }
 
     /* Execute FAPI command with passed arguments */
@@ -178,46 +167,52 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     free (qualifyingData);
 
     /* Write returned data to file(s) */
-    r = open_write_and_close (ctx.quoteInfo, ctx.overwrite, quoteInfo, 0);
-    if (r){
-        LOG_PERR ("open_write_and_close quoteInfo", r);
-        Fapi_Free (quoteInfo);
-        if (pcrLog){
+    if (ctx.quoteInfo && quoteInfo) {
+        r = open_write_and_close (ctx.quoteInfo, ctx.overwrite, quoteInfo, 0);
+        if (r) {
+            LOG_PERR ("open_write_and_close quoteInfo", r);
+            Fapi_Free (quoteInfo);
             Fapi_Free (pcrLog);
+            Fapi_Free (signature);
+            Fapi_Free (certificate);
+            return 1;
         }
-        Fapi_Free (signature);
-        return 1;
     }
 
     Fapi_Free (quoteInfo);
 
-    if (pcrLog){
-        r = open_write_and_close (ctx.pcrLog, ctx.overwrite, pcrLog,
-            0);
-        if (r){
+    if (ctx.pcrLog && pcrLog) {
+        r = open_write_and_close (ctx.pcrLog, ctx.overwrite, pcrLog, 0);
+        if (r) {
             LOG_PERR ("open_write_and_close pcrLog", r);
             Fapi_Free (pcrLog);
             Fapi_Free (signature);
+            Fapi_Free (certificate);
             return 1;
         }
-        Fapi_Free (pcrLog);
     }
+    Fapi_Free (pcrLog);
 
-    r = open_write_and_close (ctx.signature, ctx.overwrite, signature,
-        signatureSize);
-    if (r) {
-        LOG_PERR ("open_write_and_close signature", r);
-        Fapi_Free (signature);
-        return 1;
+    if (ctx.signature && signature) {
+        r = open_write_and_close (ctx.signature, ctx.overwrite, signature,
+            signatureSize);
+        if (r) {
+            LOG_PERR ("open_write_and_close signature", r);
+            Fapi_Free (signature);
+            Fapi_Free (certificate);
+            return 1;
+        }
     }
     Fapi_Free (signature);
 
-    r = open_write_and_close (ctx.certificate, ctx.overwrite, certificate,
-        strlen(certificate));
-    if (r) {
-        LOG_PERR ("open_write_and_close certificate", r);
-        Fapi_Free (certificate);
-        return 1;
+    if (ctx.certificate && certificate) {
+        r = open_write_and_close (ctx.certificate, ctx.overwrite, certificate,
+            strlen(certificate));
+        if (r) {
+            LOG_PERR ("open_write_and_close certificate", r);
+            Fapi_Free (certificate);
+            return 1;
+        }
     }
     Fapi_Free (certificate);
 
