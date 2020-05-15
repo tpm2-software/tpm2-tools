@@ -39,7 +39,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"path"    , required_argument, NULL, 'p'},
         {"x509certData", required_argument, NULL, 'o'}
     };
-    return (*opts = tpm2_options_new ("f:p:o:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("fp:o:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 

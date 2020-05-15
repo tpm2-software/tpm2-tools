@@ -45,7 +45,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"data", required_argument, NULL, 'o'},
         {"logData", required_argument, NULL, 'l'}
     };
-    return (*opts = tpm2_options_new ("f:o:p:l:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("fo:p:l:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 
