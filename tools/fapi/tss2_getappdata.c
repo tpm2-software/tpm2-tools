@@ -41,7 +41,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"force" , no_argument, NULL, 'f'},
 
     };
-    return (*opts = tpm2_options_new ("o:f:p:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("o:fp:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 
