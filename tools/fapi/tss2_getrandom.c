@@ -49,7 +49,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         /* output file */
         {"data"   , required_argument, NULL, 'o'}
     };
-    return (*opts = tpm2_options_new ("f:n:o:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("fn:o:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 

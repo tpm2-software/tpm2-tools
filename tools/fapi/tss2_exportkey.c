@@ -44,7 +44,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"exportedData",                required_argument, NULL, 'o'},
         {"pathOfKeyToDuplicate",        required_argument, NULL, 'p'}
     };
-    return (*opts = tpm2_options_new ("f:e:o:p:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("fe:o:p:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 

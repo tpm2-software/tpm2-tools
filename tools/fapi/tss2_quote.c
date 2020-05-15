@@ -99,7 +99,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"certificate"    , required_argument, NULL, 'c'},
         {"force"          , no_argument      , NULL, 'f'}
     };
-    return (*opts = tpm2_options_new ("x:Q:l:f:p:q:o:c:", ARRAY_LEN(topts),
+    return (*opts = tpm2_options_new ("x:Q:l:fp:q:o:c:", ARRAY_LEN(topts),
         topts, on_option, NULL, 0)) != NULL;
 }
 

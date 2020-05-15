@@ -39,7 +39,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"jsonPolicy",  required_argument, NULL, 'o'},
 
     };
-    return (*opts = tpm2_options_new ("f:o:p:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("fo:p:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 

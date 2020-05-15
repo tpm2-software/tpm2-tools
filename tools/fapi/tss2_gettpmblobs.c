@@ -49,7 +49,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"tpm2bPrivate"    , required_argument, NULL, 'r'},
         {"policy"    , required_argument, NULL, 'l'},
     };
-    return (*opts = tpm2_options_new ("f:p:u:r:l", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("fp:u:r:l", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 
