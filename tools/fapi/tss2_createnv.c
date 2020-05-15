@@ -64,16 +64,26 @@ bool tss2_tool_onstart(tpm2_options **opts) {
 /* Execute specific tool */
 int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Check availability of required parameters */
-    if (!ctx.policyPath) {
-        ctx.policyPath = "";
-    }
     if (!ctx.nvPath) {
         fprintf (stderr, "No NV path provided, use --path\n");
         return -1;
     }
-    if (!ctx.nvTemplate) {
-        fprintf (stderr, "No type provided, use --type\n");
-        return -1;
+
+    uint32_t size = 0;
+    if (!ctx.size) {
+        /* ctx.size is allowed to be zero if type is bitfield, pcr or
+         * counter
+         */
+        if (!ctx.nvTemplate || !(strstr(ctx.nvTemplate, "bitfield") ||
+            strstr(ctx.nvTemplate, "pcr") || strstr(ctx.nvTemplate, "counter"))) {
+            fprintf (stderr, "Error: Either provide a type of \"bitfield\", "\
+                "pcr\" or \"counter\" with --type or provide a size > 0 with "\
+                "--size.\n");
+            return -1;
+        }
+    }
+    else {
+        size = ctx.size;
     }
 
     /* If no authValue was given, prompt the user interactively */
@@ -87,7 +97,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
 
     /* Execute FAPI command with passed arguments */
     TSS2_RC r = Fapi_CreateNv(fctx, ctx.nvPath, ctx.nvTemplate,
-        ctx.size, ctx.policyPath, ctx.authValue);
+        size, ctx.policyPath, ctx.authValue);
     if (r != TSS2_RC_SUCCESS){
         if(has_asked_for_password){
             free (ctx.authValue);

@@ -49,10 +49,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         fprintf (stderr, "path to the sealed data missing, use --path\n");
         return -1;
     }
-    if (!ctx.data) {
-        fprintf (stderr, "path to decrypted data missing, use --data\n");
-        return -1;
-    }
 
     /* Execute FAPI command with passed arguments */
     uint8_t *data;
@@ -64,13 +60,15 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     /* Write returned data to file(s) */
-    r = open_write_and_close (ctx.data, ctx.overwrite, data, size);
-    if (r){
-        LOG_PERR ("open_write_and_close data", r);
-        Fapi_Free (data);
-        return 1;
+    if (ctx.data && data) {
+        r = open_write_and_close (ctx.data, ctx.overwrite, data, size);
+        if (r) {
+            LOG_PERR ("open_write_and_close data", r);
+            Fapi_Free (data);
+            return 1;
+        }
     }
-
     Fapi_Free (data);
+
     return 0;
 }
