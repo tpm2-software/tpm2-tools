@@ -11,7 +11,6 @@ bool output_enabled = false;
 /* Context struct used to store passed commandline parameters */
 static struct cxt {
     char const *keyPath;
-    char const *policyPath;
     char const *plainText;
     char const *cipherText;
     bool        overwrite;
@@ -22,9 +21,6 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'f':
         ctx.overwrite = true;
-        break;
-    case 'P':
-        ctx.policyPath = value;
         break;
     case 'o':
         ctx.cipherText = value;
@@ -43,12 +39,11 @@ static bool on_option(char key, char *value) {
 bool tss2_tool_onstart(tpm2_options **opts) {
     struct option topts[] = {
         {"keyPath",     required_argument, NULL, 'p'},
-        {"policyPath",  required_argument, NULL, 'P'},
         {"plainText",   required_argument, NULL, 'i'},
         {"cipherText",  required_argument, NULL, 'o'},
         {"force",       no_argument      , NULL, 'f'},
     };
-    return (*opts = tpm2_options_new ("fP:o:p:i:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("fo:p:i:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 
