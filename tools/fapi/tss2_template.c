@@ -367,7 +367,6 @@ int open_write_and_close(const char* path, bool overwrite, const void *output,
             fprintf (stderr, "write(2) to stdout failed: %m\n");
             return 1;
         }
-        putchar ('\n');
         return 0;
     }
 
