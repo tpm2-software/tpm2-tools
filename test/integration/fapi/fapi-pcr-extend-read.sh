@@ -67,6 +67,16 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 EOF
 
 expect <<EOF
+# Try with multiple stdins
+spawn tss2_pcrextend --pcr 16 --data - --logData -
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
+
+expect <<EOF
 # Try with missing pcrIndex
 spawn tss2_pcrread --pcrValue $PCR_DIGEST_FILE --pcrLog $PCR_LOG_FILE_READ
 set ret [wait]
@@ -97,9 +107,9 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 EOF
 
 expect <<EOF
-# Try with mutliple stdins
-spawn tss2_pcrread --pcrIndex 16 --pcrValue=- \
-    --pcrLog=-
+# Try with multiple stdins (1)
+spawn tss2_pcrread --pcrIndex 16 --pcrValue - \
+    --pcrLog -
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"

@@ -86,6 +86,48 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
+expect <<EOF
+# Try with multiple stdout (1)
+spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic - \
+    --tpm2bPrivate - --policy $POLICY_FILE --force
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
 
+expect <<EOF
+# Try with multiple stdout (2)
+spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic $PUBLIC_KEY_FILE \
+    --tpm2bPrivate - --policy - --force
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
+
+expect <<EOF
+# Try with multiple stdout (3)
+spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic - \
+    --tpm2bPrivate $PRIVATE_KEY_FILE --policy - --force
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
+
+expect <<EOF
+# Try with multiple stdout (4)
+spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic - \
+    --tpm2bPrivate - --policy - --force
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
 
 exit 0
