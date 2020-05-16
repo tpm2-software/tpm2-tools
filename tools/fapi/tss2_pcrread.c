@@ -60,12 +60,14 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         return -1;
     }
 
-    if (ctx.pcrLog && ctx.pcrValue) {
-        if (!strcmp (ctx.pcrLog, "-") && !strcmp (ctx.pcrValue, "-")) {
-            fprintf (stderr, "Only one of --pcrLog and --pcrValue "\
-                "can read from standard input");
-            return -1;
-        }
+    /* Check exclusive access to stdout */
+    int count_out = 0;
+    if (ctx.pcrValue && !strcmp (ctx.pcrValue, "-")) count_out +=1;
+    if (ctx.pcrLog && !strcmp (ctx.pcrLog, "-")) count_out +=1;
+    if (count_out > 1) {
+        fprintf (stderr, "Only one of --pcrValue and --pcrLog can print to - "\
+        "(standard output)\n");
+        return -1;
     }
 
     /* Execute FAPI command with passed arguments */

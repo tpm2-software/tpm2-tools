@@ -67,7 +67,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     r = open_write_and_close (ctx.x509cert, ctx.overwrite, x509certData,
         strlen(x509certData));
     if (r){
-        LOG_PERR ("open_read_and_close x509certData", r);
+        LOG_PERR ("open_write_and_close x509certData", r);
         Fapi_Free (x509certData);
         return 1;
     }

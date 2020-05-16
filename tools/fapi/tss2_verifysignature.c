@@ -60,9 +60,14 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             "--signature\n");
         return -1;
     }
-    if (!strcmp ("-", ctx.signature)  && !strcmp("-", ctx.digest)) {
-        fprintf (stderr, "At most one of --signature and --digest can be '-'"\
-            " (standard input)\n");
+
+    /* Check exclusive access to stdin */
+    int count_in = 0;
+    if (ctx.digest && !strcmp (ctx.digest, "-")) count_in +=1;
+    if (ctx.signature && !strcmp (ctx.signature, "-")) count_in +=1;
+    if (count_in > 1) {
+        fprintf (stderr, "Only one of --digest and --signature can read from -"\
+        "(standard input)\n");
         return -1;
     }
 

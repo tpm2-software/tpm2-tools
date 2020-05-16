@@ -61,6 +61,17 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         return -1;
     }
 
+    /* Check exclusive access to stdout */
+    int count_out = 0;
+    if (ctx.tpm2bPublic && !strcmp (ctx.tpm2bPublic, "-")) count_out +=1;
+    if (ctx.tpm2bPrivate && !strcmp (ctx.tpm2bPrivate, "-")) count_out +=1;
+    if (ctx.policy && !strcmp (ctx.policy, "-")) count_out +=1;
+    if (count_out > 1) {
+        fprintf (stderr, "Only one of --tpm2bPublic, --tpm2bPrivate and "\
+        "--policy can print to - (standard output)\n");
+        return -1;
+    }
+
     /* Execute FAPI command with passed arguments */
     uint8_t *tpm2bPublic;
     size_t  tpm2bPublicSize;
