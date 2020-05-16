@@ -70,33 +70,17 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             " --signature\n");
         return -1;
     }
-    if (ctx.qualifyingData && ctx.pcrLog) {
-        if (!strcmp (ctx.signature, "-") + !strcmp(ctx.qualifyingData, "-") +
-            !strcmp(ctx.quoteInfo, "-") + !strcmp(ctx.pcrLog, "-") > 1) {
-                fprintf (stderr, "At most one of --signature, "\
-                    "--qualifyingData, --quoteInfo and --pcrLog can "\
-                    "be '-' (standard output)\n");
-                return -1;
-        }
-    }
 
-    if (!ctx.qualifyingData && ctx.pcrLog) {
-        if (!strcmp (ctx.signature, "-") + !strcmp(ctx.quoteInfo, "-") +
-            !strcmp(ctx.pcrLog, "-") > 1) {
-                fprintf (stderr, "At most one of --signature, "\
-                    " --quoteInfo and --pcrLog can be '-' (standard output)\n");
-                return -1;
-        }
-    }
-
-    if (ctx.qualifyingData && !ctx.pcrLog) {
-        if (!strcmp (ctx.signature, "-") + !strcmp(ctx.qualifyingData, "-") +
-            !strcmp(ctx.quoteInfo, "-") > 1) {
-                fprintf (stderr, "At most one of --signature, "\
-                    "--qualifyingData and --quoteInfo can "\
-                    "be '-' (standard output)\n");
-                return -1;
-        }
+    /* Check exclusive access to stdin */
+    int count_in = 0;
+    if (ctx.qualifyingData && !strcmp (ctx.qualifyingData, "-")) count_in +=1;
+    if (ctx.signature && !strcmp (ctx.signature, "-")) count_in +=1;
+    if (ctx.quoteInfo && !strcmp (ctx.quoteInfo, "-")) count_in +=1;
+    if (ctx.pcrLog && !strcmp (ctx.pcrLog, "-")) count_in +=1;
+    if (count_in > 1) {
+        fprintf (stderr, "Only one of --qualifyingData, --signature, "\
+        " --quoteInfo and --pcrLog can read from - (standard input)\n");
+        return -1;
     }
 
     /* Read qualifyingData, signature, quoteInfo and pcrLog from file */

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "tools/fapi/tss2_template.h"
 
 /* needed by tpm2_util and tpm2_option functions */
@@ -51,6 +52,16 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
     if (!ctx.data) {
         fprintf (stderr, "No file for input provided, use --data\n");
+        return -1;
+    }
+
+    /* Check exclusive access to stdin */
+    int count_in = 0;
+    if (ctx.data && !strcmp (ctx.data, "-")) count_in +=1;
+    if (ctx.logData && !strcmp (ctx.logData, "-")) count_in +=1;
+    if (count_in > 1) {
+        fprintf (stderr, "Only one of --data and --logData can read from - "\
+        "(standard input)\n");
         return -1;
     }
 

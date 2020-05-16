@@ -56,4 +56,14 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
+expect <<EOF
+# Try with multiple stdin
+spawn tss2_nvextend --nvPath $NV_PATH --data - --logData -
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
+
 exit 0
