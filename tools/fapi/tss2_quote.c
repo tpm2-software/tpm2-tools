@@ -125,15 +125,18 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         free (ctx.pcrList);
         return -1;
     }
-    if (ctx.qualifyingData && ctx.pcrLog && ctx.certificate) {
-        if (!strcmp (ctx.keyPath, "-") + !strcmp (ctx.quoteInfo, "-") +
-            !strcmp (ctx.signature, "-") + !strcmp (ctx.qualifyingData, "-") +
-            !strcmp (ctx.pcrLog, "-") + !strcmp (ctx.certificate, "-") > 1) {
-            fprintf (stderr, "Only one of --quoteInfo, --pcrLog, "\
-            "--signature and --certificate can print to standard output");
-            free (ctx.pcrList);
-            return -1;
-        }
+
+    /* Check exclusive access to stdout */
+    int count_out = 0;
+    if (ctx.quoteInfo && !strcmp (ctx.quoteInfo, "-")) count_out +=1;
+    if (ctx.pcrLog && !strcmp (ctx.pcrLog, "-")) count_out +=1;
+    if (ctx.signature && !strcmp (ctx.signature, "-")) count_out +=1;
+    if (ctx.certificate && !strcmp (ctx.certificate, "-")) count_out +=1;
+    if (count_out > 1) {
+        fprintf (stderr, "Only one of --quoteInfo, --pcrLog, --signature and "\
+            "--certificate can print to - (standard output)\n");
+        free (ctx.pcrList);
+        return -1;
     }
 
     /* Read qualifyingData file */
@@ -144,6 +147,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_read_and_close (ctx.qualifyingData,
             (void*)&qualifyingData, &qualifyingDataSize);
         if (r) {
+          LOG_ERR ("open_read_and_close qualifyingData", r);
           free (ctx.pcrList);
           return 1;
         }

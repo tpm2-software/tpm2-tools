@@ -77,6 +77,16 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 EOF
 
 expect <<EOF
+# Try with multiple stdout (1)
+spawn tss2_nvread --nvPath $NV_PATH --data - --logData - --force
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
+
+expect <<EOF
 # Try with missing nvPath
 spawn tss2_nvwrite --data $DATA_WRITE_FILE
 set ret [wait]

@@ -81,27 +81,16 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         fprintf (stderr, "signature missing, use --signature\n");
         return -1;
     }
-    if (ctx.publicKey && ctx.certificate){
-        if (!strcmp ("-", ctx.signature) + !strcmp ("-", ctx.publicKey) +
-            !strcmp("-", ctx.certificate) > 1) {
-            fprintf (stderr, "At most one of --certificate, --publicKey and "\
-                "--signature can be '-' (standard output)\n");
-            return -1;
-        }
-    }
-    if (ctx.publicKey && !ctx.certificate){
-        if (!strcmp ("-", ctx.signature) + !strcmp ("-", ctx.publicKey) > 1) {
-            fprintf (stderr, "At most one of --publicKey and --signature can "\
-                "be '-' (standard output)\n");
-            return -1;
-        }
-    }
-    if (ctx.certificate && !ctx.publicKey){
-        if (!strcmp ("-", ctx.signature) + !strcmp("-", ctx.certificate) > 1) {
-            fprintf (stderr, "At most one of --certificate and --signature can"\
-            " be '-' (standard output)\n");
-            return -1;
-        }
+
+    /* Check exclusive access to stdout */
+    int count_out = 0;
+    if (ctx.certificate && !strcmp (ctx.certificate, "-")) count_out +=1;
+    if (ctx.signature && !strcmp (ctx.signature, "-")) count_out +=1;
+    if (ctx.publicKey && !strcmp (ctx.publicKey, "-")) count_out +=1;
+    if (count_out > 1) {
+        fprintf (stderr, "Only one of --certificate, --signature and "\
+        "--publicKey can print to - (standard output)\n");
+        return -1;
     }
 
     /* Read data needed to create signature */

@@ -61,6 +61,16 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         return -1;
     }
 
+    /* Check exclusive access to stdout */
+    int count_out = 0;
+    if (ctx.data && !strcmp (ctx.data, "-")) count_out +=1;
+    if (ctx.logData && !strcmp (ctx.logData, "-")) count_out +=1;
+    if (count_out > 1) {
+        fprintf (stderr, "Only one of --data and --logData can print to - "\
+        "(standard output)\n");
+        return -1;
+    }
+
     /* Execute FAPI command with passed arguments */
     uint8_t *data;
     size_t data_len;
