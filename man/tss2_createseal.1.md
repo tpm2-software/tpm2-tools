@@ -20,29 +20,45 @@ These are the available options:
 
   * **-p**, **\--path**:
 
-    The path to the new key. MUST NOT be NULL.
+    The path to the new key.
 
   * **-t**, **\--type**:
 
-    Identifies the intended usage. For possible values see FAPI specification. MAY be NULL.
+    Identifies the intended usage. Optional parameter.
+    Types may be any comma-separated combination of:
+
+        - "exportable": Clears the fixedTPM and fixedParent attributes of a key or
+          sealed object.
+        - "noda": Sets the noda attribute of a key or NV index.
+        - "system": Stores the data blobs and metadata for a created key or seal
+          in the system-wide directory instead of user's personal directory.
+        - A hexadecimal number (e.g. "0x81000001"): Marks a key object to be
+          made persistent and sets the persistent object handle to this value.
 
   * **-P**, **\--policyPath**:
 
-    Identifies the policy to be associated with the new key. MAY be NULL. If NULL then no policy will be associated with the key.
+    Identifies the policy to be associated with the new key. Optional parameter.
+    If omitted then no policy will be associated with the key.
+
+    A policyPath is composed of two elements, separated by "/". A policyPath
+    starts with "/policy". The second path element identifies the policy
+    or policy template using a meaningful name.
 
   * **-a**, **\--authValue**:
 
-    The new authorization value for the key. MAY be NULL. If NULL then the authorization value will be the empty string.
+    The new UTF-8 password. Optional parameter. If it is neglected then the user
+    is queried interactively for a password. To set no password, this option
+    should be used with the empty string ("").
 
   * **-i**, **\--data**:
 
-    the data to be sealed by the TPM. MAY be NULL.
+    The data to be sealed by the TPM. Optional parameter.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
 
-## Create a key without password and read data to be sealed from file.
+## Create a key with password "abc" and read sealing data from file.
 ```
 tss2_createseal --path HS/SRK/mySealKey --type "noDa" --authValue abc --data abc
 ```

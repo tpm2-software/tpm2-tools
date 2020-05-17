@@ -12,7 +12,8 @@
 
 # DESCRIPTION
 
-**tss2_decrypt**(1) - Input pointer to data to be decrypted, and a place to put the decrypted data.
+**tss2_decrypt**(1) - This command decrypts data that was encrypted using tss2_encrypt.
+
 
 # OPTIONS
 
@@ -20,11 +21,11 @@ These are the available options:
 
   * **-p**, **\--keyPath**:
 
-    Identifies the decryption key. MUST NOT be NULL.
+    Identifies the decryption key.
 
   * **-i**, **\--cipherText**: \<filename\>
 
-    The JSON-encoded cipherText. MUST NOT be NULL.
+    The JSON-encoded cipherText.
 
   * **-f**, **\--force**:
 
@@ -32,13 +33,14 @@ These are the available options:
 
   * **-o**, **\--plainText**: \<filename\>
 
-    Returns the decrypted data. MAY be NULL.
+    Returns the decrypted data. Optional parameter.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
     tss2_decrypt --keyPath HS/SRK/myRSACrypt --cipherText encrypted.file --plainText abc
+```
 
 # RETURNS
 

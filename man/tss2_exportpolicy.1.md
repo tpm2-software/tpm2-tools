@@ -13,7 +13,7 @@
 # DESCRIPTION
 
 **tss2_policyexport**(1) - This commands exports a policy associated with a key
-in JSON encoding. The exported policy SHALL be encoded according to TCG TSS 2.0 JSON Policy Language Specification.
+in JSON encoding.
 
 # OPTIONS
 
@@ -25,17 +25,18 @@ These are the available options:
 
   * **-o**, **\--jsonPolicy**:
 
-    Returns the JSON-encoded policy. MUST NOT be NULL.
+    Returns the JSON-encoded policy.
 
   * **-p**, **\--path**:
 
-    The path of the key. MUST NOT be NULL.
+    The path of the key.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
 tss2_exportpolicy --path HS/SRK/myRSASign --jsonPolicy pcr-policy.json
+```
 
 # RETURNS
 

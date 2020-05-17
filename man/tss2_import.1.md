@@ -12,7 +12,9 @@
 
 # DESCRIPTION
 
-**tss2_import**(1) - This command imports a JSON encoded policy or policy template encoded according to TCG TSS 2.0 JSON Policy Language Specification and stores it under the provided path or it imports a JSON encoded key under the provided path.
+**tss2_import**(1) - This command imports a JSON encoded policy or policy
+template and stores it under the provided path or it imports a JSON encoded key
+under the provided path.
 
 # OPTIONS
 
@@ -20,20 +22,21 @@ These are the available options:
 
   * **-p**, **\--path**:
 
-    The path of the new object. MUST NOT be NULL.
+    The path of the new object.
 
   * **-i**, **\--importData**:
 
-    The data to be imported. MUST NOT be NULL.
+    The data to be imported.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
 tss2_import --path duplicate_policy --importData pol_duplicate.json
-
+```
+```
 tss2_import --path importedPubKey --importData public_key.file
-
+```
 
 # RETURNS
 

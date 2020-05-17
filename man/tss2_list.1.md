@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tss2_list**(1) - This command enumerates all objects in the metadata store in a given a path. The returned list SHALL consist of complete paths from the root (not relative paths from the search path), such that they can be directly used in another query. The values in this list SHALL be colon-separated.
+**tss2_list**(1) - This command enumerates all objects in the metadata store in a given a path.
 
 # OPTIONS
 
@@ -20,21 +20,23 @@ These are the available options:
 
   * **-p**, **\--searchPath**:
 
-    The path identifying the root of the search. MUST NOT be NULL.
+    The path identifying the root of the search. Optional parameter. If omitted,
+    all entities will be searched.
 
   * **-o**, **\--pathList**:
 
-    Returns the colon-separated list of paths. MUST NOT be NULL.
+    Returns the colon-separated list of paths. Optional parameter. If omitted,
+    results will be printed to _STDOUT_.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLES
 
-## List all entities
+## List all entities and print results to stdout
 ```
 tss2_list
 ```
-## List all entities under the HS path
+## List all entities under the HS path and print results to file
 ```
 tss2_list --searchPath HS --pathList output.file
 ```
