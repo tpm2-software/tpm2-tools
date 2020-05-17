@@ -24,25 +24,26 @@ These are the available options:
 
   * **-p**, **\--path**:
 
-    The path of the object for which the blobs will be returned. MUST NOT be NULL.
+    The path of the object for which the blobs will be returned.
 
   * **-u**, **\--tpm2bPublic**:
 
-    The returned public area of the object as a marshalled TPM2B_PUBLIC. MAY be NULL.
+    The returned public area of the object as a marshalled TPM2B_PUBLIC. Optional parameter.
 
   * **-r**, **\--tpm2bPrivate**:
 
-    The returned private area of the object as a marshalled TPM2B_PRIVATE. MAY be NULL.
+    The returned private area of the object as a marshalled TPM2B_PRIVATE. Optional parameter.
 
   * **-l**, **\--policy**:
 
-    The returned policy associated with the object, encoded in JSON. policy MAY be NULL.
+    The returned policy associated with the object, encoded in JSON. Optional parameter.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
 tss2_gettpmblobs --path HS/SRK/myRSACrypt --tpm2bPublic public.file --tpm2bPrivate private.file --policy policy.file
+```
 
 # RETURNS
 

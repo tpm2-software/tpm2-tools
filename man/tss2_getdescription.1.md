@@ -12,7 +12,8 @@
 
 # DESCRIPTION
 
-**tss2_getdescription**(1) - This command returns the previously stored application data for an object. If no description is present, description SHALL be set to an empty string.
+**tss2_getdescription**(1) - This command returns the previously stored application data for an object. If no
+description is present, an empty string is returned.
 
 # OPTIONS
 
@@ -24,16 +25,15 @@ These are the available options:
 
   * **-p**, **\--path**:
 
-    The path of the object for which the appData will be loaded. MUST NOT be NULL.
+    The path of the object for which the description will be loaded.
 
   * **-o**, **\--description**:
 
-    Returns the stored description. MUST NOT be NULL.
+    Returns the stored description.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
 ```
 tss2_getdescription --path HS/SRK --description description.file
 ```

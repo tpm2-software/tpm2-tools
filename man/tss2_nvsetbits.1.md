@@ -24,13 +24,14 @@ These are the availabe options:
 
   * **-p**, **\--nvPath**:
 
-    Identifies the NV space to write. MUST NOT be NULL.
+    Identifies the NV space to write.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
 tss2_nvsetbits --nvPath /nv/Owner/NvBitmap --bitmap 0x0102030405060608
+```
 
 # RETURNS
 

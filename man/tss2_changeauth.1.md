@@ -6,7 +6,7 @@
 
 **tss2_changeauth**(1) - This command changes the authorization data of an entity referred to by the path.
 
-The authValue is a UTF-8 password. If the length of the password is larger than the digest size of the entity's nameAlg (which is stored internally as part of its meta data) then the FAPI should hash the password, in accordance with the TPM specification, part 1 rev 138, section 19.6.4.3 "Authorization Size Convention."
+The authValue is a UTF-8 password.
 
 # SYNOPSIS
 
@@ -22,11 +22,13 @@ These are the available options:
 
   * **-a**, **\--authValue**:
 
-    The new 0-terminated password. MAY be NULL. If NULL then the password is set to the empty string.
+    The new UTF-8 password. Optional parameter. If it is neglected then the user
+    is queried interactively for a password. To set no password, this option
+    should be used with the empty string ("").
 
   * **-p**, **\--entityPath**:
 
-    The path identifying the entity to modify. MUST NOT be NULL.
+    The path identifying the entity to modify.
 
 [common tss2 options](common/tss2-options.md)
 
@@ -37,9 +39,9 @@ These are the available options:
 tss2_changeauth --entityPath HS/SRK/myRSACryptKey --authValue M1
 ```
 
-## Change a password for an entity HS/SRK/myRSACryptKey and ask the user to enter the password with disabled ecoh.
+## Change a password for an entity HS/SRK/myRSACryptKey and ask the user to enter the password.
 ```
-tss2_changeauth --entityPath HS/SRK/myRSACryptKey --authValue
+tss2_changeauth --entityPath HS/SRK/myRSACryptKey
 ```
 
 # RETURNS

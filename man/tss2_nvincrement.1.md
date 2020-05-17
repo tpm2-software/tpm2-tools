@@ -20,13 +20,14 @@ These are the availabe options:
 
   * **-p**, **\--nvPath**:
 
-    Identifies the NV space to increment. MUST NOT be NULL.
+    Identifies the NV space to increment.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
 tss2_nvincrement --nvPath /nv/Owner/myNVcounter
+```
 
 # RETURNS
 

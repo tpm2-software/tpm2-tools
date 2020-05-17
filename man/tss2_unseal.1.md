@@ -24,17 +24,19 @@ These are the available options:
 
   * **-p**, **\--path**:
 
-    Path of the object for which the blobs will be returned. MUST NOT be NULL.
+    Path of the object for which the blobs will be returned.
 
   * **-o**, **\--data**:
 
-    The decrypted data after unsealing. MAY be NULL.
+    The decrypted data after unsealing. Optional parameter.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
 
+```
 tss2_unseal --path HS/SRK/myRSACrypt --data unsealed.data
+```
 
 # RETURNS
 
