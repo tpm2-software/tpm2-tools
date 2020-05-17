@@ -14,13 +14,13 @@
 
 **tss2_verifyquote**(1) - This command verifies that the data returned by a quote is valid. This includes
 
-  * Reconstructing the quoteInfo’s PCR values from the eventLog (if an eventLog was provided)
+  * Reconstructing the quoteInfo's PCR values from the eventLog (if an eventLog was provided)
   * Verifying the quoteInfo using the signature and the publicKeyPath
 
-An application using Fapi_VerifyQuote() will further have to
+An application using tss2_verifyquote() will further have to
 
-* Assess the publicKey’s trustworthiness
-* Assess the eventLog entries’ trustworthiness
+  * Assess the publicKey's trustworthiness
+  * Assess the eventLog entries' trustworthiness
 
 # OPTIONS
 
@@ -28,29 +28,41 @@ These are the available options:
 
   * **-Q**, **\--qualifyingData**:
 
-    A nonce provided by the caller to ensure freshness of the signature. MAY be NULL.
+    A nonce provided by the caller to ensure freshness of the signature. Optional parameter.
 
   * **-l**, **\--pcrLog**:
 
-    Returns the PCR log for the chosen PCR in the format defined in the FAPI specification. MAY be NULL.
+    Returns the PCR event log for the chosen PCR. Optional parameter.
+
+    PCR event logs are a list (arbitrary length JSON array) of log entries with
+    the following content.
+
+        - recnum: Unique record number
+        - pcr: PCR index
+        - digest: The digests
+        - type: The type of event. At the moment the only possible value is: "LINUX_IMA" (legacy IMA)
+        - eventDigest: Digest of the event; e.g. the digest of the measured file
+        - eventName: Name of the event; e.g. the name of the measured file.
 
   * **-q**, **\--quoteInfo**:
 
-    The JSON-encoded structure holding the inputs to the quote operation. This includes the digest value and PCR values. MUST NOT be NULL.
+    The JSON-encoded structure holding the inputs to the quote operation. This includes the digest value and PCR values.
 
   * **-k**, **\--publicKeyPath**:
 
-    Identifies the signing key. MUST NOT be NULL. MAY be a path to the public key hierarchy /ext.
+    Identifies the signing key. MAY be a path to the public key hierarchy /ext.
 
   * **-i**, **\--signature**:
 
-    The signature over the quoted material. MUST NOT be NULL.
+    The signature over the quoted material.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
 
+```
     tss2_verifyquote --publicKeyPath "ext/myNewParent" --qualifyingData nonce.file --quoteInfo quote.info --signature signature.file --pcrLog pcr.log
+```
 
 # RETURNS
 

@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tss2_setappdata**(1) - allows an application to associate an arbitrary data blob with a given object. The data SHALL be stored and the same data SHALL be returned upon Fapi_GetAppData. Previously stored data SHALL be overwritten by this function. If NULL is passed in, stored data SHALL be deleted.
+**tss2_setappdata**(1) - This command allows an application to associate an arbitrary data blob with a given object. The data is stored and can be returned with tss2_getappdata. Previously stored data is overwritten by this function. If empty data is passed in, the stored data is deleted.
 
 # OPTIONS
 
@@ -20,11 +20,11 @@ These are the available options:
 
   * **-p**, **\--path**:
 
-    Path of the object for which the appData will be stored. MUST NOT be NULL.
+    Path of the object for which the appData will be stored.
 
   * **-i**, **\--appData**:
 
-    The data to be stored. MAY be NULL.
+    The data to be stored. Optional parameter. If omitted, stored data is deleted.
 
 [common tss2 options](common/tss2-options.md)
 

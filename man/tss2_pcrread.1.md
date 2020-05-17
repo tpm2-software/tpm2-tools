@@ -20,7 +20,7 @@ These are the available options:
 
   * **-o**, **\--pcrValue**:
 
-    Returns PCR digest. MAY be NULL.
+    Returns PCR digest. Optional parameter.
 
   * **-x**, **\--pcrIndex**:
 
@@ -32,13 +32,24 @@ These are the available options:
 
   * **-l**, **\--pcrLog**:
 
-    Returns the PCR log for that PCR in the format defined in the FAPI specification. MAY be NULL.
+    Returns the PCR log for that PCR. Optional parameter.
+
+    PCR event logs are a list (arbitrary length JSON array) of log entries with
+    the following content.
+
+        - recnum: Unique record number
+        - pcr: PCR index
+        - digest: The digests
+        - type: The type of event. At the moment the only possible value is: "LINUX_IMA" (legacy IMA)
+        - eventDigest: Digest of the event; e.g. the digest of the measured file
+        - eventName: Name of the event; e.g. the name of the measured file.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
 tss2_pcrread --pcrIndex 16 --pcrValue pcr_digest.file --pcrLog pcr_log_read.file
+```
 
 # RETURNS
 

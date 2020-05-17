@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tss2_createnv**(1) - This command creates an NV index in the TPM. The path is constructed as described in section 1.7.2. The type field is described in section 1.8.
+**tss2_createnv**(1) - This command creates an NV index in the TPM.
 
 # OPTIONS
 
@@ -20,30 +20,56 @@ These are the available options:
 
   * **-p**, **\--path**:
 
-    Path of the new NV space. MUST NOT be NULL.
+    Path of the new NV space.
+
+    The path is composed of three elements, separated by "/". An nvPath starts
+    with "/nv". The second path element identifies the NV handle range
+    for the nv object. This includes the following values:
+    Owner, TPM, Platform, Endorsement_Certificate, Platform_Certificate,
+    Component_OEM, TPM_OEM, Platform_OEM, PC-Client, Server,
+    Virtualized_Platform, MPWG, Embedded. The third path element identifies
+    the actual NV-Index using a meaningful name.
 
   * **-t**, **\--type**:
 
-    Identifies the intended usage. For possible values see FAPI specification. MAY be NULL.
+    Identifies the intended usage. Optional parameter.
+    Types may be any comma-separated combination of:
+
+        - "noda": Sets the noda attribute of a key or NV index.
+        - "bitfield": Sets the NV type to bitfield.
+        - "counter": Sets the NV type to counter.
+        - "pcr": Sets the NV type to pcr-like behavior.
+        - Hint: If none of the previous three keywords is provided a regular NV
+          index is created.
+
 
   * **-s**, **\--size**:
 
-    The size in bytes of the NV index to be created. MAY be zero if the size is inferred from the type; e.g. an NV index of type counter has a size of 8 bytes.
+    The size in bytes of the NV index to be created. Can be omitted if size can
+    be inferred from the type; e.g. an NV index of type counter has a size of 8
+    bytes.
 
   * **-P**, **\--policyPath**:
 
-    Identifies the policy to be associated with the new NV space. MAY be NULL. If NULL then no policy will be associated with the NV space.
+    Identifies the policy to be associated with the new NV space. Optional parameter.
+    If omitted then no policy will be associated with the key.
+
+    A policyPath is composed of two elements, separated by "/". A policyPath
+    starts with "/policy". The second path element identifies the policy
+    or policy template using a meaningful name.
 
   * **-a**, **\--authValue**:
 
-    The new authorization value for the nv index. MAY be NULL. If NULL then the authorization value will be the empty string
-
+    The new UTF-8 password. Optional parameter. If it is neglected then the user
+    is queried interactively for a password. To set no password, this option
+    should be used with the empty string ("").
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
 tss2_createnv --authValue abc --path /nv/Owner/myNV --size 20 --type "noDa"
+```
 
 # RETURNS
 

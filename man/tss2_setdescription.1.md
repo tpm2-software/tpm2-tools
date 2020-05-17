@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tss2_setdescription**(1) - This command allows an application to assign a human readable description to an object in the metadata store. Previously stored descriptions SHALL be overwritten by this function. If NULL is passed in, any stored description SHALL be deleted.
+**tss2_setdescription**(1) - This command allows an application to assign a human readable description to an object in the metadata store.  The data is stored and can be returned with tss2_getdescription. Previously stored data is overwritten by this function. If an empty description is passed in, the stored data is deleted.
 
 # OPTIONS
 
@@ -20,16 +20,19 @@ These are the available options:
 
   * **-i**, **\--description**:
 
-    The data to be stored as description for the object. MAY be NULL.
+    The data to be stored as description for the object. Optional parameter.
+    Previously stored descriptions are overwritten by this function. If omitted
+    any stored description is deleted.
 
   * **-p**, **\--path**:
 
-    The path of the object for which the description will be stored. MUST NOT be NULL.
+    The path of the object for which the description will be stored.
 
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
+
 ```
 tss2_setdescription --path HS/SRK --description object-description
 ```
