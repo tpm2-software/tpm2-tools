@@ -24,13 +24,14 @@ These are the available options:
 
   * **-o**, **\--certificates**:
 
-    Returns a continuous buffer containing the concatenated platform certificates. MUST NOT be NULL.
+    Returns a continuous buffer containing the concatenated platform certificates.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
 tss2_getplatformcertificates --certificates platform.certs
+```
 
 # RETURNS
 

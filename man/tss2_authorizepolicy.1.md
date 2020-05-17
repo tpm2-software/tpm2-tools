@@ -19,19 +19,24 @@
 These are the available options:
 
   * **-P**, **\--policyPath**:
-    Path of the new policy. MUST NOT be NULL.
+    Path of the new policy.
+
+    A policyPath is composed of two elements, separated by "/". A policyPath
+    starts with "/policy". The second path element identifies the policy
+    or policy template using a meaningful name.
 
   * **-p**, **\--keyPath**:
-    Path of the signing key. MUST NOT be NULL.
+    Path of the signing key.
 
   * **-r**, **\--policyRef**:
-    A byte buffer to be included in the signature. MAY be NULL if policyRefSize is 0.
+    A byte buffer to be included in the signature. Optional parameter.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
-tss2_authorizepolicy --keyPath HS/SRK/myPolicySignKey --policyPath policy/pcr-policy --policyRef policyRef.file
+```
+tss2_authorizepolicy --keyPath HS/SRK/myPolicySignKey --policyPath /policy/pcr-policy --policyRef policyRef.file
+```
 
 # RETURNS
 

@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tss2_nvread**(1) - This command reads the entire data from an NV index of the TPM. The FAPI will automatically perform multiple read operations with the TPM if the NV index is larger than the TPM's TPM2_MAX_NV_BUFFER_SIZE.
+**tss2_nvread**(1) - This command reads the entire data from an NV index of the TPM.
 
 # OPTIONS
 
@@ -24,22 +24,22 @@ These are the availabe options:
 
   * **-o**, **\--data**:
 
-    Returns the value read from the NV space. MUST NOT be NULL.
+    Returns the value read from the NV space.
 
   * **-p**, **\--nvPath**:
 
-    Identifies the NV space to read. MUST NOT be NULL.
+    Identifies the NV space to read.
 
   * **-l**, **\--logData**:
 
-    Returns the JSON encoded log, if the NV index is of type “extend” and an empty string otherwise. MAY be NULL.
+    Returns the JSON encoded log, if the NV index is of type "extend" and an empty string otherwise. Optional parameter.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
 tss2_nvread --nvPath /nv/Owner/myNVwrite --data nv_read_data.file
-
+```
 
 # RETURNS
 

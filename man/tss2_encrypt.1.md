@@ -21,7 +21,7 @@ These are the available options:
 
   * **-p**, **\--keyPath**:
 
-    Identifies the encryption key. MUST NOT be NULL.
+    Identifies the encryption key.
 
   * **-f**, **\--force**:
 
@@ -29,17 +29,18 @@ These are the available options:
 
   * **-i**, **\--plainText**:
 
-    The data to be encrypted. MUST NOT be NULL.
+    The data to be encrypted.
 
   * **-o**, **\--cipherText**:
 
-    Returns the JSON-encoded ciphertext. MUST NOT be NULL.
+    Returns the JSON-encoded ciphertext.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
-
+```
   tss2_encrypt --keyPath HS/SRK/myRSACrypt --plainText plaintext.file --cipherText encrypted.file
+```
 
 # RETURNS
 
