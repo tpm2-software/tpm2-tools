@@ -18,11 +18,11 @@
 
 These are the available options:
 
-  * **-i**, **\--data**:
+  * **-i**, **\--data** _FILENAME_ or _-_ (for stdin):
 
     The data to write to the NV space.
 
-  * **-p**, **\--nvPath**:
+  * **-p**, **\--nvPath** _STRING_:
 
     Identifies the NV space to write to.
 

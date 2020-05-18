@@ -18,11 +18,11 @@
 
 These are the available options:
 
-  * **-p**, **\--path**:
+  * **-p**, **\--path** _STRING_:
 
     Path of the object for which the appData will be stored.
 
-  * **-i**, **\--appData**:
+  * **-i**, **\--appData** _STRING_:
 
     The data to be stored. Optional parameter. If omitted, stored data is deleted.
 

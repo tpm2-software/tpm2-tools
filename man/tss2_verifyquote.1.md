@@ -26,11 +26,11 @@ An application using tss2_verifyquote() will further have to
 
 These are the available options:
 
-  * **-Q**, **\--qualifyingData**:
+  * **-Q**, **\--qualifyingData** _FILENAME_ or _-_ (for stdin):
 
     A nonce provided by the caller to ensure freshness of the signature. Optional parameter.
 
-  * **-l**, **\--pcrLog**:
+  * **-l**, **\--pcrLog** _FILENAME_ or _-_ (for stdin):
 
     Returns the PCR event log for the chosen PCR. Optional parameter.
 
@@ -44,15 +44,15 @@ These are the available options:
         - eventDigest: Digest of the event; e.g. the digest of the measured file
         - eventName: Name of the event; e.g. the name of the measured file.
 
-  * **-q**, **\--quoteInfo**:
+  * **-q**, **\--quoteInfo** _FILENAME_ or _-_ (for stdin):
 
     The JSON-encoded structure holding the inputs to the quote operation. This includes the digest value and PCR values.
 
-  * **-k**, **\--publicKeyPath**:
+  * **-k**, **\--publicKeyPath** _STRING_:
 
     Identifies the signing key. MAY be a path to the public key hierarchy /ext.
 
-  * **-i**, **\--signature**:
+  * **-i**, **\--signature** _FILENAME_ or _-_ (for stdin):
 
     The signature over the quoted material.
 
@@ -61,7 +61,7 @@ These are the available options:
 # EXAMPLE
 
 ```
-    tss2_verifyquote --publicKeyPath "ext/myNewParent" --qualifyingData nonce.file --quoteInfo quote.info --signature signature.file --pcrLog pcr.log
+    tss2_verifyquote --publicKeyPath "ext/myNewParent" --qualifyingData qualifyingData.file --quoteInfo quoteInfo.file --signature signature.file --pcrLog pcrLog.file
 ```
 
 # RETURNS

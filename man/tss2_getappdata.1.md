@@ -18,11 +18,11 @@
 
 These are the available options:
 
-  * **-p**, **\--path**:
+  * **-p**, **\--path** _STRING_:
 
     Path of the object for which the appData will be loaded.
 
-  * **-o**, **\--appData**:
+  * **-o**, **\--appData** _FILENAME_ or _-_ (for stdout):
 
     Returns a copy of the stored data. Optional parameter.
 
@@ -30,7 +30,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_getappdata --path HS/SRK/myRSACrypt --appData appData
+tss2_getappdata --path HS/SRK/myRSACrypt --appData appData.file
 ```
 
 # RETURNS

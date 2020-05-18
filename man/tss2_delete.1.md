@@ -28,7 +28,7 @@ actions are taken:
 
 These are the available options:
 
-  * **-p**, **\--path**:
+  * **-p**, **\--path** _STRING_:
 
     The path to the entity to delete.
 
