@@ -23,11 +23,11 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-o**, **\--jsonPolicy**:
+  * **-o**, **\--jsonPolicy** _FILENAME_ or _-_ (for stdout):
 
     Returns the JSON-encoded policy.
 
-  * **-p**, **\--path**:
+  * **-p**, **\--path** _STRING_:
 
     The path of the key.
 
@@ -35,7 +35,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_exportpolicy --path HS/SRK/myRSASign --jsonPolicy pcr-policy.json
+tss2_exportpolicy --path HS/SRK/myRSASign --jsonPolicy jsonPolicy.json
 ```
 
 # RETURNS

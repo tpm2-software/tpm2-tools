@@ -18,15 +18,15 @@
 
 These are the available options:
 
-  * **-x**, **\--pcr**:
+  * **-x**, **\--pcr** _INTEGER_:
 
    The PCR to extend.
 
-  * **-i**, **\--data**:
+  * **-i**, **\--data** _FILENAME_ or _-_ (for stdin):
 
     The event data to be extended.
 
-  * **-l**, **\--logData**:
+  * **-l**, **\--logData** _FILENAME_ or _-_ (for stdin):
 
     Contains a JSON representation of data to be written to the PCR's event log. Optional parameter.
 
@@ -35,7 +35,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_pcrextend --pcr 16 --data pcr_event_data.file --logData pcr_log_write.file
+tss2_pcrextend --pcr 16 --data data.file --logData logData.file
 ```
 
 # RETURNS

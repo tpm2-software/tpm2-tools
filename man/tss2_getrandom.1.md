@@ -17,7 +17,7 @@
 
 These are the available options:
 
-  * **-n**, **\--numBytes**: \<number\>
+  * **-n**, **\--numBytes** _INTEGER_:
 
     The number of bytes requested by the caller.
 
@@ -25,7 +25,7 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-o**, **\--data**: \<filename\>
+  * **-o**, **\--data** _FILENAME_ or _-_ (for stdout):
 
     The returned random bytes.
 

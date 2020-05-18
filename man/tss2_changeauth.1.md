@@ -20,13 +20,13 @@ The authValue is a UTF-8 password.
 
 These are the available options:
 
-  * **-a**, **\--authValue**:
+  * **-a**, **\--authValue** _STRING_:
 
     The new UTF-8 password. Optional parameter. If it is neglected then the user
     is queried interactively for a password. To set no password, this option
     should be used with the empty string ("").
 
-  * **-p**, **\--entityPath**:
+  * **-p**, **\--entityPath** _STRING_:
 
     The path identifying the entity to modify.
 

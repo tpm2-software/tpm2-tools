@@ -22,11 +22,11 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-p**, **\--path**:
+  * **-p**, **\--path** _STRING_:
 
     The entity whose certificate is requested.
 
-  * **-o**, **\--x509certData**:
+  * **-o**, **\--x509certData** _FILENAME_ or _-_ (for stdout):
 
     Returns the PEM encoded certificate. If no certificate is stored, then an empty string is returned.
 
@@ -34,7 +34,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_getcertificate --path HS/SRK/myRSACrypt --x509certData myRSACrypt.cert
+tss2_getcertificate --path HS/SRK/myRSACrypt --x509certData x509certData.file
 ```
 
 # RETURNS

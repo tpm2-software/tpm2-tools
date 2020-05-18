@@ -18,12 +18,12 @@
 
 These are the available options:
 
-  * **-p**, **\--searchPath**:
+  * **-p**, **\--searchPath** _STRING_:
 
     The path identifying the root of the search. Optional parameter. If omitted,
     all entities will be searched.
 
-  * **-o**, **\--pathList**:
+  * **-o**, **\--pathList** _FILENAME_ or _-_ (for stdout):
 
     Returns the colon-separated list of paths. Optional parameter. If omitted,
     results will be printed to _STDOUT_.

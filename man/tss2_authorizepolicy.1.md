@@ -18,17 +18,17 @@
 
 These are the available options:
 
-  * **-P**, **\--policyPath**:
+  * **-P**, **\--policyPath** _STRING_:
     Path of the new policy.
 
     A policyPath is composed of two elements, separated by "/". A policyPath
     starts with "/policy". The second path element identifies the policy
     or policy template using a meaningful name.
 
-  * **-p**, **\--keyPath**:
+  * **-p**, **\--keyPath** _STRING_:
     Path of the signing key.
 
-  * **-r**, **\--policyRef**:
+  * **-r**, **\--policyRef** _FILENAME_ or _-_ (for stdin):
     A byte buffer to be included in the signature. Optional parameter.
 
 [common tss2 options](common/tss2-options.md)
