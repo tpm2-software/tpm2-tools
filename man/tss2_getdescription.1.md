@@ -23,11 +23,11 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-p**, **\--path**:
+  * **-p**, **\--path** _STRING_:
 
     The path of the object for which the description will be loaded.
 
-  * **-o**, **\--description**:
+  * **-o**, **\--description** _FILENAME_ or _-_ (for stdout):
 
     Returns the stored description.
 

@@ -22,7 +22,7 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-o**, **\--info**:
+  * **-o**, **\--info** _FILENAME_ or _-_ (for stdout):
 
     Returns the FAPI and TPM information.
 
@@ -31,7 +31,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_getinfo --info data.info
+tss2_getinfo --info info.file
 ```
 
 # RETURNS

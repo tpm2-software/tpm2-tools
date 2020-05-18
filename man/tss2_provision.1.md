@@ -26,14 +26,14 @@ without authorization value is made persistent.
 
 These are the available options:
 
-  * **-E**, **\--authValueEh**:
+  * **-E**, **\--authValueEh** _STRING_:
     The authorization value for the privacy admin, i.e. the endorsement hierarchy.
     Optional parameter.
 
-  * **-S**, **\--authValueSh**:
+  * **-S**, **\--authValueSh** _STRING_:
     The authorization value for the owner, i.e. the storage hierarchy. Optional parameter.
 
-  * **-L**, **\--authValueLockout**:
+  * **-L**, **\--authValueLockout** _STRING_:
     The authorization value for the lockout authorization. Optional parameter.
 
 [common tss2 options](common/tss2-options.md)

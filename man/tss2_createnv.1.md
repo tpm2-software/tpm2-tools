@@ -18,7 +18,7 @@
 
 These are the available options:
 
-  * **-p**, **\--path**:
+  * **-p**, **\--path** _STRING_:
 
     Path of the new NV space.
 
@@ -30,7 +30,7 @@ These are the available options:
     Virtualized_Platform, MPWG, Embedded. The third path element identifies
     the actual NV-Index using a meaningful name.
 
-  * **-t**, **\--type**:
+  * **-t**, **\--type** _STRING_:
 
     Identifies the intended usage. Optional parameter.
     Types may be any comma-separated combination of:
@@ -43,13 +43,13 @@ These are the available options:
           index is created.
 
 
-  * **-s**, **\--size**:
+  * **-s**, **\--size** _INTEGER_:
 
     The size in bytes of the NV index to be created. Can be omitted if size can
     be inferred from the type; e.g. an NV index of type counter has a size of 8
     bytes.
 
-  * **-P**, **\--policyPath**:
+  * **-P**, **\--policyPath** _STRING_:
 
     Identifies the policy to be associated with the new NV space. Optional parameter.
     If omitted then no policy will be associated with the key.
@@ -58,7 +58,7 @@ These are the available options:
     starts with "/policy". The second path element identifies the policy
     or policy template using a meaningful name.
 
-  * **-a**, **\--authValue**:
+  * **-a**, **\--authValue** _STRING_:
 
     The new UTF-8 password. Optional parameter. If it is neglected then the user
     is queried interactively for a password. To set no password, this option

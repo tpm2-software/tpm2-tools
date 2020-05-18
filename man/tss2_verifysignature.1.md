@@ -18,15 +18,15 @@
 
 These are the available options:
 
-  * **-d**, **\--digest**:
+  * **-d**, **\--digest** _FILENAME_ or _-_ (for stdin):
 
     The data that was signed, already hashed.
 
-  * **-p**, **\--keyPath**:
+  * **-p**, **\--keyPath** _STRING_:
 
     Path to the verification public key.
 
-  * **-i**, **\--signature**:
+  * **-i**, **\--signature** _FILENAME_ or _-_ (for stdin):
 
     The signature to be verified.
 
