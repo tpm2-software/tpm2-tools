@@ -20,11 +20,11 @@ under the provided path.
 
 These are the available options:
 
-  * **-p**, **\--path**:
+  * **-p**, **\--path** _STRING_:
 
     The path of the new object.
 
-  * **-i**, **\--importData**:
+  * **-i**, **\--importData** _FILENAME_ or _-_ (for stdin):
 
     The data to be imported.
 
@@ -32,10 +32,10 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_import --path duplicate_policy --importData pol_duplicate.json
+tss2_import --path /policy/duplicate-policy --importData importData.json
 ```
 ```
-tss2_import --path importedPubKey --importData public_key.file
+tss2_import --path /ext/key --importData importData.file
 ```
 
 # RETURNS

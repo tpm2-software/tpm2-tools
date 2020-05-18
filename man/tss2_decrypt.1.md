@@ -19,11 +19,11 @@
 
 These are the available options:
 
-  * **-p**, **\--keyPath**:
+  * **-p**, **\--keyPath** _STRING_:
 
     Identifies the decryption key.
 
-  * **-i**, **\--cipherText**: \<filename\>
+  * **-i**, **\--cipherText** _FILENAME_ or _-_ (for stdin):
 
     The JSON-encoded cipherText.
 
@@ -31,7 +31,7 @@ These are the available options:
 
     Force Overwriting the output file.
 
-  * **-o**, **\--plainText**: \<filename\>
+  * **-o**, **\--plainText** _FILENAME_ or _-_ (for stdout):
 
     Returns the decrypted data. Optional parameter.
 
@@ -39,7 +39,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-    tss2_decrypt --keyPath HS/SRK/myRSACrypt --cipherText encrypted.file --plainText abc
+    tss2_decrypt --keyPath HS/SRK/myRSACrypt --cipherText cipherText.file --plainText plainText.file
 ```
 
 # RETURNS

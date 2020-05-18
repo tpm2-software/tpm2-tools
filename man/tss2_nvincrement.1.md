@@ -18,7 +18,7 @@
 
 These are the availabe options:
 
-  * **-p**, **\--nvPath**:
+  * **-p**, **\--nvPath** _STRING_:
 
     Identifies the NV space to increment.
 
