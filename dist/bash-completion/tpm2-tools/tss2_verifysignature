@@ -21,6 +21,6 @@ _tss2_verifysignature()
     COMPREPLY=( $(compgen -W "-h --help -v --version --digest -d --keyPath -p --signature -i" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
-complete -F _tss2verify_signature tss2verify_signature
+complete -F _tss2_verifysignature tss2_verifysignature
 
 # ex: filetype=sh
