@@ -11,11 +11,17 @@
 # DESCRIPTION
 
 **tpm2_nvwrite**(1) - Write data specified via _FILE_ to a Non-Volatile (NV)
-index. If _FILE_ is not specified, it defaults to stdin. The index can be
-specified as raw handle or an offset value to the nv handle range
+index. If _FILE_ is not specified, it defaults to stdin. The index is specified
+as an argument and can be a raw handle or an offset value to the nv handle range
 "TPM2_HR_NV_INDEX".
 
 # OPTIONS
+
+  * **ARGUMENT**=_NUMBER_
+
+    Specify the NV index to write to as an offset to the starting NV index
+    range or an absolute index value.
+    Example: tpm2_nvwrite 1 is same as tpm2_nvwrite 0x01000001
 
   * **-i**, **\--input**=_FILE_:
 
