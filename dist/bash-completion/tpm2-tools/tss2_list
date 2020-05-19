@@ -18,7 +18,7 @@ _tss2_list()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --pathList -o
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --pathList -o
     --searchPath -p" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
