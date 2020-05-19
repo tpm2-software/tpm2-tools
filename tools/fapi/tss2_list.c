@@ -11,6 +11,7 @@ bool output_enabled = false;
 
 /* Context struct used to store passed command line parameters */
 static struct cxt {
+    bool  overwrite;
     char *searchPath;
     char *pathList;
 } ctx;
@@ -18,6 +19,9 @@ static struct cxt {
 /* Parse command line parameters */
 static bool on_option(char key, char *value) {
     switch (key) {
+    case 'f':
+        ctx.overwrite = true;
+        break;
     case 'p':
         ctx.searchPath = value;
         break;
@@ -31,10 +35,11 @@ static bool on_option(char key, char *value) {
 /* Define possible command line parameters */
 bool tss2_tool_onstart(tpm2_options **opts) {
     struct option topts[] = {
+        {"force"   , no_argument      , NULL, 'f'},
         {"searchPath", required_argument, NULL, 'p'},
         {"pathList",   required_argument, NULL, 'o'}
     };
-    return (*opts = tpm2_options_new ("p:o:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("fp:o:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 
@@ -51,7 +56,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     /* Write returned data to file(s) */
-    r = open_write_and_close (ctx.pathList, true, pathList,
+    r = open_write_and_close (ctx.pathList, ctx.overwrite, pathList,
         strlen(pathList));
     if (r){
         LOG_PERR ("open_write_and_close pathList", r);

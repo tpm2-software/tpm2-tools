@@ -18,6 +18,10 @@
 
 These are the available options:
 
+  * **-f**, **\--force**:
+
+    Force overwriting the output file.
+
   * **-p**, **\--searchPath** _STRING_:
 
     The path identifying the root of the search. Optional parameter. If omitted,
