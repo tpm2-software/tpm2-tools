@@ -18,7 +18,7 @@ _tss2_pcrextend()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version -x --pcr -i --data -l --logData -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version -x --pcr -i --data -l --logData" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_pcrextend tss2_pcrextend
