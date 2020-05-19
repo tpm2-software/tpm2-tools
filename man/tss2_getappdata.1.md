@@ -18,6 +18,10 @@
 
 These are the available options:
 
+  * **-f**, **\--force**:
+
+    Force overwriting the output file.
+
   * **-p**, **\--path** _STRING_:
 
     Path of the object for which the appData will be loaded.
