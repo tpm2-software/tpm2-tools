@@ -52,5 +52,6 @@ EOF
 
 tss2_getrandom --numBytes 4 --data $OUTPUT_FILE --force
 
+tss2_getrandom --numBytes 4 --hex --data $OUTPUT_FILE --force
 
 exit 0

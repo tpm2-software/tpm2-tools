@@ -14,6 +14,7 @@ static struct cxt {
     size_t  numBytes;
     char   *filename;
     bool    overwrite;
+    bool    hex;
 } ctx;
 
 /* Parse commandline parameters */
@@ -37,6 +38,9 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.filename = value;
         break;
+    case 0:
+        ctx.hex = true;
+        break;
     }
     return true;
 }
@@ -47,7 +51,8 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"numBytes", required_argument, NULL, 'n'},
         {"force"    , no_argument      , NULL, 'f'},
         /* output file */
-        {"data"   , required_argument, NULL, 'o'}
+        {"data"   , required_argument, NULL, 'o'},
+        {"hex",          no_argument,       NULL,  0}
     };
     return (*opts = tpm2_options_new ("fn:o:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
@@ -73,10 +78,21 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         return 1;
     }
 
-    /* Write returned data to file(s) */
-    r = open_write_and_close (ctx.filename, ctx.overwrite, data,
-        ctx.numBytes);
-    if (r){
+    if (ctx.hex) {
+        char* str = malloc (ctx.numBytes*2 + 1);
+        for (size_t i = 0; i<ctx.numBytes; i++) {
+            sprintf(str+i*2,"%02x",data[i]);
+        }
+        /* Write returned data to file(s) */
+        r = open_write_and_close (ctx.filename, ctx.overwrite, str, 0);
+        free(str);
+    }
+    else {
+        /* Write returned data to file(s) */
+        r = open_write_and_close (ctx.filename, ctx.overwrite, data,
+            ctx.numBytes);
+    }
+    if (r) {
         Fapi_Free (data);
         return 1;
     }

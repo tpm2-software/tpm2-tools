@@ -29,6 +29,10 @@ These are the available options:
 
     The returned random bytes.
 
+  * **\--hex**
+
+    Convert the output data to hex format without a leading "0x".
+
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
