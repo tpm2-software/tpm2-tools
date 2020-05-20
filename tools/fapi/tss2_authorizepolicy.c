@@ -64,7 +64,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_read_and_close (ctx.policyRef, (void**)&policyRef,
             &policyRefSize);
         if (r){
-            LOG_PERR ("open_read_and_close policyRef", r);
             return r;
         }
     }

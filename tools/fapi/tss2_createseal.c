@@ -82,7 +82,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     size_t dataSize;
     TSS2_RC r = open_read_and_close (ctx.data, (void**)&data, &dataSize);
     if (r){
-        LOG_PERR ("open_read_and_close data", r);
         return r;
     }
 

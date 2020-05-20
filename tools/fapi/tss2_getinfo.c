@@ -57,7 +57,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Write returned data to file(s) */
     r = open_write_and_close (ctx.info, ctx.overwrite, info, 0);
     if (r) {
-        LOG_PERR ("open_write_and_close", r);
         Fapi_Free (info);
         return 1;
     }

@@ -52,7 +52,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     char *importData;
     TSS2_RC r = open_read_and_close (ctx.importData, (void**)&importData, NULL);
     if (r){
-        LOG_PERR("open_read_and_close input", r);
         return 1;
     }
 

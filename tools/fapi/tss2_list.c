@@ -59,7 +59,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     r = open_write_and_close (ctx.pathList, ctx.overwrite, pathList,
         strlen(pathList));
     if (r){
-        LOG_PERR ("open_write_and_close pathList", r);
         Fapi_Free (pathList);
         return 1;
     }

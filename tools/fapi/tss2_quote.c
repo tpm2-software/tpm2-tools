@@ -147,7 +147,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_read_and_close (ctx.qualifyingData,
             (void*)&qualifyingData, &qualifyingDataSize);
         if (r) {
-          LOG_ERR ("open_read_and_close qualifyingData", r);
           free (ctx.pcrList);
           return 1;
         }
@@ -174,7 +173,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (ctx.quoteInfo && quoteInfo) {
         r = open_write_and_close (ctx.quoteInfo, ctx.overwrite, quoteInfo, 0);
         if (r) {
-            LOG_PERR ("open_write_and_close quoteInfo", r);
             Fapi_Free (quoteInfo);
             Fapi_Free (pcrLog);
             Fapi_Free (signature);
@@ -188,7 +186,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (ctx.pcrLog && pcrLog) {
         r = open_write_and_close (ctx.pcrLog, ctx.overwrite, pcrLog, 0);
         if (r) {
-            LOG_PERR ("open_write_and_close pcrLog", r);
             Fapi_Free (pcrLog);
             Fapi_Free (signature);
             Fapi_Free (certificate);
@@ -201,7 +198,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_write_and_close (ctx.signature, ctx.overwrite, signature,
             signatureSize);
         if (r) {
-            LOG_PERR ("open_write_and_close signature", r);
             Fapi_Free (signature);
             Fapi_Free (certificate);
             return 1;
@@ -213,7 +209,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_write_and_close (ctx.certificate, ctx.overwrite, certificate,
             strlen(certificate));
         if (r) {
-            LOG_PERR ("open_write_and_close certificate", r);
             Fapi_Free (certificate);
             return 1;
         }
