@@ -90,7 +90,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_write_and_close (ctx.tpm2bPublic, ctx.overwrite, tpm2bPublic,
             tpm2bPublicSize);
         if (r) {
-            LOG_PERR ("open_write_and_close tpm2bPublic", r);
             return 1;
         }
     }
@@ -99,7 +98,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_write_and_close (ctx.tpm2bPrivate, ctx.overwrite, tpm2bPrivate,
             tpm2bPrivateSize);
         if (r) {
-            LOG_PERR ("open_write_and_close tpm2bPrivate", r);
             Fapi_Free (tpm2bPublic);
             return 1;
         }
@@ -109,7 +107,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_write_and_close (ctx.policy, ctx.overwrite, policy,
             strlen(policy));
         if (r) {
-            LOG_PERR ("open_write_and_close policy", r);
             Fapi_Free (tpm2bPublic);
             Fapi_Free (tpm2bPrivate);
             return 1;

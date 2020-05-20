@@ -52,7 +52,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_read_and_close (ctx.x509cert, (void**)&x509certData,
             &x509certSize);
         if (r) {
-            LOG_PERR("open_read_and_close x509cert", r);
             return 1;
         }
     }

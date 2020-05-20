@@ -69,7 +69,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     TSS2_RC r = open_read_and_close (ctx.plainText, (void**)&plainText,
         &plainTextSize);
     if (r){
-        LOG_PERR ("open_read_and_close plainText", r);
         return 1;
     }
 
@@ -89,7 +88,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     r = open_write_and_close (ctx.cipherText, ctx.overwrite, cipherText,
         cipherTextSize);
     if (r) {
-        LOG_PERR ("open_write_and_close cipherText", r);
         return 1;
     }
 

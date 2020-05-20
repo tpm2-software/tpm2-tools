@@ -66,7 +66,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Write returned data to file(s) */
     r = open_write_and_close (ctx.jsonPolicy, ctx.overwrite, jsonPolicy, 0);
     if (r){
-        LOG_PERR ("open_write_and_close buffer", r);
         return 1;
     }
 

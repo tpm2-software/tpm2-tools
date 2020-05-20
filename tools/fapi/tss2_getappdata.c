@@ -69,7 +69,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_write_and_close (ctx.data, ctx.overwrite, appData,
             appDataSize);
         if (r != TSS2_RC_SUCCESS) {
-            LOG_PERR ("open_write_and_close appData", r);
             return 1;
         }
     }

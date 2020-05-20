@@ -76,12 +76,10 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     size_t digestSize, signatureSize;
     TSS2_RC r = open_read_and_close (ctx.digest, (void**)&digest, &digestSize);
     if (r){
-        LOG_PERR("open_read_and_close digest", r);
         return 1;
     }
     r = open_read_and_close (ctx.signature, (void**)&signature, &signatureSize);
     if (r) {
-        LOG_PERR("open_read_and_close signature", r);
         free (digest);
         return 1;
     }

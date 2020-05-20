@@ -99,7 +99,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     char *publicKey, *certificate = NULL;
     TSS2_RC r = open_read_and_close (ctx.digest, (void**)&digest, &digestSize);
     if (r){
-        LOG_PERR ("open_read_and_close digest", r);
         return 1;
     }
 
@@ -118,7 +117,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             r = open_write_and_close (ctx.certificate, ctx.overwrite,
                 certificate, strlen(certificate));
             if (r) {
-                LOG_PERR ("open_write_and_close certificate", r);
                 Fapi_Free (certificate);
                 Fapi_Free (signature);
                 Fapi_Free (publicKey);
@@ -131,7 +129,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_write_and_close (ctx.signature, ctx.overwrite, signature,
             signatureSize);
         if (r) {
-            LOG_PERR ("open_write_and_close certificate signature", r);
             Fapi_Free (signature);
             Fapi_Free (publicKey);
             return 1;
@@ -143,7 +140,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_write_and_close (ctx.publicKey, ctx.overwrite, publicKey,
                 strlen(publicKey));
         if (r) {
-            LOG_PERR ("open_write_and_close certificate publicKey", r);
             Fapi_Free (publicKey);
             return 1;
         }

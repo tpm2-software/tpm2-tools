@@ -91,7 +91,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_read_and_close (ctx.qualifyingData,
             (void**)&qualifyingData, &qualifyingDataSize);
         if (r) {
-            LOG_PERR ("open_read_and_close qualifyingData", r);
             return -1;
         }
     }
@@ -101,7 +100,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (ctx.signature) {
         r = open_read_and_close (ctx.signature, (void**)&signature, &signatureSize);
         if (r) {
-            LOG_PERR ("open_read_and_close signature", r);
             free (qualifyingData);
             return -1;
         }
@@ -111,7 +109,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (ctx.quoteInfo) {
         r = open_read_and_close (ctx.quoteInfo, (void**)&quoteInfo, NULL);
         if (r) {
-            LOG_PERR ("open_read_and_close quoteInfo", r);
             free (qualifyingData);
             free (signature);
             return -1;
@@ -122,7 +119,6 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (ctx.pcrLog) {
         r = open_read_and_close (ctx.pcrLog, (void**)&pcrLog, NULL);
         if (r) {
-            LOG_PERR ("open_read_and_close pcrLog", r);
             free (qualifyingData);
             free (signature);
             free (quoteInfo);
