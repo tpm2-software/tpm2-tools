@@ -180,6 +180,24 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
+# Try with missing qualifyingData
+tss2_quote --keyPath $KEY_PATH --pcrList "16" \
+    --signature $SIGNATURE_FILE \
+    --pcrLog $PCR_LOG --certificate $CERTIFICATE_FILE \
+    --quoteInfo $QUOTE_INFO --force
+
+# Try with missing pcrLog
+tss2_quote --keyPath $KEY_PATH --pcrList "16" \
+    --qualifyingData $NONCE_FILE --signature $SIGNATURE_FILE \
+    --certificate $CERTIFICATE_FILE \
+    --quoteInfo $QUOTE_INFO --force
+
+# Try with missing certificate
+tss2_quote --keyPath $KEY_PATH --pcrList "16" \
+    --qualifyingData $NONCE_FILE --signature $SIGNATURE_FILE \
+    --pcrLog $PCR_LOG \
+    --quoteInfo $QUOTE_INFO --force
+
 expect <<EOF
 # Try with missing publicKeyPath
 spawn tss2_verifyquote \
@@ -334,5 +352,10 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     exit 1
 }
 EOF
+
+# Try with missing qualifyingData
+tss2_verifyquote --publicKeyPath "ext/myNewParent" \
+    --quoteInfo $QUOTE_INFO \
+    --signature $SIGNATURE_FILE
 
 exit 0

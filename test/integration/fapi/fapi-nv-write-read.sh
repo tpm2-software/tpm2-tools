@@ -98,7 +98,7 @@ EOF
 
 expect <<EOF
 # Try with missing data
-spawn tss2_nvwrite --data $DATA_WRITE_FILE
+spawn tss2_nvwrite --nvPath $NV_PATH
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -118,6 +118,47 @@ send "$PW\r"
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 0} {
     send_user "Using interactive prompt with password has failed\n"
+    exit 1
+}
+EOF
+
+
+
+# Try with missing type
+tss2_delete --path $NV_PATH
+tss2_createnv --path $NV_PATH --size 20 --authValue=$PW
+
+# Try with size-0 supported types
+tss2_delete --path $NV_PATH
+tss2_createnv --path $NV_PATH --type "bitfield" --size 0 --authValue=$PW
+tss2_delete --path $NV_PATH
+tss2_createnv --path $NV_PATH --type "pcr" --size 0 --authValue=$PW
+tss2_delete --path $NV_PATH
+tss2_createnv --path $NV_PATH --type "counter" --size 0 --authValue=$PW
+tss2_delete --path $NV_PATH
+tss2_createnv --path $NV_PATH --type "bitfield" --authValue=$PW
+tss2_delete --path $NV_PATH
+tss2_createnv --path $NV_PATH --type "pcr" --authValue=$PW
+tss2_delete --path $NV_PATH
+tss2_createnv --path $NV_PATH --type "counter" --authValue=$PW
+tss2_delete --path $NV_PATH
+
+expect <<EOF
+# Try with missing size and no type
+spawn tss2_createnv --path $NV_PATH --authValue=$PW
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
+
+expect <<EOF
+# Try with size=0 and no type
+spawn tss2_createnv --path $NV_PATH --size 0 --authValue=$PW
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
     exit 1
 }
 EOF

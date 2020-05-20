@@ -31,6 +31,13 @@ tss2_import --path $IMPORTED_KEY_NAME --importData $PUBLIC_KEY_FILE
 tss2_verifysignature --keyPath $PUB_KEY_DIR/$IMPORTED_KEY_NAME \
     --digest $DIGEST_FILE --signature $SIGNATURE_FILE
 
+# Try without certificate
+tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
+    --signature $SIGNATURE_FILE --publicKey $PUBLIC_KEY_FILE --force
+
+# Try without public key
+tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
+    --signature $SIGNATURE_FILE --force
 
 expect <<EOF
 # Try with missing keyPath
