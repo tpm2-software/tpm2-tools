@@ -61,4 +61,7 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
+# Try with missing appData
+tss2_getappdata --path $KEY_PATH
+
 exit 0

@@ -15,8 +15,6 @@ function cleanup {
 trap cleanup EXIT
 
 KEY_PATH=HS/SRK/myRSACrypt
-# cat > $tempdir/fapi_config.json <<EOF
-
 READ_CERTIFICATE_FILE=$TEMP_DIR/read_certificate.file
 WRITE_CERTIFICATE_FILE=$TEMP_DIR/write_certificate.file
 
@@ -52,21 +50,30 @@ tss2_setcertificate --path $KEY_PATH --x509certData $WRITE_CERTIFICATE_FILE
 tss2_getcertificate --path $KEY_PATH --x509certData $READ_CERTIFICATE_FILE \
     --force
 
-if [ ! cmp -s "$WRITE_CERTIFICATE_FILE" "$READ_CERTIFICATE_FILE" ]; then
+if [[ "$(< $READ_CERTIFICATE_FILE)" != "$(< $WRITE_CERTIFICATE_FILE)" ]]; then
   echo "Certificates not equal"
   exit 1
 fi
 
 expect <<EOF
 # Try with missing path
-spawn tss2_setcertificate \
-    --x509certData $WRITE_CERTIFICATE_FILE
+spawn tss2_setcertificate --x509certData $WRITE_CERTIFICATE_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
     exit 1
 }
 EOF
+
+# Try with missing cert, should set cert to empty
+tss2_setcertificate --path $KEY_PATH
+tss2_getcertificate --path $KEY_PATH --x509certData $READ_CERTIFICATE_FILE \
+    --force
+
+if [[ "$(< $READ_CERTIFICATE_FILE)" != "" ]]; then
+  echo "Certificate was not deleted"
+  exit 1
+fi
 
 expect <<EOF
 # Try with missing path

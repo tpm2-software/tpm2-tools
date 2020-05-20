@@ -15,21 +15,20 @@ function cleanup {
 trap cleanup EXIT
 
 KEY_PATH=HS/SRK/myRSACrypt
-DESCRIPTION_SET=$TEMP_DIR/object-description
+# DESCRIPTION_SET=$TEMP_DIR/set_description.file
 DESCRIPTION_FILE=$TEMP_DIR/object_description.file
-
-echo -n "description data" > DESCRIPTION_SET
+DESCRIPTION_SET="description data"
 
 tss2_provision
 
 tss2_createkey --path $KEY_PATH --type "noDa, restricted, decrypt" \
     --authValue ""
 
-tss2_setdescription --path $KEY_PATH --description $DESCRIPTION_SET
+tss2_setdescription --path $KEY_PATH --description "$(echo $DESCRIPTION_SET)"
 
 tss2_getdescription --path $KEY_PATH --description $DESCRIPTION_FILE --force
 
-if [ `cat $DESCRIPTION_FILE` !=  "$DESCRIPTION_SET" ]; then
+if [ "$(< $DESCRIPTION_FILE)" !=  "$DESCRIPTION_SET" ]; then
   echo "Descriptions not equal"
   exit 1
 fi
@@ -43,6 +42,15 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     exit 1
 }
 EOF
+
+# Try with missing description, should set description to empty
+tss2_setdescription --path $KEY_PATH
+tss2_getdescription --path $KEY_PATH --description $DESCRIPTION_FILE --force
+
+if [ "$(< $DESCRIPTION_FILE)" !=  "" ]; then
+  echo "Description is not empty"
+  exit 1
+fi
 
 expect <<EOF
 # Try with missing path

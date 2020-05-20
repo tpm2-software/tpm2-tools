@@ -84,4 +84,38 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
+# Unseal with password
+tss2_delete --path $KEY_PATH
+tss2_createseal --path $KEY_PATH --data $SEALED_DATA_FILE --authValue "abc"
+printf "" > $UNSEALED_DATA_FILE
+expect <<EOF
+spawn tss2_unseal --path $KEY_PATH --data $UNSEALED_DATA_FILE --force
+expect "Authorize object : "
+send "abc\r"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 0} {
+    send_user "Authorization failed\n"
+    exit 1
+}
+EOF
+
+V1=$(printf "$SEAL_DATA" | xxd)
+V2=$"`xxd $UNSEALED_DATA_FILE`"
+
+if [ "$V1" != "$V2" ]; then
+  echo "Seal/Unseal failed"
+  exit 1
+fi
+
+
+# Try with missing type
+tss2_delete --path $KEY_PATH
+tss2_createseal --path $KEY_PATH --data $SEALED_DATA_FILE --authValue ""
+# Try with missing data
+tss2_unseal --path $KEY_PATH --force
+
+
+
+
+
 exit 0

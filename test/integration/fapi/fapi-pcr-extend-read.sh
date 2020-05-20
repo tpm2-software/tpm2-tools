@@ -76,9 +76,12 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
+# Try with missing logData
+tss2_pcrextend --pcr 16 --data $PCR_EVENT_DATA
+
 expect <<EOF
 # Try with missing pcrIndex
-spawn tss2_pcrread --pcrValue $PCR_DIGEST_FILE --pcrLog $PCR_LOG_FILE_READ
+spawn tss2_pcrread --pcrValue $PCR_DIGEST_FILE --pcrLog $PCR_LOG_FILE_READ --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -86,25 +89,11 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
-expect <<EOF
 # Try with missing pcrValue
-spawn tss2_pcrread --pcrIndex 16 --pcrLog $PCR_LOG_FILE_READ
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
+tss2_pcrread --pcrIndex 16 --pcrLog $PCR_LOG_FILE_READ --force
 
-expect <<EOF
 # Try with missing pcrLog
-spawn tss2_pcrread --pcrIndex 16 --pcrValue $PCR_DIGEST_FILE
-set ret [wait]
-if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
-    Command has not failed as expected\n"
-    exit 1
-}
-EOF
+tss2_pcrread --pcrIndex 16 --pcrValue $PCR_DIGEST_FILE --force
 
 expect <<EOF
 # Try with multiple stdins (1)
@@ -120,7 +109,7 @@ EOF
 expect <<EOF
 # Try with wrong pcrIndex
 spawn tss2_pcrread --pcrIndex abc --pcrValue $PCR_DIGEST_FILE \
-    --pcrLog $PCR_LOG_FILE_READ
+    --pcrLog $PCR_LOG_FILE_READ --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"

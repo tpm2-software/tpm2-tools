@@ -28,7 +28,7 @@ fi
 
 expect <<EOF
 # Try with missing info file
-spawn tss2_getinfo --info $DATA_OUTPUT_FILE
+spawn tss2_getinfo
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
