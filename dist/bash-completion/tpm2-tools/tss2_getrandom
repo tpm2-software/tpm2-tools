@@ -18,7 +18,7 @@ _tss2_getrandom()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --numBytes -n --data -o " -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --hex --version --force -f --numBytes -n --data -o " -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_getrandom tss2_getrandom
