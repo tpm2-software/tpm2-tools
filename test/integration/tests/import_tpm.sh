@@ -54,8 +54,13 @@ load_new_parent() {
 create_load_duplicatee() {
     # Create the key we want to duplicate
     create_policy dpolicy.dat TPM2_CC_Duplicate
-    tpm2_create -Q -C primary.ctx -g sha256 -G $1 -p foo -r key.prv -u key.pub \
-    -L dpolicy.dat -a "sensitivedataorigin|decrypt|userwithauth"
+    if [ -z "$2" ];then
+        tpm2_create -Q -C primary.ctx -g sha256 -G $1 -r key.prv \
+        -u key.pub -L dpolicy.dat -a "sensitivedataorigin|decrypt|userwithauth"
+    else
+        tpm2_create -Q -C primary.ctx -g sha256 -G $1 -p "$2" -r key.prv \
+        -u key.pub -L dpolicy.dat -a "sensitivedataorigin|decrypt|userwithauth"
+    fi
     # Load the key
     tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -c key.ctx
     # Extract the public part for import later
@@ -113,34 +118,45 @@ for dup_key_type in aes rsa ecc; do
     done
 done
 
-# Part 2 :
-# Create a rsa key (Kd)
-# Encrypt a message using Kd
-# Duplicate Kd
-# Import & Load Kd
-# Decrypt the message and verify
-tpm2_createprimary -Q -C o -g sha256 -G rsa -c primary.ctx
-# New parent ...
-create_load_new_parent
-# Key to be duplicated
-create_load_duplicatee rsa
-# Encrypt a secret message
-echo "Mary had a little lamb ..." > plain.txt
-tpm2_rsaencrypt -Q -c key.ctx -o cipher.txt plain.txt
-# Duplicate the key
-do_duplication null
-# Remove, we're done with it
-rm new_parent.ctx
-# Load the full thing this time
-load_new_parent
-# Import & load the duplicate
-do_import_load null
-# Decrypt the secret message using duplicated key
-tpm2_rsadecrypt -Q -p foo -c dup.ctx -o recovered.txt cipher.txt
-# Check we got it right ...
-diff recovered.txt plain.txt
-# Cleanup
-rm plain.txt recovered.txt cipher.txt
-cleanup "no-shut-down"
+test_key_usage() {
+    # Part 2 :
+    # Create a rsa key (Kd)
+    # Encrypt a message using Kd
+    # Duplicate Kd
+    # Import & Load Kd
+    # Decrypt the message and verify
+    tpm2_createprimary -Q -C o -g sha256 -G rsa -c primary.ctx
+    # New parent ...
+    create_load_new_parent
+    # Key to be duplicated
+    create_load_duplicatee rsa "$1"
+    # Encrypt a secret message
+    echo "Mary had a little lamb ..." > plain.txt
+    tpm2_rsaencrypt -Q -c key.ctx -o cipher.txt plain.txt
+    # Duplicate the key
+    do_duplication null
+    # Remove, we're done with it
+    rm new_parent.ctx
+    # Load the full thing this time
+    load_new_parent
+    # Import & load the duplicate
+    do_import_load null
+    # Decrypt the secret message using duplicated key
+    if [ -z "$1" ];then
+        tpm2_rsadecrypt -Q -c dup.ctx -o recovered.txt cipher.txt
+    else
+        tpm2_rsadecrypt -Q -p "$1" -c dup.ctx -o recovered.txt cipher.txt
+    fi
+    # Check we got it right ...
+    diff recovered.txt plain.txt
+    # Cleanup
+    rm plain.txt recovered.txt cipher.txt
+    cleanup "no-shut-down"
+}
+
+#Test key with password
+test_key_usage foo
+#Test key without password
+test_key_usage
 
 exit 0
