@@ -47,7 +47,7 @@ struct tpm_create_ctx {
     TPML_PCR_SELECTION creation_pcr;
 
     struct {
-        UINT8 b :1;
+        UINT8 a :1;
         UINT8 i :1;
         UINT8 L :1;
         UINT8 u :1;
@@ -256,7 +256,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'a':
         ctx.object.attrs = value;
-        ctx.flags.b = 1;
+        ctx.flags.a = 1;
         break;
     case 'i':
         ctx.object.sealed_data = strcmp("-", value) ? value : NULL;
@@ -389,12 +389,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
         ctx.object.alg = "keyedhash";
 
-        if (!ctx.flags.b) {
+        if (!ctx.flags.a) {
             attrs &= ~TPMA_OBJECT_SIGN_ENCRYPT;
             attrs &= ~TPMA_OBJECT_DECRYPT;
             attrs &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
         }
-    } else if (!ctx.flags.b && !strncmp("hmac", ctx.object.alg, 4)) {
+    } else if (!ctx.flags.a && !strncmp("hmac", ctx.object.alg, 4)) {
         attrs &= ~TPMA_OBJECT_DECRYPT;
     }
 
@@ -405,7 +405,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    if (ctx.flags.L && !ctx.object.auth_str) {
+    if (!ctx.flags.a && ctx.flags.L && !ctx.object.auth_str) {
         ctx.object.public.publicArea.objectAttributes &=
                 ~TPMA_OBJECT_USERWITHAUTH;
     }

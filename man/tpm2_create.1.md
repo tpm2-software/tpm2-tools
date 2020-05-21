@@ -13,7 +13,7 @@
 **tpm2_create**(1) - Create a child object. The object can either be a key or
 a sealing object. A sealing object allows to seal user data to the TPM, with a
 maximum size of 256 bytes. Additionally it will load the created object if the
-**-o** is specified.
+**-c** is specified.
 
 # OPTIONS
 
@@ -54,6 +54,13 @@ These options for creating the TPM entity:
     The algorithm is set in a way where the the object is only good for sealing
     and unsealing. I.e. one cannot use an object for sealing and cryptography
     operations.
+
+    When **-L** is specified for adding policy based authorization information
+    AND no string password is specified, the  attribute `TPMA_OBJECT_USERWITHAUTH`
+    is cleared unless an explicit choice is made by setting of the attribute
+    with **-a** option. This prevents creation of objects with inadvertant auth
+    model where in user intended to enforce a policy but inadvertantly created
+    an object with empty auth which can be used instead of policy authorization.
 
   * **-i**, **\--sealing-input**=_FILE_ or _STDIN_:
 
