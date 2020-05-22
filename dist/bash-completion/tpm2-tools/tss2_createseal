@@ -10,7 +10,7 @@ _tss2_createseal()
             return;;
         -!(-*)[i] | --data)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[ptPa] | --path | --type | --policyPath | --authValue)
             return;;

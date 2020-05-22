@@ -12,7 +12,7 @@ _tss2_pcrextend()
             return;;
         -!(-*)[il] | --data | --logData)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
     esac
 

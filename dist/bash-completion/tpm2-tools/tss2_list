@@ -12,7 +12,7 @@ _tss2_list()
             return;;
         -!(-*)[o] | --pathList)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
     esac
 

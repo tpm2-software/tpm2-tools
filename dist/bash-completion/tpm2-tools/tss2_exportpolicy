@@ -10,7 +10,7 @@ _tss2_exportpolicy()
             return;;
         -!(-*)[o] | --jsonPolicy )
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[p] | --path)
             return;;

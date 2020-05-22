@@ -12,7 +12,7 @@ _tss2_gettpmblobs()
             return;;
         -!(-*)[url] | --tpm2bPublic | --tpm2bPrivate | --policy)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
     esac
 

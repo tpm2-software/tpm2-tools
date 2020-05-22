@@ -12,7 +12,7 @@ _tss2_nvread()
             return;;
         -!(-*)[ol] | --data | --logData)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
     esac
 

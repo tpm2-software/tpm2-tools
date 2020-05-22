@@ -12,7 +12,7 @@ _tss2_nvwrite()
             return;;
         -!(-*)[i] | --data)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
     esac
 

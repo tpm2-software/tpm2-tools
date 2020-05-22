@@ -10,7 +10,7 @@ _tss2_nvextend()
             return;;
         -!(-*)[il] | --data |  --logData)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[p] | --nvPath )
             return;;

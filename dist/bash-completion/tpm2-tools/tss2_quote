@@ -12,7 +12,7 @@ _tss2_quote()
             return;;
         -!(-*)[olqQc] | --signature | --pcrLog | --quoteInfo | --qualifyingData | --certificate)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
     esac
 

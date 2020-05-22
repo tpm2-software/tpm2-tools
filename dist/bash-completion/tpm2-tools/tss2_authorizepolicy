@@ -10,7 +10,7 @@ _tss2_authorizepolicy()
             return;;
         -!(-*)[r] | --policyRef)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[Pp] | --policyPath | --keyPath )
             return;;

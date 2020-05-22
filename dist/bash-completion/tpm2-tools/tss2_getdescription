@@ -9,8 +9,8 @@ _tss2_getdescription()
             COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
             return;;
         -!(-*)[o] | --description)
-            COMPREPLY+=( '-' )
             _filedir
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[p] | --path)
             return;;

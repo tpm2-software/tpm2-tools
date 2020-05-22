@@ -10,7 +10,7 @@ _tss2_verifyquote()
             return;;
         -!(-*)[Qilq] | --qualifyingData | --signature | --pcrLog | --quoteInfo)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[k] | --publicKeyPath)
             return;;
