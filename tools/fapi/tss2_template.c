@@ -135,14 +135,10 @@ static tpm2_option_code tss2_handle_options (
             char *t = strstr(info, "\"version\"");
             if (t) {
                 t = t + strlen("\"version\"");
-                version = (char*) malloc(strlen(t) + 1);
-                if (!version) {
-                    fprintf (stderr, "malloc(2) failed: %m\n");
-                    return 1;
-                }
-                ret = sscanf(t, "%*[^\"]\"%[^\"]%*[*]", version);
+                ret = sscanf(t, "%*[^\"]\"%m[^\"]%*[*]", &version);
                 /* Version string is not larger than 128 characters */
                 if (ret!=1 || strlen(version) > 128 ) {
+                    free(version);
                     version = "not found";
                     t = NULL;
                 }
