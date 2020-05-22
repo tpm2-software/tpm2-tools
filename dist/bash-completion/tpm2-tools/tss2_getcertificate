@@ -10,7 +10,7 @@ _tss2_getcertificate()
             return;;
         -!(-*)[o] | --x509certData)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[p] | --path)
             return;;

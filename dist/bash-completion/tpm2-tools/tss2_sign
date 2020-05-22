@@ -10,7 +10,7 @@ _tss2_sign()
             return;;
         -!(-*)[dokc] | --digest | --signature | --publicKey | --certificate)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[ps] | --keyPath | --padding)
             return;;

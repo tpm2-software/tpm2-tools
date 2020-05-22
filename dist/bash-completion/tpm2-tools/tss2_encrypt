@@ -10,7 +10,7 @@ _tss2_encrypt()
             return;;
         -!(-*)[io] | --plainText | --cipherText)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[p] | --keyPath )
             return;;

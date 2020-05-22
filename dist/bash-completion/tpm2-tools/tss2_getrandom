@@ -10,7 +10,7 @@ _tss2_getrandom()
             return;;
         -!(-*)o | --data)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)n | --numBytes)
             return;;

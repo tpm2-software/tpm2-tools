@@ -12,7 +12,7 @@ _tss2_import()
             return;;
         -!(-*)[i] | --importData)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
     esac
 

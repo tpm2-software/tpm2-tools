@@ -10,7 +10,7 @@ _tss2_getappdata()
             return;;
         -!(-*)[o] | --appData)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
         -!(-*)[p] | --path)
             return;;

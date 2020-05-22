@@ -10,7 +10,7 @@ _tss2_getinfo()
             return;;
         -!(-*)o | --info)
             _filedir
-            COMPREPLY+=( '-' )
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
     esac
 
