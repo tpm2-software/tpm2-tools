@@ -18,8 +18,8 @@ _tss2_exportpolicy()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --jsonPolicy -o
-    --path -p --force -f" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --jsonPolicy= -o
+    --path= -p --force -f" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_exportpolicy tss2_exportpolicy

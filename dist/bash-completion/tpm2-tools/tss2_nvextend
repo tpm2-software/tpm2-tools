@@ -18,7 +18,7 @@ _tss2_nvextend()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --data -i --nvPath -p --logData -l" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --data= -i --nvPath= -p --logData= -l" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_nvextend tss2_nvextend

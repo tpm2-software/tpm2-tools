@@ -23,11 +23,11 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-p**, **\--path** _STRING_:
+  * **-p**, **\--path**=_STRING_:
 
     The path of the object for which the description will be loaded.
 
-  * **-o**, **\--description** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--description**=_FILENAME_ or _-_ (for stdout):
 
     Returns the stored description.
 
@@ -35,7 +35,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_getdescription --path HS/SRK --description description.file
+tss2_getdescription --path=HS/SRK --description=description.file
 ```
 
 # RETURNS

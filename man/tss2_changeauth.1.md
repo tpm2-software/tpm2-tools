@@ -20,13 +20,13 @@ The authValue is a UTF-8 password.
 
 These are the available options:
 
-  * **-a**, **\--authValue** _STRING_:
+  * **-a**, **\--authValue**=_STRING_:
 
     The new UTF-8 password. Optional parameter. If it is neglected then the user
     is queried interactively for a password. To set no password, this option
     should be used with the empty string ("").
 
-  * **-p**, **\--entityPath** _STRING_:
+  * **-p**, **\--entityPath**=_STRING_:
 
     The path identifying the entity to modify.
 
@@ -36,12 +36,12 @@ These are the available options:
 
 ## Change a password for an entity HS/SRK/myRSACryptKey to M1
 ```
-tss2_changeauth --entityPath HS/SRK/myRSACryptKey --authValue M1
+tss2_changeauth --entityPath=HS/SRK/myRSACryptKey --authValue=M1
 ```
 
 ## Change a password for an entity HS/SRK/myRSACryptKey and ask the user to enter the password.
 ```
-tss2_changeauth --entityPath HS/SRK/myRSACryptKey
+tss2_changeauth --entityPath=HS/SRK/myRSACryptKey
 ```
 
 # RETURNS

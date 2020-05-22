@@ -18,11 +18,11 @@
 
 These are the available options:
 
-  * **-p**, **\--path** _STRING_:
+  * **-p**, **\--path**=_STRING_:
 
     The path to the new key.
 
-  * **-t**, **\--type** _STRING_:
+  * **-t**, **\--type**=_STRING_:
 
     Identifies the intended usage. Optional parameter.
     Types may be any comma-separated combination of:
@@ -35,7 +35,7 @@ These are the available options:
         - A hexadecimal number (e.g. "0x81000001"): Marks a key object to be
           made persistent and sets the persistent object handle to this value.
 
-  * **-P**, **\--policyPath** _STRING_:
+  * **-P**, **\--policyPath**=_STRING_:
 
     Identifies the policy to be associated with the new key. Optional parameter.
     If omitted then no policy will be associated with the key.
@@ -44,13 +44,13 @@ These are the available options:
     starts with "/policy". The second path element identifies the policy
     or policy template using a meaningful name.
 
-  * **-a**, **\--authValue** _STRING_:
+  * **-a**, **\--authValue**=_STRING_:
 
     The new UTF-8 password. Optional parameter. If it is neglected then the user
     is queried interactively for a password. To set no password, this option
     should be used with the empty string ("").
 
-  * **-i**, **\--data** _FILENAME_ or _-_ (for stdin):
+  * **-i**, **\--data**=_FILENAME_ or _-_ (for stdin):
 
     The data to be sealed by the TPM. Optional parameter.
 
@@ -60,7 +60,7 @@ These are the available options:
 
 ## Create a key with password "abc" and read sealing data from file.
 ```
-tss2_createseal --path HS/SRK/mySealKey --type "noDa" --authValue abc --data data.file
+tss2_createseal --path=HS/SRK/mySealKey --type="noDa" --authValue=abc --data=data.file
 ```
 
 # RETURNS

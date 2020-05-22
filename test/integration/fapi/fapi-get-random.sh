@@ -10,7 +10,7 @@ setup_fapi
 PATH=${BUILDDIR}/tools/fapi:$PATH
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -22,7 +22,7 @@ tss2_provision
 
 expect <<EOF
 # Try with wrong size value
-spawn tss2_getrandom --numBytes a --data $OUTPUT_FILE --force
+spawn tss2_getrandom --numBytes=a --data=$OUTPUT_FILE --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -32,7 +32,7 @@ EOF
 
 expect <<EOF
 # Try with missing output
-spawn tss2_getrandom --numBytes 20
+spawn tss2_getrandom --numBytes=20
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -42,7 +42,7 @@ EOF
 
 expect <<EOF
 # Try with missing numBytes
-spawn tss2_getrandom --data $OUTPUT_FILE --force
+spawn tss2_getrandom --data=$OUTPUT_FILE --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -50,8 +50,8 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
-tss2_getrandom --numBytes 4 --data $OUTPUT_FILE --force
+tss2_getrandom --numBytes=4 --data=$OUTPUT_FILE --force
 
-tss2_getrandom --numBytes 4 --hex --data $OUTPUT_FILE --force
+tss2_getrandom --numBytes=4 --hex --data=$OUTPUT_FILE --force
 
 exit 0

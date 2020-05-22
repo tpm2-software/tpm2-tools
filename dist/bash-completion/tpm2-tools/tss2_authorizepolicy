@@ -18,8 +18,8 @@ _tss2_authorizepolicy()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --policyPath -P
-      --keyPath -p --policyRef -r" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --policyPath= -P
+      --keyPath= -p --policyRef= -r" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_authorizepolicy tss2_authorizepolicy

@@ -18,24 +18,24 @@
 
 These are the available options:
 
-  * **-P**, **\--policyPath** _STRING_:
+  * **-P**, **\--policyPath**=_STRING_:
     Path of the new policy.
 
     A policyPath is composed of two elements, separated by "/". A policyPath
     starts with "/policy". The second path element identifies the policy
     or policy template using a meaningful name.
 
-  * **-p**, **\--keyPath** _STRING_:
+  * **-p**, **\--keyPath**=_STRING_:
     Path of the signing key.
 
-  * **-r**, **\--policyRef** _FILENAME_ or _-_ (for stdin):
+  * **-r**, **\--policyRef**=_FILENAME_ or _-_ (for stdin):
     A byte buffer to be included in the signature. Optional parameter.
 
 [common tss2 options](common/tss2-options.md)
 
 # EXAMPLE
 ```
-tss2_authorizepolicy --keyPath HS/SRK/myPolicySignKey --policyPath /policy/pcr-policy --policyRef policyRef.file
+tss2_authorizepolicy --keyPath=HS/SRK/myPolicySignKey --policyPath=/policy/pcr-policy --policyRef=policyRef.file
 ```
 
 # RETURNS

@@ -18,15 +18,15 @@
 
 These are the available options:
 
-  * **-d**, **\--digest** _FILENAME_ or _-_ (for stdin):
+  * **-d**, **\--digest**=_FILENAME_ or _-_ (for stdin):
 
     The data that was signed, already hashed.
 
-  * **-p**, **\--keyPath** _STRING_:
+  * **-p**, **\--keyPath**=_STRING_:
 
     Path to the verification public key.
 
-  * **-i**, **\--signature** _FILENAME_ or _-_ (for stdin):
+  * **-i**, **\--signature**=_FILENAME_ or _-_ (for stdin):
 
     The signature to be verified.
 
@@ -36,7 +36,7 @@ These are the available options:
 # EXAMPLE
 
 ```
-tss2_verifysignature --keyPath ext/myRSASign --digest digest.file --signature signature.file
+tss2_verifysignature --keyPath=ext/myRSASign --digest=digest.file --signature=signature.file
 ```
 
 # RETURNS

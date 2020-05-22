@@ -28,7 +28,7 @@ actions are taken:
 
 These are the available options:
 
-  * **-p**, **\--path** _STRING_:
+  * **-p**, **\--path**=_STRING_:
 
     The path to the entity to delete.
 
@@ -38,7 +38,7 @@ These are the available options:
 
 # Deletes storage hierarchy (HS) and everything below it:
 ```
-tss2_delete --path /HS
+tss2_delete --path=/HS
 ```
 
 # RETURNS

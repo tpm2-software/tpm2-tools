@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -23,24 +23,24 @@ tss2_provision
 
 echo 1234567890123456789 > $DATA_WRITE_FILE
 
-tss2_createnv --path $NV_PATH --type "noDa" --size 20 --authValue ""
+tss2_createnv --path=$NV_PATH --type="noDa" --size=20 --authValue=""
 
-tss2_nvwrite --nvPath $NV_PATH --data $DATA_WRITE_FILE
+tss2_nvwrite --nvPath=$NV_PATH --data=$DATA_WRITE_FILE
 
-tss2_nvread --nvPath $NV_PATH --data $DATA_READ_FILE --force
+tss2_nvread --nvPath=$NV_PATH --data=$DATA_READ_FILE --force
 
 if [ `cat $DATA_READ_FILE` !=  `cat $DATA_WRITE_FILE` ]; then
   echo "Test without password: Strings are not equal"
   exit 99
 fi
 
-tss2_delete --path $NV_PATH
+tss2_delete --path=$NV_PATH
 
-tss2_createnv --path $NV_PATH --type "noDa" --size 20 --authValue=$PW
+tss2_createnv --path=$NV_PATH --type="noDa" --size=20 --authValue=$PW
 
 expect <<EOF
 # Check if system asks for auth value and provide it
-spawn tss2_nvwrite --nvPath $NV_PATH --data $DATA_WRITE_FILE
+spawn tss2_nvwrite --nvPath=$NV_PATH --data=$DATA_WRITE_FILE
 expect {
     "Authorize object: " {
     } eof {
@@ -58,7 +58,7 @@ EOF
 
 expect <<EOF
 # Try with missing nvPath
-spawn tss2_nvread --data $DATA_READ_FILE --force
+spawn tss2_nvread --data=$DATA_READ_FILE --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -68,7 +68,7 @@ EOF
 
 expect <<EOF
 # Try with missing data
-spawn tss2_nvread --nvPath $NV_PATH  --force
+spawn tss2_nvread --nvPath=$NV_PATH  --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -78,7 +78,7 @@ EOF
 
 expect <<EOF
 # Try with multiple stdout (1)
-spawn tss2_nvread --nvPath $NV_PATH --data - --logData - --force
+spawn tss2_nvread --nvPath=$NV_PATH --data=- --logData=- --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -88,7 +88,7 @@ EOF
 
 expect <<EOF
 # Try with missing nvPath
-spawn tss2_nvwrite --data $DATA_WRITE_FILE
+spawn tss2_nvwrite --data=$DATA_WRITE_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -98,7 +98,7 @@ EOF
 
 expect <<EOF
 # Try with missing data
-spawn tss2_nvwrite --nvPath $NV_PATH
+spawn tss2_nvwrite --nvPath=$NV_PATH
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -106,11 +106,12 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
-tss2_delete --path $NV_PATH
+tss2_delete --path=$NV_PATH
 
+NODA="noDa"
 expect <<EOF
 # Try interactive prompt
-spawn tss2_createnv --path $NV_PATH --type "noDa" --size 20
+spawn tss2_createnv --path=$NV_PATH --type=$NODA --size=20
 expect "Authorize object Password: "
 send "$PW\r"
 expect "Authorize object Retype password: "
@@ -122,30 +123,28 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 0} {
 }
 EOF
 
-
-
 # Try with missing type
-tss2_delete --path $NV_PATH
-tss2_createnv --path $NV_PATH --size 20 --authValue=$PW
+tss2_delete --path=$NV_PATH
+tss2_createnv --path=$NV_PATH --size=20 --authValue=$PW
 
 # Try with size-0 supported types
-tss2_delete --path $NV_PATH
-tss2_createnv --path $NV_PATH --type "bitfield" --size 0 --authValue=$PW
-tss2_delete --path $NV_PATH
-tss2_createnv --path $NV_PATH --type "pcr" --size 0 --authValue=$PW
-tss2_delete --path $NV_PATH
-tss2_createnv --path $NV_PATH --type "counter" --size 0 --authValue=$PW
-tss2_delete --path $NV_PATH
-tss2_createnv --path $NV_PATH --type "bitfield" --authValue=$PW
-tss2_delete --path $NV_PATH
-tss2_createnv --path $NV_PATH --type "pcr" --authValue=$PW
-tss2_delete --path $NV_PATH
-tss2_createnv --path $NV_PATH --type "counter" --authValue=$PW
-tss2_delete --path $NV_PATH
+tss2_delete --path=$NV_PATH
+tss2_createnv --path=$NV_PATH --type="bitfield" --size=0 --authValue=$PW
+tss2_delete --path=$NV_PATH
+tss2_createnv --path=$NV_PATH --type="pcr" --size=0 --authValue=$PW
+tss2_delete --path=$NV_PATH
+tss2_createnv --path=$NV_PATH --type="counter" --size=0 --authValue=$PW
+tss2_delete --path=$NV_PATH
+tss2_createnv --path=$NV_PATH --type="bitfield" --authValue=$PW
+tss2_delete --path=$NV_PATH
+tss2_createnv --path=$NV_PATH --type="pcr" --authValue=$PW
+tss2_delete --path=$NV_PATH
+tss2_createnv --path=$NV_PATH --type="counter" --authValue=$PW
+tss2_delete --path=$NV_PATH
 
 expect <<EOF
 # Try with missing size and no type
-spawn tss2_createnv --path $NV_PATH --authValue=$PW
+spawn tss2_createnv --path=$NV_PATH --authValue=$PW
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -155,7 +154,7 @@ EOF
 
 expect <<EOF
 # Try with size=0 and no type
-spawn tss2_createnv --path $NV_PATH --size 0 --authValue=$PW
+spawn tss2_createnv --path=$NV_PATH --size=0 --authValue=$PW
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"

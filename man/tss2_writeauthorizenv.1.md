@@ -18,11 +18,11 @@
 
 These are the available options:
 
-  * **-p**, **\--nvPath** _STRING_:
+  * **-p**, **\--nvPath**=_STRING_:
 
     The path of the NV index.
 
-  * **-P**, **\--policyPath** _STRING_:
+  * **-P**, **\--policyPath**=_STRING_:
 
     The path of the new policy.
 
@@ -31,7 +31,7 @@ These are the available options:
 # EXAMPLE
 
 ```
-tss2_writeauthorizenv --nvPath /nv/Owner/myNV --policyPath /policy/pcr-policy
+tss2_writeauthorizenv --nvPath=/nv/Owner/myNV --policyPath=/policy/pcr-policy
 ```
 
 # RETURNS

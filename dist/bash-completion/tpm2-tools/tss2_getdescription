@@ -18,8 +18,8 @@ _tss2_getdescription()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version -f --force --path -p
-    --description -o " -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version -f --force --path= -p
+    --description= -o " -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_getdescription tss2_getdescription

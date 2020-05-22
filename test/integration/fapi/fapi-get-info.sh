@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -18,7 +18,7 @@ DATA_OUTPUT_FILE=$TEMP_DIR/output.file
 
 tss2_provision
 
-tss2_getinfo --info $DATA_OUTPUT_FILE --force
+tss2_getinfo --info=$DATA_OUTPUT_FILE --force
 
 if [ ! -s $DATA_OUTPUT_FILE ]
 then

@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -26,8 +26,8 @@ tss2_provision
 
 expect <<EOF
 # Try interactive prompt with different passwords
-spawn tss2_createseal --path $KEY_PATH --policyPath $POLICY_PCR --type "noDa" \
-    --data $SEALED_DATA_FILE
+spawn tss2_createseal --path=$KEY_PATH --policyPath=$POLICY_PCR --type="noDa" \
+    --data=$SEALED_DATA_FILE
 expect "Authorize object Password: "
 send "1\r"
 expect "Authorize object Retype password: "
@@ -42,7 +42,7 @@ EOF
 
 expect <<EOF
 # Try with missing path
-spawn tss2_createseal --type "noDa" --data $SEALED_DATA_FILE --authValue ""
+spawn tss2_createseal --type="noDa" --data=$SEALED_DATA_FILE --authValue=""
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -50,21 +50,21 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
-tss2_import --path $POLICY_PCR --importData $PCR_POLICY_DATA
+tss2_import --path=$POLICY_PCR --importData=$PCR_POLICY_DATA
 
-tss2_createseal --path $KEY_PATH --policyPath $POLICY_PCR --type "noDa" \
-    --data $SEALED_DATA_FILE --authValue ""
-tss2_unseal --path $KEY_PATH --data $UNSEALED_DATA_FILE --force
+tss2_createseal --path=$KEY_PATH --policyPath=$POLICY_PCR --type="noDa" \
+    --data=$SEALED_DATA_FILE --authValue=""
+tss2_unseal --path=$KEY_PATH --data=$UNSEALED_DATA_FILE --force
 
 if [ "`xxd $UNSEALED_DATA_FILE`" != "`xxd $SEALED_DATA_FILE`" ]; then
   echo "Seal/Unseal failed"
   exit 1
 fi
 
-tss2_delete --path $KEY_PATH
-printf "$SEAL_DATA" | tss2_createseal --path $KEY_PATH --policyPath $POLICY_PCR --type "noDa" \
-    --data - --authValue ""
-UNSEALED_DATA=$(tss2_unseal --path $KEY_PATH --data - | xxd)
+tss2_delete --path=$KEY_PATH
+printf "$SEAL_DATA" | tss2_createseal --path=$KEY_PATH --policyPath=$POLICY_PCR --type="noDa" \
+    --data=- --authValue=""
+UNSEALED_DATA=$(tss2_unseal --path=$KEY_PATH --data=- | xxd)
 
 V1=$(printf "$SEAL_DATA" | xxd)
 V2=$UNSEALED_DATA
@@ -76,7 +76,7 @@ fi
 
 expect <<EOF
 # Try with missing path
-spawn tss2_unseal --data $UNSEALED_DATA_FILE --force
+spawn tss2_unseal --data=$UNSEALED_DATA_FILE --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -85,11 +85,11 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 EOF
 
 # Unseal with password
-tss2_delete --path $KEY_PATH
-tss2_createseal --path $KEY_PATH --data $SEALED_DATA_FILE --authValue "abc"
+tss2_delete --path=$KEY_PATH
+tss2_createseal --path=$KEY_PATH --data=$SEALED_DATA_FILE --authValue="abc"
 printf "" > $UNSEALED_DATA_FILE
 expect <<EOF
-spawn tss2_unseal --path $KEY_PATH --data $UNSEALED_DATA_FILE --force
+spawn tss2_unseal --path=$KEY_PATH --data=$UNSEALED_DATA_FILE --force
 expect "Authorize object : "
 send "abc\r"
 set ret [wait]
@@ -109,10 +109,10 @@ fi
 
 
 # Try with missing type
-tss2_delete --path $KEY_PATH
-tss2_createseal --path $KEY_PATH --data $SEALED_DATA_FILE --authValue ""
+tss2_delete --path=$KEY_PATH
+tss2_createseal --path $KEY_PATH --data=$SEALED_DATA_FILE --authValue=""
 # Try with missing data
-tss2_unseal --path $KEY_PATH --force
+tss2_unseal --path=$KEY_PATH --force
 
 
 

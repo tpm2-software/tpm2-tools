@@ -22,11 +22,11 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-p**, **\--path** _STRING_:
+  * **-p**, **\--path**=_STRING_:
 
     Path of the object for which the appData will be loaded.
 
-  * **-o**, **\--appData** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--appData**=_FILENAME_ or _-_ (for stdout):
 
     Returns a copy of the stored data. Optional parameter.
 
@@ -34,7 +34,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_getappdata --path HS/SRK/myRSACrypt --appData appData.file
+tss2_getappdata --path=HS/SRK/myRSACrypt --appData=appData.file
 ```
 
 # RETURNS

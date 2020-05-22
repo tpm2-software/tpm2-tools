@@ -18,7 +18,7 @@ _tss2_pcrread()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version -o --pcrValue -x --pcrIndex --force -f -l --pcrLog" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version -o --pcrValue= -x --pcrIndex= --force -f -l --pcrLog=" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_pcrread tss2_pcrread

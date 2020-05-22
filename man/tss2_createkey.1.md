@@ -18,11 +18,11 @@
 
 These are the available options:
 
-  * **-p**, **\--path** _STRING_:
+  * **-p**, **\--path**=_STRING_:
 
     The path to the new key.
 
-  * **-t**, **\--type** _STRING_:
+  * **-t**, **\--type**=_STRING_:
 
     Identifies the intended usage. Optional parameter.
     Types may be any comma-separated combination of:
@@ -40,7 +40,7 @@ These are the available options:
         - A hexadecimal number (e.g. "0x81000001"): Marks a key object to be
           made persistent and sets the persistent object handle to this value.
 
-  * **-P**, **\--policyPath** _STRING_:
+  * **-P**, **\--policyPath**=_STRING_:
 
     The policy to be associated with the new key. Optional parameter. If omitted
     then no policy will be associated with the key.
@@ -49,7 +49,7 @@ These are the available options:
     starts with "/policy". The second path element identifies the policy
     or policy template using a meaningful name.
 
-  * **-a**, **\--authValue** _STRING_:
+  * **-a**, **\--authValue**=_STRING_:
 
     The new UTF-8 password. Optional parameter. If it is neglected then the user
     is queried interactively for a password. To set no password, this option
@@ -61,17 +61,17 @@ These are the available options:
 
 ## Create a key without password
 ```
-tss2_createkey --path HS/SRK/myRsaCryptKey --type "noDa, decrypt" --authValue ""
+tss2_createkey --path=HS/SRK/myRsaCryptKey --type="noDa, decrypt" --authValue=""
 ```
 
 ## Create a key, ask for password on the command line
 ```
-tss2_createkey --path HS/SRK/myRsaCryptKey --type "noDa, decrypt"
+tss2_createkey --path=HS/SRK/myRsaCryptKey --type="noDa, decrypt"
 ```
 
 ## Create a key with password "abc".
 ```
-tss2_createkey --path HS/SRK/myRsaCryptKey --type "noDa, decrypt" --authValue abc
+tss2_createkey --path=HS/SRK/myRsaCryptKey --type="noDa, decrypt" --authValue=abc
 ```
 
 # RETURNS

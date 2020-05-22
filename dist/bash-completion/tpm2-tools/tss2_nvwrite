@@ -18,7 +18,7 @@ _tss2_nvwrite()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --nvPath -p --data  -i" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --nvPath= -p --data= -i" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_nvwrite tss2_nvwrite

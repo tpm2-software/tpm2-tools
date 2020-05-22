@@ -14,7 +14,7 @@ _tss2_delete()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version -p --path" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version -p --path=" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_delete tss2_delete

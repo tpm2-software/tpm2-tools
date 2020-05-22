@@ -18,11 +18,11 @@
 
 These are the availabe options:
 
-  * **-i**, **\--bitmap** _BITS_:
+  * **-i**, **\--bitmap**=_BITS_:
 
     A mask indicating which bits to set in the NV space.
 
-  * **-p**, **\--nvPath** _STRING_:
+  * **-p**, **\--nvPath**=_STRING_:
 
     Identifies the NV space to write.
 
@@ -30,7 +30,7 @@ These are the availabe options:
 
 # EXAMPLE
 ```
-tss2_nvsetbits --nvPath /nv/Owner/NvBitmap --bitmap 0x0102030405060608
+tss2_nvsetbits --nvPath=/nv/Owner/NvBitmap --bitmap=0x0102030405060608
 ```
 
 # RETURNS

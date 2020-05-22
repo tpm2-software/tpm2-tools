@@ -18,13 +18,13 @@
 
 These are the available options:
 
-  * **-i**, **\--description** _STRING_:
+  * **-i**, **\--description**=_STRING_:
 
     The data to be stored as description for the object. Optional parameter.
     Previously stored descriptions are overwritten by this function. If omitted
     any stored description is deleted.
 
-  * **-p**, **\--path** _STRING_:
+  * **-p**, **\--path**=_STRING_:
 
     The path of the object for which the description will be stored.
 
@@ -34,7 +34,7 @@ These are the available options:
 # EXAMPLE
 
 ```
-tss2_setdescription --path HS/SRK --description description
+tss2_setdescription --path=HS/SRK --description=description
 ```
 
 # RETURNS

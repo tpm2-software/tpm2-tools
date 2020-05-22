@@ -17,7 +17,7 @@
 
 These are the available options:
 
-  * **-n**, **\--numBytes** _INTEGER_:
+  * **-n**, **\--numBytes**=_INTEGER_:
 
     The number of bytes requested by the caller.
 
@@ -25,7 +25,7 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-o**, **\--data** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--data**=_FILENAME_ or _-_ (for stdout):
 
     The returned random bytes.
 
@@ -37,7 +37,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-    tss2_getrandom --numBytes 20 -data - | hexdump -C
+    tss2_getrandom --numBytes=20 -data=- | hexdump -C
 ```
 
 # RETURNS

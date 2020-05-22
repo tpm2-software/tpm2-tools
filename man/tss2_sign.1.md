@@ -18,20 +18,20 @@
 
 These are the available options:
 
-  * **-p**, **\--keyPath** _STRING_:
+  * **-p**, **\--keyPath**=_STRING_:
 
     The path to the signing key.
 
-  * **-s**, **\--padding** _STRING_:
+  * **-s**, **\--padding**=_STRING_:
 
     The padding scheme used. Possible values are "RSA_SSA", "RSA_PSS" (case insensitive). Optional parameter.
     If omitted, the default padding specified in the crypto profile is used.
 
-  * **-c**, **\--certificate** _FILENAME_ or _-_ (for stdout):
+  * **-c**, **\--certificate**=_FILENAME_ or _-_ (for stdout):
 
     The certificate associated with keyPath in PEM format. Optional parameter.
 
-  * **-d**, **\--digest** _FILENAME_ or _-_ (for stdin):
+  * **-d**, **\--digest**=_FILENAME_ or _-_ (for stdin):
 
     The data to be signed, already hashed.
 
@@ -39,11 +39,11 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-k**, **\--publicKey** _FILENAME_ or _-_ (for stdout):
+  * **-k**, **\--publicKey**=_FILENAME_ or _-_ (for stdout):
 
     The public key associated with keyPath in PEM format. Optional parameter.
 
-  * **-o**, **\--signature** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--signature**=_FILENAME_ or _-_ (for stdout):
 
     Returns the signature in binary form.
 
@@ -52,7 +52,7 @@ These are the available options:
 # EXAMPLE
 
 ```
-tss2_sign --keyPath HS/SRK/myRSASign --padding "RSA_PSS" --digest digest.file --signature signature.file --publicKey publicKey.file
+tss2_sign --keyPath=HS/SRK/myRSASign --padding="RSA_PSS" --digest=digest.file --signature=signature.file --publicKey=publicKey.file
 ```
 
 # RETURNS

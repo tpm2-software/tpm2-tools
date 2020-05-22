@@ -22,12 +22,12 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-p**, **\--searchPath** _STRING_:
+  * **-p**, **\--searchPath**=_STRING_:
 
     The path identifying the root of the search. Optional parameter. If omitted,
     all entities will be searched.
 
-  * **-o**, **\--pathList** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--pathList**=_FILENAME_ or _-_ (for stdout):
 
     Returns the colon-separated list of paths. Optional parameter. If omitted,
     results will be printed to _STDOUT_.
@@ -42,7 +42,7 @@ tss2_list
 ```
 ## List all entities under the HS path and print results to file
 ```
-tss2_list --searchPath HS --pathList output.file
+tss2_list --searchPath=HS --pathList=output.file
 ```
 
 # RETURNS

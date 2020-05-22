@@ -18,7 +18,7 @@ _tss2_sign()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --certificate -c --digest -d --keyPath -p --publicKey -k --signature -o --padding -s" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --certificate= -c --digest= -d --keyPath= -p --publicKey= -k --signature= -o --padding= -s" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_sign tss2_sign
