@@ -18,7 +18,7 @@ _tss2_exportkey()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --exportedData -o --force -f --pathOfKeyToDuplicate -p --pathToPublicKeyOfNewParent -e" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --exportedData= -o --force -f --pathOfKeyToDuplicate= -p --pathToPublicKeyOfNewParent= -e" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_exportkey tss2_exportkey

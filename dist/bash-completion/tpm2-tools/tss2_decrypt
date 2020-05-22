@@ -18,7 +18,7 @@ _tss2_decrypt()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f -i --cipherText --plainText -o --keyPath -p" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f -i --cipherText= --plainText= -o --keyPath= -p" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_decrypt tss2_decrypt

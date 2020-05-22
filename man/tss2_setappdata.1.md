@@ -18,11 +18,11 @@
 
 These are the available options:
 
-  * **-p**, **\--path** _STRING_:
+  * **-p**, **\--path**=_STRING_:
 
     Path of the object for which the appData will be stored.
 
-  * **-i**, **\--appData** _FILENAME_ or _-_ (for stdin):
+  * **-i**, **\--appData**=_FILENAME_ or _-_ (for stdin):
 
     The data to be stored. Optional parameter. If omitted, stored data is deleted.
 
@@ -31,7 +31,7 @@ These are the available options:
 # EXAMPLE
 
 ```
-tss2_setappdata --path HS/SRK/myRSACrypt --appData appData.file
+tss2_setappdata --path=HS/SRK/myRSACrypt --appData=appData.file
 ```
 
 # RETURNS

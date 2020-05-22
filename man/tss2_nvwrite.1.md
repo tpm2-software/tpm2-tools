@@ -18,11 +18,11 @@
 
 These are the available options:
 
-  * **-i**, **\--data** _FILENAME_ or _-_ (for stdin):
+  * **-i**, **\--data**=_FILENAME_ or _-_ (for stdin):
 
     The data to write to the NV space.
 
-  * **-p**, **\--nvPath** _STRING_:
+  * **-p**, **\--nvPath**=_STRING_:
 
     Identifies the NV space to write to.
 
@@ -30,7 +30,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_nvwrite --nvPath /nv/Owner/myNV --data data.file
+tss2_nvwrite --nvPath=/nv/Owner/myNV --data=data.file
 ```
 
 # RETURNS

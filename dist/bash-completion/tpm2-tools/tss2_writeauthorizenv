@@ -14,7 +14,7 @@ _tss2_writeauthorizenv()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --nvPath -p -policyPath -P" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --nvPath= -p -policyPath= -P" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_writeauthorizenv tss2_writeauthorizenv

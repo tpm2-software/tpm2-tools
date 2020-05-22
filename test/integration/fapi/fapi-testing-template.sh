@@ -10,7 +10,7 @@ setup_fapi
 function cleanup {
     # If this test is successful, no keys are created. Thus, command below will
     # always fail
-    tss2_delete --path / || true
+    tss2_delete --path=/ || true
     shut_down
 }
 

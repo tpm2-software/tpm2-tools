@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -22,12 +22,12 @@ echo -n "abcdef" > $APP_DATA_SET
 
 tss2_provision
 
-tss2_createkey --path $KEY_PATH --type "noDa, restricted, decrypt" \
-    --authValue ""
+tss2_createkey --path=$KEY_PATH --type="noDa, restricted, decrypt" \
+    --authValue=""
 
-tss2_setappdata --path $KEY_PATH --appData $APP_DATA_SET
+tss2_setappdata --path=$KEY_PATH --appData=$APP_DATA_SET
 
-tss2_getappdata --path $KEY_PATH --appData $APP_DATA_FILE --force
+tss2_getappdata --path=$KEY_PATH --appData=$APP_DATA_FILE --force
 
 if [ "$(< $APP_DATA_FILE)" !=  "$(< $APP_DATA_SET)" ]; then
   echo "Files are not equal"
@@ -53,7 +53,7 @@ fi
 
 expect <<EOF
 # Try with missing path
-spawn tss2_getappdata --appData $APP_DATA_FILE
+spawn tss2_getappdata --appData=$APP_DATA_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -62,6 +62,6 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 EOF
 
 # Try with missing appData
-tss2_getappdata --path $KEY_PATH
+tss2_getappdata --path=$KEY_PATH
 
 exit 0

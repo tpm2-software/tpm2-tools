@@ -18,7 +18,7 @@
 
 These are the availabe options:
 
-  * **-p**, **\--nvPath** _STRING_:
+  * **-p**, **\--nvPath**=_STRING_:
 
     Identifies the NV space to increment.
 
@@ -26,7 +26,7 @@ These are the availabe options:
 
 # EXAMPLE
 ```
-tss2_nvincrement --nvPath /nv/Owner/myNVcounter
+tss2_nvincrement --nvPath=/nv/Owner/myNVcounter
 ```
 
 # RETURNS

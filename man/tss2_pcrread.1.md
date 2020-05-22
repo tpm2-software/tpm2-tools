@@ -18,11 +18,11 @@
 
 These are the available options:
 
-  * **-o**, **\--pcrValue** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--pcrValue**=_FILENAME_ or _-_ (for stdout):
 
     Returns PCR digest. Optional parameter.
 
-  * **-x**, **\--pcrIndex** _INTEGER_:
+  * **-x**, **\--pcrIndex**=_INTEGER_:
 
     Identifies the PCR to read.
 
@@ -30,7 +30,7 @@ These are the available options:
 
     Force overwriting the output files.
 
-  * **-l**, **\--pcrLog** _FILENAME_ or _-_ (for stdout):
+  * **-l**, **\--pcrLog**=_FILENAME_ or _-_ (for stdout):
 
     Returns the PCR log for that PCR. Optional parameter.
 
@@ -48,7 +48,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_pcrread --pcrIndex 16 --pcrValue pcrValue.file --pcrLog pcrLog.file
+tss2_pcrread --pcrIndex=16 --pcrValue=pcrValue.file --pcrLog=pcrLog.file
 ```
 
 # RETURNS

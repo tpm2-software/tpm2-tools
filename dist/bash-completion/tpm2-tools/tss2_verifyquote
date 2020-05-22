@@ -18,7 +18,7 @@ _tss2_verifyquote()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --qualifyingData -Q --pcrLog -l --quoteInfo -q --publicKeyPath -k --signature -i" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --qualifyingData= -Q --pcrLog= -l --quoteInfo= -q --publicKeyPath= -k --signature= -i" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_verifyquote tss2_verifyquote

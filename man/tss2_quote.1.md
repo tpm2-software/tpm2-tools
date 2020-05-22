@@ -18,15 +18,15 @@
 
 These are the available options:
 
-  * **-x**, **\--pcrList** _STRING_:
+  * **-x**, **\--pcrList**=_STRING_:
 
     An array holding the PCR indices to quote against.
 
-  * **-Q**, **\--qualifyingData** _FILENAME_ or _-_ (for stdin):
+  * **-Q**, **\--qualifyingData**=_FILENAME_ or _-_ (for stdin):
 
     A nonce provided by the caller to ensure freshness of the signature. Optional parameter.
 
-  * **-l**, **\--pcrLog** _FILENAME_ or _-_ (for stdout):
+  * **-l**, **\--pcrLog**=_FILENAME_ or _-_ (for stdout):
 
     Returns the PCR log for the chosen PCR. Optional parameter.
 
@@ -44,19 +44,19 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-p**, **\--keyPath** _STRING_:
+  * **-p**, **\--keyPath**=_STRING_:
 
     Identifies the signing key.
 
-  * **-q**, **\--quoteInfo** _FILENAME_ or _-_ (for stdout):
+  * **-q**, **\--quoteInfo**=_FILENAME_ or _-_ (for stdout):
 
     Returns a JSON-encoded structure holding the inputs to the quote operation. This includes the digest value and PCR values.
 
-  * **-o**, **\--signature** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--signature**=_FILENAME_ or _-_ (for stdout):
 
     Returns the signature over the quoted material.
 
-  * **-c**, **\--certificate** _FILENAME_ or _-_ (for stdout):
+  * **-c**, **\--certificate**=_FILENAME_ or _-_ (for stdout):
 
     The certificate associated with keyPath in PEM format. Optional parameter.
 
@@ -64,7 +64,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_quote --keyPath HS/SRK/quotekey --pcrList "10,16" --qualifyingData qualifyingData.file --signature signature.file --pcrLog pcrLog.file --certificate certificate.file --quoteInfo quoteInfo.info
+tss2_quote --keyPath=HS/SRK/quotekey --pcrList="10,16" --qualifyingData=qualifyingData.file --signature=signature.file --pcrLog=pcrLog.file --certificate=certificate.file --quoteInfo=quoteInfo.info
 ```
 
 # RETURNS

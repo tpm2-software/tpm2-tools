@@ -19,7 +19,7 @@ exported data will contain the re-wrapped key pointed to by the pathOfKeyToDupli
 
 These are the available options:
 
-  * **-e** **\--pathToPublicKeyOfNewParent** _STRING_:
+  * **-e** **\--pathToPublicKeyOfNewParent**=_STRING_:
 
     The path to the public key of the new parent. This key MAY be in the public key hierarchy /ext.
     Optional parameter. If omitted only the public key will exported.
@@ -28,11 +28,11 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-o**, **\--exportedData** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--exportedData**=_FILENAME_ or _-_ (for stdout):
 
     Returns the exported subtree.
 
-  * **-p**, **\--pathOfKeyToDuplicate** _STRING_:
+  * **-p**, **\--pathOfKeyToDuplicate**=_STRING_:
 
     The path to the root of the subtree to export.
 
@@ -40,7 +40,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_exportkey --pathOfKeyToDuplicate HS/SRK/myRSADecrypt --exportedData exportedData.file
+tss2_exportkey --pathOfKeyToDuplicate=HS/SRK/myRSADecrypt --exportedData=exportedData.file
 ```
 
 # RETURNS

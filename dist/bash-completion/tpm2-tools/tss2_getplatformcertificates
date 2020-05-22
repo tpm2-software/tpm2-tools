@@ -16,7 +16,7 @@ _tss2_getplatformcertificates()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --certificates -o" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --certificates= -o" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_getplatformcertificates tss2_getplatformcertificates

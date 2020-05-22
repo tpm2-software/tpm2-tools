@@ -18,7 +18,7 @@ _tss2_gettpmblobs()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --path -p --tpm2bPublic -u --tpm2bPrivate -r --policy -l" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --path= -p --tpm2bPublic= -u --tpm2bPrivate= -r --policy= -l" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_gettpmblobs tss2_gettpmblobs

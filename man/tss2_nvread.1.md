@@ -22,15 +22,15 @@ These are the availabe options:
 
     Force overwriting the output file.
 
-  * **-o**, **\--data** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--data**=_FILENAME_ or _-_ (for stdout):
 
     Returns the value read from the NV space.
 
-  * **-p**, **\--nvPath** _STRING_:
+  * **-p**, **\--nvPath**=_STRING_:
 
     Identifies the NV space to read.
 
-  * **-l**, **\--logData** _FILENAME_ or _-_ (for stdout):
+  * **-l**, **\--logData**=_FILENAME_ or _-_ (for stdout):
 
     Returns the JSON encoded log, if the NV index is of type "extend" and an empty string otherwise. Optional parameter.
 
@@ -38,7 +38,7 @@ These are the availabe options:
 
 # EXAMPLE
 ```
-tss2_nvread --nvPath /nv/Owner/myNV --data data.file
+tss2_nvread --nvPath=/nv/Owner/myNV --data=data.file
 ```
 
 # RETURNS

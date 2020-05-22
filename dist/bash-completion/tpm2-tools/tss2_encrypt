@@ -18,8 +18,8 @@ _tss2_encrypt()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version -f --force -o --cipherText
-    -p --keyPath -i --plainText" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version -f --force -o --cipherText=
+    -p --keyPath= -i --plainText=" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_encrypt tss2_encrypt

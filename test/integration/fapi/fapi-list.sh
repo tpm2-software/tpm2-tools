@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -18,7 +18,7 @@ KEY_PATH=HS/SRK/myRSASign
 
 tss2_provision
 
-tss2_createkey --path $KEY_PATH --type "noDa, sign" --authValue ""
+tss2_createkey --path=$KEY_PATH --type="noDa, sign" --authValue=""
 
 tss2_list
 

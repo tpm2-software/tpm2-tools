@@ -16,7 +16,7 @@ _tss2_getinfo()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --info -o" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --info= -o" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_getinfo tss2_getinfo

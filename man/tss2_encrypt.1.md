@@ -19,7 +19,7 @@ using the TPM encryption schemes as specified in the crypto profile.
 
 These are the available options:
 
-  * **-p**, **\--keyPath** _STRING_:
+  * **-p**, **\--keyPath**=_STRING_:
 
     Identifies the encryption key.
 
@@ -27,11 +27,11 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-i**, **\--plainText** _FILENAME_ or _-_ (for stdin):
+  * **-i**, **\--plainText**=_FILENAME_ or _-_ (for stdin):
 
     The data to be encrypted.
 
-  * **-o**, **\--cipherText** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--cipherText**=_FILENAME_ or _-_ (for stdout):
 
     Returns the JSON-encoded ciphertext.
 
@@ -39,7 +39,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-  tss2_encrypt --keyPath HS/SRK/myRSACrypt --plainText plainText.file --cipherText cipherText.file
+  tss2_encrypt --keyPath=HS/SRK/myRSACrypt --plainText=plainText.file --cipherText=cipherText.file
 ```
 
 # RETURNS

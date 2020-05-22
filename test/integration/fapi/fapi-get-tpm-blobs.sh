@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -23,18 +23,18 @@ POLICY_PCR=policy/pcr-policy
 
 tss2_provision
 
-tss2_import --path $POLICY_PCR --importData $PCR_POLICY_DATA
+tss2_import --path=$POLICY_PCR --importData=$PCR_POLICY_DATA
 
-tss2_createkey --path $KEY_PATH --policyPath $POLICY_PCR --type "noDa, sign" \
-    --authValue ""
+tss2_createkey --path=$KEY_PATH --policyPath=$POLICY_PCR --type="noDa, sign" \
+    --authValue=""
 
-tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic $PUBLIC_KEY_FILE \
-    --tpm2bPrivate $PRIVATE_KEY_FILE --policy $POLICY_FILE --force
+tss2_gettpmblobs --path=$KEY_PATH --tpm2bPublic=$PUBLIC_KEY_FILE \
+    --tpm2bPrivate=$PRIVATE_KEY_FILE --policy=$POLICY_FILE --force
 
 expect <<EOF
 # Try with missing path
-spawn tss2_gettpmblobs --tpm2bPublic $PUBLIC_KEY_FILE \
-    --tpm2bPrivate $PRIVATE_KEY_FILE --policy $POLICY_FILE
+spawn tss2_gettpmblobs --tpm2bPublic=$PUBLIC_KEY_FILE \
+    --tpm2bPrivate=$PRIVATE_KEY_FILE --policy=$POLICY_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -44,8 +44,8 @@ EOF
 
 expect <<EOF
 # Try with missing tpm2bPublic
-spawn tss2_gettpmblobs --path $KEY_PATH \
-    --tpm2bPrivate $PRIVATE_KEY_FILE --policy $POLICY_FILE
+spawn tss2_gettpmblobs --path=$KEY_PATH \
+    --tpm2bPrivate=$PRIVATE_KEY_FILE --policy=$POLICY_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -55,8 +55,8 @@ EOF
 
 expect <<EOF
 # Try with missing tpm2bPrivate
-spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic $PUBLIC_KEY_FILE \
-    --policy $POLICY_FILE
+spawn tss2_gettpmblobs --path=$KEY_PATH --tpm2bPublic=$PUBLIC_KEY_FILE \
+    --policy=$POLICY_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -66,8 +66,8 @@ EOF
 
 expect <<EOF
 # Try with missing policy
-spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic $PUBLIC_KEY_FILE \
-    --tpm2bPrivate $PRIVATE_KEY_FILE
+spawn tss2_gettpmblobs --path=$KEY_PATH --tpm2bPublic=$PUBLIC_KEY_FILE \
+    --tpm2bPrivate=$PRIVATE_KEY_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -77,8 +77,8 @@ EOF
 
 expect <<EOF
 # Try with existing directory PUBLIC_KEY_FILE
-spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic $PUBLIC_KEY_FILE \
-    --tpm2bPrivate $PRIVATE_KEY_FILE --policy $POLICY_FILE
+spawn tss2_gettpmblobs --path=$KEY_PATH --tpm2bPublic=$PUBLIC_KEY_FILE \
+    --tpm2bPrivate=$PRIVATE_KEY_FILE --policy=$POLICY_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -88,8 +88,8 @@ EOF
 
 expect <<EOF
 # Try with multiple stdout (1)
-spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic - \
-    --tpm2bPrivate - --policy $POLICY_FILE --force
+spawn tss2_gettpmblobs --path=$KEY_PATH --tpm2bPublic=- \
+    --tpm2bPrivate=- --policy=$POLICY_FILE --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -99,8 +99,8 @@ EOF
 
 expect <<EOF
 # Try with multiple stdout (2)
-spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic $PUBLIC_KEY_FILE \
-    --tpm2bPrivate - --policy - --force
+spawn tss2_gettpmblobs --path=$KEY_PATH --tpm2bPublic=$PUBLIC_KEY_FILE \
+    --tpm2bPrivate=- --policy=- --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -110,8 +110,8 @@ EOF
 
 expect <<EOF
 # Try with multiple stdout (3)
-spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic - \
-    --tpm2bPrivate $PRIVATE_KEY_FILE --policy - --force
+spawn tss2_gettpmblobs --path=$KEY_PATH --tpm2bPublic=- \
+    --tpm2bPrivate=$PRIVATE_KEY_FILE --policy=- --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -121,8 +121,8 @@ EOF
 
 expect <<EOF
 # Try with multiple stdout (4)
-spawn tss2_gettpmblobs --path $KEY_PATH --tpm2bPublic - \
-    --tpm2bPrivate - --policy - --force
+spawn tss2_gettpmblobs --path=$KEY_PATH --tpm2bPublic=- \
+    --tpm2bPrivate=- --policy=- --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"

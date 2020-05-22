@@ -14,7 +14,7 @@ _tss2_nvsetbits()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version -i --bitmap -p --nvPath" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version -i --bitmap= -p --nvPath=" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_nvsetbits tss2_nvsetbits

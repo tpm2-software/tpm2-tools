@@ -14,7 +14,7 @@ _tss2_setdescription()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --path -p --description -i " -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --path= -p --description= -i " -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_setdescription tss2_setdescription

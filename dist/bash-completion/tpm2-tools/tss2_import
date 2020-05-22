@@ -18,7 +18,7 @@ _tss2_import()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --importData -i --path -p" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --importData= -i --path= -p" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_import tss2_import

@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -21,18 +21,18 @@ POLICY_PCR=policy/pcr-policy
 
 tss2_provision
 
-tss2_import --path $POLICY_PCR --importData $PCR_POLICY_DATA
+tss2_import --path=$POLICY_PCR --importData=$PCR_POLICY_DATA
 
-tss2_createnv --path $NV_PATH --policyPath=$POLICY_PCR --type "counter, noDa" \
-    --size 0 --authValue ""
+tss2_createnv --path=$NV_PATH --policyPath=$POLICY_PCR --type="counter, noDa" \
+    --size=0 --authValue=""
 
-tss2_nvincrement --nvPath $NV_PATH
+tss2_nvincrement --nvPath=$NV_PATH
 
-tss2_nvread --nvPath $NV_PATH --data $NV_COUNTER_READ_FILE --force
+tss2_nvread --nvPath=$NV_PATH --data=$NV_COUNTER_READ_FILE --force
 
-tss2_nvincrement --nvPath $NV_PATH
+tss2_nvincrement --nvPath=$NV_PATH
 
-tss2_nvread --nvPath $NV_PATH --data $NV_COUNTER_READ_FILE --force
+tss2_nvread --nvPath=$NV_PATH --data=$NV_COUNTER_READ_FILE --force
 
 expect <<EOF
 # Try with missing nvPath

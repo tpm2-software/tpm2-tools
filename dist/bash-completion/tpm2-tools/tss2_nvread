@@ -18,7 +18,7 @@ _tss2_nvread()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --nvPath -p --data -o --logData -l" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --nvPath= -p --data= -o --logData= -l" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_nvread tss2_nvread

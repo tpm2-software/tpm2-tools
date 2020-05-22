@@ -19,15 +19,15 @@
 
 These are the available options:
 
-  * **-i**, **\--data** _FILENAME_ or _-_ (for stdin):
+  * **-i**, **\--data**=_FILENAME_ or _-_ (for stdin):
 
     The data to be extended into the NV space.
 
-  * **-p**, **\--nvPath** _STRING_:
+  * **-p**, **\--nvPath**=_STRING_:
 
     Identifies the NV space to write.
 
-  * **-l**, **\--logData** _FILENAME_ or _-_ (for stdin):
+  * **-l**, **\--logData**=_FILENAME_ or _-_ (for stdin):
 
     A JSON representation of data to be written to the PCR's event log. Optional parameter.
 
@@ -35,7 +35,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_nvextend --nvPath /nv/Owner/NvExtend --data data.file --logData logData.file
+tss2_nvextend --nvPath=/nv/Owner/NvExtend --data=data.file --logData=logData.file
 ```
 
 # RETURNS

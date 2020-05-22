@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -23,26 +23,26 @@ PUB_KEY_DIR="ext"
 
 tss2_provision
 echo -n "01234567890123456789" > $DIGEST_FILE
-tss2_createkey --path $KEY_PATH --type "noDa, sign" --authValue ""
-echo -n `cat $DIGEST_FILE` | tss2_sign --digest - --keyPath $KEY_PATH \
-    --padding "RSA_PSS" --signature $SIGNATURE_FILE --publicKey $PUBLIC_KEY_FILE
+tss2_createkey --path=$KEY_PATH --type="noDa, sign" --authValue=""
+echo -n `cat $DIGEST_FILE` | tss2_sign --digest=- --keyPath=$KEY_PATH \
+    --padding="RSA_PSS" --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
 
-tss2_import --path $IMPORTED_KEY_NAME --importData $PUBLIC_KEY_FILE
-tss2_verifysignature --keyPath $PUB_KEY_DIR/$IMPORTED_KEY_NAME \
-    --digest $DIGEST_FILE --signature $SIGNATURE_FILE
+tss2_import --path=$IMPORTED_KEY_NAME --importData=$PUBLIC_KEY_FILE
+tss2_verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
+    --digest=$DIGEST_FILE --signature=$SIGNATURE_FILE
 
 # Try without certificate
-tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
-    --signature $SIGNATURE_FILE --publicKey $PUBLIC_KEY_FILE --force
+tss2_sign --keyPath=$KEY_PATH --padding="RSA_PSS" --digest=$DIGEST_FILE \
+    --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE --force
 
 # Try without public key
-tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
-    --signature $SIGNATURE_FILE --force
+tss2_sign --keyPath=$KEY_PATH --padding="RSA_PSS" --digest=$DIGEST_FILE \
+    --signature=$SIGNATURE_FILE --force
 
 expect <<EOF
 # Try with missing keyPath
-spawn tss2_sign --padding "RSA_PSS" --digest $DIGEST_FILE \
-    --signature $SIGNATURE_FILE --publicKey $PUBLIC_KEY_FILE
+spawn tss2_sign --padding="RSA_PSS" --digest=$DIGEST_FILE \
+    --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -52,8 +52,8 @@ EOF
 
 expect <<EOF
 # Try with missing digest
-spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" \
-    --signature $SIGNATURE_FILE --publicKey $PUBLIC_KEY_FILE
+spawn tss2_sign --keyPath=$KEY_PATH --padding="RSA_PSS" \
+    --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -63,8 +63,8 @@ EOF
 
 expect <<EOF
 # Try with missing signature
-spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
-    --publicKey $PUBLIC_KEY_FILE
+spawn tss2_sign --keyPath=$KEY_PATH --padding="RSA_PSS" --digest=$DIGEST_FILE \
+    --publicKey=$PUBLIC_KEY_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -74,8 +74,8 @@ EOF
 
 expect <<EOF
 # Try with multiple stdins with publicKey and with certificate
-spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
-    --signature - --publicKey - --certificate -
+spawn tss2_sign --keyPath=$KEY_PATH --padding="RSA_PSS" --digest=$DIGEST_FILE \
+    --signature=- --publicKey=- --certificate -
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -85,8 +85,8 @@ EOF
 
 expect <<EOF
 # Try with multiple stdins without publicKey and with certificate
-spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest $DIGEST_FILE \
-    --signature - --certificate -
+spawn tss2_sign --keyPath=$KEY_PATH --padding="RSA_PSS" --digest=$DIGEST_FILE \
+    --signature=- --certificate=-
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -96,8 +96,8 @@ EOF
 
 expect <<EOF
 # Try with missing digest file
-spawn tss2_sign --keyPath $KEY_PATH --padding "RSA_PSS" --digest abc \
-    --signature $SIGNATURE_FILE --publicKey $PUBLIC_KEY_FILE
+spawn tss2_sign --keyPath=$KEY_PATH --padding="RSA_PSS" --digest=abc \
+    --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -108,7 +108,7 @@ EOF
 expect <<EOF
 # Try with missing keyPath
 spawn tss2_verifysignature \
-    --digest $DIGEST_FILE --signature $SIGNATURE_FILE
+    --digest=$DIGEST_FILE --signature=$SIGNATURE_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -118,8 +118,8 @@ EOF
 
 expect <<EOF
 # Try with missing digest
-spawn tss2_verifysignature --keyPath $PUB_KEY_DIR/$IMPORTED_KEY_NAME \
-    --signature $SIGNATURE_FILE
+spawn tss2_verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
+    --signature=$SIGNATURE_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -129,8 +129,8 @@ EOF
 
 expect <<EOF
 # Try with missing signature
-spawn tss2_verifysignature --keyPath $PUB_KEY_DIR/$IMPORTED_KEY_NAME \
-    --digest $DIGEST_FILE
+spawn tss2_verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
+    --digest=$DIGEST_FILE
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -140,8 +140,8 @@ EOF
 
 expect <<EOF
 # Try with multiple stdins
-spawn tss2_verifysignature --keyPath $PUB_KEY_DIR/$IMPORTED_KEY_NAME \
-    --digest - --signature -
+spawn tss2_verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
+    --digest=- --signature=-
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"

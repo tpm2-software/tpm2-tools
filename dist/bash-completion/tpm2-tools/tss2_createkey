@@ -14,8 +14,8 @@ _tss2_createkey()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version -p --path  -t --type
-    -P --policyPath  -a --authValue" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version -p --path=  -t --type=
+    -P --policyPath=  -a --authValue=" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_createkey tss2_createkey

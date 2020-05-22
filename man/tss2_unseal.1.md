@@ -22,11 +22,11 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-p**, **\--path** _STRING_:
+  * **-p**, **\--path**=_STRING_:
 
     Path of the object for which the blobs will be returned.
 
-  * **-o**, **\--data** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--data**=_FILENAME_ or _-_ (for stdout):
 
     The decrypted data after unsealing. Optional parameter.
 
@@ -35,7 +35,7 @@ These are the available options:
 # EXAMPLE
 
 ```
-tss2_unseal --path HS/SRK/myRSACrypt --data data.file
+tss2_unseal --path=HS/SRK/myRSACrypt --data=data.file
 ```
 
 # RETURNS

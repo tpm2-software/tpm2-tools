@@ -14,8 +14,8 @@ _tss2_changeauth()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version -a --authValue
-    -p --entityPath" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version -a --authValue=
+    -p --entityPath=" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_changeauth tss2_changeauth

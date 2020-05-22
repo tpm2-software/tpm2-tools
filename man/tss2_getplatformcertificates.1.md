@@ -22,7 +22,7 @@ These are the available options:
 
     Force overwriting the output file.
 
-  * **-o**, **\--certificates** _FILENAME_ or _-_ (for stdout):
+  * **-o**, **\--certificates**=_FILENAME_ or _-_ (for stdout):
 
     Returns a continuous buffer containing the concatenated platform certificates.
 
@@ -30,7 +30,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-tss2_getplatformcertificates --certificates certificates.file
+tss2_getplatformcertificates --certificates=certificates.file
 ```
 
 # RETURNS

@@ -10,7 +10,7 @@ setup_fapi
 PATH=${BUILDDIR}/tools/fapi:$PATH
 
 function cleanup {
-    tss2_delete --path /
+    tss2_delete --path=/
     shut_down
 }
 
@@ -32,7 +32,7 @@ EOF
 
 expect <<EOF
 # Try normal command; should fail since no certificates present
-spawn tss2_getplatformcertificates --certificates $CERTIFICATES_OUTPUT_FILE \
+spawn tss2_getplatformcertificates --certificates=$CERTIFICATES_OUTPUT_FILE \
     --force
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {

@@ -14,7 +14,7 @@ _tss2_nvincrement()
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --nvPath -p" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --nvPath= -p" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_nvincrement tss2_nvincrement
