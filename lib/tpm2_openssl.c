@@ -123,10 +123,6 @@ int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s) {
 
 #endif
 
-static inline const char *get_openssl_err(void) {
-    return ERR_error_string(ERR_get_error(), NULL);
-}
-
 bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg, BYTE *buffer,
         UINT16 length, TPM2B_DIGEST *digest) {
 
@@ -139,26 +135,26 @@ bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg, BYTE *buffer,
 
     EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
     if (!mdctx) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         return false;
     }
 
     int rc = EVP_DigestInit_ex(mdctx, md, NULL);
     if (!rc) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         goto out;
     }
 
     rc = EVP_DigestUpdate(mdctx, buffer, length);
     if (!rc) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         goto out;
     }
 
     unsigned size = EVP_MD_size(md);
     rc = EVP_DigestFinal_ex(mdctx, digest->buffer, &size);
     if (!rc) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         goto out;
     }
 
@@ -183,13 +179,13 @@ bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg, TPML_DIGEST *digests,
 
     EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
     if (!mdctx) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         return false;
     }
 
     int rc = EVP_DigestInit_ex(mdctx, md, NULL);
     if (!rc) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         goto out;
     }
 
@@ -199,7 +195,7 @@ bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg, TPML_DIGEST *digests,
         TPM2B_DIGEST *b = &digests->digests[i];
         rc = EVP_DigestUpdate(mdctx, b->buffer, b->size);
         if (!rc) {
-            LOG_ERR("%s", get_openssl_err());
+            LOG_ERR("%s", tpm2_openssl_get_err());
             goto out;
         }
     }
@@ -208,7 +204,7 @@ bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg, TPML_DIGEST *digests,
 
     rc = EVP_DigestFinal_ex(mdctx, digest->buffer, &size);
     if (!rc) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         goto out;
     }
 
@@ -235,13 +231,13 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hash_alg,
 
     EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
     if (!mdctx) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         return false;
     }
 
     int rc = EVP_DigestInit_ex(mdctx, md, NULL);
     if (!rc) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         goto out;
     }
 
@@ -266,7 +262,7 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hash_alg,
             TPM2B_DIGEST *b = &pcrs->pcr_values[vi].digests[di];
             rc = EVP_DigestUpdate(mdctx, b->buffer, b->size);
             if (!rc) {
-                LOG_ERR("%s", get_openssl_err());
+                LOG_ERR("%s", tpm2_openssl_get_err());
                 goto out;
             }
 
@@ -285,7 +281,7 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hash_alg,
     unsigned size = EVP_MD_size(md);
     rc = EVP_DigestFinal_ex(mdctx, digest->buffer, &size);
     if (!rc) {
-        LOG_ERR("%s", get_openssl_err());
+        LOG_ERR("%s", tpm2_openssl_get_err());
         goto out;
     }
 

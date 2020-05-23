@@ -34,6 +34,7 @@ struct createak_context {
             const char *pub_file;
             const char *name_file;
             const char *priv_file;
+            const char *qname_file;
         } out;
         char *auth_str;
     } ak;
@@ -235,9 +236,10 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     LOG_INFO("Esys_PolicySecret success");
 
+    TPM2B_CREATION_DATA *creation_data = NULL;
     rval = Esys_Create(ectx, ctx.ek.ek_ctx.tr_handle, sess_handle, ESYS_TR_NONE,
             ESYS_TR_NONE, &ctx.ak.in.in_sensitive, &in_public, &outside_info,
-            &creation_pcr, &out_private, &out_public, NULL, NULL, NULL);
+            &creation_pcr, &out_private, &out_public, &creation_data, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Create, rval);
         goto out;
@@ -304,9 +306,22 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
+    /* generation qualified name */
+    TPM2B_NAME *p_qname = &creation_data->creationData.parentQualifiedName;
+    TPM2B_NAME qname = { 0 };
+    rc = tpm2_calq_qname(p_qname,
+            in_public.publicArea.nameAlg, key_name, &qname) ?
+                    tool_rc_success : tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        goto out;
+    }
+
     /* Output in YAML format */
     tpm2_tool_output("loaded-key:\n  name: ");
     tpm2_util_print_tpm2b(key_name);
+    tpm2_tool_output("\n");
+    tpm2_tool_output("  qualified name: ");
+    tpm2_util_print_tpm2b(&qname);
     tpm2_tool_output("\n");
 
     // write name to ak.name file
@@ -315,6 +330,16 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
                 key_name->size);
         if (!result) {
             LOG_ERR("Failed to save AK name into file \"%s\"",
+                    ctx.ak.out.name_file);
+            goto nameout;
+        }
+    }
+
+    if (ctx.ak.out.qname_file) {
+        result = files_save_bytes_to_file(ctx.ak.out.qname_file, qname.name,
+                qname.size);
+        if (!result) {
+            LOG_ERR("Failed to save AK qualified name into file \"%s\"",
                     ctx.ak.out.name_file);
             goto nameout;
         }
@@ -352,6 +377,7 @@ nameout:
 out:
     free(out_public);
     free(out_private);
+    Esys_Free(creation_data);
 out_session:
     tpm2_session_close(&session);
 
@@ -413,6 +439,9 @@ static bool on_option(char key, char *value) {
     case 'r':
         ctx.ak.out.priv_file = value;
         break;
+    case 'q':
+        ctx.ak.out.qname_file = value;
+        break;
     }
 
     return true;
@@ -421,20 +450,21 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "eh-auth",          required_argument, NULL, 'P' },
-        { "ak-auth",          required_argument, NULL, 'p' },
-        { "ek-context",       required_argument, NULL, 'C' },
-        { "ak-context",       required_argument, NULL, 'c' },
-        { "ak-name",          required_argument, NULL, 'n' },
-        { "key-algorithm",    required_argument, NULL, 'G' },
-        { "hash-algorithm",   required_argument, NULL, 'g' },
-        { "signing-algorithm",required_argument, NULL, 's' },
-        { "format",           required_argument, NULL, 'f' },
-        { "public",           required_argument, NULL, 'u' },
-        { "private",          required_argument, NULL, 'r'},
+        { "eh-auth",           required_argument, NULL, 'P' },
+        { "ak-auth",           required_argument, NULL, 'p' },
+        { "ek-context",        required_argument, NULL, 'C' },
+        { "ak-context",        required_argument, NULL, 'c' },
+        { "ak-name",           required_argument, NULL, 'n' },
+        { "key-algorithm",     required_argument, NULL, 'G' },
+        { "hash-algorithm",    required_argument, NULL, 'g' },
+        { "signing-algorithm", required_argument, NULL, 's' },
+        { "format",            required_argument, NULL, 'f' },
+        { "public",            required_argument, NULL, 'u' },
+        { "private",           required_argument, NULL, 'r' },
+        { "ak-qualified-name", required_argument, NULL, 'q' },
     };
 
-    *opts = tpm2_options_new("P:p:C:c:n:G:g:s:f:u:r:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:C:c:n:G:g:s:f:u:r:q:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

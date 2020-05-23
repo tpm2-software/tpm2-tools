@@ -55,6 +55,10 @@ int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
 typedef unsigned char *(*digester)(const unsigned char *d, size_t n,
         unsigned char *md);
 
+static inline const char *tpm2_openssl_get_err(void) {
+    return ERR_error_string(ERR_get_error(), NULL);
+}
+
 /**
  * Get an openssl hash algorithm ID from a tpm hashing algorithm ID.
  * @param algorithm
