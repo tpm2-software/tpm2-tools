@@ -987,3 +987,59 @@ void tpm2_util_print_time(const TPMS_TIME_INFO *current_time) {
     tpm2_tool_output("  safe: %s\n",
             current_time->clockInfo.safe ? "yes" : "no");
 }
+
+bool tpm2_calq_qname(TPM2B_NAME *pqname,
+        TPMI_ALG_HASH halg, TPM2B_NAME *name, TPM2B_NAME *qname) {
+
+    // QNB ≔ HB (QNA || NAMEB)
+    bool result = false;
+
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(halg);
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
+    if (!mdctx) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        return false;
+    }
+
+    int rc = EVP_DigestInit_ex(mdctx, md, NULL);
+    if (!rc) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        goto out;
+    }
+
+    size_t offset = sizeof(halg);
+    rc = EVP_DigestUpdate(mdctx, pqname->name, pqname->size);
+    if (!rc) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        goto out;
+    }
+
+    rc = EVP_DigestUpdate(mdctx, name->name, name->size);
+    if (!rc) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        goto out;
+    }
+
+    unsigned size = EVP_MD_size(md);
+    rc = EVP_DigestFinal_ex(mdctx, &qname->name[offset], &size);
+    if (!rc) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        goto out;
+    }
+
+    /* hash sizes are not bigger than 16 bits, safe truncate */
+    qname->size = (UINT16)size;
+
+    /* put the hash alg on the front, since name already has it in marshalled
+     * proper form just use it.
+     */
+    memcpy(qname->name, name->name, offset);
+    qname->size += offset;
+
+    result = true;
+
+out:
+    EVP_MD_CTX_destroy(mdctx);
+    return result;
+}

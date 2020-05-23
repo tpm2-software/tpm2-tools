@@ -71,6 +71,12 @@ loaded-key:
 
     Format selection for the signature output file.
 
+  * **-q**, **\--ak-qualified-name**=_FILE_:
+
+    The qualified name of the attestation key object. The qualified name is the qualified name
+    of the parent object (the EK in this instance) and the name of the object itself. Thus, the
+    qualified name of an object serves to bind it to its parents.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying

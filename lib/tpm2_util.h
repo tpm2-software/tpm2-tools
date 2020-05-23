@@ -463,4 +463,31 @@ bool tpm2_util_get_label(const char *value, TPM2B_DATA *label);
  */
 void tpm2_util_print_time(const TPMS_TIME_INFO *current_time);
 
+/**
+ * Given the parent qualified name and the name of an object, computes
+ * that objects qualified name.
+ *
+ * The qualified name is defined as:
+ * QNB ≔ HB (QNA || NAMEB)
+ *
+ * Where:
+ *  - QNB is the qualified name of the object.
+ *  - HB is the name hash algorithm of the object.
+ *  - QNA is the qualified name of the parent object.
+ *  - NAMEB is the name of the object.
+ *
+ * @param pqname
+ *  The parent qualified name.
+ * @param halg
+ *  The name hash algorithm of the object.
+ * @param name
+ *  The name of the object.
+ * @param qname
+ *  The output qname, valid on success.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool tpm2_calq_qname(TPM2B_NAME *pqname,
+        TPMI_ALG_HASH halg, TPM2B_NAME *name, TPM2B_NAME *qname);
+
 #endif /* STRING_BYTES_H */
