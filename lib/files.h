@@ -179,6 +179,13 @@ bool files_save_template(TPMT_PUBLIC *template, const char *path);
  */
 bool files_load_public(const char *path, TPM2B_PUBLIC *public);
 
+bool files_load_public_file(FILE *f, const char *path, TPM2B_PUBLIC *public);
+
+bool files_load_template(const char *path, TPMT_PUBLIC *public);
+
+bool files_load_template_file(FILE *f, const char *path, TPMT_PUBLIC *public);
+
+
 /**
  * Serializes a TPMT_SIGNATURE to the file path provided.
  * @param signature

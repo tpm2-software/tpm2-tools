@@ -9,18 +9,15 @@
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
-typedef enum {
-    file_type_unknown = 0,
-    file_type_TPMS_ATTEST,
-    file_type_TPMS_CONTEXT,
-} file_type_id;
+typedef bool (*print_fn)(FILE *f);
 
 typedef struct tpm2_print_ctx tpm2_print_ctx;
 struct tpm2_print_ctx {
     struct {
         const char *path;
-        file_type_id type;
+        print_fn handler;
     } file;
 };
 
@@ -68,7 +65,7 @@ read_error:
     return false;
 }
 
-static bool print_TPMS_QUOTE_INFO(FILE* fd, size_t indent_count) {
+bool print_TPMS_QUOTE_INFO(FILE* fd, size_t indent_count) {
     // read TPML_PCR_SELECTION count (UINT32)
     UINT32 pcr_selection_count;
     bool res = files_read_32(fd, &pcr_selection_count);
@@ -140,7 +137,7 @@ read_error:
     error: return false;
 }
 
-static bool print_TPMS_ATTEST_yaml(FILE* fd) {
+static bool print_TPMS_ATTEST(FILE* fd) {
     // print magic without converting endianness
     UINT32 magic;
     bool res = files_read_bytes(fd, (UINT8*) &magic, sizeof(UINT32));
@@ -218,7 +215,7 @@ read_error:
     error: return false;
 }
 
-static bool print_TPMS_CONTEXT_yaml(FILE *fstream) {
+static bool print_TPMS_CONTEXT(FILE *fstream) {
 
     /*
      * Reading the TPMS_CONTEXT structure to disk, format:
@@ -314,20 +311,64 @@ out:
     return result;
 }
 
+static bool print_TPMT_PUBLIC(FILE *fstream) {
+
+    TPMT_PUBLIC public = { 0 };
+    bool res = files_load_template_file(fstream, ctx.file.path, &public);
+    if (!res) {
+        return res;
+    }
+
+    tpm2_util_tpmt_public_to_yaml(&public, NULL);
+
+    return true;
+}
+
+static bool print_TPM2B_PUBLIC(FILE *fstream) {
+
+    TPM2B_PUBLIC public = { 0 };
+    bool res = files_load_public_file(fstream, ctx.file.path, &public);
+    if (!res) {
+        return res;
+    }
+
+    tpm2_util_public_to_yaml(&public, NULL);
+
+    return true;
+}
+
+#define ADD_HANDLER(type) { .name = #type, .fn = print_##type }
+
+static bool handle_type(const char *name) {
+
+    static const struct {
+        const char *name;
+        print_fn fn;
+    } handlers[] = {
+        ADD_HANDLER(TPMS_ATTEST),
+        ADD_HANDLER(TPMS_CONTEXT),
+        ADD_HANDLER(TPM2B_PUBLIC),
+        ADD_HANDLER(TPMT_PUBLIC)
+    };
+
+    size_t i;
+    for (i=0; i < ARRAY_LEN(handlers); i++) {
+
+        if (!strcmp(name, handlers[i].name)) {
+            ctx.file.handler = handlers[i].fn;
+            return true;
+        }
+    }
+
+    LOG_ERR("Unknown file type, got: \"%s\"", name);
+
+    return false;
+}
+
 static bool on_option(char key, char *value) {
     switch (key) {
     case 't':
-        if (strcmp(value, "TPMS_ATTEST") == 0) {
-            ctx.file.type = file_type_TPMS_ATTEST;
-
-        } else if (strcmp(value, "TPMS_CONTEXT") == 0) {
-            ctx.file.type = file_type_TPMS_CONTEXT;
-        } else {
-            LOG_ERR("Invalid type specified. Only TPMS_ATTEST and TPMS_CONTEXT "
-                    "are presently supported.");
-            return false;
-        }
-        break;
+        return handle_type(value);
     case 'i':
         ctx.file.path = value;
         break;
@@ -366,20 +407,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(ectx);
     UNUSED(flags);
 
-    bool (*print_fn)(FILE*) = NULL;
-
-    switch (ctx.file.type) {
-    case file_type_TPMS_ATTEST:
-        print_fn = print_TPMS_ATTEST_yaml;
-        break;
-    case file_type_TPMS_CONTEXT:
-        print_fn = print_TPMS_CONTEXT_yaml;
-        break;
-    default:
-        LOG_ERR("Must specify a file type with -t option");
-        return tool_rc_option_error;
-    }
-
     FILE* fd = stdin;
 
     if (ctx.file.path) {
@@ -393,7 +420,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         LOG_INFO("Reading from stdin");
     }
 
-    bool res = print_fn(fd);
+    bool res = ctx.file.handler(fd);
 
     LOG_INFO("Read %ld bytes from file %s", ftell(fd), ctx.file.path);
 

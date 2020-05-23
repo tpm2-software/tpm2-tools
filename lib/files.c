@@ -687,11 +687,34 @@ tool_rc files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path)
         return rc == TPM2_RC_SUCCESS; \
     }
 
+#define LOAD_TYPE_FILE(type, name) \
+    bool files_load_##name##_file(FILE *f, const char *path, type *name) { \
+    \
+        UINT8 buffer[sizeof(*name)]; \
+        UINT16 size = sizeof(buffer); \
+        bool res = file_read_bytes_from_file(f, buffer, &size, path); \
+        if (!res) { \
+            return false; \
+        } \
+        \
+        size_t offset = 0; \
+        TSS2_RC rc = Tss2_MU_##type##_Unmarshal(buffer, size, &offset, name); \
+        if (rc != TSS2_RC_SUCCESS) { \
+            LOG_ERR("Error deserializing "str(name)" structure: 0x%x", rc); \
+            LOG_ERR("The input file needs to be a valid "xstr(type)" data structure"); \
+            return false; \
+        } \
+        \
+        return rc == TPM2_RC_SUCCESS; \
+    }
+
 SAVE_TYPE(TPM2B_PUBLIC, public)
 LOAD_TYPE(TPM2B_PUBLIC, public)
+LOAD_TYPE_FILE(TPM2B_PUBLIC, public)
 
 SAVE_TYPE(TPMT_PUBLIC, template)
 LOAD_TYPE(TPMT_PUBLIC, template)
+LOAD_TYPE_FILE(TPMT_PUBLIC, template)
 
 SAVE_TYPE(TPMT_SIGNATURE, signature)
 LOAD_TYPE(TPMT_SIGNATURE, signature)
