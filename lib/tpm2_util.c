@@ -368,39 +368,39 @@ struct tpm2_util_keydata {
     } entries[2];
 };
 
-static void tpm2_util_public_to_keydata(TPM2B_PUBLIC *public,
+static void tpm2_util_public_to_keydata(TPMT_PUBLIC *public,
         tpm2_util_keydata *keydata) {
 
-    switch (public->publicArea.type) {
+    switch (public->type) {
     case TPM2_ALG_RSA:
         keydata->len = 1;
         keydata->entries[0].name = tpm2_alg_util_algtostr(
-            public->publicArea.type, tpm2_alg_util_flags_any);
-        keydata->entries[0].value = (TPM2B *) &public->publicArea.unique.rsa;
+            public->type, tpm2_alg_util_flags_any);
+        keydata->entries[0].value = (TPM2B *) &public->unique.rsa;
         return;
     case TPM2_ALG_KEYEDHASH:
         keydata->len = 1;
         keydata->entries[0].name = tpm2_alg_util_algtostr(
-            public->publicArea.type, tpm2_alg_util_flags_any);
+            public->type, tpm2_alg_util_flags_any);
         keydata->entries[0].value =
-                (TPM2B *) &public->publicArea.unique.keyedHash;
+                (TPM2B *) &public->unique.keyedHash;
         return;
     case TPM2_ALG_SYMCIPHER:
         keydata->len = 1;
         keydata->entries[0].name = tpm2_alg_util_algtostr(
-            public->publicArea.type, tpm2_alg_util_flags_any);
-        keydata->entries[0].value = (TPM2B *) &public->publicArea.unique.sym;
+            public->type, tpm2_alg_util_flags_any);
+        keydata->entries[0].value = (TPM2B *) &public->unique.sym;
         return;
     case TPM2_ALG_ECC:
         keydata->len = 2;
         keydata->entries[0].name = "x";
-        keydata->entries[0].value = (TPM2B *) &public->publicArea.unique.ecc.x;
+        keydata->entries[0].value = (TPM2B *) &public->unique.ecc.x;
         keydata->entries[1].name = "y";
-        keydata->entries[1].value = (TPM2B *) &public->publicArea.unique.ecc.y;
+        keydata->entries[1].value = (TPM2B *) &public->unique.ecc.y;
         return;
     default:
         LOG_WARN("The algorithm type(0x%4.4x) is not supported",
-            public->publicArea.type);
+            public->type);
     }
 
     return;
@@ -484,7 +484,7 @@ static void print_kdf_scheme(TPMT_KDF_SCHEME *kdf, const char *indent) {
     print_alg_raw("kdfa-halg", kdf->details.mgf1.hashAlg, indent);
 }
 
-void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
+void tpm2_util_tpmt_public_to_yaml(TPMT_PUBLIC *public, char *indent) {
 
     if (!indent) {
         indent = "";
@@ -492,26 +492,26 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
 
     tpm2_tool_output("%sname-alg:\n", indent);
     tpm2_tool_output("%s  value: %s\n", indent,
-            tpm2_alg_util_algtostr(public->publicArea.nameAlg,
+            tpm2_alg_util_algtostr(public->nameAlg,
                     tpm2_alg_util_flags_any));
-    tpm2_tool_output("%s  raw: 0x%x\n", indent, public->publicArea.nameAlg);
+    tpm2_tool_output("%s  raw: 0x%x\n", indent, public->nameAlg);
 
-    tpm2_util_tpma_object_to_yaml(public->publicArea.objectAttributes, indent);
+    tpm2_util_tpma_object_to_yaml(public->objectAttributes, indent);
 
     tpm2_tool_output("%stype:\n", indent);
     tpm2_tool_output("%s  value: %s\n", indent,
-            tpm2_alg_util_algtostr(public->publicArea.type,
+            tpm2_alg_util_algtostr(public->type,
                     tpm2_alg_util_flags_any));
-    tpm2_tool_output("%s  raw: 0x%x\n", indent, public->publicArea.type);
+    tpm2_tool_output("%s  raw: 0x%x\n", indent, public->type);
 
-    switch (public->publicArea.type) {
+    switch (public->type) {
     case TPM2_ALG_SYMCIPHER: {
-        TPMS_SYMCIPHER_PARMS *s = &public->publicArea.parameters.symDetail;
+        TPMS_SYMCIPHER_PARMS *s = &public->parameters.symDetail;
         print_sym(&s->sym, indent);
     }
         break;
     case TPM2_ALG_KEYEDHASH: {
-        TPMS_KEYEDHASH_PARMS *k = &public->publicArea.parameters.keyedHashDetail;
+        TPMS_KEYEDHASH_PARMS *k = &public->parameters.keyedHashDetail;
         tpm2_tool_output("%salgorithm: \n", indent);
         tpm2_tool_output("%s  value: %s\n", indent,
                 tpm2_alg_util_algtostr(k->scheme.scheme,
@@ -545,7 +545,7 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
     }
         break;
     case TPM2_ALG_RSA: {
-        TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
+        TPMS_RSA_PARMS *r = &public->parameters.rsaDetail;
         tpm2_tool_output("%sexponent: %u\n", indent, r->exponent ? r->exponent : 65537);
         tpm2_tool_output("%sbits: %u\n", indent, r->keyBits);
 
@@ -555,7 +555,7 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
     }
         break;
     case TPM2_ALG_ECC: {
-        TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
+        TPMS_ECC_PARMS *e = &public->parameters.eccDetail;
 
         tpm2_tool_output("%scurve-id:\n", indent);
         tpm2_tool_output("%s  value: %s\n", indent,
@@ -583,12 +583,17 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
         tpm2_tool_output("%s\n", indent);
     }
 
-    if (public->publicArea.authPolicy.size) {
+    if (public->authPolicy.size) {
         tpm2_tool_output("%sauthorization policy: ", indent);
-        tpm2_util_hexdump(public->publicArea.authPolicy.buffer,
-            public->publicArea.authPolicy.size);
+        tpm2_util_hexdump(public->authPolicy.buffer,
+            public->authPolicy.size);
         tpm2_tool_output("%s\n", indent);
     }
+}
+
+void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
+
+    tpm2_util_tpmt_public_to_yaml(&public->publicArea, indent);
 }
 
 bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg,

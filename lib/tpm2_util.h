@@ -354,6 +354,8 @@ void print_yaml_indent(size_t indent_count);
  */
 void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent);
 
+void tpm2_util_tpmt_public_to_yaml(TPMT_PUBLIC *public, char *indent);
+
 /**
  * Convert a TPMA_OBJECT to a yaml format and output if not quiet.
  * @param obj

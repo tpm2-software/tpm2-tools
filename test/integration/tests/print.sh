@@ -13,7 +13,8 @@ print_file=quote.yaml
 
 cleanup() {
     rm -f $ak_name_file $ak_pubkey_file \
-          $quote_file $print_file $ak_ctx
+          $quote_file $print_file $ak_ctx \
+          tpmt_public.ak
 
     if [ "$1" != "no-shut-down" ]; then
        shut_down
@@ -31,6 +32,14 @@ tpm2_clear
 tpm2_createek -Q -G rsa -c $ek_handle
 tpm2_createak -Q -G rsa -g sha256 -s rsassa -C $ek_handle -c $ak_ctx\
   -u $ak_pubkey_file -n $ak_name_file
+
+tpm2_readpublic -c $ak_ctx -f tpmt -o tpmt_public.ak
+
+tpm2_print -t TPM2B_PUBLIC $ak_pubkey_file > $print_file
+yaml_verify $print_file
+
+tpm2_print -t TPMT_PUBLIC tpmt_public.ak > $print_file
+yaml_verify $print_file
 
 # Take PCR quote
 tpm2_quote -Q -c $ak_ctx -l "sha256:0,2,4,9,10,11,12,17" -q "0f8beb45ac" \

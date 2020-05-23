@@ -8,6 +8,9 @@
 
  * tpm2\_createak: add qualified name output as -q.
  * tpm2\_readpublic: add qualified name output as -q.
+ * tpm2\_print:
+   - Support printing TPM2B\_PUBLIC data structures.
+   - Support printing TPMT\_PUBLIC data structures.
 
 ### 4.2 2020-04-08
 

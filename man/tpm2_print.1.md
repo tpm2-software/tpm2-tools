@@ -18,9 +18,11 @@ path argument. Reads from stdin if unspecified.
 
   * **-t**, **\--type**:
 
-    Required. Type of data structure. Only **TPMS_ATTEST** and **TPMS_CONTEXT**
-    are presently supported.
-
+    Required. Type of data structure. The option supports the following arguments:
+      * **TPMS_ATTEST**
+      * **TPMS_CONTEXT**
+      * **TPM2B_PUBLIC**
+      * **TPMT_PUBLIC**
   * **ARGUMENT** the command line argument specifies the path of the TPM data.
 
 ## References
@@ -61,6 +63,18 @@ tpm2_quote -c key.ctx -l 0x0004:16,17,18+0x000b:16,17,18 -g sha256 -m msg.dat
 
 ```bash
 tpm2_print -t TPMS_ATTEST msg.dat
+```
+
+### Print a public file
+
+```bash
+tpm2_print -t TPM2B_PUBLIC key.pub
+```
+
+### Print a tpmt public file
+```bash
+tpm2_readpublic -c key.ctx -f tpmt -o key.tpmt
+tpm2_print -t TPMT_PUBLIC key.tpmt
 ```
 
 [returns](common/returns.md)
