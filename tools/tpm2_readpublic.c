@@ -16,6 +16,7 @@ struct tpm_readpub_ctx {
     } flags;
     char *output_path;
     char *out_name_file;
+    char *out_qname_file;
     tpm2_convert_pubkey_fmt format;
     tpm2_loaded_object context_object;
     const char *context_arg;
@@ -72,6 +73,14 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
+    if (ctx.out_qname_file) {
+        ret = files_save_bytes_to_file(ctx.out_qname_file, qualified_name->name,
+                qualified_name->size);
+        if (!ret) {
+            goto out;
+        }
+    }
+
     if (ctx.out_tr_file) {
         rc = files_save_ESYS_TR(ectx, ctx.context_object.tr_handle,
                 ctx.out_tr_file);
@@ -109,6 +118,9 @@ static bool on_option(char key, char *value) {
     case 't':
         ctx.out_tr_file = value;
         break;
+    case 'q':
+        ctx.out_qname_file = value;
+        break;
     }
 
     return true;
@@ -121,10 +133,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "object-context",    required_argument, NULL, 'c' },
         { "format",            required_argument, NULL, 'f' },
         { "name",              required_argument, NULL, 'n' },
-        { "serialized-handle", required_argument, NULL, 't' }
+        { "serialized-handle", required_argument, NULL, 't' },
+        { "qualified-name",    required_argument, NULL, 'q' }
     };
 
-    *opts = tpm2_options_new("o:c:f:n:t:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("o:c:f:n:t:q:", ARRAY_LEN(topts), topts, on_option,
             NULL, 0);
 
     return *opts != NULL;
