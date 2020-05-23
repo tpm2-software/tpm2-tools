@@ -36,6 +36,12 @@
     optionally save the serialized handle for use later. This routine does NOT verify the name of the object being read. Callers should ensure that the
     contents of name match the expected objects name.
 
+  * **-q**, **\--qualified-name**=_FILE_:
+
+    Saves the qualified name of the object to _FILE_. The qualified name of the object is the name algorithm hash of
+    the parents qualified and the objects name. Thus the qualified name of the object serves as proof of the objects
+    parents.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying

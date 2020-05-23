@@ -7,6 +7,7 @@
  * Fix missing handle maps for ESY3 handle breaks. See #1994.
 
  * tpm2\_createak: add qualified name output as -q.
+ * tpm2\_readpublic: add qualified name output as -q.
 
 ### 4.2 2020-04-08
 
