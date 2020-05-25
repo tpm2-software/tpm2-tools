@@ -52,7 +52,13 @@ These are the available options:
 
   * **-i**, **\--data**=_FILENAME_ or _-_ (for stdin):
 
-    The data to be sealed by the TPM. Optional parameter.
+    The data to be sealed by the TPM. Optional parameter. Must not be used
+    together with \--size.
+
+  * **-s**, **\--size**=_INTEGER_:
+
+    Determines the number of random bytes the TPM should generate and seal.
+    Optional parameter. Must not be "0". Must no be used together with \--data.
 
 [common tss2 options](common/tss2-options.md)
 
