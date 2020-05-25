@@ -1,5 +1,9 @@
 ## Changelog
 
+### 4.1.3-rc0 - 2020-05-22
+
+* tpm2\_create: Fix issue with userauth attribute being cleared if policy is specified.
+
 ### 4.1.2 - 2020-05-18
 
 * Fix missing handle maps for ESY3 handle breaks. See #1994.
