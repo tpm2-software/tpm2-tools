@@ -19,6 +19,7 @@ static struct cxt {
     char const *policyPath;
     char       *authValue;
     char const *data;
+    uint32_t        size;
 } ctx;
 
 /* Parse command line parameters */
@@ -39,6 +40,13 @@ static bool on_option(char key, char *value) {
     case 'i':
         ctx.data = value;
         break;
+    case 's':
+        if (!tpm2_util_string_to_uint32 (value, &ctx.size)) {
+            fprintf (stderr, "%s cannot be converted to an integer or is" \
+                " larger than 2**32 - 1\n", value);
+            return false;
+        }
+        break;
     }
     return true;
 }
@@ -50,9 +58,10 @@ bool tss2_tool_onstart(tpm2_options **opts) {
         {"type",       required_argument, NULL, 't'},
         {"policyPath", required_argument, NULL, 'P'},
         {"authValue",  required_argument, NULL, 'a'},
-        {"data",       required_argument, NULL, 'i'}
+        {"data",       required_argument, NULL, 'i'},
+        {"size",       required_argument, NULL, 's'}
     };
-    return (*opts = tpm2_options_new ("a:p:P:t:i:", ARRAY_LEN(topts), topts,
+    return (*opts = tpm2_options_new ("a:p:P:t:i:s:", ARRAY_LEN(topts), topts,
                                       on_option, NULL, 0)) != NULL;
 }
 
@@ -63,8 +72,10 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         fprintf (stderr, "key path missing, use --path\n");
         return -1;
     }
-    if (!ctx.data) {
-        fprintf (stderr, "data to seal missing, use --data\n");
+
+    if (ctx.data && ctx.size) {
+        fprintf (stderr, "Only one of --data and --size "\
+        "can be used");
         return -1;
     }
 
@@ -78,11 +89,19 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     /* Read data file */
-    uint8_t* data;
-    size_t dataSize;
-    TSS2_RC r = open_read_and_close (ctx.data, (void**)&data, &dataSize);
-    if (r){
-        return r;
+    TSS2_RC r;
+    uint8_t* data = NULL;
+    size_t dataSize = 0;
+    if (ctx.data) {
+        r = open_read_and_close (ctx.data, (void**)&data, &dataSize);
+        if (r) {
+            return r;
+        }
+    }
+    else {
+        if (ctx.size) {
+            dataSize = ctx.size;
+        }
     }
 
     /* Execute FAPI command with passed arguments */

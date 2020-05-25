@@ -21,6 +21,7 @@ printf "$SEAL_DATA" > $SEALED_DATA_FILE
 UNSEALED_DATA_FILE=$TEMP_DIR/unsealed-data.file
 PCR_POLICY_DATA=$TEMP_DIR/pol_pcr16_0.json
 POLICY_PCR=policy/pcr-policy
+COUNT_FILE=$TEMP_DIR/count.file
 
 tss2_provision
 
@@ -114,8 +115,59 @@ tss2_createseal --path $KEY_PATH --data=$SEALED_DATA_FILE --authValue=""
 # Try with missing data
 tss2_unseal --path=$KEY_PATH --force
 
+# Try with size parameter
+tss2_delete --path $KEY_PATH
 
+expect <<EOF
+# Try with size and data
+spawn tss2_createseal --path $KEY_PATH --data $UNSEALED_DATA_FILE --size 6 --authValue ""
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
 
+expect <<EOF
+# Try with wrong size
+spawn tss2_createseal --path $KEY_PATH  --size abc --authValue ""
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
+
+expect <<EOF
+# Try with wrong size
+spawn tss2_createseal --path $KEY_PATH  --size 4294967296 --authValue ""
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
+
+tss2_createseal --path $KEY_PATH --size 15 --authValue ""
+tss2_unseal --path $KEY_PATH --data $UNSEALED_DATA_FILE --force
+
+wc -c $UNSEALED_DATA_FILE | awk '{print $1}'> $COUNT_FILE
+
+if [ "$(< $COUNT_FILE)" !=  "15" ]; then
+  echo "Wrong size"
+  exit 99
+fi
+
+printf "" > $SEALED_DATA_FILE
+expect <<EOF
+# Try with empty seal file
+spawn tss2_createseal --path $KEY_PATH --data $SEALED_DATA_FILE --authValue ""
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    Command has not failed as expected\n"
+    exit 1
+}
+EOF
 
 
 exit 0

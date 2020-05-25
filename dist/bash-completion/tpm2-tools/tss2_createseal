@@ -12,13 +12,13 @@ _tss2_createseal()
             _filedir
             if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
-        -!(-*)[ptPa] | --path | --type | --policyPath | --authValue)
+        -!(-*)[ptPas] | --path | --type | --policyPath | --authValue | --size)
             return;;
     esac
 
     $split && return
 
-    COMPREPLY=( $(compgen -W "-h --help -v --version --authValue= -a --path= -p --policyPath= -P --type= -t --data= -i" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-h --help -v --version --authValue= -a --path= -p --policyPath= -P --type= -t --data= -i --size= -s" -- "$cur") )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 } &&
 complete -F _tss2_createseal tss2_createseal
