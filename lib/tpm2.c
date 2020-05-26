@@ -4320,6 +4320,31 @@ tool_rc tpm2_ecdhzgen(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_zgen2phase(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *ecc_key_object, TPM2B_ECC_POINT *Q1,
+    TPM2B_ECC_POINT *Q2, TPM2B_ECC_POINT **Z1, TPM2B_ECC_POINT **Z2,
+    TPMI_ECC_KEY_EXCHANGE keyexchange_scheme, UINT16 commit_counter) {
+
+        ESYS_TR ecc_key_obj_session_handle = ESYS_TR_NONE;
+        tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+            ecc_key_object->tr_handle, ecc_key_object->session,
+            &ecc_key_obj_session_handle);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Failed to get shandle");
+            return rc;
+        }
+
+        TSS2_RC rval = Esys_ZGen_2Phase(esys_context, ecc_key_object->tr_handle,
+            ecc_key_obj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE, Q1, Q2,
+            keyexchange_scheme, commit_counter, Z1, Z2);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Esys_ZGen_2Phase, rval);
+            return tool_rc_from_tpm(rval);
+        }
+
+        return tool_rc_success;
+}
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context) {
 
