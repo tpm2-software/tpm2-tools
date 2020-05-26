@@ -52,4 +52,28 @@ tpm2_ecdhzgen -u ecc256ecdh.pub -o ecdhZgen.dat -c ecdh_key.ctx
 
 diff ecdhZgen.dat ecc256ecdh.priv
 
+# TPM2_ZGen_2Phase
+## Check if output Z points are generated using separate commit count values
+tpm2_zgen2phase -c ecdh_key.ctx --static-public ecc256ecdh.pub \
+--ephemeral-public pass1_ecc.q -t 0 --output-Z1 pass1.z1 --output-Z2 pass1.z2
+
+tpm2_zgen2phase -c ecdh_key.ctx --static-public ecc256ecdh.pub \
+--ephemeral-public pass2_ecc.q -t 1 --output-Z1 pass2.z1 --output-Z2 pass2.z2
+
+tpm2_zgen2phase -c ecdh_key.ctx --static-public ecc256ecdh.pub \
+--ephemeral-public E.bin -t 2 --output-Z1 pass3.z1 --output-Z2 pass3.z2
+
+## Check to ensure the Z1 points are always the same value
+diff pass1.z1 pass2.z1
+diff pass2.z1 pass3.z1
+
+## Check to ensure the Z2 points are different
+trap - ERR
+
+diff pass1.z2 pass2.z2
+diff pass1.z2 pass3.z2
+diff pass2.z2 pass3.z2
+
+trap onerror ERR
+
 exit 0

@@ -173,7 +173,8 @@ bin_PROGRAMS += \
     tools/tpm2_ecephermal \
     tools/tpm2_commit \
     tools/tpm2_ecdhkeygen \
-    tools/tpm2_ecdhzgen
+    tools/tpm2_ecdhzgen \
+    tools/tpm2_zgen2phase
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
@@ -424,6 +425,7 @@ tools_tpm2_ecephermal_SOURCES = tools/tpm2_ecephermal.c $(TOOL_SRC)
 tools_tpm2_commit_SOURCES = tools/tpm2_commit.c $(TOOL_SRC)
 tools_tpm2_ecdhkeygen_SOURCES = tools/tpm2_ecdhkeygen.c $(TOOL_SRC)
 tools_tpm2_ecdhzgen_SOURCES = tools/tpm2_ecdhzgen.c $(TOOL_SRC)
+tools_tpm2_zgen2phase_SOURCES = tools/tpm2_zgen2phase.c $(TOOL_SRC)
 
 if UNIT
 TESTS += $(check_PROGRAMS)
@@ -659,7 +661,8 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_ecephermal.1 \
     man/man1/tpm2_commit.1 \
     man/man1/tpm2_ecdhkeygen.1 \
-    man/man1/tpm2_ecdhzgen.1
+    man/man1/tpm2_ecdhzgen.1 \
+    man/man1/tpm2_zgen2phase.1
 
 if HAVE_FAPI
 dist_man1_MANS += \
