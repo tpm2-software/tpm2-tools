@@ -46,4 +46,10 @@ tpm2_create -C prim.ctx -c ecdh_key.ctx -u ecdh_key.pub -r ecdh_key.priv \
 
 tpm2_ecdhkeygen -u ecc256ecdh.pub -o ecc256ecdh.priv -c ecdh_key.ctx
 
+# TPM2_ECDH_ZGen
+## Check if the recovered Z point matches
+tpm2_ecdhzgen -u ecc256ecdh.pub -o ecdhZgen.dat -c ecdh_key.ctx
+
+diff ecdhZgen.dat ecc256ecdh.priv
+
 exit 0
