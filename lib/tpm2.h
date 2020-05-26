@@ -467,6 +467,10 @@ tool_rc tpm2_ecdhkeygen(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *ecc_public_key, TPM2B_ECC_POINT **Z,
     TPM2B_ECC_POINT **Q);
 
+tool_rc tpm2_ecdhzgen(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *ecc_key_object, TPM2B_ECC_POINT **Z,
+    TPM2B_ECC_POINT *Q);
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context);
 
