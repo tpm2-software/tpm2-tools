@@ -2,6 +2,8 @@
 
 ### next
 
+ * tpm2\_eventlog: output EV_POST_CODE as string not firmward blob.
+
  * Fix missing handle maps for ESY3 handle breaks. See #1994.
 
 ### 4.2 2020-04-08
