@@ -12,8 +12,7 @@ bool output_enabled = false;
 
 /* Context struct used to store passed commandline parameters */
 static struct cxt {
-    uint8_t const *data;
-    size_t  data_size;
+    char const *appData;
     char    const *path;
 } ctx;
 
@@ -21,8 +20,7 @@ static struct cxt {
 static bool on_option(char key, char *value) {
     switch (key) {
     case 'i':
-        ctx.data_size = strlen(value);
-        ctx.data = (uint8_t*) value;
+        ctx.appData = value;
         break;
     case 'p':
         ctx.path = value;
@@ -49,11 +47,25 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         return -1;
     }
 
+    /* Read appData from file */
+    TSS2_RC r;
+    uint8_t* appData = NULL;
+    size_t appDataSize = 0;
+    if (ctx.appData) {
+        r = open_read_and_close (ctx.appData, (void**)&appData,
+            &appDataSize);
+        if (r) {
+            return 1;
+        }
+    }
+
     /* Execute FAPI command with passed arguments */
-    TSS2_RC r = Fapi_SetAppData (fctx, ctx.path, ctx.data, ctx.data_size);
+    r = Fapi_SetAppData (fctx, ctx.path, appData, appDataSize);
     if (r != TSS2_RC_SUCCESS) {
         LOG_PERR ("Fapi_SetAppData", r);
+        free(appData);
         return 1;
     }
+    free(appData);
     return 0;
 }

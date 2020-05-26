@@ -8,7 +8,11 @@ _tss2_setappdata()
         -!(-*)h | --help)
             COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
             return;;
-        -!(-*)[pi] | --path | --appData)
+        -!(-*)[p] | --path )
+            return;;
+        -!(-*)i | --appData)
+            _filedir
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
             return;;
     esac
 
