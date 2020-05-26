@@ -66,6 +66,7 @@ loaded-key:
   * **-r**, **\--private**=_FILE_:
 
     The output file which contains the sensitive portion of the object, optional.
+    [protection details](common/protection-details.md)
 
   * **-f**, **\--format**=_FORMAT_:
 

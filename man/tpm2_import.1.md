@@ -63,6 +63,7 @@ These options control the key importation process:
 
     When importing a duplicated object this option specifies the file containing
     the private portion of the object to be imported.
+    [protection details](common/protection-details.md)
 
   * **-u**, **\--public**=_FILE_:
 

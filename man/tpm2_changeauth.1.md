@@ -38,6 +38,7 @@ see section "Authorization Formatting".
   * **-r**, **\--private**=_FILE_:
     The output file which contains the new sensitive portion of the object whose
     auth was being changed.
+    [protection details](common/protection-details.md)
 
   * **\--cphash**=_FILE_
 

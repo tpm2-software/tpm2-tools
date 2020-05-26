@@ -64,7 +64,8 @@ It also saves a context file for future interactions with the object.
         is no need to specify -u for the public portion.
 
     *Note*: The private portion does not respect TSS formats as it's impossible
-    to get a **TPM2B_SENSITIVE** output from a previous command.
+    to get a **TPM2B_SENSITIVE** output from a previous command. They are always
+    protected by the TPM as **TPM2B_PRIVATE** blobs.
 
   * **-p**, **\--auth**=_AUTH_:
 
