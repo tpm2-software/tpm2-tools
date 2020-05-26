@@ -762,6 +762,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[returns\]/d' \
 	    -e '/\[footer\]/r $(top_srcdir)/man/common/footer.md' \
 	    -e '/\[footer\]/d' \
+	    -e '/\[protection details\]/r $(top_srcdir)/man/common/protection-details.md' \
+	    -e '/\[protection details\]/d' \
 	    < $< | pandoc -s -t man > $@
 
 CLEANFILES = $(dist_man1_MANS)

@@ -81,6 +81,8 @@ These options for creating the TPM entity:
 
     The output file which contains the sensitive portion of the object,
     optional.
+    [protection details](common/protection-details.md)
+
 
   * **-c**, **\--key-context**=_FILE_:
 

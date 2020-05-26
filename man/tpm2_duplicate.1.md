@@ -44,6 +44,7 @@ These options control the key importation process:
   * **-r**, **\--private**=_FILE_:
 
     Specifies the file path to save the private portion of the duplicated object.
+    [protection details](common/protection-details.md)
 
   * **-s**, **\--encrypted-seed**=_FILE_:
 
