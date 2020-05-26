@@ -33,6 +33,8 @@
 
  * tss2_*: Add parameter types to all man pages
 
+ * tss2_*: tss2_setappdata now reads from file or stdin allowing to store also binary data
+
 ### 4.2 2020-04-08
 
  * Fix various issues reported by static analysis tools.

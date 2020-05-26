@@ -29,8 +29,25 @@ tss2_setappdata --path $KEY_PATH --appData $APP_DATA_SET
 
 tss2_getappdata --path $KEY_PATH --appData $APP_DATA_FILE --force
 
-if [ `cat $APP_DATA_FILE` !=  "$APP_DATA_SET" ]; then
-  echo "Strings are not equal"
+if [ "$(< $APP_DATA_FILE)" !=  "$(< $APP_DATA_SET)" ]; then
+  echo "Files are not equal"
+  exit 99
+fi
+
+echo -n "" > $APP_DATA_FILE
+tss2_setappdata --path $KEY_PATH
+tss2_getappdata --path $KEY_PATH --appData $APP_DATA_FILE --force
+
+if [ "$(< $APP_DATA_FILE)" !=  "" ]; then
+  echo "File not empty"
+  exit 99
+fi
+
+echo -n "123" | tss2_setappdata --path $KEY_PATH --appData -
+tss2_getappdata --path $KEY_PATH --appData $APP_DATA_FILE --force
+
+if [ "$(< $APP_DATA_FILE)" !=  "123" ]; then
+  echo "Files are not equal"
   exit 99
 fi
 
