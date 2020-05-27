@@ -349,6 +349,17 @@ bool files_save_encrypted_seed(TPM2B_ENCRYPTED_SECRET *encrypted_seed,
         const char *path);
 
 /**
+ * Serializes a TPM2B_ECC_POINT to the file path provided.
+ * @param Q
+ *  The TPM2B_ECC_POINT to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_ecc_point(TPM2B_ECC_POINT *Q, const char *path);
+
+/**
  * Loads a TPM2B_ENCRYPTED_SECRET from disk.
  * @param encrypted_seed
  *  The path to load from.

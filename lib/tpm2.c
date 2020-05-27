@@ -4245,6 +4245,19 @@ tool_rc tpm2_geteccparameters(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_ecephermal(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
+    TPM2B_ECC_POINT **Q, uint16_t *counter) {
+
+    TSS2_RC rval = Esys_EC_Ephemeral(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
+        ESYS_TR_NONE, curve_id, Q, counter);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_EC_Ephemeral, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context) {
 
