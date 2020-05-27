@@ -36,4 +36,14 @@ tpm2_commit -c commit_key.ctx -t commit.ctr --eccpoint-K K.bin \
 
 xxd -p commit.ctr | grep 0002
 
+# TPM2_ECDH_KeyGen
+## Check if ecdhkeygen creates ephemeral key with loaded ECC key of type ECDAA
+tpm2_ecdhkeygen -u ecc256ecdaa.pub -o ecc256ecdaa.priv -c commit_key.ctx
+
+## Check if ecdhkeygen creates ephemeral key with loaded ECC key of type ECDH
+tpm2_create -C prim.ctx -c ecdh_key.ctx -u ecdh_key.pub -r ecdh_key.priv \
+-G ecc256:ecdh
+
+tpm2_ecdhkeygen -u ecc256ecdh.pub -o ecc256ecdh.priv -c ecdh_key.ctx
+
 exit 0

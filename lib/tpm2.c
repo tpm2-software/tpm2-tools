@@ -4283,6 +4283,20 @@ tool_rc tpm2_commit(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_ecdhkeygen(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *ecc_public_key, TPM2B_ECC_POINT **Z,
+    TPM2B_ECC_POINT **Q) {
+
+    TSS2_RC rval = Esys_ECDH_KeyGen(esys_context, ecc_public_key->tr_handle,
+        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, Z, Q);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_ECDH_KeyGen, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context) {
 
