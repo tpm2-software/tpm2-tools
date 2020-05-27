@@ -58,7 +58,7 @@ Refer to:
     https://trustedcomputinggroup.org/wp-content/uploads/
     TCG_IWG_Credential_Profile_EK_V2.1_R13.pdf
 
-  * **-f**, **\--format**=_FORMAT_:
+[pubkey options](common/pubkey.md)
 
     Public key format.
 
