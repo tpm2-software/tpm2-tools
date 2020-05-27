@@ -4258,6 +4258,31 @@ tool_rc tpm2_ecephermal(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
     return tool_rc_success;
 }
 
+tool_rc tpm2_commit(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *signing_key_object, TPM2B_ECC_POINT *P1,
+    TPM2B_SENSITIVE_DATA *s2, TPM2B_ECC_PARAMETER *y2, TPM2B_ECC_POINT **K,
+    TPM2B_ECC_POINT **L, TPM2B_ECC_POINT **E, uint16_t *counter) {
+
+    ESYS_TR signing_key_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+        signing_key_object->tr_handle, signing_key_object->session,
+        &signing_key_obj_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_Commit(esys_context, signing_key_object->tr_handle,
+        signing_key_obj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE, P1, s2, y2,
+        K, L, E, counter);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_Commit, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context) {
 

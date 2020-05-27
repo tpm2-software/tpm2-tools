@@ -24,4 +24,16 @@ xxd -p pass1_ecc.ctr | grep 0000
 tpm2_ecephermal -u pass2_ecc.q -t pass2_ecc.ctr ecc256
 xxd -p pass2_ecc.ctr | grep 0001
 
+# TPM2_Commit
+## Check if commit counter in incremented after successful execution of commit
+tpm2_createprimary -C o -c prim.ctx -Q
+
+tpm2_create -C prim.ctx -c commit_key.ctx -u commit_key.pub -r commit_key.priv \
+-G ecc256:ecdaa
+
+tpm2_commit -c commit_key.ctx -t commit.ctr --eccpoint-K K.bin \
+--eccpoint-L L.bin -u E.bin
+
+xxd -p commit.ctr | grep 0002
+
 exit 0

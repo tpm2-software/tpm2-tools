@@ -458,6 +458,11 @@ tool_rc tpm2_geteccparameters(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_ecephermal(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
     TPM2B_ECC_POINT **Q, uint16_t *counter);
 
+tool_rc tpm2_commit(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *signing_key_object, TPM2B_ECC_POINT *P1,
+    TPM2B_SENSITIVE_DATA *s2, TPM2B_ECC_PARAMETER *y2, TPM2B_ECC_POINT **K,
+    TPM2B_ECC_POINT **L, TPM2B_ECC_POINT **E, uint16_t *counter);
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context);
 
