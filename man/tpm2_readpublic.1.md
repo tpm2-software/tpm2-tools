@@ -22,7 +22,7 @@
 
     An optional file to save the name structure of the object.
 
-  * **-f**, **\--format**=_FORMAT_:
+[pubkey options](common/pubkey.md)
 
     Public key format.
 
