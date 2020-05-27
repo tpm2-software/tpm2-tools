@@ -360,6 +360,24 @@ bool files_save_encrypted_seed(TPM2B_ENCRYPTED_SECRET *encrypted_seed,
 bool files_save_ecc_point(TPM2B_ECC_POINT *Q, const char *path);
 
 /**
+ * Loads a TPM2B_ECC_POINT from disk.
+ * @param path
+ *  The path to load from.
+ * @param Q
+ *  The TPM2B_ECC_POINT data to load.
+ */
+bool files_load_ecc_point(const char *path, TPM2B_ECC_POINT *Q);
+
+/**
+ * Loads a TPM2B_ECC_PARAMETER from disk
+ * @param path
+ *  The path to load from.
+ * @param parameter
+ *  The TPM2B_ECC_PARAMETER data to load.
+ */
+bool files_load_ecc_parameter(const char *path, TPM2B_ECC_PARAMETER *parameter);
+
+/**
  * Loads a TPM2B_ENCRYPTED_SECRET from disk.
  * @param encrypted_seed
  *  The path to load from.
