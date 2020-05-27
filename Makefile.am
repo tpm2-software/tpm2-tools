@@ -169,8 +169,8 @@ bin_PROGRAMS += \
     tools/tpm2_setcommandauditstatus \
     tools/tpm2_getcommandauditdigest \
     tools/tpm2_getsessionauditdigest \
-    tools/tpm2_geteccparameters
-
+    tools/tpm2_geteccparameters \
+    tools/tpm2_ecephermal
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
@@ -417,6 +417,7 @@ tools_tpm2_setcommandauditstatus_SOURCES = tools/tpm2_setcommandauditstatus.c $(
 tools_tpm2_getcommandauditdigest_SOURCES = tools/tpm2_getcommandauditdigest.c $(TOOL_SRC)
 tools_tpm2_getsessionauditdigest_SOURCES = tools/tpm2_getsessionauditdigest.c $(TOOL_SRC)
 tools_tpm2_geteccparameters_SOURCES = tools/tpm2_geteccparameters.c $(TOOL_SRC)
+tools_tpm2_ecephermal_SOURCES = tools/tpm2_ecephermal.c $(TOOL_SRC)
 
 if UNIT
 TESTS += $(check_PROGRAMS)
@@ -648,7 +649,8 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_setcommandauditstatus.1 \
     man/man1/tpm2_getcommandauditdigest.1 \
     man/man1/tpm2_getsessionauditdigest.1 \
-    man/man1/tpm2_geteccparameters.1
+    man/man1/tpm2_geteccparameters.1 \
+    man/man1/tpm2_ecephermal.1
 
 if HAVE_FAPI
 dist_man1_MANS += \
