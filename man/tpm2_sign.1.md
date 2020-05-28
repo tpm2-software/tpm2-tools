@@ -48,13 +48,13 @@ must be provided via the **-t** input. The ticket indicates that the TPM perform
   * **-s**, **\--scheme**=_ALGORITHM_:
 
     The signing scheme used to sign the message. Optional.
+
     Signing schemes should follow the "formatting standards", see section
-     "Algorithm Specifiers".
-    Also, see section "Supported Signing Schemes" for a list of supported
-     signature schemes.
+    "Algorithm Specifiers".
+
     If specified, the signature scheme must match the key type.
     If left unspecified, a default signature scheme for the key type will
-     be used.
+    be used.
 
   * **-d**, **\--digest**:
 
@@ -101,6 +101,7 @@ information many users may expect.
 
 [common tcti options](common/tcti.md) collection of options used to configure
 the various known TCTI modules.
+
 [signature format specifiers](common/signature.md)
 
 # EXAMPLES
