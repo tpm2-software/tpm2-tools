@@ -37,7 +37,7 @@ struct tpm_quote_ctx {
 };
 
 static tpm_quote_ctx ctx = {
-    .sig_hash_algorithm = TPM2_ALG_SHA256,
+    .sig_hash_algorithm = TPM2_ALG_NULL,
     .qualification_data = TPM2B_EMPTY_INIT,
 };
 
@@ -100,7 +100,7 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcr_selection) {
     TPMT_SIG_SCHEME in_scheme = { .scheme = TPM2_ALG_NULL };
 
     tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx,
-            ctx.key.object.tr_handle, ctx.sig_hash_algorithm, TPM2_ALG_NULL,
+            ctx.key.object.tr_handle, &ctx.sig_hash_algorithm, TPM2_ALG_NULL,
             &in_scheme);
     if (rc != tool_rc_success) {
         return rc;

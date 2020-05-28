@@ -600,7 +600,7 @@ static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
     return BN_bn2bin(e, (unsigned char *) &rdetail->exponent);
 }
 
-RSA *tpm2_openssl_get_public_RSA_from_pem(FILE *f, const char *path) {
+static RSA *tpm2_openssl_get_public_RSA_from_pem(FILE *f, const char *path) {
 
     /*
      * Public PEM files appear in two formats:

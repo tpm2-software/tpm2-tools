@@ -133,17 +133,21 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
  * @param keyHandle
  *  Handle to key used in signing operation
  * @param halg
- *  Hash algorithm for message
+ *  The requested hash algorithm for message, the contents are checked
+ *  against what the object will support. If TPM2_ALG_NULL is specified, then the
+ *  hash algorithm is updated to what the object will support.
  * @param sig_scheme
  *  Signature scheme (optional, use TPM2_ALG_NULL for default)
  * @param scheme
  *  Signature scheme output
+ * @param default_hash_sha1
+ *  Set to true to make the default hash sha1 over sha256
  * @return
  *  tool_rc indicating status.
  *  On error scheme is left unmodified.
  */
 tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
-        ESYS_TR key_handle, TPMI_ALG_HASH halg, TPMI_ALG_SIG_SCHEME sig_scheme,
+        ESYS_TR key_handle, TPMI_ALG_HASH *halg, TPMI_ALG_SIG_SCHEME sig_scheme,
         TPMT_SIG_SCHEME *scheme);
 
 /**

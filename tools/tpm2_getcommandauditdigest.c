@@ -38,7 +38,7 @@ struct tpm_getcommandauditdigest_ctx {
 };
 
 static tpm_getcommandauditdigest_ctx ctx = {
-    .sig_hash_algorithm = TPM2_ALG_SHA256,
+    .sig_hash_algorithm = TPM2_ALG_NULL,
     .qualification_data = TPM2B_EMPTY_INIT,
     .endorsement_hierarchy = {
         .ctx_path = "e"
@@ -157,7 +157,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * Setup signature scheme
      */
     rc = tpm2_alg_util_get_signature_scheme(ectx,
-            ctx.key.object.tr_handle, ctx.sig_hash_algorithm, TPM2_ALG_NULL,
+            ctx.key.object.tr_handle, &ctx.sig_hash_algorithm, TPM2_ALG_NULL,
             &ctx.in_scheme);
     if (rc != tool_rc_success) {
         return rc;

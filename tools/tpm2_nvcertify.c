@@ -43,7 +43,7 @@ struct tpm_nvcertify_ctx {
 };
 
 static tpm_nvcertify_ctx ctx = {
-    .halg = TPM2_ALG_SHA1,
+    .halg = TPM2_ALG_NULL,
     .sig_scheme = TPM2_ALG_NULL,
 };
 
@@ -252,7 +252,7 @@ static tool_rc process_nvcertify_input(ESYS_CONTEXT *ectx,
      * Set appropriate signature scheme for key type
      */
     rc = tpm2_alg_util_get_signature_scheme(ectx,
-        ctx.signing_key.object.tr_handle, ctx.halg, ctx.sig_scheme, in_scheme);
+        ctx.signing_key.object.tr_handle, &ctx.halg, ctx.sig_scheme, in_scheme);
     if (rc != tool_rc_success) {
         LOG_ERR("bad signature scheme for key type!");
         return rc;

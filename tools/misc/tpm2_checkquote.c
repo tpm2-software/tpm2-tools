@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+ #include <openssl/pem.h>
+#include <openssl/err.h>
+
 #include "files.h"
 #include "log.h"
 #include "object.h"
@@ -21,18 +24,16 @@ struct tpm2_verifysig_ctx {
             UINT8 msg :1;
             UINT8 sig :1;
             UINT8 pcr :1;
-            UINT8 key_context :1;
-            UINT8 fmt;
+            UINT8 hlg :1;
         };
         UINT8 all;
     } flags;
-    TPMI_ALG_SIG_SCHEME format;
     TPMI_ALG_HASH halg;
     TPM2B_DIGEST msg_hash;
     TPM2B_DIGEST pcr_hash;
     TPMS_ATTEST attest;
     TPM2B_DATA extra_data;
-    TPMT_SIGNATURE signature;
+    TPM2B_MAX_BUFFER signature;
     char *msg_file_path;
     char *sig_file_path;
     char *out_file_path;
@@ -42,46 +43,65 @@ struct tpm2_verifysig_ctx {
 };
 
 static tpm2_verifysig_ctx ctx = {
-        .format = TPM2_ALG_ERROR,
         .halg = TPM2_ALG_SHA256,
         .msg_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
         .pcr_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
 };
 
-static bool verify_signature() {
+static bool verify(void) {
 
     bool result = false;
 
     // Read in the AKpub they provided as an RSA object
-    FILE *pubkey_input = fopen(ctx.pubkey_file_path, "rb");
-    if (!pubkey_input) {
+    FILE *f = fopen(ctx.pubkey_file_path, "rb");
+    if (!f) {
         LOG_ERR("Could not open RSA pubkey input file \"%s\" error: \"%s\"",
                 ctx.pubkey_file_path, strerror(errno));
         return false;
     }
-    RSA *pub_key = tpm2_openssl_get_public_RSA_from_pem(pubkey_input,
-            ctx.pubkey_file_path);
-    if (pub_key == NULL) {
-        LOG_ERR("Failed to load RSA public key from file");
+
+    /* read the public key */
+    EVP_PKEY *pkey = PEM_read_PUBKEY(f, NULL, NULL, NULL);
+
+    EVP_PKEY_CTX *pkey_ctx = EVP_PKEY_CTX_new(pkey, NULL);
+    if (!pkey_ctx) {
+        LOG_ERR("EVP_PKEY_CTX_new failed: %s", ERR_error_string(ERR_get_error(), NULL));
         goto err;
     }
 
-    // Get the signature ready
-    if (ctx.signature.sigAlg != TPM2_ALG_RSASSA) {
-        LOG_ERR("Only RSASSA is supported for signatures");
+    /* get the digest alg */
+    /* TODO SPlit loading on plain vs tss format to detect the hash alg */
+    /* If its a plain sig we need -g */
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(ctx.halg);
+    // TODO error handling
+
+    int rc = EVP_PKEY_verify_init(pkey_ctx);
+    if (!rc) {
+        LOG_ERR("EVP_PKEY_verify_init failed: %s", ERR_error_string(ERR_get_error(), NULL));
         goto err;
     }
-    TPM2B_PUBLIC_KEY_RSA sig = ctx.signature.signature.rsassa.sig;
+
+    rc = EVP_PKEY_CTX_set_signature_md(pkey_ctx, md);
+    if (!rc) {
+        LOG_ERR("EVP_PKEY_CTX_set_signature_md failed: %s", ERR_error_string(ERR_get_error(), NULL));
+        goto err;
+    }
+
+    /* TODO dump actual signature */
     tpm2_tool_output("sig: ");
-    tpm2_util_hexdump(sig.buffer, sig.size);
+    tpm2_util_hexdump(ctx.signature.buffer, ctx.signature.size);
     tpm2_tool_output("\n");
 
     // Verify the signature matches message digest
-    int openssl_hash =
-        tpm2_openssl_halgid_from_tpmhalg(ctx.signature.signature.rsassa.hash);
-    if (!RSA_verify(openssl_hash, ctx.msg_hash.buffer, ctx.msg_hash.size,
-            sig.buffer, sig.size, pub_key)) {
-        LOG_ERR("Error validating signed message with public key provided");
+
+    rc = EVP_PKEY_verify(pkey_ctx, ctx.signature.buffer, ctx.signature.size,
+            ctx.msg_hash.buffer, ctx.msg_hash.size);
+    if (rc != 1) {
+        if (rc == 0) {
+            LOG_ERR("Error validating signed message with public key provided");
+        } else {
+            LOG_ERR("Error %s", ERR_error_string(ERR_get_error(), NULL));
+        }
         goto err;
     }
 
@@ -105,11 +125,12 @@ static bool verify_signature() {
     result = true;
 
 err:
-    if (pubkey_input) {
-        fclose(pubkey_input);
+    if (f) {
+        fclose(f);
     }
 
-    RSA_free(pub_key);
+    EVP_PKEY_free(pkey);
+    EVP_PKEY_CTX_free(pkey_ctx);
 
     return result;
 }
@@ -216,21 +237,38 @@ static tool_rc init(void) {
     tpm2_pcrs * pcrs;
     tool_rc return_value = tool_rc_general_error;
 
-    if (ctx.flags.msg) {
-        msg = message_from_file(ctx.msg_file_path);
-        if (!msg) {
-            /* message_from_file() logs specific error no need to here */
-            return tool_rc_general_error;
-        }
+    msg = message_from_file(ctx.msg_file_path);
+    if (!msg) {
+        /* message_from_file() logs specific error no need to here */
+        return tool_rc_general_error;
     }
 
-    if (ctx.flags.sig) {
-        tpm2_convert_sig_fmt fmt =
-                ctx.flags.fmt ? signature_format_plain : signature_format_tss;
-        bool res = tpm2_convert_sig_load(ctx.sig_file_path, fmt, ctx.format,
-                ctx.halg, &ctx.signature);
-        if (!res) {
-            goto err;
+    /*
+     * If the caller specifies the signature format, like rsassa, that means
+     * the caller doesn't have the TPMT signature, but rather a plain signature,
+     * and we need to trust what was set in -g as the hash algorithm. The
+     * verification will fail.
+     *
+     * In the case of the TSS signature format, we have the hash alg, so if the user
+     * specifies the hash alg, or we're guessing, we should use the right one.
+     */
+    TPMI_ALG_HASH expected_halg = TPM2_ALG_ERROR;
+    bool res = tpm2_convert_sig_load_plain(ctx.sig_file_path,
+            &ctx.signature, &expected_halg);
+    if (!res) {
+        goto err;
+    }
+
+    if (expected_halg != TPM2_ALG_NULL) {
+        if (ctx.halg != expected_halg) {
+            if (ctx.flags.hlg) {
+                const char *got_str = tpm2_alg_util_algtostr(ctx.halg, tpm2_alg_util_flags_any);
+                const char *expected_str = tpm2_alg_util_algtostr(expected_halg, tpm2_alg_util_flags_any);
+                LOG_WARN("User specified hash algorithm of \"%s\", does not match"
+                        "expected hash algorithm of \"%s\", using: \"%s\"",
+                        got_str, expected_str, expected_str);
+            }
+            ctx.halg = expected_halg;
         }
     }
 
@@ -280,7 +318,7 @@ static tool_rc init(void) {
     }
 
     // Figure out the digest for this message
-    bool res = tpm2_openssl_hash_compute_data(ctx.halg, msg->attestationData,
+    res = tpm2_openssl_hash_compute_data(ctx.halg, msg->attestationData,
             msg->size, &ctx.msg_hash);
     if (!res) {
         LOG_ERR("Compute message hash failed!");
@@ -307,6 +345,7 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Unable to convert algorithm, got: \"%s\"", value);
             return false;
         }
+        ctx.flags.hlg = 1;
     }
         break;
     case 'm': {
@@ -314,15 +353,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.msg = 1;
     }
         break;
-    case 'F': {
-        ctx.format = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
-        if (ctx.format == TPM2_ALG_ERROR) {
-            LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
-            return false;
-        }
-
-        ctx.flags.fmt = 1;
-    }
+    case 'F':
+        LOG_WARN("DEPRECATED: Format ignored");
         break;
     case 'q':
         ctx.extra_data.size = sizeof(ctx.extra_data.buffer);
@@ -373,7 +405,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    bool res = verify_signature();
+    bool res = verify();
     if (!res) {
         LOG_ERR("Verify signature failed!");
         return tool_rc_general_error;

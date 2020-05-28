@@ -48,9 +48,11 @@ struct tpm2_policysigned_ctx {
 };
 
 static tpm2_policysigned_ctx ctx = {
-    .signature = { .sigAlg = TPM2_ALG_RSASSA,
-                   .signature.rsassa.hash = TPM2_ALG_SHA256,
-                 },
+    .signature = {
+        .sigAlg = TPM2_ALG_RSASSA,
+        .signature.rsassa.hash = TPM2_ALG_SHA256,
+    },
+    .halg = TPM2_ALG_SHA256
 };
 
 static bool on_option(char key, char *value) {

@@ -209,6 +209,18 @@ bool files_save_signature(TPMT_SIGNATURE *signature, const char *path);
 bool files_load_signature(const char *path, TPMT_SIGNATURE *signature);
 
 /**
+ * Like files_save)signature() but doesn't complain about libmu failures.
+ * Useful if you're trying to probe if its a plain or tss format signature.
+ * @param path
+ *  The path to load from.
+ * @param signature
+ *  The TPMT_SIGNATURE to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_signature_silent(const char *path, TPMT_SIGNATURE *signature);
+
+/**
  * Serializes a TPMT_TK_VERIFIED to the file path provided.
  * @param signature
  *  The TPMT_SIGNATURE to save to disk.

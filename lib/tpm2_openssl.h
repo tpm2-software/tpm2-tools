@@ -232,18 +232,6 @@ bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg,
         TPM2B_PUBLIC *pub);
 
 /**
- * Retrieves a public portion of an RSA key from a PEM file.
- *
- * @param f
- *  The FILE object that is open for reading the path.
- * @param path
- *  The path to load from.
- * @return
- *  The public structure.
- */
-RSA* tpm2_openssl_get_public_RSA_from_pem(FILE *f, const char *path);
-
-/**
  * Retrieves a public portion of an ECC key from a PEM file.
  *
  * @param f

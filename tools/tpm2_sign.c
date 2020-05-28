@@ -41,7 +41,7 @@ struct tpm_sign_ctx {
 };
 
 static tpm_sign_ctx ctx = {
-        .halg = TPM2_ALG_SHA1,
+        .halg = TPM2_ALG_NULL,
         .sig_scheme = TPM2_ALG_NULL
 };
 
@@ -93,7 +93,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
      * allowed for key type.
      */
     tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx,
-            ctx.signing_key.object.tr_handle, ctx.halg, ctx.sig_scheme,
+            ctx.signing_key.object.tr_handle, &ctx.halg, ctx.sig_scheme,
             &ctx.in_scheme);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid signature scheme for key type!");

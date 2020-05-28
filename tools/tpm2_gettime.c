@@ -42,7 +42,7 @@ struct tpm_gettime_ctx {
 };
 
 static tpm_gettime_ctx ctx = {
-        .halg = TPM2_ALG_SHA256,
+        .halg = TPM2_ALG_NULL,
         .sig_scheme = TPM2_ALG_NULL,
         .privacy_admin = { .ctx_path = "endorsement" }
 };
@@ -72,7 +72,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
      * Set signature scheme for key type, or validate chosen scheme is allowed for key type.
      */
     rc = tpm2_alg_util_get_signature_scheme(ectx,
-            ctx.signing_key.object.tr_handle, ctx.halg, ctx.sig_scheme,
+            ctx.signing_key.object.tr_handle, &ctx.halg, ctx.sig_scheme,
             &ctx.in_scheme);
     if (rc != tool_rc_success) {
         LOG_ERR("bad signature scheme for key type!");
