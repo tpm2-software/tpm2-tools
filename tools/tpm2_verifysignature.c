@@ -39,7 +39,7 @@ struct tpm2_verifysig_ctx {
 static tpm2_verifysig_ctx ctx = {
         .format = TPM2_ALG_ERROR,
         .msg_hash = NULL,
-        .halg = TPM2_ALG_SHA1
+        .halg = TPM2_ALG_SHA256
 };
 
 static tool_rc verify_signature(ESYS_CONTEXT *context) {

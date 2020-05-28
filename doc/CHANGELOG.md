@@ -53,6 +53,10 @@
 
  * tss2_*: Add size parameter to tss2_createseal
 
+ * tpm2\_checkqoute:
+   - Add EC support.
+   - Support loading *tss* signatures.
+
 ### 4.2 2020-04-08
 
  * Fix various issues reported by static analysis tools.

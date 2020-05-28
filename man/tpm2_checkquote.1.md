@@ -19,7 +19,8 @@ those in the quote.
 
   * **-u**, **\--public**=_FILE_:
 
-    File input for the public portion of the signature verification key.
+    File input for the public portion of the signature verification key. Either the *pem*
+    file or *tss* public format file.
 
   * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
@@ -33,12 +34,6 @@ those in the quote.
 
     The input signature file of the signature to be validated.
 
-  * **-F**, **\--format**=_FORMAT_:
-
-    Signature format. The default is the TPM2.0 **TPMT_SIGNATURE**. Other
-    schemes are possible if the data came from an external source like OpenSSL.
-    The tool currently only supports rsassa.
-
   * **-f**, **\--pcr**=_FILE_:
 
     Optional PCR input file to save the list of PCR values that were included
@@ -48,6 +43,10 @@ those in the quote.
 
     Qualification data for the quote. Can either be a hex string or path.
     This is typically used to add a nonce against replay attacks.
+
+  * **-F**, **\--format**=_FORMAT_:
+
+    **DEPRECATED** and **IGNORED ** as it's superfluous.
 
 ## References
 
@@ -67,16 +66,16 @@ the various known TCTI modules.
 
 ## Generate a quote with a TPM, then verify it
 ```bash
-tpm2_createek -c 0x81010009 -G rsa -u ekpub.pem -f pem
+tpm2_createek -c 0x81010001 -G rsa -u ekpub.pem -f pem
 
-tpm2_createak -C 0x81010009 -c 0x8101000a -G rsa -s rsassa -g sha256 \
+tpm2_createak -C 0x81010001 -c ak.ctx -G rsa -s rsassa -g sha256 \
 -u akpub.pem -f pem -n ak.name
 
-tpm2_quote -c 0x8101000a -l sha256:15,16,22 -q abc123 -m quote.out -s sig.out \
--o pcrs.out -g sha256
+tpm2_quote -c ak.ctx -l sha256:15,16,22 -q abc123 -m quote.msg -s quote.sig \
+  -o quote.pcrs -g sha256
 
-tpm2_checkquote -u akpub.pem -m quote.out -s sig.out -f pcrs.out -g sha256 \
--q abc123
+tpm2_checkquote -u akpub.pem -m quote.msg -s quote.sig -f quote.pcrs -g sha256 \
+  -q abc123
 ```
 
 [returns](common/returns.md)

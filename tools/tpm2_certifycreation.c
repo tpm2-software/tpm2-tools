@@ -42,7 +42,7 @@ struct tpm_certifycreation_ctx {
 };
 
 static tpm_certifycreation_ctx ctx = {
-        .halg = TPM2_ALG_SHA1,
+        .halg = TPM2_ALG_NULL,
         .sig_scheme = TPM2_ALG_NULL
 };
 
@@ -219,7 +219,7 @@ static tool_rc process_certifycreation_input(ESYS_CONTEXT *ectx,
      * Validate chosen scheme is allowed for key type
      */
     rc = tpm2_alg_util_get_signature_scheme(ectx,
-        ctx.signing_key.object.tr_handle, ctx.halg, ctx.sig_scheme, in_scheme);
+        ctx.signing_key.object.tr_handle, &ctx.halg, ctx.sig_scheme, in_scheme);
     if (rc != tool_rc_success) {
         LOG_ERR("bad signature scheme for key type!");
         return rc;

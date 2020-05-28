@@ -401,6 +401,51 @@ bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format,
     }
 }
 
+bool tpm2_convert_sig_load_plain(const char *path,
+        TPM2B_MAX_BUFFER *signature, TPMI_ALG_HASH *halg) {
+
+    /*
+     * TSS signature need be read and converted to plain
+     *
+     * So load it up into the TPMT Structure
+     */
+    TPMT_SIGNATURE tmp = { 0 };
+    bool ret = files_load_signature_silent(path, &tmp);
+    if (!ret) {
+        /* plain signatures are just used as is */
+
+        *halg = TPM2_ALG_NULL;
+
+        signature->size = sizeof(signature->buffer);
+        return files_load_bytes_from_path(path,
+                signature->buffer,
+                &signature->size);
+    }
+
+    *halg = tmp.signature.any.hashAlg;
+
+    /* Then convert it to plain, but into a buffer */
+    UINT8 *buffer;
+    UINT16 size;
+
+    buffer = tpm2_convert_sig(&size, &tmp);
+    if (buffer == NULL) {
+        return false;
+    }
+
+    if (size > sizeof(signature->buffer)) {
+        LOG_ERR("Signature size bigger than buffer, got: %u expected"
+                " less than %zu", size, sizeof(signature->buffer));
+        free(buffer);
+        return false;
+    }
+
+    signature->size = size;
+    memcpy(signature->buffer, buffer, size);
+    free(buffer);
+    return true;
+}
+
 static UINT8 *extract_ecdsa(TPMS_SIGNATURE_ECDSA *ecdsa, UINT16 *size) {
 
     /* the DER encoded ECDSA signature */

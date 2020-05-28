@@ -708,6 +708,25 @@ tool_rc files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path)
         return rc == TPM2_RC_SUCCESS; \
     }
 
+#define LOAD_TYPE_SILENT(type, name) \
+    bool files_load_##name##_silent(const char *path, type *name) { \
+    \
+        UINT8 buffer[sizeof(*name)]; \
+        UINT16 size = sizeof(buffer); \
+        bool res = files_load_bytes_from_path(path, buffer, &size); \
+        if (!res) { \
+            return false; \
+        } \
+        \
+        size_t offset = 0; \
+        TSS2_RC rc = Tss2_MU_##type##_Unmarshal(buffer, size, &offset, name); \
+        if (rc != TSS2_RC_SUCCESS) { \
+            return false; \
+        } \
+        \
+        return rc == TPM2_RC_SUCCESS; \
+    }
+
 SAVE_TYPE(TPM2B_PUBLIC, public)
 LOAD_TYPE(TPM2B_PUBLIC, public)
 LOAD_TYPE_FILE(TPM2B_PUBLIC, public)
@@ -718,6 +737,7 @@ LOAD_TYPE_FILE(TPMT_PUBLIC, template)
 
 SAVE_TYPE(TPMT_SIGNATURE, signature)
 LOAD_TYPE(TPMT_SIGNATURE, signature)
+LOAD_TYPE_SILENT(TPMT_SIGNATURE, signature)
 
 SAVE_TYPE(TPMT_TK_VERIFIED, ticket)
 LOAD_TYPE(TPMT_TK_VERIFIED, ticket)

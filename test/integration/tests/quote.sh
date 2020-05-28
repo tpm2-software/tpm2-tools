@@ -29,7 +29,7 @@ toss_out=junk.out
 cleanup() {
     rm -f $file_primary_key_ctx $file_quote_key_pub $file_quote_key_priv \
     $file_quote_key_name $file_quote_key_ ak.pub2 ak.name_2 \
-    $out $toss_out $ak2_ctx
+    $out $toss_out $ak2_ctx ek.ctx ak.ctx nonce.bin quote.bin quote.sig quote.pcr
 
     tpm2_evictcontrol -Q -Co -c $Handle_ek_quote 2>/dev/null || true
     tpm2_evictcontrol -Q -Co -c $Handle_ak_quote 2>/dev/null || true
@@ -92,5 +92,11 @@ tpm2_evictcontrol -Q -C o -c $ak2_ctx $Handle_ak_quote2
 
 tpm2_quote -Q -c $Handle_ak_quote -l $alg_quote:16,17,18 -q $nonce \
 -m $toss_out -s $toss_out -o $toss_out -g $alg_primary_obj
+
+# ECC Test
+tpm2_createek -G ecc -c ek.ctx
+tpm2_createak -C ek.ctx -c ak.ctx -G ecc -g sha256 -s ecdsa
+tpm2_getrandom -o nonce.bin 20
+tpm2_quote -c ak.ctx -l sha256:15,16,22 -q nonce.bin -m quote.bin -s quote.sig -o quote.pcr -g sha256
 
 exit 0

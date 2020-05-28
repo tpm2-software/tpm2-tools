@@ -818,68 +818,119 @@ bool pcr_parse_digest_list(char **argv, int len,
     return true;
 }
 
-static tool_rc get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT object_handle,
-        TPMI_ALG_PUBLIC *type) {
+static tool_rc tpm2_public_to_scheme(ESYS_CONTEXT *ectx, ESYS_TR key, TPMI_ALG_PUBLIC *type,
+        TPMT_SIG_SCHEME *sigscheme) {
 
-    TPM2B_PUBLIC *out_public;
+    tool_rc rc = tool_rc_general_error;
 
-    tool_rc rc = tpm2_readpublic(ectx, object_handle, &out_public, NULL, NULL);
+    TPM2B_PUBLIC *out_public = NULL;
+    rc = tpm2_readpublic(ectx, key, &out_public, NULL, NULL);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     *type = out_public->publicArea.type;
+    TPMU_PUBLIC_PARMS *pp = &out_public->publicArea.parameters;
 
-    free(out_public);
+    /*
+     * Symmetric ciphers do not have signature algorithms
+     */
+    if (*type == TPM2_ALG_SYMCIPHER) {
+        LOG_ERR("Cannot convert symmetric cipher to signature algorithm");
+        goto out;
+    }
 
-    return tool_rc_success;
+    /*
+     * Now we are looking at specific algorithms that the keys
+     * are bound to, so we need to populate that in the scheme
+     */
+    if ((*type == TPM2_ALG_RSA || *type == TPM2_ALG_ECC)) {
+
+        sigscheme->scheme = pp->asymDetail.scheme.scheme;
+        /* they all have a hash alg, and for most schemes' thats it */
+        sigscheme->details.any.hashAlg
+            = pp->asymDetail.scheme.details.anySig.hashAlg;
+
+        rc = tool_rc_success;
+        goto out;
+    }
+
+    /* keyed hash could be the only one left */
+    sigscheme->scheme = pp->keyedHashDetail.scheme.scheme;
+    sigscheme->details.hmac.hashAlg = pp->keyedHashDetail.scheme.details.hmac.hashAlg;
+
+    rc = tool_rc_success;
+
+out:
+    Esys_Free(out_public);
+    return rc;
 }
 
-tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
-        ESYS_TR key_handle, TPMI_ALG_HASH halg, TPMI_ALG_SIG_SCHEME sig_scheme,
+static bool is_null_alg(TPM2_ALG_ID alg) {
+    return !alg || alg == TPM2_ALG_NULL;
+}
+
+tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *ectx,
+        ESYS_TR key_handle, TPMI_ALG_HASH *halg, TPMI_ALG_SIG_SCHEME sig_scheme,
         TPMT_SIG_SCHEME *scheme) {
 
-    TPM2_ALG_ID type;
-    tool_rc rc = get_key_type(context, key_handle, &type);
+    TPMI_ALG_PUBLIC type = TPM2_ALG_NULL;
+    TPMT_SIG_SCHEME object_sigscheme = { 0 };
+    tool_rc rc = tpm2_public_to_scheme(ectx, key_handle, &type, &object_sigscheme);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    switch (type) {
-    case TPM2_ALG_RSA:
-        if (sig_scheme == TPM2_ALG_NULL || sig_scheme == TPM2_ALG_RSASSA) {
-            scheme->scheme = TPM2_ALG_RSASSA;
-            scheme->details.rsassa.hashAlg = halg;
-        } else if (sig_scheme == TPM2_ALG_RSAPSS) {
-            scheme->scheme = TPM2_ALG_RSAPSS;
-            scheme->details.rsapss.hashAlg = halg;
-        } else {
-            return tool_rc_general_error;
-        }
-        break;
-    case TPM2_ALG_KEYEDHASH:
-        scheme->scheme = TPM2_ALG_HMAC;
-        scheme->details.hmac.hashAlg = halg;
-        break;
-    case TPM2_ALG_ECC:
-        if (sig_scheme == TPM2_ALG_NULL || sig_scheme == TPM2_ALG_ECDSA) {
-            scheme->scheme = TPM2_ALG_ECDSA;
-            scheme->details.ecdsa.hashAlg = halg;
-        } else if (sig_scheme == TPM2_ALG_ECDAA) {
-            scheme->scheme = TPM2_ALG_ECDAA;
-            scheme->details.ecdaa.hashAlg = halg;
-        } else if (sig_scheme == TPM2_ALG_ECSCHNORR) {
-            scheme->scheme = TPM2_ALG_ECSCHNORR;
-            scheme->details.ecschnorr.hashAlg = halg;
-        } else {
-            return tool_rc_general_error;
-        }
-        break;
-    case TPM2_ALG_SYMCIPHER:
-    default:
-        LOG_ERR("Unknown key type, got: 0x%x", type);
+    LOG_INFO("hashing alg in: 0x%x", *halg);
+    LOG_INFO("sig scheme in: 0x%x", sig_scheme);
+
+    /*
+     * if scheme is requested by the user, verify the scheme will work
+     */
+    if (!is_null_alg(sig_scheme) && !is_null_alg(object_sigscheme.scheme)
+            && object_sigscheme.scheme != sig_scheme) {
+        LOG_ERR("Requested sign scheme \"%s\" but object only supports sign scheme \%s\")",
+                tpm2_alg_util_algtostr(sig_scheme, tpm2_alg_util_flags_any),
+                tpm2_alg_util_algtostr(object_sigscheme.scheme, tpm2_alg_util_flags_any));
         return tool_rc_general_error;
+    } else {
+            /*
+             * set a default for RSA, ECC or KEYEDHASH
+             * Not ECDAA, it wasn't chosen because it needs count as well,
+             * so any.hashAlg doesn't work. Aksim what would you pick for count?
+             * See bug #2071 to figure out what to do if an ECDAA scheme comes back.
+             *
+             * Assign scheme based on type:
+             * TPM2_ALG_RSA --> TPM2_ALG_RSSASSA
+             * TPM2_ALG_ECC --> TPM2_ALG_ECDSA
+             * TPM2_ALG_KEYEDHASH --> TPM2_ALG_HMAC
+             */
+        if (is_null_alg(sig_scheme)) {
+            object_sigscheme.scheme = (type == TPM2_ALG_RSA) ? TPM2_ALG_RSASSA :
+                (type == TPM2_ALG_ECC) ? TPM2_ALG_ECDSA : TPM2_ALG_HMAC;
+        } else {
+            object_sigscheme.scheme = sig_scheme;
+        }
     }
+
+    /* if hash alg is requested by the user, verify the hash alg will work */
+    if (!is_null_alg(*halg) && !is_null_alg(object_sigscheme.details.any.hashAlg)
+            && object_sigscheme.details.any.hashAlg != *halg) {
+        LOG_ERR("Requested signature hash alg \"%s\" but object only supports signature hash alg \%s\")",
+                tpm2_alg_util_algtostr(*halg, tpm2_alg_util_flags_any),
+                tpm2_alg_util_algtostr(object_sigscheme.details.any.hashAlg, tpm2_alg_util_flags_any));
+        return tool_rc_general_error;
+    } else {
+        object_sigscheme.details.any.hashAlg = is_null_alg(*halg) ? TPM2_ALG_SHA256 :
+                *halg;
+    }
+
+    /* everything requested matches, or we got defaults move along */
+    *halg = object_sigscheme.details.any.hashAlg;
+    *scheme = object_sigscheme;
+
+    LOG_INFO("halg out: 0x%x", *halg);
+    LOG_INFO("sig scheme out: 0x%x", scheme->scheme);
 
     return tool_rc_success;
 }

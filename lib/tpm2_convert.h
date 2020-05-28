@@ -95,4 +95,22 @@ bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format,
         TPMI_ALG_SIG_SCHEME sig_alg, TPMI_ALG_HASH halg,
         TPMT_SIGNATURE *signature);
 
+/**
+ * Given a file, loads up the plain format of the signature. Probing to determine
+ * if its a TSS buffer (using libmu errors as the detector) or a plain OSSL style
+ * signature.
+ * into a buffer.
+ * @param path
+ *  The file path containing the signature.
+ * @param signature
+ *  The plain signature bytes.
+ * @param halg:
+ *  If the signature scheme is *tss* also provide the hash algorithm, else
+ *  set it to TPM2_ALG_NULL.
+ * @return
+ *  true on success, false on error.
+ */
+bool tpm2_convert_sig_load_plain(const char *path,
+        TPM2B_MAX_BUFFER *signature, TPMI_ALG_HASH *halg);
+
 #endif /* CONVERSION_H */
