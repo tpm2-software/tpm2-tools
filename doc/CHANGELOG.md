@@ -35,6 +35,24 @@
 
  * tss2_*: tss2_setappdata now reads from file or stdin allowing to store also binary data
 
+ * tss2_*: Fix bash-completion for tss2_pcrextend and tss2_verifysignature
+
+ * tss2_*: Add force option to tss2_list
+
+ * tss2_*: Make force option consistent in all fapi tools
+
+ * tss2_*: Do not decode non-TPM errors
+
+ * tss2_*: Enhance integration tests to test changes of optional/mandatory parameters
+
+ * tss2_*: Add --hex parameter to tss2_getrandom
+
+ * tss2_*: Fix autocompletion issue
+
+ * tss2_*: Switch tss2_* to with-"="-style
+
+ * tss2_*: Add size parameter to tss2_createseal
+
 ### 4.2 2020-04-08
 
  * Fix various issues reported by static analysis tools.
