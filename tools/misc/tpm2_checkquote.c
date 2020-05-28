@@ -52,16 +52,12 @@ static bool verify(void) {
 
     bool result = false;
 
-    // Read in the AKpub they provided as an RSA object
-    FILE *f = fopen(ctx.pubkey_file_path, "rb");
-    if (!f) {
-        LOG_ERR("Could not open RSA pubkey input file \"%s\" error: \"%s\"",
-                ctx.pubkey_file_path, strerror(errno));
+    /* read the public key */
+    EVP_PKEY *pkey = NULL;
+    bool ret = tpm2_public_load_pkey(ctx.pubkey_file_path, &pkey);
+    if (!ret) {
         return false;
     }
-
-    /* read the public key */
-    EVP_PKEY *pkey = PEM_read_PUBKEY(f, NULL, NULL, NULL);
 
     EVP_PKEY_CTX *pkey_ctx = EVP_PKEY_CTX_new(pkey, NULL);
     if (!pkey_ctx) {
@@ -125,9 +121,6 @@ static bool verify(void) {
     result = true;
 
 err:
-    if (f) {
-        fclose(f);
-    }
 
     EVP_PKEY_free(pkey);
     EVP_PKEY_CTX_free(pkey_ctx);

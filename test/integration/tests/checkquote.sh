@@ -65,12 +65,22 @@ tpm2_createek -G ecc -c ecc.ek
 
 tpm2_createak -C ecc.ek -c ecc.ak -G ecc -g sha256 -s ecdsa
 
-tpm2_readpublic -c ecc.ak -f pem -o ecc.ek.pem
+tpm2_readpublic -c ecc.ak -f pem -o ecc.ak.pem
 
 tpm2_getrandom -o nonce.bin 20
 
 tpm2_quote -c ecc.ak -l sha256:15,16,22 -q nonce.bin -m quote.bin -s quote.sig -o quote.pcr -g sha256
 
-tpm2_checkquote -u ecc.ek.pem -m quote.bin -s quote.sig -f quote.pcr -g sha256 -q nonce.bin
+tpm2_checkquote -u ecc.ak.pem -m quote.bin -s quote.sig -f quote.pcr -g sha256 -q nonce.bin
+
+# Verify that tss format works
+tpm2_readpublic -c ecc.ak -f tss -o ecc.ak.tss
+
+tpm2_checkquote -u ecc.ak.tss -m quote.bin -s quote.sig -f quote.pcr -g sha256 -q nonce.bin
+
+# Verify the tpmt format works
+tpm2_readpublic -c ecc.ak -f tpmt -o ecc.ak.tpmt
+
+tpm2_checkquote -u ecc.ak.tpmt -m quote.bin -s quote.sig -f quote.pcr -g sha256 -q nonce.bin
 
 exit 0
