@@ -77,6 +77,7 @@ information many users may expect.
 
 [common tcti options](common/tcti.md) collection of options used to configure
 the various known TCTI modules.
+
 [signature format specifiers](common/signature.md)
 
 # EXAMPLES
