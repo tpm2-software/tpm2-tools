@@ -718,7 +718,6 @@ MARKDOWN_COMMON_DEPS = \
 	man/common/policy-limitations.md \
 	man/common/pubkey.md \
 	man/common/returns.md \
-	man/common/sign-alg.md \
 	man/common/signature.md \
 	man/common/signschemes.md \
 	man/common/tcti.md
