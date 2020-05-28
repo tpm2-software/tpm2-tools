@@ -6,6 +6,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <openssl/bio.h>
+#include <openssl/err.h>
 #include <openssl/pem.h>
 
 #include "files.h"
@@ -69,7 +71,7 @@ bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public,
 }
 
 static bool convert_pubkey_RSA(TPMT_PUBLIC *public,
-        tpm2_convert_pubkey_fmt format, FILE *fp) {
+        tpm2_convert_pubkey_fmt format, BIO *bio) {
 
     bool ret = false;
     RSA *ssl_rsa_key = NULL;
@@ -109,10 +111,10 @@ static bool convert_pubkey_RSA(TPMT_PUBLIC *public,
 
     switch (format) {
     case pubkey_format_pem:
-        ssl_res = PEM_write_RSA_PUBKEY(fp, ssl_rsa_key);
+        ssl_res = PEM_write_bio_RSA_PUBKEY(bio, ssl_rsa_key);
         break;
     case pubkey_format_der:
-        ssl_res = i2d_RSA_PUBKEY_fp(fp, ssl_rsa_key);
+        ssl_res = i2d_RSA_PUBKEY_bio(bio, ssl_rsa_key);
         break;
     default:
         LOG_ERR("Invalid OpenSSL target format %d encountered", format);
@@ -140,7 +142,7 @@ static bool convert_pubkey_RSA(TPMT_PUBLIC *public,
 }
 
 static bool convert_pubkey_ECC(TPMT_PUBLIC *public,
-        tpm2_convert_pubkey_fmt format, FILE *fp) {
+        tpm2_convert_pubkey_fmt format, BIO *bio) {
 
     BIGNUM *x = NULL;
     BIGNUM *y = NULL;
@@ -209,10 +211,10 @@ static bool convert_pubkey_ECC(TPMT_PUBLIC *public,
 
     switch (format) {
     case pubkey_format_pem:
-        ssl_res = PEM_write_EC_PUBKEY(fp, key);
+        ssl_res = PEM_write_bio_EC_PUBKEY(bio, key);
         break;
     case pubkey_format_der:
-        ssl_res = i2d_EC_PUBKEY_fp(fp, key);
+        ssl_res = i2d_EC_PUBKEY_bio(bio, key);
         break;
     default:
         LOG_ERR("Invalid OpenSSL target format %d encountered", format);
@@ -243,34 +245,39 @@ out:
     return result;
 }
 
-static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public,
-        tpm2_convert_pubkey_fmt format, const char *path) {
+static bool tpm2_convert_pubkey_bio(TPMT_PUBLIC *public,
+        tpm2_convert_pubkey_fmt format, BIO *bio) {
 
     bool result = false;
 
-    FILE *fp = fopen(path, "wb");
-    if (!fp) {
-        LOG_ERR("Failed to open public key output file '%s': %s", path,
-                strerror(errno));
-        goto out;
-    }
-
     switch (public->type) {
     case TPM2_ALG_RSA:
-        result = convert_pubkey_RSA(public, format, fp);
+        result = convert_pubkey_RSA(public, format, bio);
         break;
     case TPM2_ALG_ECC:
-        result = convert_pubkey_ECC(public, format, fp);
+        result = convert_pubkey_ECC(public, format, bio);
         break;
     default:
         LOG_ERR(
                 "Unsupported key type for requested output format. Only RSA is supported.");
     }
 
-    fclose(fp);
-
-out:
     ERR_free_strings();
+    return result;
+}
+
+static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public,
+        tpm2_convert_pubkey_fmt format, const char *path) {
+
+    BIO *bio = BIO_new_file(path, "wb");
+    if (!bio) {
+        LOG_ERR("Failed to open public key output file '%s': %s", path,
+                ERR_error_string(ERR_get_error(), NULL));
+        return false;
+    }
+
+    bool result = tpm2_convert_pubkey_bio(public, format, bio);
+    BIO_free(bio);
     return result;
 }
 
@@ -559,4 +566,73 @@ UINT8 *tpm2_convert_sig(UINT16 *size, TPMT_SIGNATURE *signature) {
 nomem:
     LOG_ERR("%s: couldn't allocate memory", __func__);
     return NULL;
+}
+
+bool tpm2_public_load_pkey(const char *path, EVP_PKEY **pkey) {
+
+    bool result = false;
+
+    BIO *bio = NULL;
+    EVP_PKEY *p = NULL;
+
+    /*
+     * Order Matters. You must check for the smallest TSS size first, which
+     * it the TPMT_PUBLIC as it's embedded in the TPM2B_PUBLIC. It's possible
+     * to have valid TPMT's and have them parse as valid TPM2B_PUBLIC's (apparantly).
+     *
+     * If none of them convert, we try it as a plain signature.
+     */
+    TPM2B_PUBLIC public = { 0 };
+    bool ret = files_load_template_silent(path, &public.publicArea);
+    if (ret) {
+        goto convert_to_pem;
+    }
+
+    ret = files_load_public_silent(path, &public);
+    if (ret) {
+        goto convert_to_pem;
+    }
+
+    /* not a tss format, just treat it as a pem file */
+    bio = BIO_new_file(path, "rb");
+    if (!bio) {
+        LOG_ERR("Failed to open public key output file '%s': %s", path,
+                ERR_error_string(ERR_get_error(), NULL));
+        return false;
+    }
+
+    /* not a tpm data structure, must be pem */
+    goto try_pem;
+
+convert_to_pem:
+    bio = BIO_new(BIO_s_mem());
+    if (!bio) {
+        LOG_ERR("Failed to allocate memory bio: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        return false;
+    }
+
+    ret = tpm2_convert_pubkey_bio(&public.publicArea, pubkey_format_pem, bio);
+    if (!ret) {
+        goto out;
+    }
+
+try_pem:
+    p = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
+    if (!p) {
+        LOG_ERR("Failed to convert public key from file '%s': %s", path,
+                ERR_error_string(ERR_get_error(), NULL));
+        goto out;
+    }
+
+    *pkey = p;
+
+    result = true;
+
+out:
+    if (bio) {
+        BIO_free(bio);
+    }
+
+    return result;
 }

@@ -5,6 +5,8 @@
 
 #include <stdbool.h>
 
+#include <openssl/evp.h>
+
 #include <tss2/tss2_sys.h>
 
 typedef enum tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt;
@@ -112,5 +114,7 @@ bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format,
  */
 bool tpm2_convert_sig_load_plain(const char *path,
         TPM2B_MAX_BUFFER *signature, TPMI_ALG_HASH *halg);
+
+bool tpm2_public_load_pkey(const char *path, EVP_PKEY **pkey);
 
 #endif /* CONVERSION_H */

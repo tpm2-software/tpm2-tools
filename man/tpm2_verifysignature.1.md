@@ -46,12 +46,19 @@ symmetric key, both the public and private portions need to be loaded.
 
     The input signature file of the signature to be validated.
 
-  * **-f**, **\--format**=_FORMAT_:
+  * **-f**, **\--scheme**=_SCHEME_:
 
-    Set the input signature file to a specified format. The default is the
-    tpm2.0 TPMT_SIGNATURE data format, however different schemes can be selected
-    if the data came from an external source like OpenSSL. The tool currently
-    only supports rsassa.
+    The signing scheme that was used to sign the message. This option should only
+    be specified if the signature comes in from a non *tss* standard, like openssl.
+    See "Signature format specifiers" for more details. The *tss* format contains
+    the signature metadata required to understand it's signature scheme.
+
+    Signing schemes should follow the "formatting standards", see section
+    "Algorithm Specifiers".
+
+  * **\--format**=_SCHEME_:
+
+    Deprecated. Same as **\--scheme**.
 
   * **-t**, **\--ticket**=_FILE_:
 
