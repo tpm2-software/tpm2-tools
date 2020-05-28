@@ -100,7 +100,7 @@ These scheme specifiers are followed by a dash and a valid hash algorithm, For e
   * ecschnorr
 
 #### Multiple Option Scheme Specifiers
-This scheme specifier is followed by a count (max size UINT16) then folloed by a dash(-) and a valid hash algorithm.
+This scheme specifier is followed by a count (max size UINT16) then followed by a dash(-) and a valid hash algorithm.
   * ecdaa
 For example, ecdaa4-sha256. If no count is specified, it defaults to 4.
 
