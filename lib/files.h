@@ -190,6 +190,15 @@ bool files_load_template_silent(const char *path, TPMT_PUBLIC *public);
  */
 bool files_load_public(const char *path, TPM2B_PUBLIC *public);
 
+/**
+ * Like files_load_public(), but doesn't report errors.
+ * @param path
+ *  The path containing the TP2B_PUBLIC to load from.
+ * @param public
+ *  The destination for the TP2B_PUBLIC.
+ * @return
+ *  true on success, false otherwise.
+ */
 bool files_load_public_file(FILE *f, const char *path, TPM2B_PUBLIC *public);
 
 bool files_load_template(const char *path, TPMT_PUBLIC *public);
