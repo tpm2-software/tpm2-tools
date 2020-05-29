@@ -266,7 +266,7 @@ add_c_flag([-D_GNU_SOURCE], [AC_MSG_ERROR([Cannot enable -D_GNU_SOURCE])])
 # Best attempt compiler options that are on newer versions of GCC that
 # we can't widely enforce without killing other peoples builds.
 # Works with gcc only. Needs to be disabled on BSD and clang
-AS_IF([test "$HOSTOS" = "Linux"],
+AS_IF([test "$CC" = "gcc"],
       [add_c_flag([-Wstringop-overflow=4])
        add_c_flag([-Wstringop-truncation])
        add_c_flag([-Wduplicated-branches])
