@@ -1,0 +1,101 @@
+#!/bin/bash
+# Take all of the .o files and create ones that shouldn't have
+# naming collisions
+set -e -o pipefail
+export LC_ALL=C
+
+die() { echo >&2 "$@" ; exit 1 ; }
+
+if [ -z "$O" ]; then
+	O="."
+fi
+
+mkdir -p "$O"
+rm -f "$O/*.o"
+
+BUNDLE_C="$O/gen-bundle.c"
+BUNDLE_H="$O/gen-bundle.h"
+echo > "$BUNDLE_C" "// generated $(date)"
+echo > "$BUNDLE_H" "// generated $(date)"
+
+for file in ../tools/*.o ../tools/misc/*.o ; do
+	base="$(basename $file .o)"
+	name="${base/tpm2_/}"
+	if [ "$name" = "tool" ];  then
+		# don't include tpm2_tool since it is not a real program
+		continue
+	fi
+	if echo " $name" | grep -q '--' - ; then
+		# skip and some trouble makers with - in their name
+		continue
+	fi
+
+	echo "$name"
+
+	objcopy \
+		--redefine-sym tpm2_tool_onrun="${name}_onrun" \
+		--redefine-sym tpm2_tool_onstart="${name}_onstart" \
+		--redefine-sym tpm2_tool_onstop="${name}_onstop" \
+		--redefine-sym tpm2_tool_onexit="${name}_onexit" \
+		"$file" \
+		"$O/$base.o" \
+	|| die "$file: unable to redefine symbols"
+
+	cat >> "$BUNDLE_C" <<EOF
+{"$name", ${name}_onstart, ${name}_onrun, ${name}_onstop, ${name}_onexit },
+EOF
+
+	cat >> "$BUNDLE_H" <<EOF
+// $file
+extern bool ${name}_onstart(tpm2_options **opts) __attribute__((__weak__));
+extern tool_rc ${name}_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) __attribute__((__weak__));
+extern tool_rc ${name}_onstop(ESYS_CONTEXT *ectx) __attribute__((__weak__));
+extern void ${name}_onexit() __attribute__((__weak__));
+EOF
+
+done
+
+echo '{NULL,NULL,NULL,NULL,NULL}' >> "$BUNDLE_C"
+
+gcc \
+	-DHAVE_CONFIG_H \
+	-I. \
+	-I../lib \
+      	-D_FORTIFY_SOURCE=2 \
+	-I../tools \
+	-I../lib \
+	-Wall \
+	-Wextra \
+	-Werror \
+	-Wformat \
+	-Wformat-security \
+	-Wstack-protector \
+	-fstack-protector-all \
+	-Wstrict-overflow=5 \
+	-O2 \
+	-fPIC \
+	-fPIE \
+	-D_GNU_SOURCE \
+	-Wstringop-overflow=4 \
+	-Wstringop-truncation \
+	-Wduplicated-branches \
+	-Wduplicated-cond \
+	-Wbool-compare \
+	-fdata-sections \
+	-ffunction-sections \
+	-I../../tpm2-tss/include \
+  	-I/usr/include/uuid \
+	-g \
+	-o tpm2 \
+	tpm2_bundle.c \
+	*.o \
+	../lib/libcommon.a \
+	../../tpm2-tss/src/tss2-esys/.libs/libtss2-esys.a \
+	-ldl \
+	-lcurl \
+	-ltss2-mu \
+	-lcrypto \
+	-ltss2-tctildr \
+	-ltss2-rc \
+	-ltss2-sys \
+	-luuid \
