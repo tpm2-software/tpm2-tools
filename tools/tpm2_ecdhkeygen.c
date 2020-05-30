@@ -69,7 +69,7 @@ static tool_rc check_options(void) {
     return tool_rc_success;
 }
 
-tool_rc process_outputs(void) {
+static tool_rc process_outputs(void) {
 
     bool result = files_save_ecc_point(ctx.Q, ctx.ecdh_pub_path);
     if (!result) {

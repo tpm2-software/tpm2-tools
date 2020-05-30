@@ -75,7 +75,7 @@ static tool_rc check_options(void) {
     return tool_rc_success;
 }
 
-tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
     tool_rc  rc = tpm2_util_object_load_auth(ectx, ctx.ecc_key.ctx_path,
         ctx.ecc_key.auth_str, &ctx.ecc_key.object, false,

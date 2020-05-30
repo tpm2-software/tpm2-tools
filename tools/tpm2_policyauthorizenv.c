@@ -80,7 +80,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-bool is_input_option_args_valid(void) {
+#if 0
+static bool is_input_option_args_valid(void) {
 
     if (!ctx.session_path) {
         LOG_ERR("Must specify -S session file.");
@@ -94,6 +95,7 @@ bool is_input_option_args_valid(void) {
 
     return true;
 }
+#endif
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 

@@ -97,7 +97,7 @@ static tool_rc check_options(void) {
     return tool_rc_success;
 }
 
-tool_rc process_outputs(void) {
+static tool_rc process_outputs(void) {
 
     FILE *fp = fopen(ctx.commit_counter_path, "wb");
     bool result = files_write_16(fp, ctx.counter);

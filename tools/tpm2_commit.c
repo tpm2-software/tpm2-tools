@@ -118,7 +118,7 @@ static tool_rc check_options(void) {
     return tool_rc_success;
 }
 
-tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
             ctx.signing_key.auth_str, &ctx.signing_key.object, false,
@@ -147,7 +147,7 @@ tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     return tool_rc_success;
 }
 
-tool_rc process_outputs(void) {
+static tool_rc process_outputs(void) {
 
     bool result = files_save_ecc_point(ctx.K, ctx.eccpoint_K_data_path);
     if (!result) {

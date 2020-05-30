@@ -188,7 +188,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     return tool_rc_success;
 }
 
-tool_rc process_outputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
 
     UNUSED(ectx);
 
