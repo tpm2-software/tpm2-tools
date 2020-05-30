@@ -2,6 +2,8 @@
 .dirstamp
 *.log
 *.trs
+.*.sw[po]
+tags
 aclocal.m4
 aminclude_static.am
 autom4te.cache/
