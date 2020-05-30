@@ -19,7 +19,7 @@ echo > "$BUNDLE_C" "// generated $(date)"
 echo > "$BUNDLE_H" "// generated $(date)"
 
 for file in ../tools/*.o ../tools/misc/*.o ; do
-	base="$(basename $file .o)"
+	base="$(basename "$file" .o)"
 	name="${base/tpm2_/}"
 	if [ "$name" = "tool" ];  then
 		# don't include tpm2_tool since it is not a real program
@@ -88,7 +88,7 @@ gcc \
 	-g \
 	-o tpm2 \
 	tpm2_bundle.c \
-	*.o \
+	./*.o \
 	../lib/libcommon.a \
 	../../tpm2-tss/src/tss2-esys/.libs/libtss2-esys.a \
 	-ldl \
