@@ -11,7 +11,7 @@ if [ -z "$O" ]; then
 fi
 
 mkdir -p "$O"
-rm -f "$O/*.o"
+rm -f "$O/"*.o
 
 BUNDLE_C="$O/gen-bundle.c"
 BUNDLE_H="$O/gen-bundle.h"
@@ -19,6 +19,7 @@ echo > "$BUNDLE_C" "// generated $(date)"
 echo > "$BUNDLE_H" "// generated $(date)"
 
 for file in ../tools/*.o ../tools/misc/*.o ; do
+#for file in ../tools/tpm2_pcrread.o ; do
 	base="$(basename "$file" .o)"
 	name="${base/tpm2_/}"
 	if [ "$name" = "tool" ];  then
@@ -61,7 +62,7 @@ gcc \
 	-DHAVE_CONFIG_H \
 	-I. \
 	-I../lib \
-      	-D_FORTIFY_SOURCE=2 \
+	-D_FORTIFY_SOURCE=2 \
 	-I../tools \
 	-I../lib \
 	-Wall \
@@ -84,18 +85,19 @@ gcc \
 	-fdata-sections \
 	-ffunction-sections \
 	-I../../tpm2-tss/include \
-  	-I/usr/include/uuid \
+	-I/usr/include/uuid \
 	-g \
 	-o tpm2 \
 	tpm2_bundle.c \
 	./*.o \
 	../lib/libcommon.a \
-	../../tpm2-tss/src/tss2-esys/.libs/libtss2-esys.a \
-	-ldl \
-	-lcurl \
+	-L../../tpm2-tss/src/tss2-esys/.libs/ \
+	../../tpm2-tss/src/tss2-esys/.libs/libtss2-esys.so \
 	-ltss2-mu \
 	-lcrypto \
 	-ltss2-tctildr \
 	-ltss2-rc \
 	-ltss2-sys \
 	-luuid \
+	-ldl \
+	-lcurl \
