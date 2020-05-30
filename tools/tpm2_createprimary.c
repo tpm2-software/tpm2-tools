@@ -274,7 +274,7 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     return tpm2_session_close(&ctx.parent.session);
 }
 
-void tpm2_onexit(void) {
+void tpm2_tool_onexit(void) {
 
     tpm2_hierarchy_pdata_free(&ctx.objdata);
 }
