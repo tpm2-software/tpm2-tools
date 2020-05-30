@@ -154,7 +154,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     return tool_rc_success;
 }
 
-tool_rc process_outputs(void) {
+static tool_rc process_outputs(void) {
 
     bool result = files_save_ecc_point(ctx.Z1, ctx.output_z1_path);
     if (!result) {

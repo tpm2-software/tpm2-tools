@@ -138,7 +138,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-bool is_input_option_args_valid(void) {
+static bool is_input_option_args_valid(void) {
 
     if (!ctx.context_arg) {
             LOG_ERR("Must specify verifying key context -c.");

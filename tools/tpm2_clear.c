@@ -34,7 +34,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-bool on_arg(int argc, char **argv) {
+static bool on_arg(int argc, char **argv) {
 
     if (argc > 1) {
         LOG_ERR("Specify a single auth value");

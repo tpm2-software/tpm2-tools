@@ -51,7 +51,7 @@ static tool_rc clearcontrol(ESYS_CONTEXT *ectx) {
     ctx.disable_clear, NULL);
 }
 
-bool on_arg(int argc, char **argv) {
+static bool on_arg(int argc, char **argv) {
 
     if (argc > 1) {
         LOG_ERR("Specify single set/clear operation as s|c|0|1.");

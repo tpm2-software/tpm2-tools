@@ -60,7 +60,7 @@ static tool_rc hierarchycontrol(ESYS_CONTEXT *ectx) {
     return rc;
 }
 
-bool on_arg(int argc, char **argv) {
+static bool on_arg(int argc, char **argv) {
 
     switch (argc) {
     case 2:

@@ -32,7 +32,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-bool is_input_option_args_valid(void) {
+static bool is_input_option_args_valid(void) {
 
     if (!ctx.session_path) {
         LOG_ERR("Must specify -S session file.");
@@ -42,7 +42,7 @@ bool is_input_option_args_valid(void) {
     return true;
 }
 
-bool on_arg(int argc, char **argv) {
+static bool on_arg(int argc, char **argv) {
 
     if (argc > 1) {
         LOG_ERR("Specify only the TPM2 locality.");
