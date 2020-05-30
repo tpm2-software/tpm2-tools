@@ -419,7 +419,7 @@ out:
     return rc;
 }
 
-void tpm2_onexit(void) {
+void tpm2_tool_onexit(void) {
 
     tpm2_hierarchy_pdata_free(&ctx.objdata);
 }

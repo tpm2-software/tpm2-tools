@@ -164,7 +164,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     return parse_policy_type_specific_command(ectx);
 }
 
-void tpm2_onexit(void) {
+void tpm2_tool_onexit(void) {
 
     free(pctx.common_policy_options.policy_digest);
 }
