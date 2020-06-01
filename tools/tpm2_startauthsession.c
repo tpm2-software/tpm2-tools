@@ -33,6 +33,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.session.type = TPM2_SE_POLICY;
         break;
+    case 1:
+        ctx.session.type = TPM2_SE_HMAC;
+        break;
     case 'g':
         ctx.session.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if(ctx.session.halg == TPM2_ALG_ERROR) {
@@ -55,6 +58,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         { "policy-session",      no_argument,       NULL,  0 },
+        { "audit-session",       no_argument,       NULL,  1 },
         { "key-context",         required_argument, NULL, 'c'},
         { "hash-algorithm",      required_argument, NULL, 'g'},
         { "session",             required_argument, NULL, 'S'},
