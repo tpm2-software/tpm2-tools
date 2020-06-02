@@ -248,36 +248,6 @@ void tpm2_util_hexdump(const BYTE *data, size_t len) {
     tpm2_util_hexdump2(stdout, data, len);
 }
 
-bool tpm2_util_hexdump_file(FILE *fd, size_t len) {
-    BYTE* buff = (BYTE*) malloc(len);
-    if (!buff) {
-        LOG_ERR("malloc() failed");
-        return false;
-    }
-
-    bool res = files_read_bytes(fd, buff, len);
-    if (!res) {
-        LOG_ERR("Failed to read file");
-        free(buff);
-        return false;
-    }
-
-    tpm2_util_hexdump(buff, len);
-
-    free(buff);
-    return true;
-}
-
-bool tpm2_util_print_tpm2b_file(FILE *fd) {
-    UINT16 len;
-    bool res = files_read_16(fd, &len);
-    if (!res) {
-        LOG_ERR("File read failed");
-        return false;
-    }
-    return tpm2_util_hexdump_file(fd, len);
-}
-
 bool tpm2_util_is_big_endian(void) {
 
     uint32_t test_word;

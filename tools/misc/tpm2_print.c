@@ -23,196 +23,133 @@ struct tpm2_print_ctx {
 
 static tpm2_print_ctx ctx;
 
-static bool print_clock_info(FILE* fd, size_t indent_count) {
-    union {
-        UINT8 u8;
-        UINT32 u32;
-        UINT64 u64;
-    } numb;
+static void print_clock_info(TPMS_CLOCK_INFO *clock_info, size_t indent_count) {
 
-    bool res = files_read_64(fd, &numb.u64);
-    if (!res) {
-        goto read_error;
-    }
     print_yaml_indent(indent_count);
-    tpm2_tool_output("clock: %llu\n", (long long unsigned int) numb.u64);
+    tpm2_tool_output("clock: %"PRIu64"\n", clock_info->clock);
 
-    res = files_read_32(fd, &numb.u32);
-    if (!res) {
-        goto read_error;
-    }
     print_yaml_indent(indent_count);
-    tpm2_tool_output("resetCount: %lu\n", (long unsigned int) numb.u32);
+    tpm2_tool_output("resetCount: %"PRIu32"\n", clock_info->resetCount);
 
-    res = files_read_32(fd, &numb.u32);
-    if (!res) {
-        goto read_error;
-    }
     print_yaml_indent(indent_count);
-    tpm2_tool_output("restartCount: %lu\n", (long unsigned int) numb.u32);
+    tpm2_tool_output("restartCount: %"PRIu32"\n", clock_info->restartCount);
 
-    res = files_read_bytes(fd, &numb.u8, 1);
-    if (!res) {
-        goto read_error;
-    }
     print_yaml_indent(indent_count);
-    tpm2_tool_output("safe: %u\n", (unsigned int) numb.u8);
-
-    return true;
-
-read_error:
-    LOG_ERR("File too short");
-    return false;
+    tpm2_tool_output("safe: %u\n", clock_info->safe);
 }
 
-bool print_TPMS_QUOTE_INFO(FILE* fd, size_t indent_count) {
-    // read TPML_PCR_SELECTION count (UINT32)
-    UINT32 pcr_selection_count;
-    bool res = files_read_32(fd, &pcr_selection_count);
-    if (!res) {
-        goto read_error;
-    }
+static bool print_TPMS_QUOTE_INFO(TPMS_QUOTE_INFO *info, size_t indent_count) {
+
     print_yaml_indent(indent_count);
     tpm2_tool_output("pcrSelect:\n");
 
     print_yaml_indent(indent_count + 1);
-    tpm2_tool_output("count: %lu\n", (long unsigned int) pcr_selection_count);
+    tpm2_tool_output("count: %"PRIu32"\n", info->pcrSelect.count);
 
     print_yaml_indent(indent_count + 1);
     tpm2_tool_output("pcrSelections:\n");
 
     // read TPML_PCR_SELECTION array (of size count)
     UINT32 i;
-    for (i = 0; i < pcr_selection_count; ++i) {
+    for (i = 0; i < info->pcrSelect.count; ++i) {
         print_yaml_indent(indent_count + 2);
-        tpm2_tool_output("%lu:\n", (long unsigned int) i);
+        tpm2_tool_output("%"PRIu32":\n", i);
 
         // print hash type (TPMI_ALG_HASH)
-        UINT16 hash_type;
-        res = files_read_16(fd, &hash_type);
-        if (!res) {
-            goto read_error;
-        }
-        const char* const hash_name = tpm2_alg_util_algtostr(hash_type,
+        const char* const hash_name = tpm2_alg_util_algtostr(
+                info->pcrSelect.pcrSelections[i].hash,
                 tpm2_alg_util_flags_hash);
         if (!hash_name) {
             LOG_ERR("Invalid hash type in quote");
-            goto error;
+            return false;
         }
         print_yaml_indent(indent_count + 3);
-        tpm2_tool_output("hash: %u (%s)\n", (unsigned int) hash_type,
+        tpm2_tool_output("hash: %"PRIu16" (%s)\n",
+                info->pcrSelect.pcrSelections[i].hash,
                 hash_name);
 
-        UINT8 select_size;
-        res = files_read_bytes(fd, &select_size, 1);
-        if (!res) {
-            goto read_error;
-        }
         print_yaml_indent(indent_count + 3);
-        tpm2_tool_output("sizeofSelect: %u\n", (unsigned int) select_size);
+        tpm2_tool_output("sizeofSelect: %"PRIu8"\n",
+                info->pcrSelect.pcrSelections[i].sizeofSelect);
 
         // print PCR selection in hex
         print_yaml_indent(indent_count + 3);
         tpm2_tool_output("pcrSelect: ");
-        res = tpm2_util_hexdump_file(fd, select_size);
+        tpm2_util_hexdump((BYTE *)&info->pcrSelect.pcrSelections[i].pcrSelect,
+                info->pcrSelect.pcrSelections[i].sizeofSelect);
         tpm2_tool_output("\n");
-        if (!res) {
-            goto read_error;
-        }
     }
 
     // print digest in hex (a TPM2B object)
     print_yaml_indent(indent_count);
     tpm2_tool_output("pcrDigest: ");
-    res = tpm2_util_print_tpm2b_file(fd);
+    tpm2_util_print_tpm2b(&info->pcrDigest);
     tpm2_tool_output("\n");
-    if (!res) {
-        goto read_error;
-    }
 
     return true;
-
-read_error:
-    LOG_ERR("File too short");
-    error: return false;
 }
 
 static bool print_TPMS_ATTEST(FILE* fd) {
-    // print magic without converting endianness
-    UINT32 magic;
-    bool res = files_read_bytes(fd, (UINT8*) &magic, sizeof(UINT32));
+
+    TPMS_ATTEST attest = { 0 };
+    bool res = files_load_attest_file(fd, ctx.file.path, &attest);
     if (!res) {
-        goto read_error;
+        LOG_ERR("Could not parse TPMS_ATTEST file: \"%s\"", ctx.file.path);
+        return false;
     }
+
     tpm2_tool_output("magic: ");
-    tpm2_util_hexdump((const UINT8*) &magic, sizeof(UINT32));
+    /* dump these in TPM endianess (big-endian) */
+    typeof(attest.magic) be_magic = tpm2_util_hton_32(attest.magic);
+    tpm2_util_hexdump((const UINT8*) &be_magic,
+            sizeof(attest.magic));
     tpm2_tool_output("\n");
-    magic = tpm2_util_ntoh_32(magic); // finally, convert endianness
 
     // check magic
-    if (magic != TPM2_GENERATED_VALUE) {
-        LOG_ERR("Bad magic");
-        goto error;
+    if (attest.magic != TPM2_GENERATED_VALUE) {
+        LOG_ERR("Bad magic, got: 0x%x, expected: 0x%x",
+                attest.magic, TPM2_GENERATED_VALUE);
+        return false;
     }
 
-    UINT16 type;
-    res = files_read_bytes(fd, (UINT8*) &type, sizeof(UINT16));
-    if (!res) {
-        goto read_error;
-    }
     tpm2_tool_output("type: ");
-    tpm2_util_hexdump((const UINT8*) &type, sizeof(UINT16));
+    /* dump these in TPM endianess (big-endian) */
+    typeof(attest.type) be_type = tpm2_util_hton_16(attest.type);
+    tpm2_util_hexdump((const UINT8*) &be_type,
+            sizeof(attest.type));
     tpm2_tool_output("\n");
-    type = tpm2_util_ntoh_16(type); // finally, convert endianness
 
     tpm2_tool_output("qualifiedSigner: ");
-    res = tpm2_util_print_tpm2b_file(fd);
+    tpm2_util_print_tpm2b(&attest.qualifiedSigner);
     tpm2_tool_output("\n");
-    if (!res) {
-        goto read_error;
-    }
 
     tpm2_tool_output("extraData: ");
-    res = tpm2_util_print_tpm2b_file(fd);
+    tpm2_util_print_tpm2b(&attest.extraData);
     tpm2_tool_output("\n");
-    if (!res) {
-        goto read_error;
-    }
 
     tpm2_tool_output("clockInfo:\n");
-    res = print_clock_info(fd, 1);
-    if (!res) {
-        goto error;
-    }
+    print_clock_info(&attest.clockInfo, 1);
 
     tpm2_tool_output("firmwareVersion: ");
-    res = tpm2_util_hexdump_file(fd, sizeof(UINT64));
+    tpm2_util_hexdump((BYTE *)&attest.firmwareVersion,
+            sizeof(attest.firmwareVersion));
     tpm2_tool_output("\n");
-    if (!res) {
-        goto read_error;
-    }
 
-    switch (type) {
+    switch (attest.type) {
     case TPM2_ST_ATTEST_QUOTE:
         tpm2_tool_output("attested:\n");
         print_yaml_indent(1);
         tpm2_tool_output("quote:\n");
-        res = print_TPMS_QUOTE_INFO(fd, 2);
-        if (!res) {
-            goto error;
-        }
+        return print_TPMS_QUOTE_INFO(&attest.attested.quote, 2);
         break;
 
     default:
-        LOG_ERR("Cannot print unsupported type 0x%x", (unsigned int) type);
-        goto error;
+        LOG_ERR("Cannot print unsupported type 0x%" PRIx16, attest.type);
+        return false;
     }
 
-    return true;
-
-read_error:
-    LOG_ERR("File too short");
-    error: return false;
+    /* Should be unreachable */
+    return false;
 }
 
 static bool print_TPMS_CONTEXT(FILE *fstream) {

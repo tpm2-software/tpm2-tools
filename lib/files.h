@@ -582,4 +582,17 @@ bool files_read_bytes(FILE *out, UINT8 data[], size_t size);
  */
 tool_rc files_tpm2b_attest_to_tpms_attest(TPM2B_ATTEST *quoted, TPMS_ATTEST *attest);
 
+/**
+ * Loads a TPMS_ATTEST from disk.
+ * @param f
+ *  The file to load.
+ * @param path
+ *  The path to load from.
+ * @param attest
+ *  The attest structure to fill up.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool files_load_attest_file(FILE *f, const char *path, TPMS_ATTEST *attest);
+
 #endif /* FILES_H */
