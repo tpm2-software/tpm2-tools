@@ -1,6 +1,6 @@
 ## Changelog
 
-### 4.1.3-rc0 - 2020-05-22
+### 4.1.3 - 2020-06-02
 
 * tpm2\_create: Fix issue with userauth attribute being cleared if policy is specified.
 
