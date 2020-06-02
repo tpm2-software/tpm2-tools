@@ -81,4 +81,13 @@ with open("$print_file") as fd:
     print("OK")
 pyscript
 
+# negative testing
+trap - ERR
+
+tpm2_print $quote_file
+if [ $? -eq 0 ]; then
+  echo "Expected tpm2_print without -t to fail"
+  exit 1
+fi
+
 exit 0

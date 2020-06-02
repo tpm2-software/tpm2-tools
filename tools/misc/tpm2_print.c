@@ -409,6 +409,17 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     FILE* fd = stdin;
 
+    if (!ctx.file.handler) {
+        /*
+         * TODO: This could be automated by each
+         * type having an interrogation function. If it passes,
+         * then use the associated handler. For now, make -t
+         * mandatory.
+         */
+        LOG_ERR("Must specify -t/--type");
+        return tool_rc_general_error;
+    }
+
     if (ctx.file.path) {
         LOG_INFO("Reading from file %s", ctx.file.path);
         fd = fopen(ctx.file.path, "rb");
