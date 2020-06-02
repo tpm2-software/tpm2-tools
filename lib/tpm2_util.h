@@ -207,21 +207,6 @@ void tpm2_util_hexdump2(FILE *f, const BYTE *data, size_t len);
 bool tpm2_util_bin_from_hex_or_file(const char *input, UINT16 *len, BYTE *buffer);
 
 /**
- * Prints a file as a hex string to stdout if quiet mode
- * is not enabled.
- * ie no -Q option.
- *
- * @param fd
- *  A readable open file.
- * @param len
- *  The length of the data to read and print.
- * @return
- *  true if len bytes were successfully read and printed,
- *  false otherwise
- */
-bool tpm2_util_hexdump_file(FILE *fd, size_t len);
-
-/**
  * Prints a TPM2B as a hex dump respecting the -Q option
  * to stdout.
  *
@@ -257,13 +242,6 @@ static inline bool tpm2_util_is_pcr_select_bit_set(
         TPMS_PCR_SELECTION *pcr_selection, UINT32 pcr) {
     return (pcr_selection->pcrSelect[((pcr) / 8)] & (1 << ((pcr) % 8)));
 }
-
-/**
- * Reads a TPM2B object from FILE* and prints data in hex.
- * @param fd
- *  A readable open file.
- */
-bool tpm2_util_print_tpm2b_file(FILE *fd);
 
 /**
  * Checks if the host is big endian

@@ -753,6 +753,8 @@ LOAD_TYPE(TPM2B_ECC_POINT, ecc_point)
 
 LOAD_TYPE(TPM2B_ECC_PARAMETER, ecc_parameter)
 
+LOAD_TYPE_FILE(TPMS_ATTEST, attest)
+
 tool_rc files_tpm2b_attest_to_tpms_attest(TPM2B_ATTEST *quoted, TPMS_ATTEST *attest) {
 
     size_t offset = 0;
