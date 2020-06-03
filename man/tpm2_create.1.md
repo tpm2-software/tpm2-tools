@@ -12,7 +12,7 @@
 
 **tpm2_create**(1) - Create a child object. The object can either be a key or
 a sealing object. A sealing object allows to seal user data to the TPM, with a
-maximum size of 256 bytes. Additionally it will load the created object if the
+maximum size of 128 bytes. Additionally it will load the created object if the
 **-c** is specified.
 
 # OPTIONS
