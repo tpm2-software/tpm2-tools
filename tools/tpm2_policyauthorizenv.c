@@ -80,7 +80,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-#if 0
 static bool is_input_option_args_valid(void) {
 
     if (!ctx.session_path) {
@@ -95,11 +94,15 @@ static bool is_input_option_args_valid(void) {
 
     return true;
 }
-#endif
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
+
+    bool retval = is_input_option_args_valid();
+    if (!retval) {
+        return tool_rc_option_error;
+    }
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
             ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
