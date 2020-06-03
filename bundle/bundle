@@ -91,8 +91,7 @@ gcc \
 	tpm2_bundle.c \
 	./*.o \
 	../lib/libcommon.a \
-	-L../../tpm2-tss/src/tss2-esys/.libs/ \
-	../../tpm2-tss/src/tss2-esys/.libs/libtss2-esys.so \
+	../../tpm2-tss/src/tss2-esys/.libs/libtss2-esys.a \
 	-ltss2-mu \
 	-lcrypto \
 	-ltss2-tctildr \
