@@ -164,6 +164,7 @@ bin_PROGRAMS += \
     tools/tpm2_startup \
     tools/tpm2_stirrandom \
     tools/tpm2_testparms \
+    tools/tpm2_tool \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature \
     tools/tpm2_setcommandauditstatus \
@@ -426,6 +427,109 @@ tools_tpm2_commit_SOURCES = tools/tpm2_commit.c $(TOOL_SRC)
 tools_tpm2_ecdhkeygen_SOURCES = tools/tpm2_ecdhkeygen.c $(TOOL_SRC)
 tools_tpm2_ecdhzgen_SOURCES = tools/tpm2_ecdhzgen.c $(TOOL_SRC)
 tools_tpm2_zgen2phase_SOURCES = tools/tpm2_zgen2phase.c $(TOOL_SRC)
+
+# Bundle all the tools into a single program similar to busybox
+# should this be possible to say $(addsuffix .c,$(bin_PROGRAMS))?
+tools_tpm2_tool_LDADD = $(LDADD) $(CURL_LIBS)
+tools_tpm2_tool_SOURCES = tools/tpm2_tool.h \
+    tools/misc/tpm2_checkquote.c \
+    tools/misc/tpm2_eventlog.c \
+    tools/misc/tpm2_print.c \
+    tools/misc/tpm2_rc_decode.c \
+    tools/tpm2_activatecredential.c \
+    tools/tpm2_certify.c \
+    tools/tpm2_changeauth.c \
+    tools/tpm2_changeeps.c \
+    tools/tpm2_changepps.c \
+    tools/tpm2_clear.c \
+    tools/tpm2_clearcontrol.c \
+    tools/tpm2_clockrateadjust.c \
+    tools/tpm2_create.c \
+    tools/tpm2_createak.c \
+    tools/tpm2_createek.c \
+    tools/tpm2_createpolicy.c \
+    tools/tpm2_setprimarypolicy.c \
+    tools/tpm2_createprimary.c \
+    tools/tpm2_dictionarylockout.c \
+    tools/tpm2_duplicate.c \
+    tools/tpm2_getcap.c \
+    tools/tpm2_gettestresult.c \
+    tools/tpm2_encryptdecrypt.c \
+    tools/tpm2_evictcontrol.c \
+    tools/tpm2_flushcontext.c \
+    tools/tpm2_getekcertificate.c \
+    tools/tpm2_getrandom.c \
+    tools/tpm2_gettime.c \
+    tools/tpm2_hash.c \
+    tools/tpm2_hierarchycontrol.c \
+    tools/tpm2_hmac.c \
+    tools/tpm2_import.c \
+    tools/tpm2_incrementalselftest.c \
+    tools/tpm2_load.c \
+    tools/tpm2_loadexternal.c \
+    tools/tpm2_makecredential.c \
+    tools/tpm2_nvdefine.c \
+    tools/tpm2_nvextend.c \
+    tools/tpm2_nvincrement.c \
+    tools/tpm2_nvreadpublic.c \
+    tools/tpm2_nvread.c \
+    tools/tpm2_nvreadlock.c \
+    tools/tpm2_nvundefine.c \
+    tools/tpm2_nvwrite.c \
+    tools/tpm2_nvwritelock.c \
+    tools/tpm2_nvsetbits.c \
+    tools/tpm2_pcrallocate.c \
+    tools/tpm2_pcrevent.c \
+    tools/tpm2_pcrextend.c \
+    tools/tpm2_pcrread.c \
+    tools/tpm2_pcrreset.c \
+    tools/tpm2_policypcr.c \
+    tools/tpm2_policyauthorize.c \
+    tools/tpm2_policyauthorizenv.c \
+    tools/tpm2_policynv.c \
+    tools/tpm2_policycountertimer.c \
+    tools/tpm2_policyor.c \
+    tools/tpm2_policynamehash.c \
+    tools/tpm2_policytemplate.c \
+    tools/tpm2_policycphash.c \
+    tools/tpm2_policypassword.c \
+    tools/tpm2_policysigned.c \
+    tools/tpm2_policyticket.c \
+    tools/tpm2_policyauthvalue.c \
+    tools/tpm2_policysecret.c \
+    tools/tpm2_policyrestart.c \
+    tools/tpm2_policycommandcode.c \
+    tools/tpm2_policynvwritten.c \
+    tools/tpm2_policyduplicationselect.c \
+    tools/tpm2_policylocality.c \
+    tools/tpm2_quote.c \
+    tools/tpm2_readclock.c \
+    tools/tpm2_readpublic.c \
+    tools/tpm2_rsadecrypt.c \
+    tools/tpm2_rsaencrypt.c \
+    tools/tpm2_send.c \
+    tools/tpm2_selftest.c \
+    tools/tpm2_setclock.c \
+    tools/tpm2_shutdown.c \
+    tools/tpm2_sign.c \
+    tools/tpm2_certifycreation.c \
+    tools/tpm2_nvcertify.c \
+    tools/tpm2_startauthsession.c \
+    tools/tpm2_startup.c \
+    tools/tpm2_stirrandom.c \
+    tools/tpm2_testparms.c \
+    tools/tpm2_tool.c \
+    tools/tpm2_unseal.c \
+    tools/tpm2_verifysignature.c \
+    tools/tpm2_setcommandauditstatus.c \
+    tools/tpm2_getcommandauditdigest.c \
+    tools/tpm2_getsessionauditdigest.c \
+    tools/tpm2_geteccparameters.c \
+    tools/tpm2_ecephermal.c \
+    tools/tpm2_commit.c \
+    tools/tpm2_ecdhkeygen.c \
+    tools/tpm2_ecdhzgen.c \
+    tools/tpm2_zgen2phase.c
 
 if UNIT
 TESTS += $(check_PROGRAMS)
