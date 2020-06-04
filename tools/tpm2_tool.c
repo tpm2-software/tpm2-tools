@@ -77,7 +77,21 @@ void tpm2_tool_register(const tpm2_tool * tool)
     tools[tool_count++] = tool;
 }
 
-static const tpm2_tool * tpm2_tool_lookup(const char * const arg_name)
+static const char * tpm2_tool_name(const char * arg)
+{
+    const char * name = rindex(arg, '/');
+    if (name)
+        name++; // skip the '/'
+    else
+        name = arg; // use the full executable name as is
+
+    if (strncmp(name, "tpm2_", 5) == 0)
+        name += 5;
+
+    return name;
+}
+
+static const tpm2_tool * tpm2_tool_lookup(int *argc, char *** argv)
 {
     // no tools linked in?
     if (tool_count == 0)
@@ -88,13 +102,17 @@ static const tpm2_tool * tpm2_tool_lookup(const char * const arg_name)
 
     // find the executable name in the path
     // and skip "tpm2_" prefix if it is present
-    const char * name = rindex(arg_name, '/');
-    if (name)
-        name++; // skip the '/'
-    else
-        name = arg_name; // use the full executable name as is
-    if (strncmp(name, "tpm2_", 5) == 0)
-        name += 5;
+    const char * name = tpm2_tool_name((*argv)[0]);
+
+    // if this was invokved as 'tpm2_tool', then try again with the second argument
+    if (strcmp(name, "tool") == 0)
+    {
+	if (--(*argc) == 0)
+		return NULL;
+        (*argv)++;
+        name = tpm2_tool_name((*argv)[0]);
+    }
+
 
     // search the tools array for a matching name
     //printf("name=%s\n", name);
@@ -115,10 +133,10 @@ static const tpm2_tool * tpm2_tool_lookup(const char * const arg_name)
  * nothing more than parsing command line options that allow the caller to
  * specify which TCTI to use for the test.
  */
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
 
     tool_rc ret = tool_rc_general_error;
-    const tpm2_tool * const tool = tpm2_tool_lookup(argv[0]);
+    const tpm2_tool * const tool = tpm2_tool_lookup(&argc, &argv);
     if (!tool)
     {
         fprintf(stderr, "%s: unknown tpm2 tool?\n", argv[0]);
