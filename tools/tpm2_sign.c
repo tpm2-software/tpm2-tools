@@ -7,6 +7,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
+#include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_hash.h"
@@ -248,7 +249,7 @@ static bool on_args(int argc, char *argv[]) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
       { "auth",                 required_argument, NULL, 'p' },
@@ -268,7 +269,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -288,15 +289,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     return sign_and_save(ectx);
 }
 
-tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
     return tpm2_session_close(&ctx.signing_key.object.session);
 }
 
-void tpm2_tool_onexit(void) {
+static void tpm2_tool_onexit(void) {
 
     if (ctx.digest) {
         free(ctx.digest);
     }
     free(ctx.msg);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("sign", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, tpm2_tool_onexit)

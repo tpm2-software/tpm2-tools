@@ -4,6 +4,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
+#include "tpm2_tool.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_options.h"
 
@@ -60,7 +61,7 @@ static bool on_arg(int argc, char **argv) {
     return on_arg_nv_index(argc, argv, &ctx.nv_index);
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "hierarchy", required_argument, NULL, 'C' },
@@ -75,7 +76,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -178,7 +179,7 @@ nvundefine_out:
     return rc;
 }
 
-tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
 
     /* attempt to close all sessions and report errors */
@@ -190,3 +191,6 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
     return rc;
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("nvundefine", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)

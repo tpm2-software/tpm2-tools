@@ -6,6 +6,7 @@
 #include "log.h"
 #include "object.h"
 #include "tpm2.h"
+#include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_hash.h"
@@ -226,7 +227,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
             { "digest",         required_argument, NULL, 'd' },
@@ -246,7 +247,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -265,8 +266,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
     return tool_rc_success;
 }
 
-void tpm2_tool_onexit(void) {
+static void tpm2_tool_onexit(void) {
     if (ctx.msg_hash) {
         free(ctx.msg_hash);
     }
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("verifysignature", tpm2_tool_onstart, tpm2_tool_onrun, NULL, tpm2_tool_onexit)

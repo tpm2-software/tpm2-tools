@@ -3,6 +3,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
+#include "tpm2_tool.h"
 #include "tpm2_options.h"
 
 /* Spec enforce input data to be not longer than 128 bytes */
@@ -30,7 +31,7 @@ static bool on_args(int argc, char **argv) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_args, 0);
 
@@ -56,7 +57,7 @@ static bool load_sensitive(void) {
     return true;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -66,3 +67,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     return tpm2_stirrandom(ectx, &ctx.in_data);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("stirrandom", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)

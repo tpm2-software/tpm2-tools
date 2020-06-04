@@ -307,7 +307,7 @@ static bool on_args(int argc, char **argv) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] =
     {
@@ -365,7 +365,7 @@ bool is_getekcertificate_feasible(ESYS_CONTEXT *ectx) {
     return true;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(ectx);
 
@@ -414,7 +414,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     return tool_rc_success;
 }
 
-tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
     UNUSED(ectx);
 
@@ -424,3 +424,6 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
     return tool_rc_success;
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("getekcertificate", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)

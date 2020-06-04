@@ -4,6 +4,7 @@
 
 #include "log.h"
 #include "object.h"
+#include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 
@@ -61,7 +62,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         { "policy-session", no_argument,       NULL,  0 },
@@ -181,7 +182,7 @@ static tool_rc process_input_data(ESYS_CONTEXT *ectx) {
     return setup_session_data();
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -207,3 +208,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     //Process outputs
     return tpm2_session_close(&s);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("startauthsession", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)

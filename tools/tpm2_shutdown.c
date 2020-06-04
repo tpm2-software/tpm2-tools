@@ -32,7 +32,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts [] = {
         { "clear", no_argument, NULL, 'c' },
@@ -43,7 +43,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -51,3 +51,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     return tpm2_shutdown(context, shutdown_type);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("shutdown", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)

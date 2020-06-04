@@ -126,7 +126,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
         { "output",            required_argument, NULL, 'o' },
@@ -163,7 +163,7 @@ static tool_rc init(ESYS_CONTEXT *context) {
     return tool_rc_success;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -174,3 +174,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     return read_public_and_save(context);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("readpublic", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "log.h"
+#include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 
@@ -64,21 +65,24 @@ static bool on_arg(int argc, char **argv) {
     return pcr_parse_digest_list(argv, ctx.digest_spec_len, ctx.digest_spec);
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_arg, 0);
 
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     return pcr_extend(ectx);
 }
 
-void tpm2_tool_onexit(void) {
+static void tpm2_tool_onexit(void) {
 
     free(ctx.digest_spec);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("pcrextend", tpm2_tool_onstart, tpm2_tool_onrun, NULL, tpm2_tool_onexit)
