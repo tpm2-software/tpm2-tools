@@ -21,7 +21,7 @@
  * @return
  *  True on success, false on error.
  */
-bool tpm2_tool_onstart(tpm2_options **opts) __attribute__((weak));
+typedef bool (*tpm2_tool_onstart_t)(tpm2_options **opts);
 
 /**
  * This is the main interface for tools, after tcti and sapi/esapi initialization
@@ -33,7 +33,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) __attribute__((weak));
  * @return
  *  A tool_rc indicating status.
  */
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) __attribute__((weak));
+typedef tool_rc (*tpm2_tool_onrun_t)(ESYS_CONTEXT *ectx, tpm2_option_flags flags);
 
 /**
  * Called after tpm2_tool_onrun() is invoked. ESAPI context is still valid during this call.
@@ -42,11 +42,38 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) __attribute
  * @return
  *  A tool_rc indicating status.
  */
-tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) __attribute__((weak));
+typedef tool_rc (*tpm2_tool_onstop_t)(ESYS_CONTEXT *ectx);
 
 /**
  * Called when the tool is exiting, useful for cleanup.
  */
-void tpm2_tool_onexit(void) __attribute__((weak));
+typedef void (*tpm2_tool_onexit_t)(void);
+
+
+typedef struct {
+	const char * name;
+	tpm2_tool_onstart_t onstart;
+	tpm2_tool_onrun_t onrun;
+	tpm2_tool_onstop_t onstop;
+	tpm2_tool_onexit_t onexit;
+} tpm2_tool;
+
+void tpm2_tool_register(const tpm2_tool * tool);
+
+#define TPM2_TOOL_REGISTER(tool_name,tool_onstart,tool_onrun,tool_onstop,tool_onexit) \
+	static const tpm2_tool tool = { \
+		.name		= tool_name, \
+		.onstart	= tool_onstart, \
+		.onrun		= tool_onrun, \
+		.onstop		= tool_onstop, \
+		.onexit		= tool_onexit, \
+	}; \
+	static void \
+	__attribute__((__constructor__)) \
+	__attribute__((__used__)) \
+	_tpm2_tool_init(void) \
+	{ \
+		tpm2_tool_register(&tool); \
+	}
 
 #endif /* MAIN_H */

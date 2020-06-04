@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <openssl/err.h>
 #include <openssl/evp.h>
@@ -62,6 +63,54 @@ static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 }
 
 /*
+ * Build a list of the TPM2 tools linked into this executable
+ */
+static const tpm2_tool ** tools;
+static unsigned tool_count;
+
+void tpm2_tool_register(const tpm2_tool * tool)
+{
+    if (!tools)
+        tools = calloc(1024, sizeof(tools));
+
+    //printf("%s: register %s\n", __func__, tool->name);
+    tools[tool_count++] = tool;
+}
+
+static const tpm2_tool * tpm2_tool_lookup(const char * const arg_name)
+{
+    // no tools linked in?
+    if (tool_count == 0)
+        return NULL;
+    // only one tool linked in?
+    if (tool_count == 1)
+        return *tools;
+
+    // find the executable name in the path
+    // and skip "tpm2_" prefix if it is present
+    const char * name = rindex(arg_name, '/');
+    if (name)
+        name++; // skip the '/'
+    else
+        name = arg_name; // use the full executable name as is
+    if (strncmp(name, "tpm2_", 5) == 0)
+        name += 5;
+
+    // search the tools array for a matching name
+    //printf("name=%s\n", name);
+    for(unsigned i = 0 ; i < tool_count ; i++)
+    {
+	const tpm2_tool * const tool = tools[i];
+        if (strcmp(name, tool->name) == 0)
+            return tool;
+    }
+
+    // not found? should print a table of the tools
+    return NULL;
+}
+
+
+/*
  * This program is a template for TPM2 tools that use the SAPI. It does
  * nothing more than parsing command line options that allow the caller to
  * specify which TCTI to use for the test.
@@ -69,10 +118,18 @@ static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 int main(int argc, char *argv[]) {
 
     tool_rc ret = tool_rc_general_error;
+    const tpm2_tool * const tool = tpm2_tool_lookup(argv[0]);
+    if (!tool)
+    {
+        fprintf(stderr, "%s: unknown tpm2 tool?\n", argv[0]);
+	for(unsigned i = 0 ; i < tool_count ; i++)
+		fprintf(stderr, "%s\n", tools[i]->name);
+        return EXIT_FAILURE;
+    }
 
     tpm2_options *tool_opts = NULL;
-    if (tpm2_tool_onstart) {
-        bool res = tpm2_tool_onstart(&tool_opts);
+    if (tool->onstart) {
+        bool res = tool->onstart(&tool_opts);
         if (!res) {
             LOG_ERR("retrieving tool options");
             return tool_rc_general_error;
@@ -129,9 +186,9 @@ int main(int argc, char *argv[]) {
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */
-    ret = tpm2_tool_onrun(ectx, flags);
-    if (tpm2_tool_onstop) {
-        tool_rc tmp_rc = tpm2_tool_onstop(ectx);
+    ret = tool->onrun(ectx, flags);
+    if (tool->onstop) {
+        tool_rc tmp_rc = tool->onstop(ectx);
         /* if onrun() passed, the error code should come from onstop() */
         ret = ret == tool_rc_success ? tmp_rc : ret;
     }
@@ -157,8 +214,8 @@ free_opts:
         tpm2_options_free(tool_opts);
     }
 
-    if (tpm2_tool_onexit) {
-        tpm2_tool_onexit();
+    if (tool->onexit) {
+        tool->onexit();
     }
 
     exit(ret);
