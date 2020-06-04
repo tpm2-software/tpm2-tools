@@ -122,6 +122,14 @@
 
  * tpm2_policycountertimer: Fix an issue where operandB array was reversed causing faulty comparisons.
 
+### 4.1.3 - 2020-06-02
+
+* tpm2\_create: Fix issue with userauth attribute being cleared if policy is specified.
+
+### 4.1.2 - 2020-05-18
+
+* Fix missing handle maps for ESY3 handle breaks. See #1994.
+
 ### 4.1.1 - 2020-01-21
 
 * tpm2\_certify: Fix output of attestation data including size field. Now outputs just bytes.
