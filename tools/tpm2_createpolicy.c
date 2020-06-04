@@ -132,7 +132,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "policy",              required_argument, NULL, 'L' },
@@ -149,7 +149,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -164,7 +164,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     return parse_policy_type_specific_command(ectx);
 }
 
-void tpm2_tool_onexit(void) {
+static void tpm2_tool_onexit(void) {
 
     free(pctx.common_policy_options.policy_digest);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("createpolicy", tpm2_tool_onstart, tpm2_tool_onrun, NULL, tpm2_tool_onexit)

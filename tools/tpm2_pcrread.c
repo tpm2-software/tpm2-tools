@@ -138,7 +138,7 @@ static bool on_arg(int argc, char *argv[]) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
          { "output",         required_argument, NULL, 'o' },
@@ -150,7 +150,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -176,7 +176,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
     return show_pcr_alg_or_all_values(esys_context, &capdata);
 }
 
-tool_rc tpm2_tool_onstop(ESYS_CONTEXT *esys_context) {
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *esys_context) {
     UNUSED(esys_context);
 
     if (ctx.output_file) {
@@ -185,3 +185,6 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *esys_context) {
 
     return tool_rc_success;
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("pcrread", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)

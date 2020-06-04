@@ -3,7 +3,7 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -16,3 +16,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     return rc;
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("readclock", NULL, tpm2_tool_onrun, NULL, NULL)

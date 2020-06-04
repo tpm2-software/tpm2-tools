@@ -275,7 +275,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "eh-auth",              required_argument, NULL, 'P' },
@@ -320,7 +320,7 @@ static void set_default_hierarchy(void) {
     ctx.objdata.in.hierarchy = TPM2_RH_ENDORSEMENT;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -419,7 +419,10 @@ out:
     return rc;
 }
 
-void tpm2_tool_onexit(void) {
+static void tpm2_tool_onexit(void) {
 
     tpm2_hierarchy_pdata_free(&ctx.objdata);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("createek", tpm2_tool_onstart, tpm2_tool_onrun, NULL, tpm2_tool_onexit)

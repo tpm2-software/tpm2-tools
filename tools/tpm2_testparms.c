@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "log.h"
+#include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 
@@ -89,15 +90,18 @@ static bool on_arg(int argc, char **argv) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
     *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_arg, 0);
 
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     return tpm_testparms(ectx);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("testparms", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)

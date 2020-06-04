@@ -133,7 +133,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         {"hierarchy",      required_argument, NULL, 'C'},
@@ -152,14 +152,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     return hash_and_save(context);
 }
 
-tool_rc tpm2_tool_onstop(ESYS_CONTEXT *context) {
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *context) {
     UNUSED(context);
 
     if (ctx.input_file) {
@@ -168,3 +168,6 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *context) {
 
     return tool_rc_success;
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("hash", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)

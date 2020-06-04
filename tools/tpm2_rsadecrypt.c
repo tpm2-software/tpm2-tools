@@ -5,6 +5,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
+#include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 
@@ -114,7 +115,7 @@ static bool on_args(int argc, char **argv) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
       { "auth",        required_argument, NULL, 'p' },
@@ -154,7 +155,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
             &ctx.key.object, false, TPM2_HANDLE_ALL_W_NV);
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -166,7 +167,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     return rsa_decrypt_and_save(ectx);
 }
 
-tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
     return tpm2_session_close(&ctx.key.object.session);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("rsadecrypt", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)

@@ -3,6 +3,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
+#include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 
@@ -58,7 +59,7 @@ static bool on_args(int argc, char **argv) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
       { "output",  required_argument, NULL, 'o' },
@@ -85,7 +86,7 @@ static tool_rc check_options(void) {
     return tool_rc_success;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
     UNUSED(ectx);
@@ -112,3 +113,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     return tool_rc_success;
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("geteccparameters", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)

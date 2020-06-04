@@ -27,7 +27,7 @@ static bool on_positional(int argc, char **argv) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_positional,
                              TPM2_OPTIONS_NO_SAPI);
@@ -35,7 +35,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
     UNUSED(ectx);
@@ -80,3 +80,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("eventlog", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)

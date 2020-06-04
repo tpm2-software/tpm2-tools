@@ -42,14 +42,14 @@ static bool on_arg(int argc, char **argv) {
     return str_to_tpm_rc(argv[0], &ctx.rc);
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_arg, TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
     UNUSED(ectx);
@@ -59,3 +59,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     return tool_rc_success;
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("rc_decode", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)

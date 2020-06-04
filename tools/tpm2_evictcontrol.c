@@ -82,7 +82,7 @@ static bool on_arg(int argc, char *argv[]) {
     return true;
 }
 
-bool tpm2_tool_onstart(tpm2_options **opts) {
+static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
       { "hierarchy",      required_argument, NULL, 'C' },
@@ -98,7 +98,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -206,8 +206,11 @@ out:
     return rc;
 }
 
-tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
 
     return tpm2_session_close(&ctx.auth_hierarchy.object.session);
 }
+
+// Register this tool with tpm2_tool.c
+TPM2_TOOL_REGISTER("evictcontrol", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
