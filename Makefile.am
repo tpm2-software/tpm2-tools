@@ -164,7 +164,6 @@ bin_PROGRAMS += \
     tools/tpm2_startup \
     tools/tpm2_stirrandom \
     tools/tpm2_testparms \
-    tools/tpm2_tool \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature \
     tools/tpm2_setcommandauditstatus \
@@ -430,8 +429,9 @@ tools_tpm2_zgen2phase_SOURCES = tools/tpm2_zgen2phase.c $(TOOL_SRC)
 
 # Bundle all the tools into a single program similar to busybox
 # should this be possible to say $(addsuffix .c,$(bin_PROGRAMS))?
-tools_tpm2_tool_LDADD = $(LDADD) $(CURL_LIBS)
-tools_tpm2_tool_SOURCES = tools/tpm2_tool.h \
+bin_PROGRAMS += tools/tpm2
+tools_tpm2_LDADD = $(LDADD) $(CURL_LIBS)
+tools_tpm2_SOURCES = tools/tpm2_tool.h \
     tools/misc/tpm2_checkquote.c \
     tools/misc/tpm2_eventlog.c \
     tools/misc/tpm2_print.c \
