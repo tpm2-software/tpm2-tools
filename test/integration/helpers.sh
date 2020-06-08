@@ -8,14 +8,14 @@ is_simulator() {
     # TPM2_PT_VENDOR_STRING_1:
     #   raw: 0x53572020
     #   value: "SW"
-    tpm2_getcap properties-fixed \
+    tpm2 getcap properties-fixed \
     | grep -zP "TPM2_PT_VENDOR_STRING_1:\s*raw: 0x53572020" &>/dev/null
 }
 
 # Return 0 if algorithm is supported, return 1 otherwise
 # Error if TPM is simulator and algorithm is unsupported
 is_alg_supported() {
-    if tpm2_testparms $1 2> /dev/null; then
+    if tpm2 testparms $1 2> /dev/null; then
         return 0
     else
         if is_simulator; then
@@ -31,7 +31,7 @@ is_alg_supported() {
 # Return 0 if command is supported, return 1 otherwise
 # Error if TPM is simulator and command is unsupported
 is_cmd_supported() {
-    if tpm2_getcap commands | grep -i "$1:" &> /dev/null; then
+    if tpm2 getcap commands | grep -i "$1:" &> /dev/null; then
         return 0
     else
         if is_simulator; then
@@ -65,7 +65,7 @@ pyscript
 
 populate_algs() {
     algs="$(mktemp)"
-    tpm2_getcap algorithms > "${algs}"
+    tpm2 getcap algorithms > "${algs}"
     filter_algs_by "${algs}" "${1}"
     rm "${algs}"
 }
@@ -119,7 +119,7 @@ populate_alg_lengths() {
     local lengths="1 128 192 224 256 384 512 1024 2048 4096"
     local populated=""
     for len in $lengths; do
-        if tpm2_testparms "$alg$len" 2> /dev/null; then
+        if tpm2 testparms "$alg$len" 2> /dev/null; then
             if [ -z "$populated" ]; then
                 populated="$alg$len"
             else
@@ -155,7 +155,7 @@ populate_alg_modes() {
     local modes="ctr ofb cbc cfb ecb"
     local populated=""
     for mode in $modes; do
-        if tpm2_testparms "$alg$mode" 2> /dev/null; then
+        if tpm2 testparms "$alg$mode" 2> /dev/null; then
             if [ -z "$populated" ]; then
                 populated="$alg$mode"
             else
@@ -412,10 +412,10 @@ function start_up() {
     echo "run_startup: $run_startup"
 
     if [ $run_startup = true ]; then
-        tpm2_startup -c
+        tpm2 startup -c
     fi
 
-    if ! tpm2_clear; then
+    if ! tpm2 clear; then
         exit 1
     fi
 }
@@ -535,7 +535,7 @@ EOF
 
 # Reset PCR 16. Important when using physical TPM
 function resetPCR16(){
-    tpm2_pcrreset 16
+    tpm2 pcrreset 16
 }
 
 function setup_profile() {
