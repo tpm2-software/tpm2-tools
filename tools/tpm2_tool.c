@@ -71,10 +71,11 @@ static unsigned tool_count;
 void tpm2_tool_register(const tpm2_tool * tool)
 {
     if (!tools)
-        tools = calloc(1024, sizeof(tools));
+        tools = calloc(1024, sizeof(*tools));
 
     //printf("%s: register %s\n", __func__, tool->name);
-    tools[tool_count++] = tool;
+    if (tools)
+        tools[tool_count++] = tool;
 }
 
 static const char * tpm2_tool_name(const char * arg)
@@ -94,9 +95,10 @@ static const char * tpm2_tool_name(const char * arg)
 static const tpm2_tool * tpm2_tool_lookup(int *argc, char *** argv)
 {
     // no tools linked in?
-    if (tool_count == 0)
+    if (!tools)
         return NULL;
-    // only one tool linked in?
+
+    // only one tool linked in? use it no matter the program name.
     if (tool_count == 1)
         return *tools;
 
@@ -104,21 +106,22 @@ static const tpm2_tool * tpm2_tool_lookup(int *argc, char *** argv)
     // and skip "tpm2_" prefix if it is present
     const char * name = tpm2_tool_name((*argv)[0]);
 
-    // if this was invokved as 'tpm2_tool', then try again with the second argument
-    if (strcmp(name, "tool") == 0)
+    // if this was invoked as 'tpm2', then try again with the second argument
+    if (strcmp(name, "tpm2") == 0)
     {
-	if (--(*argc) == 0)
-		return NULL;
+        if (--(*argc) == 0)
+            return NULL;
         (*argv)++;
         name = tpm2_tool_name((*argv)[0]);
     }
 
 
     // search the tools array for a matching name
-    //printf("name=%s\n", name);
     for(unsigned i = 0 ; i < tool_count ; i++)
     {
-	const tpm2_tool * const tool = tools[i];
+        const tpm2_tool * const tool = tools[i];
+        if (!tool || !tool->name)
+            continue;
         if (strcmp(name, tool->name) == 0)
             return tool;
     }
@@ -135,16 +138,22 @@ static const tpm2_tool * tpm2_tool_lookup(int *argc, char *** argv)
  */
 int main(int argc, char **argv) {
 
-    tool_rc ret = tool_rc_general_error;
-    const tpm2_tool * const tool = tpm2_tool_lookup(&argc, &argv);
-    if (!tool)
+    if (!tools)
     {
-        fprintf(stderr, "%s: unknown tpm2 tool?\n", argv[0]);
-	for(unsigned i = 0 ; i < tool_count ; i++)
-		fprintf(stderr, "%s\n", tools[i]->name);
+        LOG_ERR("%s: No tools linked in!", argv[0]);
         return EXIT_FAILURE;
     }
 
+    const tpm2_tool * const tool = tpm2_tool_lookup(&argc, &argv);
+    if (!tool)
+    {
+        LOG_ERR("%s: unknown tool. Available tpm2 commands:", argv[0]);
+        for(unsigned i = 0 ; i < tool_count ; i++)
+            fprintf(stderr, "%s\n", tools[i]->name);
+        return EXIT_FAILURE;
+    }
+
+    tool_rc ret = tool_rc_general_error;
     tpm2_options *tool_opts = NULL;
     if (tool->onstart) {
         bool res = tool->onstart(&tool_opts);
