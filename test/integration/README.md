@@ -14,10 +14,10 @@ For example:
 ## Adding a new integration test
 To add a new test, do:
 
-1. add a script to the `test/integration` directory.
+1. add a script to the `test/integration/tests` directory.
 2. `source helpers.sh` in the new script.
-4. issue the command `start_up`.
-5. Do whatever test you need to do.
-6. If you set the `EXIT` handler, call `tpm2 shutdown` in that handler.
-7. `make distclean`, re-run `bootstrap` and configure to pick up the new script.
-8. Run `make check` again.
+3. issue the command `start_up`.
+4. Do whatever test you need to do.
+5. If you set the `EXIT` handler, call `tpm2 shutdown` in that handler.
+6. `make distclean`, re-run `bootstrap` and configure to pick up the new script.
+7. Run `make check` again.
