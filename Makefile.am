@@ -80,7 +80,6 @@ endif
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
 lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS)
-TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_fapi_tss2_decrypt_CFLAGS = $(FAPI_CFLAGS)
 tools_fapi_tss2_decrypt_LDFLAGS = $(TSS2_FAPI_LIBS)
@@ -231,7 +230,10 @@ tools_fapi_tss2_writeauthorizenv_SOURCES = tools/fapi/tss2_template.c tools/fapi
 # should this be possible to say $(addsuffix .c,$(bin_PROGRAMS))?
 bin_PROGRAMS += tools/tpm2
 tools_tpm2_LDADD = $(LDADD) $(CURL_LIBS)
-tools_tpm2_SOURCES = tools/tpm2_tool.c $(tpm2_tools)
+tools_tpm2_SOURCES = \
+	tools/tpm2_tool.c \
+	tools/tpm2_tool.h \
+	$(tpm2_tools)
 
 tpm2_tools = \
     tools/misc/tpm2_checkquote.c \
