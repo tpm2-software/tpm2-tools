@@ -41,10 +41,10 @@ bc3e1d4084e835c7c8906a1c05b4d2d30fdbebc1dbad950fa6b165bd4b6a
 525118bd4470b18180eef78ae4267bcd" | xxd -r -p > test_rsa_ek.pub
 
 # Get ek certificate and output to file
-tpm2_getekcertificate -u test_rsa_ek.pub -x -X -o rsa_ek_cert.bin
+tpm2 getekcertificate -u test_rsa_ek.pub -x -X -o rsa_ek_cert.bin
 
 # Test that stdoutput is the same
-tpm2_getekcertificate -u test_rsa_ek.pub -x -X > stdout_rsa_ek_cert.bin
+tpm2 getekcertificate -u test_rsa_ek.pub -x -X > stdout_rsa_ek_cert.bin
 
 # stdout file should match
 cmp rsa_ek_cert.bin stdout_rsa_ek_cert.bin
@@ -64,10 +64,10 @@ d76e06520b64f2a1da1b331469aa00060080004300100003001000206d8e
 51fe0853" | xxd -r -p > test_ecc_ek.pub
 
 # Get ecc certificate and output to file
-tpm2_getekcertificate -u test_ecc_ek.pub -x -X -o ecc_ek_cert.bin
+tpm2 getekcertificate -u test_ecc_ek.pub -x -X -o ecc_ek_cert.bin
 
 # Test that stdoutput is the same
-tpm2_getekcertificate -u test_ecc_ek.pub -x -X > stdout_ecc_ek_cert.bin
+tpm2 getekcertificate -u test_ecc_ek.pub -x -X > stdout_ecc_ek_cert.bin
 
 # stdout file should match
 cmp ecc_ek_cert.bin stdout_ecc_ek_cert.bin

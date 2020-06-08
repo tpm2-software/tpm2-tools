@@ -19,7 +19,7 @@ cleanup() {
     rm -f $output_ek_pub $output_ak_pub $output_ak_pub_name \
     $output_mkcredential $file_input_data output_ak grep.txt $ak_ctx
 
-    tpm2_evictcontrol -Q -Co -c $handle_ek 2>/dev/null || true
+    tpm2 evictcontrol -Q -Co -c $handle_ek 2>/dev/null || true
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
@@ -33,20 +33,20 @@ cleanup "no-shut-down"
 
 echo "12345678" > $file_input_data
 
-tpm2_createek -Q -c $handle_ek -G $ek_alg -u $output_ek_pub
+tpm2 createek -Q -c $handle_ek -G $ek_alg -u $output_ek_pub
 
-tpm2_createak -Q -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg \
+tpm2 createak -Q -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg \
 -u $output_ak_pub -n $output_ak_pub_name
 
 # Use -c in xxd so there is no line wrapping
 file_size=`ls -l $output_ak_pub_name | awk {'print $5'}`
 Loadkeyname=`cat $output_ak_pub_name | xxd -p -c $file_size`
 
-tpm2_makecredential -Q -e $output_ek_pub -s $file_input_data -n $Loadkeyname \
+tpm2 makecredential -Q -e $output_ek_pub -s $file_input_data -n $Loadkeyname \
 -o $output_mkcredential
 
 # use no tpm backend
-tpm2_makecredential -T none -Q -e $output_ek_pub -s $file_input_data \
+tpm2 makecredential -T none -Q -e $output_ek_pub -s $file_input_data \
 -n $Loadkeyname -o $output_mkcredential
 
 exit 0

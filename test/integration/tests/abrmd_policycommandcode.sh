@@ -31,45 +31,45 @@ cleanup "no-shutdown"
 
 echo $secret > $file_input_data
 
-tpm2_clear
+tpm2 clear
 
-tpm2_createprimary -Q -C o -c $file_primary_key_ctx
+tpm2 createprimary -Q -C o -c $file_primary_key_ctx
 
-tpm2_startauthsession -S $file_session_data
+tpm2 startauthsession -S $file_session_data
 
-tpm2_policycommandcode -S $file_session_data -L $file_policy TPM2_CC_Unseal
+tpm2 policycommandcode -S $file_session_data -L $file_policy TPM2_CC_Unseal
 
-tpm2_flushcontext $file_session_data
+tpm2 flushcontext $file_session_data
 
 rm $file_session_data
 
-echo "tpm2_create -C $file_primary_key_ctx -u $file_unseal_key_pub \
+echo "tpm2 create -C $file_primary_key_ctx -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -L $file_policy -i- <<< $secret"
 
-tpm2_create -C $file_primary_key_ctx -u $file_unseal_key_pub \
+tpm2 create -C $file_primary_key_ctx -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -L $file_policy -i- <<< $secret
 
-tpm2_load -C $file_primary_key_ctx -u $file_unseal_key_pub \
+tpm2 load -C $file_primary_key_ctx -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 
 # Ensure unsealing passes with proper policy
-tpm2_startauthsession --policy-session -S $file_session_data
+tpm2 startauthsession --policy-session -S $file_session_data
 
-tpm2_policycommandcode -S $file_session_data -L $file_policy TPM2_CC_Unseal
+tpm2 policycommandcode -S $file_session_data -L $file_policy TPM2_CC_Unseal
 
-tpm2_unseal -p session:$file_session_data -c sealkey.ctx > $file_output_data
+tpm2 unseal -p session:$file_session_data -c sealkey.ctx > $file_output_data
 
-tpm2_flushcontext $file_session_data
+tpm2 flushcontext $file_session_data
 
 rm $file_session_data
 
 cmp -s $file_output_data $file_input_data
 
 # Test that other operations fail
-if tpm2_encryptdecrypt -o $file_output_data -c $file_unseal_key_ctx \
+if tpm2 encryptdecrypt -o $file_output_data -c $file_unseal_key_ctx \
 $file_input_data; then
-    echo "tpm2_policycommandcode: Should have failed!"
+    echo "tpm2 policycommandcode: Should have failed!"
     exit 1
 else
     true

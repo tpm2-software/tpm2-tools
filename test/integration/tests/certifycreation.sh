@@ -17,16 +17,16 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_clear -Q
+tpm2 clear -Q
 
-tpm2_createprimary -C o -c primary.ctx --creation-data creation.data \
+tpm2 createprimary -C o -c primary.ctx --creation-data creation.data \
 -d creation.digest -t creation.ticket -Q
 
-tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx -c signing_key.ctx -Q
+tpm2 create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx -c signing_key.ctx -Q
 
-tpm2_readpublic -c signing_key.ctx -f pem -o sslpub.pem
+tpm2 readpublic -c signing_key.ctx -f pem -o sslpub.pem
 
-tpm2_certifycreation -C signing_key.ctx -c primary.ctx -d creation.digest \
+tpm2 certifycreation -C signing_key.ctx -c primary.ctx -d creation.digest \
 -t creation.ticket -g sha256 -o signature.bin --attestation attestation.bin \
 -f plain -s rsassa
 
@@ -38,7 +38,7 @@ attestation.bin
 #
 dd if=/dev/urandom of=qual.dat bs=1 count=32
 
-tpm2_certifycreation -C signing_key.ctx -c primary.ctx -d creation.digest \
+tpm2 certifycreation -C signing_key.ctx -c primary.ctx -d creation.digest \
 -t creation.ticket -g sha256 -o signature.bin --attestation attestation.bin \
 -f plain -s rsassa -q qual.dat
 
@@ -48,12 +48,12 @@ attestation.bin
 #
 # Test certification with non primary keys
 #
-tpm2_create -C primary.ctx -u sec_key.pub -r sec_key.priv -t creation.ticket \
+tpm2 create -C primary.ctx -u sec_key.pub -r sec_key.priv -t creation.ticket \
 -d creation.digest --creation-data creation.data -Q
 
-tpm2_load -C primary.ctx -u sec_key.pub -r sec_key.priv -c sec_key.ctx -Q
+tpm2 load -C primary.ctx -u sec_key.pub -r sec_key.priv -c sec_key.ctx -Q
 
-tpm2_certifycreation -C signing_key.ctx -c sec_key.ctx -d creation.digest \
+tpm2 certifycreation -C signing_key.ctx -c sec_key.ctx -d creation.digest \
 -t creation.ticket -g sha256 -o signature.bin --attestation attestation.bin \
 -f plain -s rsassa
 

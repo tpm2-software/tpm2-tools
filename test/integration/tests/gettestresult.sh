@@ -16,7 +16,7 @@ cleanup "no-shut-down"
 tempfile=$(mktemp)
 
 # Verify that tests have succeeded
-tpm2_gettestresult > "${tempfile}"
+tpm2 gettestresult > "${tempfile}"
 yaml_get_kv "${tempfile}" "status" | grep "success"
 
 exit 0

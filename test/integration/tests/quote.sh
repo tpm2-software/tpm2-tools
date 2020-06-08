@@ -31,9 +31,9 @@ cleanup() {
     $file_quote_key_name $file_quote_key_ ak.pub2 ak.name_2 \
     $out $toss_out $ak2_ctx ek.ctx ak.ctx nonce.bin quote.bin quote.sig quote.pcr
 
-    tpm2_evictcontrol -Q -Co -c $Handle_ek_quote 2>/dev/null || true
-    tpm2_evictcontrol -Q -Co -c $Handle_ak_quote 2>/dev/null || true
-    tpm2_evictcontrol -Q -Co -c $Handle_ak_quote2 2>/dev/null || true
+    tpm2 evictcontrol -Q -Co -c $Handle_ek_quote 2>/dev/null || true
+    tpm2 evictcontrol -Q -Co -c $Handle_ak_quote 2>/dev/null || true
+    tpm2 evictcontrol -Q -Co -c $Handle_ak_quote2 2>/dev/null || true
 
     if [ "$1" != "no-shut-down" ]; then
        shut_down
@@ -43,7 +43,7 @@ trap cleanup EXIT
 
 start_up
 
-tpm2_getcap properties-fixed | tr -dc '[[:print:]]\r\n' > $out
+tpm2 getcap properties-fixed | tr -dc '[[:print:]]\r\n' > $out
 maxdigest=$(yaml_get_kv $out "TPM2_PT_MAX_DIGEST" "raw")
 if ! [[ "$maxdigest" =~ ^(0x)*[0-9]+$ ]] ; then
  echo "error: not a number, got: \"$maxdigest\"" >&2
@@ -55,48 +55,48 @@ nonce=${nonce:0:2*$maxdigest}
 
 cleanup "no-shut-down"
 
-tpm2_clear
+tpm2 clear
 
-tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
+tpm2 createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
 -c $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_quote_key_pub \
+tpm2 create -Q -g $alg_create_obj -G $alg_create_key -u $file_quote_key_pub \
 -r $file_quote_key_priv -C $file_primary_key_ctx
 
-tpm2_load -Q -C $file_primary_key_ctx -u $file_quote_key_pub \
+tpm2 load -Q -C $file_primary_key_ctx -u $file_quote_key_pub \
 -r $file_quote_key_priv -n $file_quote_key_name -c $file_quote_key_ctx
 
-tpm2_quote -c $file_quote_key_ctx -l $alg_quote:16,17,18 -q $nonce \
+tpm2 quote -c $file_quote_key_ctx -l $alg_quote:16,17,18 -q $nonce \
 -m $toss_out -s $toss_out -o $toss_out -g $alg_primary_obj > $out
 
 yaml_verify $out
 
-tpm2_quote -Q -c $file_quote_key_ctx \
+tpm2 quote -Q -c $file_quote_key_ctx \
 -l $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce -m $toss_out \
 -s $toss_out -o $toss_out -g $alg_primary_obj
 
 #####handle testing
-tpm2_evictcontrol -Q -C o -c $file_quote_key_ctx $Handle_ak_quote
+tpm2 evictcontrol -Q -C o -c $file_quote_key_ctx $Handle_ak_quote
 
-tpm2_quote -Q -c $Handle_ak_quote -l $alg_quote:16,17,18 -q $nonce \
+tpm2 quote -Q -c $Handle_ak_quote -l $alg_quote:16,17,18 -q $nonce \
 -m $toss_out -s $toss_out -o $toss_out -g $alg_primary_obj
 
-tpm2_quote -Q -c $Handle_ak_quote -l $alg_quote:16,17,18+$alg_quote1:16,17,18 \
+tpm2 quote -Q -c $Handle_ak_quote -l $alg_quote:16,17,18+$alg_quote1:16,17,18 \
 -q $nonce -m $toss_out -s $toss_out -o $toss_out -g $alg_primary_obj
 
 #####AK
-tpm2_createek -Q -c $Handle_ek_quote -G 0x01
+tpm2 createek -Q -c $Handle_ek_quote -G 0x01
 
-tpm2_createak -Q -C $Handle_ek_quote -c $ak2_ctx -u ak.pub2 -n ak.name_2
-tpm2_evictcontrol -Q -C o -c $ak2_ctx $Handle_ak_quote2
+tpm2 createak -Q -C $Handle_ek_quote -c $ak2_ctx -u ak.pub2 -n ak.name_2
+tpm2 evictcontrol -Q -C o -c $ak2_ctx $Handle_ak_quote2
 
-tpm2_quote -Q -c $Handle_ak_quote -l $alg_quote:16,17,18 -q $nonce \
+tpm2 quote -Q -c $Handle_ak_quote -l $alg_quote:16,17,18 -q $nonce \
 -m $toss_out -s $toss_out -o $toss_out -g $alg_primary_obj
 
 # ECC Test
-tpm2_createek -G ecc -c ek.ctx
-tpm2_createak -C ek.ctx -c ak.ctx -G ecc -g sha256 -s ecdsa
-tpm2_getrandom -o nonce.bin 20
-tpm2_quote -c ak.ctx -l sha256:15,16,22 -q nonce.bin -m quote.bin -s quote.sig -o quote.pcr -g sha256
+tpm2 createek -G ecc -c ek.ctx
+tpm2 createak -C ek.ctx -c ak.ctx -G ecc -g sha256 -s ecdsa
+tpm2 getrandom -o nonce.bin 20
+tpm2 quote -c ak.ctx -l sha256:15,16,22 -q nonce.bin -m quote.bin -s quote.sig -o quote.pcr -g sha256
 
 exit 0

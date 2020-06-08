@@ -14,9 +14,9 @@ start_up
 cleanup "no-shut-down"
 
 # Perform simple selftest
-tpm2_selftest
+tpm2 selftest
 
 # Perform full selftest
-tpm2_selftest --fulltest
+tpm2 selftest --fulltest
 
 exit 0

@@ -14,23 +14,23 @@ cleanup() {
 trap cleanup EXIT
 
 cleanup "no-shut-down"
-tpm2_clear
+tpm2 clear
 
 # Test for flushing the specified handle
-tpm2_createprimary -Q -C o -g sha256 -G rsa
+tpm2 createprimary -Q -C o -g sha256 -G rsa
 # tpm2-abrmd may save the transient object and restore it when using
-res=`tpm2_getcap handles-transient`
+res=`tpm2 getcap handles-transient`
 if [ -n "$res" ]; then
-    tpm2_flushcontext -Q -c 0x80000000
+    tpm2 flushcontext -Q -c 0x80000000
 fi
 
 # Test for flushing a transient object
-tpm2_createprimary -Q -C o -g sha256 -G rsa
-tpm2_flushcontext -Q -t
+tpm2 createprimary -Q -C o -g sha256 -G rsa
+tpm2 flushcontext -Q -t
 
 # Test for flushing a loaded session
-tpm2_createpolicy -Q --policy-session --policy-pcr -l sha256:0
-tpm2_flushcontext -Q -l
+tpm2 createpolicy -Q --policy-session --policy-pcr -l sha256:0
+tpm2 flushcontext -Q -l
 
 cleanup "no-shut-down"
 

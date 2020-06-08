@@ -9,7 +9,7 @@ trap cleanup EXIT
 
 start_up
 
-tpm2_readclock > clock.yaml
+tpm2 readclock > clock.yaml
 
 # validate we can get each portion of the YAML file
 yaml_get_kv clock.yaml time

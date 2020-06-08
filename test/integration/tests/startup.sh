@@ -4,14 +4,14 @@ source helpers.sh
 
 start_up
 
-tpm2_startup --clear
+tpm2 startup --clear
 
-tpm2_startup
+tpm2 startup
 
 # rather than incur another simulator startup just test shutdown
 # in this test as well.
-tpm2_shutdown
+tpm2 shutdown
 
-tpm2_shutdown --clear
+tpm2 shutdown --clear
 
 exit 0

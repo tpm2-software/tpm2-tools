@@ -36,11 +36,11 @@ cleanup() {
   $output_actcredential $output_quote $output_quotesig $output_quotepcr \
   $context_ak rand.out session.ctx
 
-  tpm2_pcrreset -Q $debug_pcr
-  tpm2_evictcontrol -Q -C o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
-  tpm2_evictcontrol -Q -C o -c $context_ak -P "$ownerpw" 2>/dev/null || true
+  tpm2 pcrreset -Q $debug_pcr
+  tpm2 evictcontrol -Q -C o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
+  tpm2 evictcontrol -Q -C o -c $context_ak -P "$ownerpw" 2>/dev/null || true
 
-  tpm2_nvundefine -Q $handle_nv -C $handle_hier \
+  tpm2 nvundefine -Q $handle_nv -C $handle_hier \
   -P "$ownerpw" 2>/dev/null || true
 
   if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
@@ -56,58 +56,58 @@ echo 12345678 > $file_input_data
 echo 1234567890123456789012345678901 > $file_input_key
 
 getrandom() {
-  loaded_randomness=`tpm2_getrandom --hex $1`
+  loaded_randomness=`tpm2 getrandom --hex $1`
 }
 
-tpm2_changeauth -c o "$ownerpw"
-tpm2_changeauth -c e "$endorsepw"
+tpm2 changeauth -c o "$ownerpw"
+tpm2 changeauth -c e "$endorsepw"
 
 # Key generation
-tpm2_createek -Q -c $handle_ek -G $ek_alg -u $output_ek_pub_pem -f pem \
+tpm2 createek -Q -c $handle_ek -G $ek_alg -u $output_ek_pub_pem -f pem \
 -w "$ownerpw" -P "$endorsepw"
-tpm2_readpublic -Q -c $handle_ek -o $output_ek_pub
+tpm2 readpublic -Q -c $handle_ek -o $output_ek_pub
 
-tpm2_createak -Q -C $handle_ek -c $context_ak -G $ak_alg -g $digestAlg \
+tpm2 createak -Q -C $handle_ek -c $context_ak -G $ak_alg -g $digestAlg \
 -s $signAlg -u $output_ak_pub_pem -f pem -n $output_ak_pub_name -p "$akpw" \
 -P "$endorsepw"
-tpm2_readpublic -Q -c $context_ak -o $output_ak_pub
+tpm2 readpublic -Q -c $context_ak -o $output_ak_pub
 
 
 # Validate keys (registrar)
 file_size=`ls -l $output_ak_pub_name | awk {'print $5'}`
 loaded_key_name=`cat $output_ak_pub_name | xxd -p -c $file_size`
-tpm2_makecredential -Q -T none -e $output_ek_pub -s $file_input_data \
+tpm2 makecredential -Q -T none -e $output_ek_pub -s $file_input_data \
 -n $loaded_key_name -o $output_mkcredential
 
 TPM2_RH_ENDORSEMENT=0x4000000B
-tpm2_startauthsession --policy-session -S session.ctx
-tpm2_policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT $endorsepw
-tpm2_activatecredential -Q -c $context_ak -C $handle_ek \
+tpm2 startauthsession --policy-session -S session.ctx
+tpm2 policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT $endorsepw
+tpm2 activatecredential -Q -c $context_ak -C $handle_ek \
 -i $output_mkcredential -o $output_actcredential -p "$akpw" \
 -P "session:session.ctx"
-tpm2_flushcontext session.ctx
+tpm2 flushcontext session.ctx
 diff $file_input_data $output_actcredential
 
 
 # Quoting
-tpm2_pcrreset -Q $debug_pcr
-tpm2_pcrextend -Q $debug_pcr:sha256=$rand_pcr_value
-tpm2_pcrread -Q
+tpm2 pcrreset -Q $debug_pcr
+tpm2 pcrextend -Q $debug_pcr:sha256=$rand_pcr_value
+tpm2 pcrread -Q
 getrandom 20
-tpm2_quote -Q -c $context_ak -l $digestAlg:$debug_pcr_list \
+tpm2 quote -Q -c $context_ak -l $digestAlg:$debug_pcr_list \
 -q $loaded_randomness -m $output_quote -s $output_quotesig -o $output_quotepcr \
 -g $digestAlg -p "$akpw"
 
 
 # Verify quote
-tpm2_checkquote -Q -u $output_ak_pub_pem -m $output_quote -s $output_quotesig \
+tpm2 checkquote -Q -u $output_ak_pub_pem -m $output_quote -s $output_quotesig \
 -f $output_quotepcr -g $digestAlg -q $loaded_randomness
 
 
 # Save U key from verifier
-tpm2_nvdefine -Q $handle_nv -C $handle_hier -s 32 -a "ownerread|ownerwrite" \
+tpm2 nvdefine -Q $handle_nv -C $handle_hier -s 32 -a "ownerread|ownerwrite" \
 -p "indexpass" -P "$ownerpw"
-tpm2_nvwrite -Q $handle_nv -C $handle_hier -P "$ownerpw" -i $file_input_key
-tpm2_nvread -Q $handle_nv -C $handle_hier -s 32 -P "$ownerpw"
+tpm2 nvwrite -Q $handle_nv -C $handle_hier -P "$ownerpw" -i $file_input_key
+tpm2 nvread -Q $handle_nv -C $handle_hier -s 32 -P "$ownerpw"
 
 exit 0

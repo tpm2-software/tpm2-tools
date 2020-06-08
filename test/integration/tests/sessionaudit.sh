@@ -18,22 +18,22 @@ start_up
 
 cleanup "no-shutdown"
 
-tpm2_clear
+tpm2 clear
 
 #
 # Get audit digest for a TPM command TPM2_GetRandom using and audit session
 #
 
-tpm2_createprimary -Q -C e -c prim.ctx
+tpm2 createprimary -Q -C e -c prim.ctx
 
-tpm2_create -Q -C prim.ctx -c signing_key.ctx -u signing_key.pub \
+tpm2 create -Q -C prim.ctx -c signing_key.ctx -u signing_key.pub \
 -r signing_key.priv
 
-tpm2_startauthsession -S session.ctx --audit-session
+tpm2 startauthsession -S session.ctx --audit-session
 
-tpm2_getrandom 8 -S session.ctx --cphash cp.hash --rphash rp.hash
+tpm2 getrandom 8 -S session.ctx --cphash cp.hash --rphash rp.hash
 
-tpm2_getsessionauditdigest -c signing_key.ctx -m att.data -s att.sig \
+tpm2 getsessionauditdigest -c signing_key.ctx -m att.data -s att.sig \
 -S session.ctx
 
 dd if=/dev/zero bs=1 count=32 status=none of=zero.bin

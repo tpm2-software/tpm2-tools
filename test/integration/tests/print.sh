@@ -26,27 +26,27 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_clear
+tpm2 clear
 
 # Create signing key
-tpm2_createek -Q -G rsa -c $ek_handle
-tpm2_createak -Q -G rsa -g sha256 -s rsassa -C $ek_handle -c $ak_ctx\
+tpm2 createek -Q -G rsa -c $ek_handle
+tpm2 createak -Q -G rsa -g sha256 -s rsassa -C $ek_handle -c $ak_ctx\
   -u $ak_pubkey_file -n $ak_name_file
 
-tpm2_readpublic -c $ak_ctx -f tpmt -o tpmt_public.ak
+tpm2 readpublic -c $ak_ctx -f tpmt -o tpmt_public.ak
 
-tpm2_print -t TPM2B_PUBLIC $ak_pubkey_file > $print_file
+tpm2 print -t TPM2B_PUBLIC $ak_pubkey_file > $print_file
 yaml_verify $print_file
 
-tpm2_print -t TPMT_PUBLIC tpmt_public.ak > $print_file
+tpm2 print -t TPMT_PUBLIC tpmt_public.ak > $print_file
 yaml_verify $print_file
 
 # Take PCR quote
-tpm2_quote -Q -c $ak_ctx -l "sha256:0,2,4,9,10,11,12,17" -q "0f8beb45ac" \
+tpm2 quote -Q -c $ak_ctx -l "sha256:0,2,4,9,10,11,12,17" -q "0f8beb45ac" \
 -m $quote_file
 
 # Print TPM's quote file
-tpm2_print -t TPMS_ATTEST $quote_file > $print_file
+tpm2 print -t TPMS_ATTEST $quote_file > $print_file
 
 # Check printed yaml
 python << pyscript
@@ -84,9 +84,9 @@ pyscript
 # negative testing
 trap - ERR
 
-tpm2_print $quote_file
+tpm2 print $quote_file
 if [ $? -eq 0 ]; then
-  echo "Expected tpm2_print without -t to fail"
+  echo "Expected tpm2 print without -t to fail"
   exit 1
 fi
 

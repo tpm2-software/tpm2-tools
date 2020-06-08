@@ -38,34 +38,34 @@ cleanup "no-shut-down"
 
 echo "12345678" > $file_input_data
 
-tpm2_clear
+tpm2 clear
 
-tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key \
+tpm2 createprimary -Q -C e -g $alg_hash -G $alg_primary_key \
 -c $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub \
+tpm2 create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub \
 -r $file_signing_key_priv -C $file_primary_key_ctx
 
-tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
+tpm2 load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
 -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
-tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -o $file_output_data \
+tpm2 sign -Q -c $file_signing_key_ctx -g $alg_hash -o $file_output_data \
 $file_input_data
 
-tpm2_verifysignature -Q -c $file_signing_key_ctx -g $alg_hash \
+tpm2 verifysignature -Q -c $file_signing_key_ctx -g $alg_hash \
 -m $file_input_data -s $file_output_data -t $file_verify_tk_data
 
-tpm2_hash -Q -C n -g $alg_hash -o $file_input_data_hash \
+tpm2 hash -Q -C n -g $alg_hash -o $file_input_data_hash \
 -t $file_input_data_hash_tk $file_input_data
 
 rm -f $file_verify_tk_data
-tpm2_verifysignature -Q -c $file_signing_key_ctx -d $file_input_data_hash \
+tpm2 verifysignature -Q -c $file_signing_key_ctx -d $file_input_data_hash \
 -s $file_output_data -t $file_verify_tk_data
 
 rm -f $file_verify_tk_data $file_signing_key_ctx -rf
-tpm2_loadexternal -Q -C n -u $file_signing_key_pub -c $file_signing_key_ctx
+tpm2 loadexternal -Q -C n -u $file_signing_key_pub -c $file_signing_key_ctx
 
-tpm2_verifysignature -Q -c $file_signing_key_ctx -g $alg_hash \
+tpm2 verifysignature -Q -c $file_signing_key_ctx -g $alg_hash \
 -m $file_input_data -s $file_output_data -t $file_verify_tk_data
 
 exit 0

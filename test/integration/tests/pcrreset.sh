@@ -14,15 +14,15 @@ start_up
 cleanup "no-shut-down"
 
 # Reset a resettable PCR
-tpm2_pcrreset 23
+tpm2 pcrreset 23
 
 # Reset more than one resettable PCR
-tpm2_pcrreset 16 23
+tpm2 pcrreset 16 23
 
 trap - ERR
 
 # Get PCR_Reset bad locality error
-tpm2_pcrreset 0
+tpm2 pcrreset 0
 if [ $? -eq 0 ]; then
   echo "Expected PCR reset of 0 to induce bad locality error"
   exit 1

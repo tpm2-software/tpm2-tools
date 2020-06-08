@@ -13,12 +13,12 @@ if [ ! -f "${TPM2_COMMAND_FILE}" ]; then
 fi
 
 # check default stdin(file fd)/stdout
-tpm2_send < "${TPM2_COMMAND_FILE}" > /dev/null
+tpm2 send < "${TPM2_COMMAND_FILE}" > /dev/null
 
 # check default stdin(pipe fd) with output file
-cat ${TPM2_COMMAND_FILE} | tpm2_send -o /dev/null
+cat ${TPM2_COMMAND_FILE} | tpm2 send -o /dev/null
 
 # check -o out and argument file input
-tpm2_send -o /dev/null "${TPM2_COMMAND_FILE}"
+tpm2 send -o /dev/null "${TPM2_COMMAND_FILE}"
 
 exit 0

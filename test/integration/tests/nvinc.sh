@@ -10,9 +10,9 @@ file_pcr_value=pcr.bin
 file_policy=policy.data
 
 cleanup() {
-  tpm2_nvundefine -Q   $nv_test_index -C o 2>/dev/null || true
-  tpm2_nvundefine -Q   0x1500016 -C 0x40000001 2>/dev/null || true
-  tpm2_nvundefine -Q   0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
+  tpm2 nvundefine -Q   $nv_test_index -C o 2>/dev/null || true
+  tpm2 nvundefine -Q   0x1500016 -C 0x40000001 2>/dev/null || true
+  tpm2 nvundefine -Q   0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.readlock foo.dat $file_pcr_value $file_policy \
         nv.out cap.out
@@ -27,16 +27,16 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_clear
+tpm2 clear
 
-tpm2_nvdefine -Q   $nv_test_index -C o -s 8 \
+tpm2 nvdefine -Q   $nv_test_index -C o -s 8 \
 -a "ownerread|policywrite|ownerwrite|nt=1"
 
-tpm2_nvincrement -Q   $nv_test_index -C o
+tpm2 nvincrement -Q   $nv_test_index -C o
 
-a=0x$(tpm2_nvread  $nv_test_index -C o -s 8 | xxd -p)
+a=0x$(tpm2 nvread  $nv_test_index -C o -s 8 | xxd -p)
 
-tpm2_nvreadpublic > nv.out
+tpm2 nvreadpublic > nv.out
 yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
 # Test writing to and reading from an offset by:
@@ -44,34 +44,34 @@ yaml_get_kv nv.out "$nv_test_index" > /dev/null
 # 2. reading back the index
 # 3. comparing the result.
 
-tpm2_nvincrement -Q   $nv_test_index -C o
+tpm2 nvincrement -Q   $nv_test_index -C o
 
-b=0x$(tpm2_nvread  $nv_test_index -C o -s 8 | xxd -p)
+b=0x$(tpm2 nvread  $nv_test_index -C o -s 8 | xxd -p)
 
 if [ $(($a+1)) -ne $(($b)) ]; then
  echo "Failed to increment: $(($a)) -> $(($b))."
  exit 1
 fi
 
-tpm2_nvundefine   $nv_test_index -C o
+tpm2 nvundefine   $nv_test_index -C o
 
 
-tpm2_pcrread -Q -o $file_pcr_value $pcr_specification
+tpm2 pcrread -Q -o $file_pcr_value $pcr_specification
 
-tpm2_createpolicy -Q --policy-pcr -l $pcr_specification \
+tpm2 createpolicy -Q --policy-pcr -l $pcr_specification \
 -f $file_pcr_value -L $file_policy
 
-tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 8 -L $file_policy \
+tpm2 nvdefine -Q   0x1500016 -C 0x40000001 -s 8 -L $file_policy \
 -a "policyread|policywrite|nt=1"
 
-# Increment with index authorization for now, since tpm2_nvincrement does not
+# Increment with index authorization for now, since tpm2 nvincrement does not
 # support pcr policy.
 # Counter is initialised to highest value previously seen (in this case 2) then
 # incremented
-tpm2_nvincrement -Q   0x1500016 -C 0x1500016 \
+tpm2 nvincrement -Q   0x1500016 -C 0x1500016 \
 -P pcr:$pcr_specification=$file_pcr_value
 
-c=0x$(tpm2_nvread  0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value -s 8 | xxd -p)
+c=0x$(tpm2 nvread  0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value -s 8 | xxd -p)
 
 if [ $(($b+1)) -ne $(($c)) ]; then
  echo "Failed to increment: $(($b)) -> $(($c))."
@@ -80,28 +80,28 @@ fi
 
 # this should fail because authread is not allowed
 trap - ERR
-tpm2_nvread   0x1500016 -C 0x1500016 -P "index" 2>/dev/null
+tpm2 nvread   0x1500016 -C 0x1500016 -P "index" 2>/dev/null
 trap onerror ERR
 
-tpm2_nvundefine -Q   0x1500016 -C 0x40000001
+tpm2 nvundefine -Q   0x1500016 -C 0x40000001
 
 
 #
 # Test NV access locked
 #
-tpm2_nvdefine -Q   $nv_test_index -C o -s 8 \
+tpm2 nvdefine -Q   $nv_test_index -C o -s 8 \
 -a "ownerread|policywrite|ownerwrite|read_stclear|nt=1"
 
-tpm2_nvincrement -Q   $nv_test_index -C o
+tpm2 nvincrement -Q   $nv_test_index -C o
 
-tpm2_nvread -Q   $nv_test_index -C o -s 8
+tpm2 nvread -Q   $nv_test_index -C o -s 8
 
-tpm2_nvreadlock -Q   $nv_test_index -C o
+tpm2 nvreadlock -Q   $nv_test_index -C o
 
 # Reset ERR signal handler to test for expected nvread error
 trap - ERR
 
-tpm2_nvread -Q   $nv_test_index -C o -s 8 2> /dev/null
+tpm2 nvread -Q   $nv_test_index -C o -s 8 2> /dev/null
 if [ $? != 1 ];then
  echo "nvread didn't fail!"
  exit 1
@@ -118,35 +118,35 @@ fi
 #
 trap onerror ERR
 
-tpm2_changeauth -c o owner
+tpm2 changeauth -c o owner
 
-tpm2_nvdefine   0x1500015 -C 0x40000001 -s 8 \
+tpm2 nvdefine   0x1500015 -C 0x40000001 -s 8 \
   -a "policyread|policywrite|authread|authwrite|ownerwrite|ownerread|nt=1" \
   -p "index" -P "owner"
 
 # Use index password write/read, implicit -C
-tpm2_nvincrement -Q   0x1500015 -P "index"
-tpm2_nvread -Q   0x1500015 -P "index"
+tpm2 nvincrement -Q   0x1500015 -P "index"
+tpm2 nvread -Q   0x1500015 -P "index"
 
 # Use index password write/read, explicit -C
-tpm2_nvincrement -Q   0x1500015 -C 0x1500015 -P "index"
-tpm2_nvread -Q   0x1500015 -C 0x1500015 -P "index"
+tpm2 nvincrement -Q   0x1500015 -C 0x1500015 -P "index"
+tpm2 nvread -Q   0x1500015 -C 0x1500015 -P "index"
 
 # use owner password
-tpm2_nvincrement -Q   0x1500015 -C 0x40000001 -P "owner"
-tpm2_nvread -Q   0x1500015 -C 0x40000001 -P "owner"
+tpm2 nvincrement -Q   0x1500015 -C 0x40000001 -P "owner"
+tpm2 nvread -Q   0x1500015 -C 0x40000001 -P "owner"
 
 # Check a bad password fails
 trap - ERR
-tpm2_nvincrement -Q   0x1500015 -C 0x1500015 -P "wrong" 2>/dev/null
+tpm2 nvincrement -Q   0x1500015 -C 0x1500015 -P "wrong" 2>/dev/null
 if [ $? -eq 0 ];then
  echo "nvincrement with bad password should fail!"
  exit 1
 fi
 
-# Check using authorisation with tpm2_nvundefine
+# Check using authorisation with tpm2 nvundefine
 trap onerror ERR
 
-tpm2_nvundefine   0x1500015 -C 0x40000001 -P "owner"
+tpm2 nvundefine   0x1500015 -C 0x40000001 -P "owner"
 
 exit 0
