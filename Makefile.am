@@ -227,9 +227,9 @@ tools_fapi_tss2_writeauthorizenv_LDFLAGS = $(TSS2_FAPI_LIBS)
 tools_fapi_tss2_writeauthorizenv_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_writeauthorizenv.c
 
 # Bundle all the tools into a single program similar to busybox
-# should this be possible to say $(addsuffix .c,$(bin_PROGRAMS))?
 bin_PROGRAMS += tools/tpm2
 tools_tpm2_LDADD = $(LDADD) $(CURL_LIBS)
+tools_tpm2_CFLAGS = $(AM_CFLAGS) -DTPM2_TOOLS_MAX="$(words $(tpm2_tools))"
 tools_tpm2_SOURCES = \
 	tools/tpm2_tool.c \
 	tools/tpm2_tool.h \

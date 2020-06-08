@@ -65,17 +65,15 @@ static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 /*
  * Build a list of the TPM2 tools linked into this executable
  */
-#define TPM2_MAX_TOOLS 1024
-static const tpm2_tool ** tools;
+#ifndef TPM2_TOOLS_MAX
+#define TPM2_TOOLS_MAX 1024
+#endif
+static const tpm2_tool * tools[TPM2_TOOLS_MAX];
 static unsigned tool_count;
 
 void tpm2_tool_register(const tpm2_tool * tool) {
 
-    if (!tools) {
-        tools = calloc(TPM2_MAX_TOOLS, sizeof(*tools));
-    }
-
-    if (tools && tool_count < TPM2_MAX_TOOLS) {
+    if (tool_count < TPM2_TOOLS_MAX) {
         tools[tool_count++] = tool;
     }
 }
@@ -98,11 +96,6 @@ static const char *tpm2_tool_name(const char * arg) {
 
 static const tpm2_tool * tpm2_tool_lookup(int *argc, char *** argv)
 {
-    // no tools linked in?
-    if (!tools) {
-        return NULL;
-    }
-
     // find the executable name in the path
     // and skip "tpm2_" prefix if it is present
     const char * name = tpm2_tool_name((*argv)[0]);
@@ -140,11 +133,6 @@ static const tpm2_tool * tpm2_tool_lookup(int *argc, char *** argv)
  * specify which TCTI to use for the test.
  */
 int main(int argc, char **argv) {
-
-    if (!tools) {
-        LOG_ERR("%s: No tools linked in!", argv[0]);
-        return EXIT_FAILURE;
-    }
 
     const tpm2_tool * const tool = tpm2_tool_lookup(&argc, &argv);
     if (!tool) {
