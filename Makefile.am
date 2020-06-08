@@ -77,105 +77,6 @@ bin_PROGRAMS += \
 
 endif
 
-bin_PROGRAMS += \
-    tools/misc/tpm2_checkquote \
-    tools/misc/tpm2_eventlog \
-    tools/misc/tpm2_print \
-    tools/misc/tpm2_rc_decode \
-    tools/tpm2_activatecredential \
-    tools/tpm2_certify \
-    tools/tpm2_changeauth \
-    tools/tpm2_changeeps \
-    tools/tpm2_changepps \
-    tools/tpm2_clear \
-    tools/tpm2_clearcontrol \
-    tools/tpm2_clockrateadjust \
-    tools/tpm2_create \
-    tools/tpm2_createak \
-    tools/tpm2_createek \
-    tools/tpm2_createpolicy \
-    tools/tpm2_setprimarypolicy \
-    tools/tpm2_createprimary \
-    tools/tpm2_dictionarylockout \
-    tools/tpm2_duplicate \
-    tools/tpm2_getcap \
-    tools/tpm2_gettestresult \
-    tools/tpm2_encryptdecrypt \
-    tools/tpm2_evictcontrol \
-    tools/tpm2_flushcontext \
-    tools/tpm2_getekcertificate \
-    tools/tpm2_getrandom \
-    tools/tpm2_gettime \
-    tools/tpm2_hash \
-    tools/tpm2_hierarchycontrol \
-    tools/tpm2_hmac \
-    tools/tpm2_import \
-    tools/tpm2_incrementalselftest \
-    tools/tpm2_load \
-    tools/tpm2_loadexternal \
-    tools/tpm2_makecredential \
-    tools/tpm2_nvdefine \
-    tools/tpm2_nvextend \
-    tools/tpm2_nvincrement \
-    tools/tpm2_nvreadpublic \
-    tools/tpm2_nvread \
-    tools/tpm2_nvreadlock \
-    tools/tpm2_nvundefine \
-    tools/tpm2_nvwrite \
-    tools/tpm2_nvwritelock \
-    tools/tpm2_nvsetbits \
-    tools/tpm2_pcrallocate \
-    tools/tpm2_pcrevent \
-    tools/tpm2_pcrextend \
-    tools/tpm2_pcrread \
-    tools/tpm2_pcrreset \
-    tools/tpm2_policypcr \
-    tools/tpm2_policyauthorize \
-    tools/tpm2_policyauthorizenv \
-    tools/tpm2_policynv \
-    tools/tpm2_policycountertimer \
-    tools/tpm2_policyor \
-    tools/tpm2_policynamehash \
-    tools/tpm2_policytemplate \
-    tools/tpm2_policycphash \
-    tools/tpm2_policypassword \
-    tools/tpm2_policysigned \
-    tools/tpm2_policyticket \
-    tools/tpm2_policyauthvalue \
-    tools/tpm2_policysecret \
-    tools/tpm2_policyrestart \
-    tools/tpm2_policycommandcode \
-    tools/tpm2_policynvwritten \
-    tools/tpm2_policyduplicationselect \
-    tools/tpm2_policylocality \
-    tools/tpm2_quote \
-    tools/tpm2_readclock \
-    tools/tpm2_readpublic \
-    tools/tpm2_rsadecrypt \
-    tools/tpm2_rsaencrypt \
-    tools/tpm2_send \
-    tools/tpm2_selftest \
-    tools/tpm2_setclock \
-    tools/tpm2_shutdown \
-    tools/tpm2_sign \
-    tools/tpm2_certifycreation \
-    tools/tpm2_nvcertify \
-    tools/tpm2_startauthsession \
-    tools/tpm2_startup \
-    tools/tpm2_stirrandom \
-    tools/tpm2_testparms \
-    tools/tpm2_unseal \
-    tools/tpm2_verifysignature \
-    tools/tpm2_setcommandauditstatus \
-    tools/tpm2_getcommandauditdigest \
-    tools/tpm2_getsessionauditdigest \
-    tools/tpm2_geteccparameters \
-    tools/tpm2_ecephermal \
-    tools/tpm2_commit \
-    tools/tpm2_ecdhkeygen \
-    tools/tpm2_ecdhzgen \
-    tools/tpm2_zgen2phase
-
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
 lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS)
@@ -326,112 +227,13 @@ tools_fapi_tss2_writeauthorizenv_CFLAGS = $(FAPI_CFLAGS)
 tools_fapi_tss2_writeauthorizenv_LDFLAGS = $(TSS2_FAPI_LIBS)
 tools_fapi_tss2_writeauthorizenv_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_writeauthorizenv.c
 
-tools_misc_tpm2_checkquote_SOURCES = tools/misc/tpm2_checkquote.c $(TOOL_SRC)
-tools_misc_tpm2_eventlog_SOURCES = tools/misc/tpm2_eventlog.c $(TOOL_SRC)
-tools_misc_tpm2_print_SOURCES = tools/misc/tpm2_print.c $(TOOL_SRC)
-tools_misc_tpm2_rc_decode_SOURCES = tools/misc/tpm2_rc_decode.c $(TOOL_SRC)
-
-tools_tpm2_clear_SOURCES = tools/tpm2_clear.c $(TOOL_SRC)
-tools_tpm2_clearcontrol_SOURCES = tools/tpm2_clearcontrol.c $(TOOL_SRC)
-tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
-tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
-tools_tpm2_getcap_SOURCES = tools/tpm2_getcap.c $(TOOL_SRC)
-tools_tpm2_pcrread_SOURCES = tools/tpm2_pcrread.c $(TOOL_SRC)
-tools_tpm2_load_SOURCES = tools/tpm2_load.c $(TOOL_SRC)
-tools_tpm2_send_SOURCES = tools/tpm2_send.c $(TOOL_SRC)
-tools_tpm2_startup_SOURCES = tools/tpm2_startup.c $(TOOL_SRC)
-tools_tpm2_verifysignature_SOURCES = tools/tpm2_verifysignature.c $(TOOL_SRC)
-tools_tpm2_getekcertificate_CFLAGS = $(AM_CFLAGS) $(CURL_CFLAGS)
-tools_tpm2_getekcertificate_LDADD = $(LDADD) $(CURL_LIBS)
-tools_tpm2_getekcertificate_SOURCES = tools/tpm2_getekcertificate.c $(TOOL_SRC)
-tools_tpm2_quote_SOURCES = tools/tpm2_quote.c $(TOOL_SRC)
-tools_tpm2_changeauth_SOURCES = tools/tpm2_changeauth.c $(TOOL_SRC)
-tools_tpm2_changeeps_SOURCES = tools/tpm2_changeeps.c $(TOOL_SRC)
-tools_tpm2_changepps_SOURCES = tools/tpm2_changepps.c $(TOOL_SRC)
-tools_tpm2_createek_SOURCES = tools/tpm2_createek.c $(TOOL_SRC)
-tools_tpm2_createak_SOURCES = tools/tpm2_createak.c $(TOOL_SRC)
-tools_tpm2_hash_SOURCES = tools/tpm2_hash.c $(TOOL_SRC)
-tools_tpm2_activatecredential_SOURCES = tools/tpm2_activatecredential.c $(TOOL_SRC)
-tools_tpm2_makecredential_SOURCES = tools/tpm2_makecredential.c $(TOOL_SRC)
-tools_tpm2_nvreadpublic_SOURCES = tools/tpm2_nvreadpublic.c $(TOOL_SRC)
-tools_tpm2_nvread_SOURCES = tools/tpm2_nvread.c $(TOOL_SRC)
-tools_tpm2_nvreadlock_SOURCES = tools/tpm2_nvreadlock.c $(TOOL_SRC)
-tools_tpm2_nvwrite_SOURCES = tools/tpm2_nvwrite.c $(TOOL_SRC)
-tools_tpm2_nvdefine_SOURCES = tools/tpm2_nvdefine.c $(TOOL_SRC)
-tools_tpm2_nvincrement_SOURCES = tools/tpm2_nvincrement.c $(TOOL_SRC)
-tools_tpm2_nvundefine_SOURCES = tools/tpm2_nvundefine.c $(TOOL_SRC)
-tools_tpm2_hmac_SOURCES = tools/tpm2_hmac.c $(TOOL_SRC)
-tools_tpm2_certify_SOURCES = tools/tpm2_certify.c $(TOOL_SRC)
-tools_tpm2_readpublic_SOURCES = tools/tpm2_readpublic.c $(TOOL_SRC)
-tools_tpm2_getrandom_SOURCES = tools/tpm2_getrandom.c $(TOOL_SRC)
-tools_tpm2_encryptdecrypt_SOURCES = tools/tpm2_encryptdecrypt.c $(TOOL_SRC)
-tools_tpm2_evictcontrol_SOURCES = tools/tpm2_evictcontrol.c $(TOOL_SRC)
-tools_tpm2_loadexternal_SOURCES = tools/tpm2_loadexternal.c $(TOOL_SRC)
-tools_tpm2_rsadecrypt_SOURCES = tools/tpm2_rsadecrypt.c $(TOOL_SRC)
-tools_tpm2_rsaencrypt_SOURCES = tools/tpm2_rsaencrypt.c $(TOOL_SRC)
-tools_tpm2_selftest_SOURCES = tools/tpm2_selftest.c $(TOOL_SRC)
-tools_tpm2_sign_SOURCES = tools/tpm2_sign.c $(TOOL_SRC)
-tools_tpm2_certifycreation_SOURCES = tools/tpm2_certifycreation.c $(TOOL_SRC)
-tools_tpm2_nvcertify_SOURCES = tools/tpm2_nvcertify.c $(TOOL_SRC)
-tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c $(TOOL_SRC)
-tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC)
-tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
-tools_tpm2_setprimarypolicy_SOURCES = tools/tpm2_setprimarypolicy.c $(TOOL_SRC)
-tools_tpm2_hierarchycontrol_SOURCES = tools/tpm2_hierarchycontrol.c $(TOOL_SRC)
-tools_tpm2_pcrallocate_SOURCES = tools/tpm2_pcrallocate.c $(TOOL_SRC)
-tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
-tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
-tools_tpm2_pcrreset_SOURCES = tools/tpm2_pcrreset.c $(TOOL_SRC)
-tools_tpm2_import_SOURCES = tools/tpm2_import.c $(TOOL_SRC)
-tools_tpm2_duplicate_SOURCES = tools/tpm2_duplicate.c $(TOOL_SRC)
-tools_tpm2_flushcontext_SOURCES = tools/tpm2_flushcontext.c $(TOOL_SRC)
-tools_tpm2_startauthsession_SOURCES = tools/tpm2_startauthsession.c $(TOOL_SRC)
-tools_tpm2_policypcr_SOURCES = tools/tpm2_policypcr.c $(TOOL_SRC)
-tools_tpm2_policyauthorize_SOURCES = tools/tpm2_policyauthorize.c $(TOOL_SRC)
-tools_tpm2_policyauthorizenv_SOURCES = tools/tpm2_policyauthorizenv.c $(TOOL_SRC)
-tools_tpm2_policynv_SOURCES = tools/tpm2_policynv.c $(TOOL_SRC)
-tools_tpm2_policycountertimer_SOURCES = tools/tpm2_policycountertimer.c $(TOOL_SRC)
-tools_tpm2_policyor_SOURCES = tools/tpm2_policyor.c $(TOOL_SRC)
-tools_tpm2_policynamehash_SOURCES = tools/tpm2_policynamehash.c $(TOOL_SRC)
-tools_tpm2_policytemplate_SOURCES = tools/tpm2_policytemplate.c $(TOOL_SRC)
-tools_tpm2_policycphash_SOURCES = tools/tpm2_policycphash.c $(TOOL_SRC)
-tools_tpm2_policypassword_SOURCES = tools/tpm2_policypassword.c $(TOOL_SRC)
-tools_tpm2_policysigned_SOURCES = tools/tpm2_policysigned.c $(TOOL_SRC)
-tools_tpm2_policyticket_SOURCES = tools/tpm2_policyticket.c $(TOOL_SRC)
-tools_tpm2_policyauthvalue_SOURCES = tools/tpm2_policyauthvalue.c $(TOOL_SRC)
-tools_tpm2_policysecret_SOURCES = tools/tpm2_policysecret.c $(TOOL_SRC)
-tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
-tools_tpm2_policycommandcode_SOURCES = tools/tpm2_policycommandcode.c $(TOOL_SRC)
-tools_tpm2_policynvwritten_SOURCES = tools/tpm2_policynvwritten.c $(TOOL_SRC)
-tools_tpm2_stirrandom_SOURCES = tools/tpm2_stirrandom.c $(TOOL_SRC)
-tools_tpm2_policyduplicationselect_SOURCES = tools/tpm2_policyduplicationselect.c $(TOOL_SRC)
-tools_tpm2_policylocality_SOURCES = tools/tpm2_policylocality.c $(TOOL_SRC)
-tools_tpm2_testparms_SOURCES = tools/tpm2_testparms.c $(TOOL_SRC)
-tools_tpm2_incrementalselftest_SOURCES = tools/tpm2_incrementalselftest.c $(TOOL_SRC)
-tools_tpm2_gettestresult_SOURCES = tools/tpm2_gettestresult.c $(TOOL_SRC)
-tools_tpm2_readclock_SOURCES = tools/tpm2_readclock.c $(TOOL_SRC)
-tools_tpm2_setclock_SOURCES = tools/tpm2_setclock.c $(TOOL_SRC)
-tools_tpm2_shutdown_SOURCES = tools/tpm2_shutdown.c $(TOOL_SRC)
-tools_tpm2_clockrateadjust_SOURCES = tools/tpm2_clockrateadjust.c $(TOOL_SRC)
-tools_tpm2_nvwritelock_SOURCES = tools/tpm2_nvwritelock.c $(TOOL_SRC)
-tools_tpm2_nvsetbits_SOURCES = tools/tpm2_nvsetbits.c $(TOOL_SRC)
-tools_tpm2_nvextend_SOURCES = tools/tpm2_nvextend.c $(TOOL_SRC)
-tools_tpm2_gettime_SOURCES = tools/tpm2_gettime.c $(TOOL_SRC)
-tools_tpm2_setcommandauditstatus_SOURCES = tools/tpm2_setcommandauditstatus.c $(TOOL_SRC)
-tools_tpm2_getcommandauditdigest_SOURCES = tools/tpm2_getcommandauditdigest.c $(TOOL_SRC)
-tools_tpm2_getsessionauditdigest_SOURCES = tools/tpm2_getsessionauditdigest.c $(TOOL_SRC)
-tools_tpm2_geteccparameters_SOURCES = tools/tpm2_geteccparameters.c $(TOOL_SRC)
-tools_tpm2_ecephermal_SOURCES = tools/tpm2_ecephermal.c $(TOOL_SRC)
-tools_tpm2_commit_SOURCES = tools/tpm2_commit.c $(TOOL_SRC)
-tools_tpm2_ecdhkeygen_SOURCES = tools/tpm2_ecdhkeygen.c $(TOOL_SRC)
-tools_tpm2_ecdhzgen_SOURCES = tools/tpm2_ecdhzgen.c $(TOOL_SRC)
-tools_tpm2_zgen2phase_SOURCES = tools/tpm2_zgen2phase.c $(TOOL_SRC)
-
 # Bundle all the tools into a single program similar to busybox
 # should this be possible to say $(addsuffix .c,$(bin_PROGRAMS))?
 bin_PROGRAMS += tools/tpm2
 tools_tpm2_LDADD = $(LDADD) $(CURL_LIBS)
-tools_tpm2_SOURCES = tools/tpm2_tool.h \
+tools_tpm2_SOURCES = tools/tpm2_tool.c $(tpm2_tools)
+
+tpm2_tools = \
     tools/misc/tpm2_checkquote.c \
     tools/misc/tpm2_eventlog.c \
     tools/misc/tpm2_print.c \
@@ -518,7 +320,6 @@ tools_tpm2_SOURCES = tools/tpm2_tool.h \
     tools/tpm2_startup.c \
     tools/tpm2_stirrandom.c \
     tools/tpm2_testparms.c \
-    tools/tpm2_tool.c \
     tools/tpm2_unseal.c \
     tools/tpm2_verifysignature.c \
     tools/tpm2_setcommandauditstatus.c \
@@ -530,6 +331,14 @@ tools_tpm2_SOURCES = tools/tpm2_tool.h \
     tools/tpm2_ecdhkeygen.c \
     tools/tpm2_ecdhzgen.c \
     tools/tpm2_zgen2phase.c
+
+# Create the symlinks for each tool to the tpm2 bundled executable
+install-exec-hook:
+	for tool in $(notdir $(basename $(tpm2_tools))) ; do \
+		$(LN_S) -f \
+		"$(DESTDIR)$(bindir)/tpm2$(EXEEXT)" \
+		"$(DESTDIR)$(bindir)/$$tool$(EXEEXT)" ; \
+	done
 
 if UNIT
 TESTS += $(check_PROGRAMS)
