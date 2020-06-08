@@ -6,6 +6,9 @@
 #include <uchar.h>
 
 #include <tss2/tss2_tpm2_types.h>
+#include <openssl/buffer.h>
+#include <openssl/evp.h>
+#include <openssl/sha.h>
 
 #include "log.h"
 #include "efi_event.h"
@@ -15,7 +18,49 @@
 #include "tpm2_tool.h"
 #include "tpm2_tool_output.h"
 
-char const *eventtype_to_string (UINT32 event_type) {
+typedef struct {
+    size_t count;
+    int pcr;
+    SHA256_CTX sha256;
+    SHA_CTX sha1;
+    uint8_t sha1_pcrs[TPM2_MAX_PCRS][SHA_DIGEST_LENGTH];
+    uint8_t sha256_pcrs[TPM2_MAX_PCRS][SHA256_DIGEST_LENGTH];
+} tpm2_eventlog_ctx_t;
+
+/*
+ * update the PCR with this digest.
+ * Assumes that ctx->pcr has been set by another callback.
+ * Mismatches of sizes will be warned about, but are not fatal errors.
+ */
+static void tpm2_eventlog_extend(tpm2_eventlog_ctx_t *ctx, unsigned alg, const void *digest, size_t size) {
+
+    if (ctx->pcr == -1) {
+        // ignore this one.
+    } else
+    if (ctx->pcr >= TPM2_MAX_PCRS) {
+        LOG_WARN("PCR%d is invalid", ctx->pcr);
+    } else
+    if (alg == TPM2_ALG_SHA1 && size == sizeof(ctx->sha1_pcrs[0])) {
+        void * const pcr = ctx->sha1_pcrs[ctx->pcr];
+        SHA1_Init(&ctx->sha1);
+        SHA1_Update(&ctx->sha1, pcr, size);
+        SHA1_Update(&ctx->sha1, digest, size);
+        SHA1_Final(pcr, &ctx->sha1);
+    } else
+    if (alg == TPM2_ALG_SHA256 && size == sizeof(ctx->sha256_pcrs[0])) {
+        void * const pcr = ctx->sha256_pcrs[ctx->pcr];
+        SHA256_Init(&ctx->sha256);
+        SHA256_Update(&ctx->sha256, pcr, size);
+        SHA256_Update(&ctx->sha256, digest, size);
+        SHA256_Final(pcr, &ctx->sha256);
+    } else {
+        // unhandled PCR digest algorithm/size combo.
+        LOG_WARN("PCR%d: extended with invalid algorithm %d and size %zu",
+            ctx->pcr, alg, size);
+    }
+}
+
+static char const *eventtype_to_string (UINT32 event_type) {
 
     switch (event_type) {
     case EV_PREBOOT_CERT:
@@ -80,7 +125,7 @@ char const *eventtype_to_string (UINT32 event_type) {
         return "Unknown event type";
     }
 }
-void bytes_to_str(uint8_t const *buf, size_t size, char *dest, size_t dest_size) {
+static void bytes_to_str(uint8_t const *buf, size_t size, char *dest, size_t dest_size) {
 
     size_t i, j;
 
@@ -89,7 +134,7 @@ void bytes_to_str(uint8_t const *buf, size_t size, char *dest, size_t dest_size)
     }
     dest[j] = '\0';
 }
-void yaml_event2hdr(TCG_EVENT_HEADER2 const *eventhdr, size_t size) {
+static void yaml_event2hdr(TCG_EVENT_HEADER2 const *eventhdr, size_t size) {
 
     (void)size;
 
@@ -103,19 +148,21 @@ void yaml_event2hdr(TCG_EVENT_HEADER2 const *eventhdr, size_t size) {
 /* converting byte buffer to hex string requires 2x, plus 1 for '\0' */
 #define BYTES_TO_HEX_STRING_SIZE(byte_count) (byte_count * 2 + 1)
 #define DIGEST_HEX_STRING_MAX BYTES_TO_HEX_STRING_SIZE(TPM2_MAX_DIGEST_BUFFER)
-bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size) {
+static bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size, tpm2_eventlog_ctx_t * ctx) {
 
     char hexstr[DIGEST_HEX_STRING_MAX] = { 0, };
+    const unsigned alg = digest->AlgorithmId;
 
     tpm2_tool_output("    - AlgorithmId: %s\n",
-           tpm2_alg_util_algtostr(digest->AlgorithmId,
-                                  tpm2_alg_util_flags_hash));
+           tpm2_alg_util_algtostr(alg, tpm2_alg_util_flags_hash));
     bytes_to_str(digest->Digest, size, hexstr, sizeof(hexstr));
     tpm2_tool_output("      Digest: %s\n", hexstr);
 
+    tpm2_eventlog_extend(ctx, alg, digest->Digest, size);
+
     return true;
 }
-bool yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data) {
+static bool yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data) {
 
     int ret = 0;
     char *mbstr = NULL, *tmp = NULL;
@@ -212,7 +259,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data) {
     return yaml_uefi_var_data(data);
 }
 /* TCG PC Client FPF section 9.2.5 */
-bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
+static bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
 
     tpm2_tool_output("  Event:\n    - BlobBase: 0x%" PRIx64 "\n      "
                      "BlobLength: 0x%" PRIx64 "\n", data->BlobBase,
@@ -220,14 +267,14 @@ bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
     return true;
 }
 /* TCG PC Client PFP section 9.4.4 */
-bool yaml_uefi_action(UINT8 const *action, size_t size) {
+static bool yaml_uefi_action(UINT8 const *action, size_t size) {
 
     tpm2_tool_output("  Event: '%.*s'\n", (int) size, action);
 
     return true;
 }
 /* TCG PC Client PFP section 9.2.3 */
-bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
+static bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
 
     size_t devpath_len = (size - sizeof(*data)) * 2 + 1;
     char *buf = calloc (1, devpath_len);
@@ -250,7 +297,7 @@ bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
     return true;
 }
 #define EVENT_BUF_MAX BYTES_TO_HEX_STRING_SIZE(1024)
-bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
+static bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
 
     char hexstr[EVENT_BUF_MAX] = { 0, };
 
@@ -283,31 +330,34 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
         return true;
     }
 }
-bool yaml_event2data_callback(TCG_EVENT2 const *event, UINT32 type,
+static bool yaml_event2data_callback(TCG_EVENT2 const *event, UINT32 type,
                               void *data) {
 
     (void)data;
 
     return yaml_event2data(event, type);
 }
-bool yaml_digest2_callback(TCG_DIGEST2 const *digest, size_t size,
+static bool yaml_digest2_callback(TCG_DIGEST2 const *digest, size_t size,
                             void *data_in) {
 
-    (void)data_in;
-    return yaml_digest2(digest, size);
+    tpm2_eventlog_ctx_t * ctx = data_in;
+    return yaml_digest2(digest, size, ctx);
 }
 
-bool yaml_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size,
+static bool yaml_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size,
                              void *data_in) {
 
-    size_t *count = (size_t*)data_in;
+    tpm2_eventlog_ctx_t * const ctx = data_in;
 
-    if (count == NULL) {
+    if (ctx == NULL) {
         LOG_ERR("callback requires user data");
         return false;
     }
 
-    tpm2_tool_output("- Event[%zu]:\n", *count++);
+    // store the current PCR for future processing
+    ctx->pcr = eventhdr->PCRIndex;
+
+    tpm2_tool_output("- Event[%zu]:\n", ctx->count++);
 
     yaml_event2hdr(eventhdr, size);
 
@@ -315,7 +365,7 @@ bool yaml_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size,
 
     return true;
 }
-void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
+static void yaml_eventhdr(TCG_EVENT const *event, tpm2_eventlog_ctx_t *ctx) {
 
     /* digest is 20 bytes, 2 chars / byte and null terminator for string*/
     char digest_hex[41] = { '\0', };
@@ -325,12 +375,17 @@ void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
                      "  PCRIndex: %" PRIu32 "\n"
                      "  EventType: %s\n"
                      "  Digest: %s\n"
-                     "  EventSize: %" PRIu32 "\n", (*count)++, event->pcrIndex,
+                     "  EventSize: %" PRIu32 "\n", ctx->count++, event->pcrIndex,
                      eventtype_to_string(event->eventType), digest_hex,
                      event->eventDataSize);
+
+    if (event->eventType != EV_NO_ACTION) {
+        ctx->pcr = event->pcrIndex;
+        tpm2_eventlog_extend(ctx, TPM2_ALG_SHA1, event->digest, sizeof(event->digest));
+    }
 }
 
-void yaml_specid(TCG_SPECID_EVENT* specid) {
+static void yaml_specid(TCG_SPECID_EVENT* specid) {
 
     /* 'Signature' defined as byte buf, spec treats it like string w/o null. */
     char sig_str[sizeof(specid->Signature) + 1] = { '\0', };
@@ -352,7 +407,7 @@ void yaml_specid(TCG_SPECID_EVENT* specid) {
                      specid->numberOfAlgorithms);
 
 }
-void yaml_specid_algs(TCG_SPECID_ALG const *alg, size_t count) {
+static void yaml_specid_algs(TCG_SPECID_ALG const *alg, size_t count) {
 
     for (size_t i = 0; i < count; ++i, ++alg) {
         tpm2_tool_output("        - Algorithm[%zu]:\n"
@@ -364,7 +419,7 @@ void yaml_specid_algs(TCG_SPECID_ALG const *alg, size_t count) {
                          alg->digestSize);
     }
 }
-bool yaml_specid_vendor(TCG_VENDOR_INFO *vendor) {
+static bool yaml_specid_vendor(TCG_VENDOR_INFO *vendor) {
 
     char *vendinfo_str;
 
@@ -384,31 +439,57 @@ bool yaml_specid_vendor(TCG_VENDOR_INFO *vendor) {
     free(vendinfo_str);
     return true;
 }
-bool yaml_specid_event(TCG_EVENT const *event, size_t *count) {
+static bool yaml_specid_event(TCG_EVENT const *event, tpm2_eventlog_ctx_t *ctx) {
 
     TCG_SPECID_EVENT *specid = (TCG_SPECID_EVENT*)event->event;
     TCG_SPECID_ALG *alg = (TCG_SPECID_ALG*)specid->digestSizes;
     TCG_VENDOR_INFO *vendor = (TCG_VENDOR_INFO*)(alg + specid->numberOfAlgorithms);
 
-    yaml_eventhdr(event, count);
+    yaml_eventhdr(event, ctx);
     yaml_specid(specid);
     yaml_specid_algs(alg, specid->numberOfAlgorithms);
     return yaml_specid_vendor(vendor);
 }
-bool yaml_specid_callback(TCG_EVENT const *event, void *data) {
+static bool yaml_specid_callback(TCG_EVENT const *event, void *data) {
 
-    size_t *count = (size_t*)data;
-    return yaml_specid_event(event, count);
+    tpm2_eventlog_ctx_t * const ctx = data;
+    return yaml_specid_event(event, ctx);
+}
+
+static void yaml_eventlog_pcrs(tpm2_eventlog_ctx_t *ctx) {
+
+    char hexstr[DIGEST_HEX_STRING_MAX] = { 0, };
+
+    tpm2_tool_output("pcrs:\n");
+
+    tpm2_tool_output("  sha1:\n");
+    for(unsigned i = 0 ; i < TPM2_MAX_PCRS ; i++) {
+        bytes_to_str(ctx->sha1_pcrs[i], sizeof(ctx->sha1_pcrs[i]),
+            hexstr, sizeof(hexstr));
+        tpm2_tool_output("    %2d : 0x%s\n", i, hexstr);
+    }
+
+    tpm2_tool_output("  sha256:\n");
+    for(unsigned i = 0 ; i < TPM2_MAX_PCRS ; i++) {
+        bytes_to_str(ctx->sha256_pcrs[i], sizeof(ctx->sha256_pcrs[i]),
+            hexstr, sizeof(hexstr));
+        tpm2_tool_output("    %2d : 0x%s\n", i, hexstr);
+    }
 }
 
 bool yaml_eventlog(UINT8 const *eventlog, size_t size) {
 
-    size_t count = 0;
+    tpm2_eventlog_ctx_t ctx = {};
 
     tpm2_tool_output("---\n");
-    return parse_eventlog(eventlog, size,
+    bool rc = parse_eventlog(eventlog, size,
                           yaml_specid_callback,
                           yaml_event2hdr_callback,
                           yaml_digest2_callback,
-                          yaml_event2data_callback, &count);
+                          yaml_event2data_callback, &ctx);
+    if (!rc)
+        return rc;
+
+    yaml_eventlog_pcrs(&ctx);
+    return true;
 }
