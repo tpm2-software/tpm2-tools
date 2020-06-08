@@ -30,7 +30,7 @@ cleanup() {
         $file_unseal_output_data $file_pcr_value \
         $file_policy $file_session_file
 
-    tpm2_flushcontext $file_session_file 2>/dev/null || true
+    tpm2 flushcontext $file_session_file 2>/dev/null || true
 
     if [ "${1}" != "no-shutdown" ]; then
         shut_down
@@ -44,7 +44,7 @@ cleanup "no-shutdown"
 
 echo $secret > $file_input_data
 
-tpm2_clear
+tpm2 clear
 
 #
 # Test an extended policy session beyond client connections. This is ONLY
@@ -62,50 +62,50 @@ tpm2_clear
 # Step 3: Creating an actual policy session and using pcrpolicy event to update
 # the policy.
 #
-# Step 4: Using that actual policy session from step 3 in tpm2_unseal to unseal
+# Step 4: Using that actual policy session from step 3 in tpm2 unseal to unseal
 # the object.
 #
 
-tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
+tpm2 createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
 -c $file_primary_key_ctx
 
-tpm2_pcrread -Q -o $file_pcr_value ${alg_pcr_policy}:${pcr_ids}
+tpm2 pcrread -Q -o $file_pcr_value ${alg_pcr_policy}:${pcr_ids}
 
-tpm2_startauthsession -Q -S $file_session_file
+tpm2 startauthsession -Q -S $file_session_file
 
-tpm2_policypcr -Q -S $file_session_file -l ${alg_pcr_policy}:${pcr_ids} \
+tpm2 policypcr -Q -S $file_session_file -l ${alg_pcr_policy}:${pcr_ids} \
 -f $file_pcr_value -L $file_policy
 
-tpm2_flushcontext $file_session_file
+tpm2 flushcontext $file_session_file
 
-tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub \
+tpm2 create -Q -g $alg_create_obj -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
 -a 'fixedtpm|fixedparent' <<< $secret
 
-tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
+tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 rm $file_session_file
 
 # Start a REAL encrypted and bound policy session (-a option) and perform a pcr
 # policy event
-tpm2_startauthsession --policy-session -c $file_primary_key_ctx \
+tpm2 startauthsession --policy-session -c $file_primary_key_ctx \
 -S $file_session_file
 
-tpm2_policypcr -Q -S $file_session_file -l ${alg_pcr_policy}:${pcr_ids} \
+tpm2 policypcr -Q -S $file_session_file -l ${alg_pcr_policy}:${pcr_ids} \
 -f $file_pcr_value -L $file_policy
 
-unsealed=`tpm2_unseal -p"session:$file_session_file" -c $file_unseal_key_ctx`
+unsealed=`tpm2 unseal -p"session:$file_session_file" -c $file_unseal_key_ctx`
 
 test "$unsealed" == "$secret"
 
 # Test resetting the policy session causes unseal to fail.
-tpm2_policyrestart -S $file_session_file
+tpm2 policyrestart -S $file_session_file
 
 # negative test, clear the error handler
-if tpm2_unseal -p"session:$file_session_file" \
+if tpm2 unseal -p"session:$file_session_file" \
 -c $file_unseal_key_ctx 2>/dev/null; then
-    echo "Expected tpm2_unseal to fail after policy reset"
+    echo "Expected tpm2 unseal to fail after policy reset"
     exit 1
 else
     true

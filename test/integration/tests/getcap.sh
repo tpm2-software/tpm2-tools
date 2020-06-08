@@ -30,12 +30,12 @@ with open("$1") as f:
 pyscript
 }
 
-tpm2_getcap -l > $out
+tpm2 getcap -l > $out
 
 caplist=$(yaml_to_list $out)
 
 for c in $caplist; do
-    tpm2_getcap "$c" > $out
+    tpm2 getcap "$c" > $out
     yaml_verify $out
 done;
 
@@ -43,9 +43,9 @@ done;
 trap - ERR
 
 # Regression test, ensure that getcap -c never accepts prefix matches
-tpm2_getcap -Q --capability="comma" 2>/dev/null
+tpm2 getcap -Q --capability="comma" 2>/dev/null
 if [ $? -eq -1 ]; then
-  echo "Expected \"tpm2_getcap -Q --capability=\"comma\"\" to fail."
+  echo "Expected \"tpm2 getcap -Q --capability=\"comma\"\" to fail."
   exit 1
 fi
 

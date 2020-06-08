@@ -10,7 +10,7 @@ cleanup() {
     policynamehash.signature policy.namehash verification.tkt dupprv.bin \
     dupseed.dat
 
-    tpm2_flushcontext session.ctx 2>/dev/null || true
+    tpm2 flushcontext session.ctx 2>/dev/null || true
     if [ "${1}" != "no-shutdown" ]; then
         shut_down
     fi
@@ -32,102 +32,102 @@ openssl genrsa -out signing_key_private.pem 2048
 
 openssl rsa -in signing_key_private.pem -out signing_key_public.pem -pubout
 
-tpm2_loadexternal -G rsa -C o -u signing_key_public.pem -c signing_key.ctx \
+tpm2 loadexternal -G rsa -C o -u signing_key_public.pem -c signing_key.ctx \
 -n signing_key.name
 
-tpm2_startauthsession -S session.ctx -g sha256
+tpm2 startauthsession -S session.ctx -g sha256
 
-tpm2_policyauthorize -S session.ctx -L authorized.policy -n signing_key.name
+tpm2 policyauthorize -S session.ctx -L authorized.policy -n signing_key.name
 
-tpm2_policycommandcode -S session.ctx -L policy.dat TPM2_CC_Duplicate
+tpm2 policycommandcode -S session.ctx -L policy.dat TPM2_CC_Duplicate
 
-tpm2_flushcontext session.ctx
+tpm2 flushcontext session.ctx
 
-tpm2_createprimary -C o -g sha256 -G rsa -c primary.ctx -Q
+tpm2 createprimary -C o -g sha256 -G rsa -c primary.ctx -Q
 
 ## The duplicable key
-tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r key.prv -u key.pub \
+tpm2 create -Q -C primary.ctx -g sha256 -G rsa -r key.prv -u key.pub \
 -L policy.dat -a "sensitivedataorigin|sign|decrypt"
 
-tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -c key.ctx
+tpm2 load -Q -C primary.ctx -r key.prv -u key.pub -c key.ctx
 
 
 # Create the new parent
 
 
-tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r new_parent.prv \
+tpm2 create -Q -C primary.ctx -g sha256 -G rsa -r new_parent.prv \
 -u new_parent.pub \
 -a "decrypt|fixedparent|fixedtpm|restricted|sensitivedataorigin"
 
-tpm2_loadexternal -Q -C o -u new_parent.pub -c new_parent.ctx
+tpm2 loadexternal -Q -C o -u new_parent.pub -c new_parent.ctx
 
 
 # Modify the duplicable key policy to namehash policy to restrict parent and key
 
-tpm2_readpublic -Q -c new_parent.ctx -n new_parent.name
+tpm2 readpublic -Q -c new_parent.ctx -n new_parent.name
 
-tpm2_readpublic -Q -c key.ctx -n key.name
+tpm2 readpublic -Q -c key.ctx -n key.name
 
 cat key.name new_parent.name | openssl dgst -sha256 -binary > name.hash
 
-tpm2_startauthsession -S session.ctx -g sha256
+tpm2 startauthsession -S session.ctx -g sha256
 
-tpm2_policynamehash -L policy.namehash -S session.ctx -n name.hash
+tpm2 policynamehash -L policy.namehash -S session.ctx -n name.hash
 
-tpm2_flushcontext session.ctx
+tpm2 flushcontext session.ctx
 
 openssl dgst -sha256 -sign signing_key_private.pem \
 -out policynamehash.signature policy.namehash
 
-tpm2_startauthsession -S session.ctx -g sha256
+tpm2 startauthsession -S session.ctx -g sha256
 
-tpm2_policyauthorize -S session.ctx -L authorized.policy -i policy.namehash \
+tpm2 policyauthorize -S session.ctx -L authorized.policy -i policy.namehash \
 -n signing_key.name
 
-tpm2_policycommandcode -S session.ctx -L policy.dat TPM2_CC_Duplicate
+tpm2 policycommandcode -S session.ctx -L policy.dat TPM2_CC_Duplicate
 
-tpm2_flushcontext session.ctx
+tpm2 flushcontext session.ctx
 
 
 # Satisfy the policy and attempt key duplication
 
-tpm2_verifysignature -c signing_key.ctx -g sha256 -m policy.namehash \
+tpm2 verifysignature -c signing_key.ctx -g sha256 -m policy.namehash \
 -s policynamehash.signature -t verification.tkt -f rsassa
 
-tpm2_startauthsession -S session.ctx --policy-session -g sha256
+tpm2 startauthsession -S session.ctx --policy-session -g sha256
 
-tpm2_policynamehash -S session.ctx -n name.hash
+tpm2 policynamehash -S session.ctx -n name.hash
 
-tpm2_policyauthorize -S session.ctx -i policy.namehash -n signing_key.name \
+tpm2 policyauthorize -S session.ctx -i policy.namehash -n signing_key.name \
 -t verification.tkt
 
-tpm2_policycommandcode -S session.ctx TPM2_CC_Duplicate
+tpm2 policycommandcode -S session.ctx TPM2_CC_Duplicate
 
-tpm2_duplicate -C new_parent.ctx -c key.ctx -G null -p "session:session.ctx" \
+tpm2 duplicate -C new_parent.ctx -c key.ctx -G null -p "session:session.ctx" \
 -r dupprv.bin -s dupseed.dat
 
-tpm2_flushcontext session.ctx
+tpm2 flushcontext session.ctx
 
 # Attempt duplicating the key to a parent that is not in the policynamehash
 
-tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r unintended_parent.prv \
+tpm2 create -Q -C primary.ctx -g sha256 -G rsa -r unintended_parent.prv \
 -u unintended_parent.pub \
 -a "decrypt|fixedparent|fixedtpm|restricted|sensitivedataorigin"
 
-tpm2_loadexternal -Q -C o -u unintended_parent.pub -c unintended_parent.ctx
+tpm2 loadexternal -Q -C o -u unintended_parent.pub -c unintended_parent.ctx
 
-tpm2_startauthsession -S session.ctx --policy-session -g sha256
+tpm2 startauthsession -S session.ctx --policy-session -g sha256
 
-tpm2_policynamehash -S session.ctx -n name.hash
+tpm2 policynamehash -S session.ctx -n name.hash
 
-tpm2_policyauthorize -S session.ctx -i policy.namehash -n signing_key.name \
+tpm2 policyauthorize -S session.ctx -i policy.namehash -n signing_key.name \
 -t verification.tkt
 
-tpm2_policycommandcode -S session.ctx TPM2_CC_Duplicate
+tpm2 policycommandcode -S session.ctx TPM2_CC_Duplicate
 
 trap - ERR
 
-tpm2_duplicate -C unintended_parent.ctx -c key.ctx -G null \
+tpm2 duplicate -C unintended_parent.ctx -c key.ctx -G null \
 -p "session:session.ctx" -r dupprv.bin -s dupseed.dat
 if [ $? == 0 ];then
   echo "ERROR: Duplication had to fail!"
@@ -136,6 +136,6 @@ fi
 
 trap onerror ERR
 
-tpm2_flushcontext session.ctx
+tpm2 flushcontext session.ctx
 
 exit 0

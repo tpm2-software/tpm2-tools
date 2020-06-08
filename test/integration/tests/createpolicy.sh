@@ -2,7 +2,7 @@
 
 source helpers.sh
 
-###this script use for test the implementation tpm2_createpolicy
+###this script use for test the implementation tpm2 createpolicy
 
 cleanup() {
     rm -f pcr.in policy.out
@@ -22,7 +22,7 @@ declare -A expected_policy_digest=\
 ([sha1]=f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988
  [sha256]=33e36e786c878632494217c3f490e74ca0a3a122a8a4f3c5302500df3b32b3b8)
 
-tpm2_pcrread -V sha1
+tpm2 pcrread -V sha1
 
 for halg in ${!digestlengths[@]}
 do
@@ -32,7 +32,7 @@ do
     head -c $((${digestlengths[$halg]} - 1)) /dev/zero > pcr.in
     echo -n -e '\x03' >> pcr.in
 
-    tpm2_createpolicy --policy-pcr -l $halg:0 -f pcr.in -L policy.out
+    tpm2 createpolicy --policy-pcr -l $halg:0 -f pcr.in -L policy.out
 
     # Test the policy creation hashes against expected
     if [ $(xxd -p policy.out | tr -d '\n' ) != \

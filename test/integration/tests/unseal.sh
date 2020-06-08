@@ -37,18 +37,18 @@ cleanup "no-shut-down"
 
 echo $secret > $file_input_data
 
-tpm2_clear
+tpm2 clear
 
-tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
+tpm2 createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
 -c $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub \
+tpm2 create -Q -g $alg_create_obj -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -i $file_input_data -C $file_primary_key_ctx
 
-tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
+tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
-tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
+tpm2 unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
 cmp -s $file_unseal_output_data $file_input_data
 
@@ -57,13 +57,13 @@ cmp -s $file_unseal_output_data $file_input_data
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name \
 $file_unseal_key_ctx
 
-cat $file_input_data | tpm2_create -Q -g $alg_create_obj \
+cat $file_input_data | tpm2 create -Q -g $alg_create_obj \
 -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx
 
-tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
+tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
-tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
+tpm2 unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
 cmp -s $file_unseal_output_data $file_input_data
 
@@ -72,19 +72,19 @@ cmp -s $file_unseal_output_data $file_input_data
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name \
 $file_unseal_key_ctx
 
-tpm2_pcrread -Q -o $file_pcr_value $pcr_specification
+tpm2 pcrread -Q -o $file_pcr_value $pcr_specification
 
-tpm2_createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value \
+tpm2 createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value \
 -L $file_policy
 
-tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub \
+tpm2 create -Q -g $alg_create_obj -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
 -a 'fixedtpm|fixedparent' <<< $secret
 
-tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
+tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
-unsealed=`tpm2_unseal -V --object-context $file_unseal_key_ctx \
+unsealed=`tpm2 unseal -V --object-context $file_unseal_key_ctx \
 -p pcr:$pcr_specification=$file_pcr_value`
 
 test "$unsealed" == "$secret"
@@ -93,19 +93,19 @@ test "$unsealed" == "$secret"
 
 trap - ERR
 
-tpm2_unseal -c $file_unseal_key_ctx 2> /dev/null
+tpm2 unseal -c $file_unseal_key_ctx 2> /dev/null
 if [ $? != 1 ]; then
-  echo "tpm2_unseal didn't fail without a PCR policy!"
+  echo "tpm2 unseal didn't fail without a PCR policy!"
   exit 1
 fi
 
 # Test that unseal fails if PCR state isn't the same as the defined PCR policy
 
-tpm2_pcrextend 0:sha1=6c10289a8da7f774cf67bd2fc8502cd4b585346a
+tpm2 pcrextend 0:sha1=6c10289a8da7f774cf67bd2fc8502cd4b585346a
 
-tpm2_unseal -c $file_unseal_key_ctx -p pcr:$pcr_specification 2> /dev/null
+tpm2 unseal -c $file_unseal_key_ctx -p pcr:$pcr_specification 2> /dev/null
 if [ $? != 1 ]; then
-  echo "tpm2_unseal didn't fail with a PCR state different than the policy!"
+  echo "tpm2 unseal didn't fail with a PCR state different than the policy!"
   exit 1
 fi
 
@@ -116,19 +116,19 @@ trap onerror ERR
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name \
 $file_unseal_key_ctx
 
-tpm2_pcrread -Q -o $file_pcr_value $pcr_specification
+tpm2 pcrread -Q -o $file_pcr_value $pcr_specification
 
-tpm2_createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value \
+tpm2 createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value \
 -L $file_policy
 
-tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub \
+tpm2 create -Q -g $alg_create_obj -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
 -p secretpass <<< $secret
 
-tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
+tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
 -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
-unsealed=`tpm2_unseal -c $file_unseal_key_ctx -p secretpass`
+unsealed=`tpm2 unseal -c $file_unseal_key_ctx -p secretpass`
 
 test "$unsealed" == "$secret"
 
@@ -136,9 +136,9 @@ test "$unsealed" == "$secret"
 
 trap - ERR
 
-tpm2_unseal -c $file_unseal_key_ctx -p wrongpass 2> /dev/null
+tpm2 unseal -c $file_unseal_key_ctx -p wrongpass 2> /dev/null
 if [ $? != 3 ]; then
-  echo "tpm2_unseal didn't fail when using a wrong object password!"
+  echo "tpm2 unseal didn't fail when using a wrong object password!"
   exit 1
 fi
 

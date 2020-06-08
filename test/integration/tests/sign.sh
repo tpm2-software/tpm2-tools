@@ -27,7 +27,7 @@ cleanup() {
           $file_output_data $file_input_digest $file_output_ticket \
           $file_output_hash $file_signing_key_pub_pem
 
-    tpm2_evictcontrol -Q -Co -c $handle_signing_key 2>/dev/null || true
+    tpm2 evictcontrol -Q -Co -c $handle_signing_key 2>/dev/null || true
 
     if [ "$1" != "no-shut-down" ]; then
         shut_down
@@ -40,35 +40,35 @@ test_symmetric() {
 
     echo "12345678" > $file_input_data
 
-    tpm2_clear
+    tpm2 clear
 
-    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key \
+    tpm2 createprimary -Q -C e -g $alg_hash -G $alg_primary_key \
     -c $file_primary_key_ctx
 
-    tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub \
+    tpm2 create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub \
     -r $file_signing_key_priv -C $file_primary_key_ctx
 
-    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
+    tpm2 load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
     -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
-    tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash \
+    tpm2 sign -Q -c $file_signing_key_ctx -g $alg_hash \
     -o $file_output_data $file_input_data
 
     rm -f $file_output_data
 
-    tpm2_evictcontrol -Q -C o -c $file_signing_key_ctx $handle_signing_key
+    tpm2 evictcontrol -Q -C o -c $file_signing_key_ctx $handle_signing_key
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data \
+    tpm2 sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data \
     $file_input_data
 
     rm -f $file_output_data
 
     # generate hash and test validation
 
-    tpm2_hash -Q -C e -g $alg_hash -o $file_output_hash -t $file_output_ticket \
+    tpm2 hash -Q -C e -g $alg_hash -o $file_output_hash -t $file_output_ticket \
     $file_input_data
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data \
+    tpm2 sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data \
     -t $file_output_ticket $file_input_data
 
     rm -f $file_output_data
@@ -78,7 +78,7 @@ test_symmetric() {
     shasum -a 256 $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
     $file_input_digest
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -d -o $file_output_data \
+    tpm2 sign -Q -c $handle_signing_key -g $alg_hash -d -o $file_output_data \
     $file_input_digest
 
     rm -f $file_output_data
@@ -87,10 +87,10 @@ test_symmetric() {
 create_signature() {
     local sign_scheme=$1
     if [ "$sign_scheme" = "" ]; then
-        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -f plain \
+        tpm2 sign -Q -c $file_signing_key_ctx -g $alg_hash -f plain \
         -o $file_output_data $file_input_data
     else
-        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -s $sign_scheme \
+        tpm2 sign -Q -c $file_signing_key_ctx -g $alg_hash -s $sign_scheme \
         -f plain -o $file_output_data $file_input_data
     fi
 }
@@ -211,18 +211,18 @@ test_asymmetric() {
     shasum -a 256 $file_input_data | awk '{ print "000000 " $1 }' | \
     xxd -r -c 32 > $file_input_digest
 
-    tpm2_clear
+    tpm2 clear
 
-    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key \
+    tpm2 createprimary -Q -C e -g $alg_hash -G $alg_primary_key \
     -c $file_primary_key_ctx
 
-    tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub \
+    tpm2 create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub \
     -r $file_signing_key_priv -C $file_primary_key_ctx
 
-    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
+    tpm2 load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
     -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
-    tpm2_readpublic -Q -c $file_signing_key_ctx --format=pem \
+    tpm2 readpublic -Q -c $file_signing_key_ctx --format=pem \
     -o $file_signing_key_pub_pem
 
     local sign_scheme
@@ -275,16 +275,16 @@ cleanup "no-shut-down"
 
 echo "12345678" > $file_input_data
 
-tpm2_createprimary -Q -c $file_primary_key_ctx
-tpm2_create -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
+tpm2 createprimary -Q -c $file_primary_key_ctx
+tpm2 create -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
 -r $file_signing_key_priv -p "mypassword"
-tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
+tpm2 load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
 -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
 # Negative test, remove error handler
 trap - ERR
 
-tpm2_sign -Q -p "badpassword" -c $file_signing_key_ctx -g $alg_hash \
+tpm2 sign -Q -p "badpassword" -c $file_signing_key_ctx -g $alg_hash \
 -o $file_output_data $file_input_data
 if [ $? != 3]; then
     echo "Expected RC 3, got: $?" 1>&2

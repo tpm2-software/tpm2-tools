@@ -9,12 +9,12 @@ trap cleanup EXIT
 
 start_up
 
-tpm2_createprimary -C e -c primary.ctx
+tpm2 createprimary -C e -c primary.ctx
 
-tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
+tpm2 create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
 
-tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -c rsa.ctx
+tpm2 load -C primary.ctx -u rsa.pub -r rsa.priv -c rsa.ctx
 
-tpm2_gettime -c rsa.ctx -o attest.sig --attestation attest.data
+tpm2 gettime -c rsa.ctx -o attest.sig --attestation attest.data
 
 exit 0

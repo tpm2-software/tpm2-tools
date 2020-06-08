@@ -15,9 +15,9 @@ cleanup() {
     rm -f $session_ctx $o_policy_digest $primary_ctx $seal_key_pub $seal_key_priv\
     $seal_key_ctx qual.dat
 
-    tpm2_flushcontext $session_ctx 2>/dev/null || true
+    tpm2 flushcontext $session_ctx 2>/dev/null || true
 
-    tpm2_clear
+    tpm2 clear
 
     if [ "${1}" != "no-shutdown" ]; then
         shut_down
@@ -29,28 +29,28 @@ start_up
 
 cleanup "no-shutdown"
 
-tpm2_clear
+tpm2 clear
 
-tpm2_changeauth -c o ownerauth
+tpm2 changeauth -c o ownerauth
 
 # Create Policy
-tpm2_startauthsession -S $session_ctx
-tpm2_policysecret -S $session_ctx -c $TPM_RH_OWNER -L $o_policy_digest ownerauth
-tpm2_flushcontext $session_ctx
+tpm2 startauthsession -S $session_ctx
+tpm2 policysecret -S $session_ctx -c $TPM_RH_OWNER -L $o_policy_digest ownerauth
+tpm2 flushcontext $session_ctx
 rm $session_ctx
 
 # Create and Load Object
-tpm2_createprimary -Q -C o -c $primary_ctx -P ownerauth
-tpm2_create -Q -g sha256 -u $seal_key_pub -r $seal_key_priv -C $primary_ctx \
+tpm2 createprimary -Q -C o -c $primary_ctx -P ownerauth
+tpm2 create -Q -g sha256 -u $seal_key_pub -r $seal_key_priv -C $primary_ctx \
 -L $o_policy_digest -i- <<< $SEALED_SECRET
-tpm2_load -C $primary_ctx -u $seal_key_pub -r $seal_key_priv -c $seal_key_ctx
+tpm2 load -C $primary_ctx -u $seal_key_pub -r $seal_key_priv -c $seal_key_ctx
 
 # Satisfy policy and unseal data
-tpm2_startauthsession --policy-session -S $session_ctx
-echo -n "ownerauth" | tpm2_policysecret -S $session_ctx -c $TPM_RH_OWNER \
+tpm2 startauthsession --policy-session -S $session_ctx
+echo -n "ownerauth" | tpm2 policysecret -S $session_ctx -c $TPM_RH_OWNER \
 -L $o_policy_digest file:-
-unsealed=`tpm2_unseal -p"session:$session_ctx" -c $seal_key_ctx`
-tpm2_flushcontext $session_ctx
+unsealed=`tpm2 unseal -p"session:$session_ctx" -c $seal_key_ctx`
+tpm2 flushcontext $session_ctx
 rm $session_ctx
 
 test "$unsealed" == "$SEALED_SECRET"
@@ -61,12 +61,12 @@ fi
 
 #Test the policy with auth reference object password not set
 unsealed=""
-tpm2_changeauth -c o -p ownerauth
+tpm2 changeauth -c o -p ownerauth
 
-tpm2_startauthsession --policy-session -S $session_ctx
-tpm2_policysecret -S $session_ctx -c $TPM_RH_OWNER -L $o_policy_digest
-unsealed=`tpm2_unseal -p"session:$session_ctx" -c $seal_key_ctx`
-tpm2_flushcontext $session_ctx
+tpm2 startauthsession --policy-session -S $session_ctx
+tpm2 policysecret -S $session_ctx -c $TPM_RH_OWNER -L $o_policy_digest
+unsealed=`tpm2 unseal -p"session:$session_ctx" -c $seal_key_ctx`
+tpm2 flushcontext $session_ctx
 rm $session_ctx
 
 test "$unsealed" == "$SEALED_SECRET"
@@ -79,24 +79,24 @@ fi
 # Test with policyref or qualification data
 #
 unsealed=""
-tpm2_clear
+tpm2 clear
 
 dd if=/dev/urandom of=qual.dat bs=1 count=32
-tpm2_startauthsession -S $session_ctx
-tpm2_policysecret -S $session_ctx -c $TPM_RH_OWNER -L $o_policy_digest \
+tpm2 startauthsession -S $session_ctx
+tpm2 policysecret -S $session_ctx -c $TPM_RH_OWNER -L $o_policy_digest \
 -q qual.dat
-tpm2_flushcontext $session_ctx
+tpm2 flushcontext $session_ctx
 
-tpm2_createprimary -Q -C o -c $primary_ctx
-tpm2_create -Q -g sha256 -u $seal_key_pub -r $seal_key_priv -C $primary_ctx \
+tpm2 createprimary -Q -C o -c $primary_ctx
+tpm2 create -Q -g sha256 -u $seal_key_pub -r $seal_key_priv -C $primary_ctx \
 -L $o_policy_digest -i- <<< $SEALED_SECRET
-tpm2_load -C $primary_ctx -u $seal_key_pub -r $seal_key_priv -c $seal_key_ctx
+tpm2 load -C $primary_ctx -u $seal_key_pub -r $seal_key_priv -c $seal_key_ctx
 
-tpm2_startauthsession --policy-session -S $session_ctx
-tpm2_policysecret -S $session_ctx -c $TPM_RH_OWNER -L $o_policy_digest \
+tpm2 startauthsession --policy-session -S $session_ctx
+tpm2 policysecret -S $session_ctx -c $TPM_RH_OWNER -L $o_policy_digest \
 -q qual.dat
-unsealed=`tpm2_unseal -p"session:$session_ctx" -c $seal_key_ctx`
-tpm2_flushcontext $session_ctx
+unsealed=`tpm2 unseal -p"session:$session_ctx" -c $seal_key_ctx`
+tpm2 flushcontext $session_ctx
 
 test "$unsealed" == "$SEALED_SECRET"
 
@@ -107,15 +107,15 @@ fi
 #
 # Test with policy auth reference instead of plain password
 #
-tpm2_startauthsession -S session.ctx
-tpm2_policyauthvalue -S session.ctx -L policy.authval
-tpm2_flushcontext session.ctx
-tpm2_setprimarypolicy -C o -L policy.authval -g sha256
-tpm2_startauthsession -S session.ctx --policy-session
-tpm2_startauthsession -S policy_session.ctx --policy-session
-tpm2_policyauthvalue -S session.ctx
-tpm2_policysecret -S policy_session.ctx -c o session:session.ctx
-tpm2_flushcontext session.ctx
-tpm2_flushcontext policy_session.ctx
+tpm2 startauthsession -S session.ctx
+tpm2 policyauthvalue -S session.ctx -L policy.authval
+tpm2 flushcontext session.ctx
+tpm2 setprimarypolicy -C o -L policy.authval -g sha256
+tpm2 startauthsession -S session.ctx --policy-session
+tpm2 startauthsession -S policy_session.ctx --policy-session
+tpm2 policyauthvalue -S session.ctx
+tpm2 policysecret -S policy_session.ctx -c o session:session.ctx
+tpm2 flushcontext session.ctx
+tpm2 flushcontext policy_session.ctx
 
 exit 0

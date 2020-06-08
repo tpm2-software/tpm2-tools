@@ -20,11 +20,11 @@ start_up
 echo "T0naX0u123abc" > $hash_in_file
 
 # Run FILE and stdin as FILE
-tpm2_pcrevent -Q $hash_in_file
-tpm2_pcrevent -Q < $hash_in_file
+tpm2 pcrevent -Q $hash_in_file
+tpm2 pcrevent -Q < $hash_in_file
 
 # Test that fifo stdin works
-cat $hash_in_file | tpm2_pcrevent > $hash_out_file
+cat $hash_in_file | tpm2 pcrevent > $hash_out_file
 
 yaml_verify $hash_out_file
 
@@ -45,14 +45,14 @@ while IFS='' read -r l || [[ -n "$l" ]]; do
   fi
 done < $hash_out_file
 
-tpm2_pcrread sha1:9 > $yaml_out_file
+tpm2 pcrread sha1:9 > $yaml_out_file
 old_pcr_value=`yaml_get_kv $yaml_out_file "sha1" "9"`
 
 # Verify that extend works, and test large files
 dd if=/dev/urandom of=$hash_in_file count=1 bs=2093 2> /dev/null
-tpm2_pcrevent -Q 9 $hash_in_file
+tpm2 pcrevent -Q 9 $hash_in_file
 
-tpm2_pcrread sha1:9 > $yaml_out_file
+tpm2 pcrread sha1:9 > $yaml_out_file
 new_pcr_value=`yaml_get_kv $yaml_out_file "sha1" "9"`
 
 if [ "$new_pcr_value" == "$old_pcr_value" ]; then
@@ -64,7 +64,7 @@ fi
 # verify that specifying -P without -i fails
 trap - ERR
 
-cmd="tpm2_pcrevent -Q -P foo $hash_in_file 2> /dev/null"
+cmd="tpm2 pcrevent -Q -P foo $hash_in_file 2> /dev/null"
 eval "$cmd"
 if [ $? -eq 0 ]; then
   echo "Expected $cmd to fail, passed."

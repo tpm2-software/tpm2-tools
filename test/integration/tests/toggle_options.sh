@@ -35,8 +35,8 @@ function check_toggle() {
     for i in $(grep "'${toggle}'[[:space:]]*}" "${toolsdir}"/*.c | \
     sed "s%[[:space:]]*%%g"); do
         # An example:
-        # i:     tools/tpm2_nvdefine.c:{"hierarchy",required_argument,NULL,'a'},
-        # filename:    tools/tpm2_nvdefine.c
+        # i:     tools/tpm2 nvdefine.c:{"hierarchy",required_argument,NULL,'a'},
+        # filename:    tools/tpm2 nvdefine.c
         # match:       {"hierarchy",required_argument,NULL,'a'},
         # option:      a
         # option_long: hierarchy
@@ -47,7 +47,7 @@ function check_toggle() {
         match=${i##*:};
         option="$(sed -r "s%.*'([^'])'.*%\1%g" <<< "${match}")"
         option_long="$(grep -oP '(?<={").*(?=")' <<< "${match}")"
-        optionlist="$(grep -R "tpm2_options_new" "${filename}" | \
+        optionlist="$(grep -R "tpm2 options_new" "${filename}" | \
         sed -r 's%.*("[^"]+").*%\1%g')"
         getcase="$(grep "case '${option}'" "${filename}" | \
         sed "s%[[:space:]]*%%g")"
@@ -59,7 +59,7 @@ function check_toggle() {
         echo "    optionlist:   $optionlist"
         echo "    getcase:      $getcase"
 
-        if [[ "${filename}" =~ tpm2_options.c$ ]]; then
+        if [[ "${filename}" =~ tpm2 options.c$ ]]; then
             continue
         fi
 
@@ -76,8 +76,8 @@ function check_toggle() {
         fi
 
         ####################### check man page #######################
-        man_filename="$(basename $filename)"            # tpm2_nvdefine.c
-        man_filename="$mandir/${man_filename%.*}.1.md"  # man/tpm2_nvdefine.1.md
+        man_filename="$(basename $filename)"            # tpm2 nvdefine.c
+        man_filename="$mandir/${man_filename%.*}.1.md"  # man/tpm2 nvdefine.1.md
         man=$(cat "$man_filename")
 
         # resolve markdown includes

@@ -3,7 +3,7 @@
 source helpers.sh
 
 cleanup() {
-  tpm2_changeauth -c p -p testpassword 2>/dev/null || true
+  tpm2 changeauth -c p -p testpassword 2>/dev/null || true
 
   rm -f primary.ctx key.pub key.priv key.ctx key.name
 
@@ -17,42 +17,42 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_clear -Q
+tpm2 clear -Q
 
-tpm2_createprimary -Q -C p -c primary.ctx
+tpm2 createprimary -Q -C p -c primary.ctx
 
-tpm2_create -Q -C primary.ctx -u key.pub -r key.priv
+tpm2 create -Q -C primary.ctx -u key.pub -r key.priv
 
-tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -c key.ctx
+tpm2 load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -c key.ctx
 
-tpm2_flushcontext -t
+tpm2 flushcontext -t
 
 #
 # Test that the object cannot be loaded after change the Platform seed
 # which causes all transient objects created under the platform hierarchy
 # to be invalidated.
 #
-tpm2_changepps
+tpm2 changepps
 
 trap - ERR
 
-tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -c key.ctx
+tpm2 load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -c key.ctx
 
 #
 # Test with non null platform hierarchy auth
 #
 trap onerror ERR
 
-tpm2_changeauth -c p testpassword
+tpm2 changeauth -c p testpassword
 
-tpm2_createprimary -Q -C p -c primary.ctx -P testpassword
+tpm2 createprimary -Q -C p -c primary.ctx -P testpassword
 
-tpm2_create -Q -C primary.ctx -u key.pub -r key.priv
+tpm2 create -Q -C primary.ctx -u key.pub -r key.priv
 
-tpm2_changepps -p testpassword
+tpm2 changepps -p testpassword
 
 trap - ERR
 
-tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -c key.ctx
+tpm2 load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -c key.ctx
 
 exit 0

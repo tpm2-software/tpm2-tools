@@ -16,15 +16,15 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_clear -Q
+tpm2 clear -Q
 
-tpm2_createprimary -Q -C e -g sha256 -G rsa -c primary.ctx
+tpm2 createprimary -Q -C e -g sha256 -G rsa -c primary.ctx
 
-tpm2_create -Q -g sha256 -G rsa -u certify.pub -r certify.priv -C primary.ctx
+tpm2 create -Q -g sha256 -G rsa -u certify.pub -r certify.priv -C primary.ctx
 
-tpm2_load -Q -C primary.ctx -u certify.pub -r certify.priv -n certify.name \
+tpm2 load -Q -C primary.ctx -u certify.pub -r certify.priv -n certify.name \
 -c certify.ctx
 
-tpm2_certify -Q -c primary.ctx -C certify.ctx -g sha256 -o attest.out -s sig.out
+tpm2 certify -Q -c primary.ctx -C certify.ctx -g sha256 -o attest.out -s sig.out
 
 exit 0

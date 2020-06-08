@@ -14,7 +14,7 @@ declare -A alg_hashes=(
 
 digests=""
 # test a single algorithm based on what is supported
-for alg in `tpm2_getcap pcrs | grep sha |awk {'print $2'} | awk -F: {'print $1'}`; do
+for alg in `tpm2 getcap pcrs | grep sha |awk {'print $2'} | awk -F: {'print $1'}`; do
 
   hash=${alg_hashes[$alg]}
 
@@ -24,7 +24,7 @@ for alg in `tpm2_getcap pcrs | grep sha |awk {'print $2'} | awk -F: {'print $1'}
 
   digests="$digests$alg=$hash"
 
-  tpm2_pcrextend 9:$alg=$hash
+  tpm2 pcrextend 9:$alg=$hash
 
 done;
 
@@ -32,15 +32,15 @@ done;
 # To keep things simple, compound specifications are just done with
 # the supported sha1 algorithms to guarantee the command to succeed.
 #
-tpm2_pcrextend 8:$digests
+tpm2 pcrextend 8:$digests
 
 # Extend a PCR for all supported banks like in the previous test but
 # try extending two PCR in the same command.
-tpm2_pcrextend 8:$digests 9:$digests
+tpm2 pcrextend 8:$digests 9:$digests
 
 # Over-length hash should fail
-if tpm2_pcrextend 8:$digests,sha1=${alg_hashes["sha256"]}; then
-    echo "tpm2_pcrextend with over-length hash didn't fail!"
+if tpm2 pcrextend 8:$digests,sha1=${alg_hashes["sha256"]}; then
+    echo "tpm2 pcrextend with over-length hash didn't fail!"
     exit 1
 else
     true

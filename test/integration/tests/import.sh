@@ -24,29 +24,29 @@ run_aes_import_test() {
     dd if=/dev/urandom of=sym.key bs=1 count=$3 2>/dev/null
 
     #Symmetric Key Import Test
-    echo "tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 \
+    echo "tpm2 import -Q -G aes -g "$name_alg" -i sym.key -C $1 \
     -u import_key.pub -r import_key.priv"
 
-    tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub \
+    tpm2 import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub \
     -r import_key.priv
 
-    tpm2_load -Q -C $1 -u import_key.pub -r import_key.priv -n import_key.name \
+    tpm2 load -Q -C $1 -u import_key.pub -r import_key.priv -n import_key.name \
     -c import_key.ctx
 
     echo "plaintext" > "plain.txt"
 
     if is_cmd_supported "EncryptDecrypt"; then
-        tpm2_encryptdecrypt -c import_key.ctx -o plain.enc plain.txt
+        tpm2 encryptdecrypt -c import_key.ctx -o plain.enc plain.txt
 
         openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` \
         -iv 0 -$2
 
         diff plain.txt plain.dec.ssl
     else
-        tpm2_readpublic -c import_key.ctx >out.pub
+        tpm2 readpublic -c import_key.ctx >out.pub
         alg=$(yaml_get_kv out.pub "sym-alg" "value")
         if [ "$alg" != "aes" ]; then
-            echo "Algorithm parsed from tpm2_readpublic is '$alg' but should be \
+            echo "Algorithm parsed from tpm2 readpublic is '$alg' but should be \
                   'aes'"
             exit 1
         fi
@@ -63,17 +63,17 @@ run_rsa_import_test() {
     openssl rsa -in private.pem -pubout > public.pem
 
     # Test an import without the parent public info data to force a readpublic
-    tpm2_import -Q -G rsa -g "$name_alg" -i private.pem -C $1 \
+    tpm2 import -Q -G rsa -g "$name_alg" -i private.pem -C $1 \
     -u import_rsa_key.pub -r import_rsa_key.priv
 
-    tpm2_load -Q -C $1 -u import_rsa_key.pub -r import_rsa_key.priv \
+    tpm2 load -Q -C $1 -u import_rsa_key.pub -r import_rsa_key.priv \
     -n import_rsa_key.name -c import_rsa_key.ctx
 
     openssl rsa -in private.pem -out public.pem -outform PEM -pubout
     openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt \
     -out plain.rsa.enc
 
-    tpm2_rsadecrypt -c import_rsa_key.ctx -o plain.rsa.dec plain.rsa.enc
+    tpm2 rsadecrypt -c import_rsa_key.ctx -o plain.rsa.dec plain.rsa.enc
 
     diff plain.txt plain.rsa.dec
 
@@ -84,7 +84,7 @@ run_rsa_import_test() {
     shasum -a 256 data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
     data.in.digest
 
-    tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -d -f plain \
+    tpm2 sign -Q -c import_rsa_key.ctx -g sha256 -d -f plain \
     -o data.out.signed data.in.digest
 
     openssl dgst -verify public.pem -keyform pem -sha256 -signature \
@@ -94,7 +94,7 @@ run_rsa_import_test() {
     openssl dgst -sha256 -sign private.pem -out data.out.signed data.in.raw
 
     # Verify with the TPM
-    tpm2_verifysignature -Q -c import_rsa_key.ctx -g sha256 -m data.in.raw \
+    tpm2 verifysignature -Q -c import_rsa_key.ctx -g sha256 -m data.in.raw \
     -f rsassa -s data.out.signed -t ticket.out
 
     rm import_rsa_key.ctx
@@ -117,20 +117,20 @@ run_ecc_import_test() {
     shasum -a 256 data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
     data.in.digest
 
-    tpm2_import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub \
+    tpm2 import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub \
     -r ecc.priv
 
-    tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -c ecc.ctx
+    tpm2 load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -c ecc.ctx
 
     # Sign in the TPM and verify with OSSL
-    tpm2_sign -Q -c ecc.ctx -g sha256 -d -f plain -o data.out.signed \
+    tpm2 sign -Q -c ecc.ctx -g sha256 -d -f plain -o data.out.signed \
     data.in.digest
     openssl dgst -verify public.ecc.pem -keyform pem -sha256 \
     -signature data.out.signed data.in.raw
 
     # Sign with openssl and verify with TPM.
     openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
-    tpm2_verifysignature -Q -c ecc.ctx -g sha256 -m data.in.raw -f ecdsa \
+    tpm2 verifysignature -Q -c ecc.ctx -g sha256 -m data.in.raw -f ecdsa \
     -s data.out.signed
 
     rm ecc.ctx
@@ -139,11 +139,11 @@ run_ecc_import_test() {
 run_rsa_import_passin_test() {
 
     if [ "$3" != "stdin" ]; then
-        tpm2_import -Q -G rsa -i "$2" -C "$1" \
+        tpm2 import -Q -G rsa -i "$2" -C "$1" \
             -u "import_rsa_key.pub" -r "import_rsa_key.priv" \
             --passin "$3"
     else
-        tpm2_import -Q -G rsa -i "$2" -C "$1" \
+        tpm2 import -Q -G rsa -i "$2" -C "$1" \
             -u "import_rsa_key.pub" -r "import_rsa_key.priv" \
             --passin "$3" < "$4"
     fi;
@@ -154,14 +154,14 @@ run_aes_policy_import_test() {
 	dd if=/dev/urandom of=aes.key bs=16 count=1
 	dd if=/dev/urandom of=policy.dat bs=32 count=1
 
-	tpm2_import -C "$1" -G aes -i aes.key -L policy.dat -u aes.pub -r aes.priv
+	tpm2 import -C "$1" -G aes -i aes.key -L policy.dat -u aes.pub -r aes.priv
 
-	tpm2_load -C "$1" -u aes.priv -u aes.pub -r aes.priv -c aes.ctx
+	tpm2 load -C "$1" -u aes.priv -u aes.pub -r aes.priv -c aes.ctx
 
 	trap - ERR
-	echo 'foo' | tpm2_encryptdecrypt -c aes.ctx -o plain.rsa.dec plain.rsa.enc
+	echo 'foo' | tpm2 encryptdecrypt -c aes.ctx -o plain.rsa.dec plain.rsa.enc
 	if [ $? -eq 0 ]; then
-		echo "expected tpm2_encryptdecrypt to fail"
+		echo "expected tpm2 encryptdecrypt to fail"
 		exit 1
 	fi
         trap onerror ERR
@@ -174,7 +174,7 @@ run_test() {
     parent_alg=$1
     name_alg=$2
 
-    tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -C o -c parent.ctx
+    tpm2 createprimary -Q -G "$parent_alg" -g "$name_alg" -C o -c parent.ctx
 
     # 128 bit AES is 16 bytes
     if is_alg_supported aes128; then
@@ -212,7 +212,7 @@ done;
 # Test the passin options
 #
 
-tpm2_createprimary -Q -c parent.ctx
+tpm2 createprimary -Q -c parent.ctx
 
 openssl genrsa -aes128 -passout "pass:mypassword" -out "private.pem" 1024
 

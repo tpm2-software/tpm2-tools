@@ -16,19 +16,19 @@ start_up
 cleanup "no-shut-down"
 
 # test file output
-tpm2_getrandom -o random.out 32
+tpm2 getrandom -o random.out 32
 s=`ls -l random.out | awk {'print $5'}`
 test $s -eq 32
 
 #test stdout
-tpm2_getrandom --hex 4 > random.out
+tpm2 getrandom --hex 4 > random.out
 s=`ls -l random.out | awk {'print $5'}`
 test $s -eq 8
 
 yaml_verify random.out
 
 # test stdout and -Q
-tpm2_getrandom -Q --hex 4 > random.out
+tpm2 getrandom -Q --hex 4 > random.out
 s=`ls -l random.out | awk {'print $5'}`
 test $s -eq 0
 
@@ -36,16 +36,16 @@ test $s -eq 0
 trap - ERR
 
 # larger than any known hash size should fail
-tpm2_getrandom 2000 &> /dev/null
+tpm2 getrandom 2000 &> /dev/null
 if [ $? -eq 0 ]; then
-    echo "tpm2_getrandom should fail with too big of request"
+    echo "tpm2 getrandom should fail with too big of request"
     exit 1
 fi
 
-# verify that tpm2_getrandom requires a TCTI
-./tools/tpm2_getrandom -T none &> /dev/null
+# verify that tpm2 getrandom requires a TCTI
+./tools/tpm2 getrandom -T none &> /dev/null
 if [ $? -eq 0 ]; then
-    echo "tpm2_getrandom should fail with tcti: \"none\""
+    echo "tpm2 getrandom should fail with tcti: \"none\""
     exit 1
 fi
 

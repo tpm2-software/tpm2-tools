@@ -27,7 +27,7 @@ cleanup() {
   private.pem
 
   if [ $(ina "$@" "keep_handle") -ne 0 ]; then
-    tpm2_evictcontrol -Q -Co -c $Handle_parent 2>/dev/null || true
+    tpm2 evictcontrol -Q -Co -c $Handle_parent 2>/dev/null || true
   fi
 
   if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
@@ -40,38 +40,38 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_clear
+tpm2 clear
 
 run_tss_test() {
 
-    tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
+    tpm2 createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
     -c $file_primary_key_ctx
 
-    tpm2_create -Q -g $alg_create_obj -G $alg_create_key \
+    tpm2 create -Q -g $alg_create_obj -G $alg_create_key \
     -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv \
     -C $file_primary_key_ctx
 
-    tpm2_loadexternal -Q -C n -u $file_loadexternal_key_pub \
+    tpm2 loadexternal -Q -C n -u $file_loadexternal_key_pub \
     -c $file_loadexternal_key_ctx
 
-    tpm2_evictcontrol -Q -C o -c $file_primary_key_ctx $Handle_parent
+    tpm2 evictcontrol -Q -C o -c $file_primary_key_ctx $Handle_parent
 
     # Test with Handle
     cleanup "keep_handle" "no-shut-down"
 
-    tpm2_create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key \
+    tpm2 create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key \
     -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
 
-    tpm2_loadexternal -Q -C n -u $file_loadexternal_key_pub \
+    tpm2 loadexternal -Q -C n -u $file_loadexternal_key_pub \
     -c $file_loadexternal_key_ctx
 
     # Test with default hierarchy (and handle)
     cleanup "keep_handle" "no-shut-down"
 
-    tpm2_create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key \
+    tpm2 create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key \
     -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv
 
-    tpm2_loadexternal -Q -u $file_loadexternal_key_pub \
+    tpm2 loadexternal -Q -u $file_loadexternal_key_pub \
     -c $file_loadexternal_key_ctx
 
     cleanup "no-shut-down"
@@ -87,16 +87,16 @@ run_rsa_test() {
     openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt \
     -out plain.rsa.enc
 
-    tpm2_loadexternal -G rsa -C n -p foo -r private.pem -c key.ctx
+    tpm2 loadexternal -G rsa -C n -p foo -r private.pem -c key.ctx
 
-    tpm2_rsadecrypt -c key.ctx -p foo -o plain.rsa.dec plain.rsa.enc
+    tpm2 rsadecrypt -c key.ctx -p foo -o plain.rsa.dec plain.rsa.enc
 
     diff plain.txt plain.rsa.dec
 
     # try encrypting with the public key and decrypting with the private
-    tpm2_loadexternal -G rsa -C n -p foo -u public.pem -c key.ctx
+    tpm2 loadexternal -G rsa -C n -p foo -u public.pem -c key.ctx
 
-    tpm2_rsaencrypt -c key.ctx plain.txt -o plain.rsa.enc
+    tpm2 rsaencrypt -c key.ctx plain.txt -o plain.rsa.enc
 
     openssl rsautl -decrypt -inkey private.pem -in plain.rsa.enc \
     -out plain.rsa.dec
@@ -117,7 +117,7 @@ run_aes_test() {
 
     dd if=/dev/urandom of=sym.key bs=1 count=$(($1 / 8)) 2>/dev/null
 
-    tpm2_loadexternal -G aes -r sym.key -n name.bin -c key.ctx > stdout.yaml
+    tpm2 loadexternal -G aes -r sym.key -n name.bin -c key.ctx > stdout.yaml
 
     local name1=$(yaml_get_kv "stdout.yaml" "name")
     local name2="$(xxd -c 256 -p name.bin)"
@@ -127,18 +127,18 @@ run_aes_test() {
     echo "plaintext" > "plain.txt"
 
     if is_cmd_supported "EncryptDecrypt"; then
-        tpm2_encryptdecrypt -c key.ctx -o plain.enc plain.txt
+        tpm2 encryptdecrypt -c key.ctx -o plain.enc plain.txt
 
         openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` \
         -iv 0 -aes-$1-cfb
 
         diff plain.txt plain.dec.ssl
     else
-        tpm2_readpublic -c key.ctx >out.pub
+        tpm2 readpublic -c key.ctx >out.pub
         alg=$(yaml_get_kv out.pub "sym-alg" "value")
         len=$(yaml_get_kv out.pub "sym-keybits")
         if [ "$alg$len" != "aes$1" ]; then
-            echo "Algorithm parsed from tpm2_readpublic is '$alg$len' but \
+            echo "Algorithm parsed from tpm2 readpublic is '$alg$len' but \
                   should be 'aes$1'"
             exit 1
         fi
@@ -166,19 +166,19 @@ run_ecc_test() {
     data.in.digest
 
     # Load the private key for signing
-    tpm2_loadexternal -Q -G ecc -r private.ecc.pem -c key.ctx
+    tpm2 loadexternal -Q -G ecc -r private.ecc.pem -c key.ctx
 
     # Sign in the TPM and verify with OSSL
-    tpm2_sign -Q -c key.ctx -g sha256 -d -f plain -o data.out.signed \
+    tpm2 sign -Q -c key.ctx -g sha256 -d -f plain -o data.out.signed \
     data.in.digest
     openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature \
     data.out.signed data.in.raw
 
     # Sign with openssl and verify with TPM but only with the public portion of
     # an object loaded
-    tpm2_loadexternal -Q -G ecc -u public.ecc.pem -c key.ctx
+    tpm2 loadexternal -Q -G ecc -u public.ecc.pem -c key.ctx
     openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
-    tpm2_verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa \
+    tpm2 verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa \
     -s data.out.signed
 
     cleanup "no-shut-down"
@@ -189,9 +189,9 @@ run_rsa_passin_test() {
     openssl genrsa -aes128 -passout "pass:mypassword" -out "private.pem" 1024
 
     if [ "$2" != "stdin" ]; then
-        cmd="tpm2_loadexternal -Q -G rsa -r $1 -c key.ctx --passin $2"
+        cmd="tpm2 loadexternal -Q -G rsa -r $1 -c key.ctx --passin $2"
     else
-        cmd="tpm2_loadexternal -Q -G rsa -r $1 -c key.ctx --passin $2 < $3"
+        cmd="tpm2 loadexternal -Q -G rsa -r $1 -c key.ctx --passin $2 < $3"
     fi;
 
     eval $cmd
