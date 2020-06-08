@@ -134,6 +134,11 @@ static const tpm2_tool * tpm2_tool_lookup(int *argc, char *** argv)
  */
 int main(int argc, char **argv) {
 
+    /* don't buffer stdin/stdout/stderr so pipes work */
+    setvbuf (stdin, NULL, _IONBF, 0);
+    setvbuf (stdout, NULL, _IONBF, 0);
+    setvbuf (stderr, NULL, _IONBF, 0);
+
     const tpm2_tool * const tool = tpm2_tool_lookup(&argc, &argv);
     if (!tool) {
         LOG_ERR("%s: unknown tool. Available tpm2 commands:", argv[0]);
