@@ -19,15 +19,19 @@ struct tpm2_send_ctx {
 
 static tpm2_send_ctx ctx;
 
-static bool read_command_from_file(FILE *f, tpm2_command_header **c,
+static int read_command_from_file(FILE *f, tpm2_command_header **c,
         UINT32 *size) {
 
     UINT8 buffer[TPM2_COMMAND_HEADER_SIZE];
 
     size_t ret = fread(buffer, TPM2_COMMAND_HEADER_SIZE, 1, f);
-    if (ret != 1 && ferror(f)) {
+    if (ret != 1 && ferror(f) && errno != EINTR) {
         LOG_ERR("Failed to read command header: %s", strerror (errno));
-        return false;
+        return -1;
+    }
+
+    if (feof(f) || ferror(f)) {
+        return 0;
     }
 
     tpm2_command_header *header = tpm2_command_header_from_bytes(buffer);
@@ -39,13 +43,13 @@ static bool read_command_from_file(FILE *f, tpm2_command_header **c,
         LOG_ERR("Command buffer %"PRIu32" bytes cannot be smaller then the "
                 "encapsulated data %"PRIu32" bytes, and can not be bigger than"
                 " the maximum buffer size", command_size, data_size);
-        return false;
+        return -1;
     }
 
     tpm2_command_header *command = (tpm2_command_header *) malloc(command_size);
     if (!command) {
         LOG_ERR("oom");
-        return false;
+        return -1;
     }
 
     /* copy the header into the struct */
@@ -59,13 +63,13 @@ static bool read_command_from_file(FILE *f, tpm2_command_header **c,
     if (ret != 1 && ferror(f)) {
         LOG_ERR("Failed to read command body: %s", strerror (errno));
         free(command);
-        return false;
+        return -1;
     }
 
     *c = command;
     *size = command_size;
 
-    return true;
+    return 1;
 }
 
 static bool write_response_to_file(FILE *f, UINT8 *rbuf) {
@@ -78,7 +82,9 @@ static bool write_response_to_file(FILE *f, UINT8 *rbuf) {
     LOG_INFO("response size: 0x%08x", size);
     LOG_INFO("response code: 0x%08x", tpm2_response_header_get_code(r));
 
-    return files_write_bytes(f, r->bytes, size);
+    bool rc =  files_write_bytes(f, r->bytes, size);
+    fflush(f);
+    return rc;
 }
 
 static FILE *open_file(const char *path, const char *mode) {
@@ -156,13 +162,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     tool_rc rc = tool_rc_general_error;
 
-    UINT32 size;
-    tpm2_command_header *command;
-    bool result = read_command_from_file(ctx.input, &command, &size);
-    if (!result) {
-        LOG_ERR("failed to read TPM2 command buffer from file");
-        goto out_files;
-    }
+    tpm2_command_header *command = NULL;
 
     TSS2_TCTI_CONTEXT *tcti_context;
     TSS2_RC rval = Esys_GetTcti(context, &tcti_context);
@@ -172,31 +172,47 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
         goto out;
     }
 
-    rval = Tss2_Tcti_Transmit(tcti_context, size, command->bytes);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("tss2_tcti_transmit failed: 0x%x", rval);
-        goto out;
-    }
+    while (1) {
 
-    size_t rsize = TPM2_MAX_SIZE;
-    UINT8 rbuf[TPM2_MAX_SIZE];
-    rval = Tss2_Tcti_Receive(tcti_context, &rsize, rbuf,
-            TSS2_TCTI_TIMEOUT_BLOCK);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("tss2_tcti_receive failed: 0x%x", rval);
-        rc = tool_rc_from_tpm(rval);
-        goto out;
-    }
+        UINT32 size;
+        int result = read_command_from_file(ctx.input, &command, &size);
+        if (result < 0) {
+            LOG_ERR("failed to read TPM2 command buffer from file");
+            goto out_files;
+        } else if (result == 0) {
+            /* EOF */
+            rc = tool_rc_success;
+            goto out_files;
+        }
 
-    /*
-     * The response buffer, rbuf, all fields are in big-endian, and we save
-     * in big-endian.
-     */
-    result = write_response_to_file(ctx.output, rbuf);
-    if (!result) {
-        LOG_ERR("Failed writing response to output file.");
-    } else {
-        rc = tool_rc_success;
+        rval = Tss2_Tcti_Transmit(tcti_context, size, command->bytes);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_ERR("tss2_tcti_transmit failed: 0x%x", rval);
+            goto out;
+        }
+
+        size_t rsize = TPM2_MAX_SIZE;
+        UINT8 rbuf[TPM2_MAX_SIZE];
+        rval = Tss2_Tcti_Receive(tcti_context, &rsize, rbuf,
+                TSS2_TCTI_TIMEOUT_BLOCK);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_ERR("tss2_tcti_receive failed: 0x%x", rval);
+            rc = tool_rc_from_tpm(rval);
+            goto out;
+        }
+
+        /*
+         * The response buffer, rbuf, all fields are in big-endian, and we save
+         * in big-endian.
+         */
+        result = write_response_to_file(ctx.output, rbuf);
+        if (!result) {
+            LOG_ERR("Failed writing response to output file.");
+            goto out;
+        }
+
+        free(command);
+        command = NULL;
     }
 
 out:
