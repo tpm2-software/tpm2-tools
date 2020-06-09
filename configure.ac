@@ -207,7 +207,8 @@ AS_IF([test x"$enable_hardening" != x"no"], [
   AC_DEFUN([add_hardened_c_flag], [
     AX_CHECK_COMPILE_FLAG([$1],
       [EXTRA_CFLAGS="$EXTRA_CFLAGS $1"],
-      [AC_MSG_ERROR([Cannot enable $1, consider configuring with --disable-hardening])]
+      [AC_MSG_ERROR([Cannot enable $1, consider configuring with --disable-hardening])],
+      [-Werror]
     )
   ])
 
@@ -225,12 +226,13 @@ AS_IF([test x"$enable_hardening" != x"no"], [
     )
   ])
 
+  add_hardened_c_flag([-Werror])
   add_hardened_c_flag([-Wall])
   add_hardened_c_flag([-Wextra])
-  add_hardened_c_flag([-Werror])
 
+  add_hardened_c_flag([-Wbool-compare])
   add_hardened_c_flag([-Wformat])
-  add_hardened_c_flag([-Wformat-security])
+  add_hardened_c_flag([-Wformat -Wformat-security])
   add_hardened_c_flag([-Wstack-protector])
   add_hardened_c_flag([-fstack-protector-all])
   add_hardened_c_flag([-Wstrict-overflow=5])
@@ -256,7 +258,8 @@ and submitting patches upstream!])
 AC_DEFUN([add_c_flag], [
   AX_CHECK_COMPILE_FLAG([$1],
     [EXTRA_CFLAGS="$EXTRA_CFLAGS $1"],
-    $2
+    [$2],
+    [-Werror]
   )
 ])
 
@@ -271,7 +274,7 @@ AS_IF([test "$HOSTOS" = "Linux"],
        add_c_flag([-Wstringop-truncation])
        add_c_flag([-Wduplicated-branches])
        add_c_flag([-Wduplicated-cond])
-       add_hardened_c_flag([-Wbool-compare])],[])
+])
 
 # Best attempt, strip unused stuff from the binary to reduce size.
 # Rather than nesting these and making them ugly just use a counter.
