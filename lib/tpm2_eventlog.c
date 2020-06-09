@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <tss2/tss2_tpm2_types.h>
 
+#include <openssl/buffer.h>
+#include <openssl/evp.h>
+#include <openssl/sha.h>
+
 #include "log.h"
 #include "efi_event.h"
 #include "tpm2_alg_util.h"
@@ -27,8 +31,7 @@ bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
  * hold the digest. The size of the digest is passed to the callback in the
  * 'size' parameter.
  */
-bool foreach_digest2(TCG_DIGEST2 const *digest, size_t count, size_t size,
-                     DIGEST2_CALLBACK callback, void *data) {
+bool foreach_digest2(tpm2_eventlog_ctx_t * ctx, int pcrId, TCG_DIGEST2 const *digest, size_t count, size_t size) {
 
     if (digest == NULL) {
         LOG_ERR("digest cannot be NULL");
@@ -48,8 +51,26 @@ bool foreach_digest2(TCG_DIGEST2 const *digest, size_t count, size_t size,
             LOG_ERR("insufficient size for digest buffer");
             return false;
         }
-        if (callback != NULL) {
-            ret = callback(digest, alg_size, data);
+
+        if (digest->AlgorithmId == TPM2_ALG_SHA1) {
+            uint8_t * const pcr = ctx->sha1_pcrs[pcrId];
+            SHA_CTX sha1;
+            SHA1_Init(&sha1);
+            SHA1_Update(&sha1, pcr, alg_size);
+            SHA1_Update(&sha1, digest->Digest, alg_size);
+            SHA1_Final(pcr, &sha1);
+        } else
+        if (digest->AlgorithmId == TPM2_ALG_SHA256) {
+            uint8_t * const pcr = ctx->sha256_pcrs[pcrId];
+            SHA256_CTX sha256;
+            SHA256_Init(&sha256);
+            SHA256_Update(&sha256, pcr, alg_size);
+            SHA256_Update(&sha256, digest->Digest, alg_size);
+            SHA256_Final(pcr, &sha256);
+        }
+
+        if (ctx->digest2_cb != NULL) {
+            ret = ctx->digest2_cb(digest, alg_size, ctx->data);
             if (!ret) {
                 LOG_ERR("callback failed for digest at %p with size %zu", digest, alg_size);
                 break;
@@ -137,9 +158,13 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
     }
     *event_size = sizeof(*eventhdr);
 
-    ret = foreach_digest2(eventhdr->Digests, eventhdr->DigestCount,
-                          buf_size - sizeof(*eventhdr),
-                          digest2_accumulator_callback, digests_size);
+    tpm2_eventlog_ctx_t ctx = {
+        .data = digests_size,
+        .digest2_cb = digest2_accumulator_callback,
+    };
+    ret = foreach_digest2(&ctx, eventhdr->PCRIndex,
+                          eventhdr->Digests, eventhdr->DigestCount,
+                          buf_size - sizeof(*eventhdr));
     if (ret != true) {
         return false;
     }
@@ -161,10 +186,7 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
     return true;
 }
 
-bool foreach_event2(TCG_EVENT_HEADER2 const *eventhdr_start, size_t size,
-                    EVENT2_CALLBACK event2hdr_cb,
-                    DIGEST2_CALLBACK digest2_cb,
-                    EVENT2DATA_CALLBACK event2_cb, void *data) {
+bool foreach_event2(tpm2_eventlog_ctx_t * ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size) {
 
     if (eventhdr_start == NULL) {
         LOG_ERR("invalid parameter");
@@ -191,18 +213,18 @@ bool foreach_event2(TCG_EVENT_HEADER2 const *eventhdr_start, size_t size,
         }
 
         TCG_EVENT2 *event = (TCG_EVENT2*)((uintptr_t)eventhdr->Digests + digests_size);
+
         /* event header callback */
-        if (event2hdr_cb != NULL) {
-            ret = event2hdr_cb(eventhdr, event_size, data);
+        if (ctx->event2hdr_cb != NULL) {
+            ret = ctx->event2hdr_cb(eventhdr, event_size, ctx->data);
             if (ret != true) {
                 return false;
             }
         }
 
         /* digest callback foreach digest */
-        if (digest2_cb != NULL) {
-            ret = foreach_digest2(eventhdr->Digests, eventhdr->DigestCount,
-                                  digests_size, digest2_cb, data);
+        if (ctx->digest2_cb != NULL) {
+            ret = foreach_digest2(ctx, eventhdr->PCRIndex, eventhdr->Digests, eventhdr->DigestCount, digests_size);
             if (ret != true) {
                 return false;
             }
@@ -214,8 +236,8 @@ bool foreach_event2(TCG_EVENT_HEADER2 const *eventhdr_start, size_t size,
         }
 
         /* event data callback */
-        if (event2_cb != NULL) {
-            ret = event2_cb(event, eventhdr->EventType, data);
+        if (ctx->event2_cb != NULL) {
+            ret = ctx->event2_cb(event, eventhdr->EventType, ctx->data);
             if (ret != true) {
                 return false;
             }
@@ -304,12 +326,7 @@ bool specid_event(TCG_EVENT const *event, size_t size,
     return true;
 }
 
-bool parse_eventlog(BYTE const *eventlog, size_t size,
-                    SPECID_CALLBACK specid_cb,
-                    EVENT2_CALLBACK event2hdr_cb,
-                    DIGEST2_CALLBACK digest2_cb,
-                    EVENT2DATA_CALLBACK event2_cb, void *data)
-{
+bool parse_eventlog(tpm2_eventlog_ctx_t *ctx, BYTE const *eventlog, size_t size) {
 
     TCG_EVENT_HEADER2 *next;
     TCG_EVENT *event = (TCG_EVENT*)eventlog;
@@ -322,12 +339,12 @@ bool parse_eventlog(BYTE const *eventlog, size_t size,
 
     size -= (uintptr_t)next - (uintptr_t)eventlog;
 
-    if (specid_cb) {
-        ret = specid_cb(event, data);
+    if (ctx->specid_cb) {
+        ret = ctx->specid_cb(event, ctx->data);
         if (!ret) {
             return false;
         }
     }
 
-    return foreach_event2(next, size, event2hdr_cb, digest2_cb, event2_cb, data);
+    return foreach_event2(ctx, next, size);
 }
