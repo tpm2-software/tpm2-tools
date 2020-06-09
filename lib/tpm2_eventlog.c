@@ -223,11 +223,9 @@ bool foreach_event2(tpm2_eventlog_ctx_t * ctx, TCG_EVENT_HEADER2 const *eventhdr
         }
 
         /* digest callback foreach digest */
-        if (ctx->digest2_cb != NULL) {
-            ret = foreach_digest2(ctx, eventhdr->PCRIndex, eventhdr->Digests, eventhdr->DigestCount, digests_size);
-            if (ret != true) {
-                return false;
-            }
+        ret = foreach_digest2(ctx, eventhdr->PCRIndex, eventhdr->Digests, eventhdr->DigestCount, digests_size);
+        if (ret != true) {
+            return false;
         }
 
         ret = parse_event2body(event, eventhdr->EventType);
