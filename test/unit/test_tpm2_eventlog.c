@@ -12,6 +12,7 @@
 #include "tpm2_eventlog.h"
 
 #define TCG_DIGEST2_SHA1_SIZE (sizeof(TCG_DIGEST2) + TPM2_SHA_DIGEST_SIZE)
+#define TCG_DIGEST2_SHA256_SIZE (sizeof(TCG_DIGEST2) + TPM2_SHA256_DIGEST_SIZE)
 
 static bool foreach_digest2_test_callback(TCG_DIGEST2 const *digest, size_t size, void *data){
 
@@ -51,11 +52,43 @@ static void test_foreach_digest2(void **state) {
 static void test_foreach_digest2_cbnull(void **state){
 
     (void)state;
-    uint8_t buf [TCG_DIGEST2_SHA1_SIZE] = { 0, };
+    uint8_t buf [TCG_DIGEST2_SHA1_SIZE] = { };
     TCG_DIGEST2* digest = (TCG_DIGEST2*)buf;
 
     tpm2_eventlog_ctx_t ctx = {};
     assert_true(foreach_digest2(&ctx, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE));
+}
+static void test_sha1(void **state){
+
+    (void)state;
+    uint8_t buf [TCG_DIGEST2_SHA1_SIZE] = { 0, };
+    uint8_t sha1sum[] = { 0x31,0x19,0x5d,0x69,0x35,0x16,0x3c,0x79,0xa9,0x67,0x22,0xba,0x7d,0x4b,0x11,0x35,0x24,0x89,0xf4,0x8b };
+    const int pcrIndex = 3;
+
+    TCG_DIGEST2 * digest = (TCG_DIGEST2*) buf;
+    digest->AlgorithmId = TPM2_ALG_SHA1,
+    memcpy(digest->Digest, "the magic words are:", TPM2_SHA1_DIGEST_SIZE);
+
+    tpm2_eventlog_ctx_t ctx = {};
+    assert_true(foreach_digest2(&ctx, pcrIndex, digest, 1, TCG_DIGEST2_SHA1_SIZE));
+    // memcmp() == 0 if the buffers match
+    assert_false(memcmp(ctx.sha1_pcrs[pcrIndex], sha1sum, sizeof(sha1sum)));
+}
+static void test_sha256(void **state){
+
+    (void)state;
+    uint8_t buf [TCG_DIGEST2_SHA256_SIZE] = { };
+    uint8_t sha256sum[TPM2_SHA256_DIGEST_SIZE] = { 0x51,0xea,0x4e,0xa4,0x98,0xaa,0xe2,0x52,0xf4,0xe7,0xff,0x4b,0x13,0xb6,0x3f,0xe5,0xb5,0x7a,0xf8,0x21,0xa4,0x84,0x4e,0xe2,0x6f,0xd8,0xdd,0x25,0xa4,0x2b,0x33,0x23 };
+    const int pcrIndex = 3;
+
+    TCG_DIGEST2 * digest = (TCG_DIGEST2*) buf;
+    digest->AlgorithmId = TPM2_ALG_SHA256,
+    memcpy(digest->Digest, "The Magic Words are Squeamish Ossifrage, for RSA-129 (from 1977)", TPM2_SHA256_DIGEST_SIZE);
+
+    tpm2_eventlog_ctx_t ctx = {};
+    assert_true(foreach_digest2(&ctx, pcrIndex, digest, 1, TCG_DIGEST2_SHA256_SIZE));
+    // memcmp() == 0 if the buffers match
+    assert_false(memcmp(ctx.sha256_pcrs[pcrIndex], sha256sum, sizeof(sha256sum)));
 }
 static void test_foreach_digest2_cbfail(void **state){
 
@@ -468,6 +501,8 @@ int main(void) {
         cmocka_unit_test(test_foreach_digest2),
         cmocka_unit_test(test_foreach_digest2_cbfail),
         cmocka_unit_test(test_foreach_digest2_cbnull),
+        cmocka_unit_test(test_sha1),
+        cmocka_unit_test(test_sha256),
         cmocka_unit_test(test_digest2_accumulator_callback),
         cmocka_unit_test(test_digest2_accumulator_callback_null),
         cmocka_unit_test(test_parse_event2_badhdr),
