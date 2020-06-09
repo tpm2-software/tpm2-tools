@@ -16,6 +16,7 @@
 #include "tpm2_openssl.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
+#include "tpm2_eventlog.h"
 
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
 struct tpm2_verifysig_ctx {
@@ -25,6 +26,7 @@ struct tpm2_verifysig_ctx {
             UINT8 sig :1;
             UINT8 pcr :1;
             UINT8 hlg :1;
+            UINT8 eventlog :1;
         };
         UINT8 all;
     } flags;
@@ -39,6 +41,7 @@ struct tpm2_verifysig_ctx {
     char *out_file_path;
     char *pcr_file_path;
     const char *pubkey_file_path;
+    char *eventlog_path;
     tpm2_loaded_object key_context_object;
 };
 
@@ -216,12 +219,47 @@ out:
     return result;
 }
 
+static bool eventlog_from_file(tpm2_eventlog_ctx_t * ctx, const char *file_path) {
+
+    unsigned long size;
+
+    if (!files_get_file_size_path(file_path, &size)) {
+        return false;
+    }
+
+    if (!size) {
+        LOG_ERR("The eventlog file \"%s\" is empty", file_path);
+        return false;
+    }
+
+    uint8_t * eventlog = calloc(1, size);
+    if (!eventlog) {
+        LOG_ERR("OOM");
+        return false;
+    }
+
+    uint16_t size_tmp = size; // wtf uint16?
+    if (!files_load_bytes_from_path(file_path, eventlog, &size_tmp)) {
+        free(eventlog);
+        return false;
+    }
+
+    bool rc = parse_eventlog(ctx, eventlog, size);
+    free(eventlog);
+
+    return rc;
+}
+
 static tool_rc init(void) {
 
     /* check flags for mismatches */
     if (!(ctx.pubkey_file_path && ctx.flags.sig && ctx.flags.msg)) {
         LOG_ERR(
                 "--pubkey (-u), --msg (-m) and --sig (-s) are required");
+        return tool_rc_option_error;
+    }
+    if (ctx.flags.eventlog && !ctx.flags.pcr) {
+        LOG_ERR("PCR file is required to validate eventlog");
         return tool_rc_option_error;
     }
 
@@ -304,6 +342,69 @@ static tool_rc init(void) {
         }
     }
 
+    if (ctx.flags.eventlog) {
+        tpm2_eventlog_ctx_t eventlog_ctx = {};
+        if (!eventlog_from_file(&eventlog_ctx, ctx.eventlog_path)) {
+            LOG_ERR("Failed to process eventlog");
+            goto err;
+        }
+
+        bool eventlog_fail = false;
+        unsigned vi = 0;
+        unsigned di = 0;
+        for (unsigned i = 0; i < pcr_select.count; i++) {
+            const TPMS_PCR_SELECTION * const sel = &pcr_select.pcrSelections[i];
+
+            // Loop through all PCRs in this bank
+            const unsigned bank_size = sel->sizeofSelect * 8;
+            for (unsigned pcr_id = 0; pcr_id < bank_size; pcr_id++) {
+                // skip non-selected banks
+                if (!tpm2_util_is_pcr_select_bit_set(sel, pcr_id)) {
+                    continue;
+                }
+                if (vi >= pcrs->count || di >= pcrs->pcr_values[vi].count) {
+                    LOG_ERR("Something wrong, trying to print but nothing more");
+                    eventlog_fail = true;
+                    break;
+                }
+
+                // Compare this digest to the computed value from the eventlog
+                const TPM2B_DIGEST *pcr = &pcrs->pcr_values[vi].digests[di];
+                const uint8_t * pcr_q = pcr->buffer;
+		const uint8_t * pcr_e = NULL;
+
+                if (sel->hash == TPM2_ALG_SHA1 && pcr->size == TPM2_SHA1_DIGEST_SIZE) {
+                    pcr_e = eventlog_ctx.sha1_pcrs[pcr_id];
+                } else
+                if (sel->hash == TPM2_ALG_SHA256 && pcr->size == TPM2_SHA256_DIGEST_SIZE) {
+                    pcr_e = eventlog_ctx.sha256_pcrs[pcr_id];
+                } else {
+                    LOG_WARN("PCR%u unsupported algorithm/size %u/%u", pcr_id, sel->hash, pcr->size);
+                    eventlog_fail = 1;
+                }
+
+		if (pcr_e && memcmp(pcr_e, pcr_q, pcr->size) != 0) {
+                    LOG_WARN("PCR%u mismatch", pcr_id);
+                    eventlog_fail = 1;
+                }
+
+                if (++di < pcrs->pcr_values[vi].count) {
+                    continue;
+                }
+
+                di = 0;
+                if (++vi < pcrs->count) {
+                    continue;
+                }
+            }
+        }
+
+        if (eventlog_fail) {
+            LOG_ERR("Eventlog and quote PCR mismatch");
+            goto err;
+        }
+    }
+
     tool_rc tmp_rc = files_tpm2b_attest_to_tpms_attest(msg, &ctx.attest);
     if (tmp_rc != tool_rc_success) {
         return_value = tmp_rc;
@@ -362,6 +463,10 @@ static bool on_option(char key, char *value) {
         ctx.pcr_file_path = value;
         ctx.flags.pcr = 1;
         break;
+    case 'e':
+        ctx.eventlog_path = value;
+        ctx.flags.eventlog = 1;
+        break;
         /* no default */
     }
 
@@ -375,13 +480,14 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
             { "message",            required_argument, NULL, 'm' },
             { "format",             required_argument, NULL, 'F' },
             { "signature",          required_argument, NULL, 's' },
+            { "eventlog",           required_argument, NULL, 'e' },
             { "pcr",                required_argument, NULL, 'f' },
             { "public",             required_argument, NULL, 'u' },
             { "qualification",      required_argument, NULL, 'q' },
     };
 
 
-    *opts = tpm2_options_new("g:m:F:s:u:f:q:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("g:m:F:s:u:f:q:e:", ARRAY_LEN(topts), topts,
             on_option, NULL, TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
