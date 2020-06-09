@@ -228,7 +228,7 @@ static inline void _tpm2_util_print_tpm2b(TPM2B *buffer) {
  *   buffer the TPM2B to print.
  */
 #define tpm2_util_print_tpm2b2(o, b) _tpm2_util_print_tpm2b2(o, (TPM2B *)b)
-static inline void _tpm2_util_print_tpm2b2(FILE *out, TPM2B *buffer) {
+static inline void _tpm2_util_print_tpm2b2(FILE *out, const TPM2B *buffer) {
 
     return tpm2_util_hexdump2(out, buffer->buffer, buffer->size);
 }
@@ -239,7 +239,7 @@ static inline void _tpm2_util_print_tpm2b2(FILE *out, TPM2B *buffer) {
  * @param pcr the PCR ID to check selection status of.
  */
 static inline bool tpm2_util_is_pcr_select_bit_set(
-        TPMS_PCR_SELECTION *pcr_selection, UINT32 pcr) {
+        const TPMS_PCR_SELECTION *pcr_selection, UINT32 pcr) {
     return (pcr_selection->pcrSelect[((pcr) / 8)] & (1 << ((pcr) % 8)));
 }
 
