@@ -2,14 +2,11 @@
 #include <stdlib.h>
 #include <tss2/tss2_tpm2_types.h>
 
-#include <openssl/buffer.h>
-#include <openssl/evp.h>
-#include <openssl/sha.h>
-
 #include "log.h"
 #include "efi_event.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_eventlog.h"
+#include "tpm2_openssl.h"
 
 bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
                                   void *data){
@@ -46,27 +43,27 @@ bool foreach_digest2(tpm2_eventlog_ctx_t * ctx, int pcrId, TCG_DIGEST2 const *di
             LOG_ERR("insufficient size for digest header");
             return false;
         }
-        size_t alg_size = tpm2_alg_util_get_hash_size(digest->AlgorithmId);
+
+        const TPMI_ALG_HASH alg = digest->AlgorithmId;
+        const size_t alg_size = tpm2_alg_util_get_hash_size(alg);
         if (size < sizeof(*digest) + alg_size) {
             LOG_ERR("insufficient size for digest buffer");
             return false;
         }
 
-        if (digest->AlgorithmId == TPM2_ALG_SHA1) {
-            uint8_t * const pcr = ctx->sha1_pcrs[pcrId];
-            SHA_CTX sha1;
-            SHA1_Init(&sha1);
-            SHA1_Update(&sha1, pcr, alg_size);
-            SHA1_Update(&sha1, digest->Digest, alg_size);
-            SHA1_Final(pcr, &sha1);
+        uint8_t * pcr = NULL;
+        if (alg == TPM2_ALG_SHA1) {
+            pcr = ctx->sha1_pcrs[pcrId];
         } else
-        if (digest->AlgorithmId == TPM2_ALG_SHA256) {
-            uint8_t * const pcr = ctx->sha256_pcrs[pcrId];
-            SHA256_CTX sha256;
-            SHA256_Init(&sha256);
-            SHA256_Update(&sha256, pcr, alg_size);
-            SHA256_Update(&sha256, digest->Digest, alg_size);
-            SHA256_Final(pcr, &sha256);
+        if (alg == TPM2_ALG_SHA256) {
+            pcr = ctx->sha256_pcrs[pcrId];
+        } else {
+            LOG_WARN("PCR%d algorithm %d unsupported", pcrId, alg);
+        }
+
+        if (pcr && !tpm2_openssl_pcr_extend(alg, pcr, digest->Digest, alg_size)) {
+            LOG_ERR("PCR%d extend failed", pcrId);
+            return false;
         }
 
         if (ctx->digest2_cb != NULL) {
@@ -76,6 +73,7 @@ bool foreach_digest2(tpm2_eventlog_ctx_t * ctx, int pcrId, TCG_DIGEST2 const *di
                 break;
             }
         }
+
         size -= sizeof(*digest) + alg_size;
         digest = (TCG_DIGEST2*)((uintptr_t)digest->Digest + alg_size);
     }
