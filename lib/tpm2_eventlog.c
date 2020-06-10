@@ -52,11 +52,28 @@ bool foreach_digest2(tpm2_eventlog_ctx_t * ctx, int pcrId, TCG_DIGEST2 const *di
         }
 
         uint8_t * pcr = NULL;
+        if (pcrId > TPM2_MAX_PCRS) {
+            LOG_ERR("PCR%d > max %d", pcrId, TPM2_MAX_PCRS);
+        } else
         if (alg == TPM2_ALG_SHA1) {
             pcr = ctx->sha1_pcrs[pcrId];
+            ctx->sha1_used |= (1 << pcrId);
         } else
         if (alg == TPM2_ALG_SHA256) {
             pcr = ctx->sha256_pcrs[pcrId];
+            ctx->sha256_used |= (1 << pcrId);
+        } else
+        if (alg == TPM2_ALG_SHA384) {
+            pcr = ctx->sha384_pcrs[pcrId];
+            ctx->sha384_used |= (1 << pcrId);
+        } else
+        if (alg == TPM2_ALG_SHA512) {
+            pcr = ctx->sha512_pcrs[pcrId];
+            ctx->sha512_used |= (1 << pcrId);
+        } else
+        if (alg == TPM2_ALG_SM3_256) {
+            pcr = ctx->sm3_256_pcrs[pcrId];
+            ctx->sm3_256_used |= (1 << pcrId);
         } else {
             LOG_WARN("PCR%d algorithm %d unsupported", pcrId, alg);
         }

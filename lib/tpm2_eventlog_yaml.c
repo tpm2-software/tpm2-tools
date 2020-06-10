@@ -407,18 +407,59 @@ static void yaml_eventlog_pcrs(tpm2_eventlog_ctx_t *ctx) {
 
     tpm2_tool_output("pcrs:\n");
 
-    tpm2_tool_output("  sha1:\n");
-    for(unsigned i = 0 ; i < TPM2_MAX_PCRS ; i++) {
-        bytes_to_str(ctx->sha1_pcrs[i], sizeof(ctx->sha1_pcrs[i]),
-            hexstr, sizeof(hexstr));
-        tpm2_tool_output("    %2d : 0x%s\n", i, hexstr);
+    if (ctx->sha1_used != 0) {
+        tpm2_tool_output("  sha1:\n");
+        for(unsigned i = 0 ; i < TPM2_MAX_PCRS ; i++) {
+            if ((ctx->sha1_used & (1 << i)) == 0)
+                continue;
+            bytes_to_str(ctx->sha1_pcrs[i], sizeof(ctx->sha1_pcrs[i]),
+                hexstr, sizeof(hexstr));
+            tpm2_tool_output("    %2d : 0x%s\n", i, hexstr);
+        }
     }
 
-    tpm2_tool_output("  sha256:\n");
-    for(unsigned i = 0 ; i < TPM2_MAX_PCRS ; i++) {
-        bytes_to_str(ctx->sha256_pcrs[i], sizeof(ctx->sha256_pcrs[i]),
-            hexstr, sizeof(hexstr));
-        tpm2_tool_output("    %2d : 0x%s\n", i, hexstr);
+    if (ctx->sha256_used != 0) {
+        tpm2_tool_output("  sha256:\n");
+        for(unsigned i = 0 ; i < TPM2_MAX_PCRS ; i++) {
+            if ((ctx->sha256_used & (1 << i)) == 0)
+                continue;
+            bytes_to_str(ctx->sha256_pcrs[i], sizeof(ctx->sha256_pcrs[i]),
+                hexstr, sizeof(hexstr));
+            tpm2_tool_output("    %2d : 0x%s\n", i, hexstr);
+        }
+    }
+
+    if (ctx->sha384_used != 0) {
+        tpm2_tool_output("  sha384:\n");
+        for(unsigned i = 0 ; i < TPM2_MAX_PCRS ; i++) {
+            if ((ctx->sha384_used & (1 << i)) == 0)
+                continue;
+            bytes_to_str(ctx->sha384_pcrs[i], sizeof(ctx->sha384_pcrs[i]),
+                hexstr, sizeof(hexstr));
+            tpm2_tool_output("    %2d : 0x%s\n", i, hexstr);
+        }
+    }
+
+    if (ctx->sha512_used != 0) {
+        tpm2_tool_output("  sha512:\n");
+        for(unsigned i = 0 ; i < TPM2_MAX_PCRS ; i++) {
+            if ((ctx->sha512_used & (1 << i)) == 0)
+                continue;
+            bytes_to_str(ctx->sha512_pcrs[i], sizeof(ctx->sha512_pcrs[i]),
+                hexstr, sizeof(hexstr));
+            tpm2_tool_output("    %2d : 0x%s\n", i, hexstr);
+        }
+    }
+
+    if (ctx->sm3_256_used != 0) {
+        tpm2_tool_output("  sm3_256:\n");
+        for(unsigned i = 0 ; i < TPM2_MAX_PCRS ; i++) {
+            if ((ctx->sm3_256_used & (1 << i)) == 0)
+                continue;
+            bytes_to_str(ctx->sm3_256_pcrs[i], sizeof(ctx->sm3_256_pcrs[i]),
+                hexstr, sizeof(hexstr));
+            tpm2_tool_output("    %2d : 0x%s\n", i, hexstr);
+        }
     }
 }
 
