@@ -266,6 +266,7 @@ static tool_rc init(void) {
     TPM2B_ATTEST *msg = NULL;
     TPML_PCR_SELECTION pcr_select;
     tpm2_pcrs * pcrs;
+    tpm2_pcrs temp_pcrs;
     tool_rc return_value = tool_rc_general_error;
 
     msg = message_from_file(ctx.msg_file_path);
@@ -315,7 +316,6 @@ static tool_rc init(void) {
     }
 
     if (ctx.flags.pcr) {
-        tpm2_pcrs temp_pcrs;
         if (pcrs_from_file(ctx.pcr_file_path, &pcr_select, &temp_pcrs)) {
             /* pcrs_from_file() logs specific error no need to here */
             pcrs = &temp_pcrs;
@@ -342,7 +342,7 @@ static tool_rc init(void) {
         }
     }
 
-    if (ctx.flags.eventlog) {
+    if (ctx.flags.eventlog && ctx.flags.pcr) {
         tpm2_eventlog_ctx_t eventlog_ctx = {};
         if (!eventlog_from_file(&eventlog_ctx, ctx.eventlog_path)) {
             LOG_ERR("Failed to process eventlog");
