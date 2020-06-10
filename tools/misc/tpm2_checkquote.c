@@ -219,7 +219,7 @@ out:
     return result;
 }
 
-static bool eventlog_from_file(tpm2_eventlog_ctx_t * ctx, const char *file_path) {
+static bool eventlog_from_file(tpm2_eventlog_ctx_t * evctx, const char *file_path) {
 
     unsigned long size;
 
@@ -244,7 +244,7 @@ static bool eventlog_from_file(tpm2_eventlog_ctx_t * ctx, const char *file_path)
         return false;
     }
 
-    bool rc = parse_eventlog(ctx, eventlog, size);
+    bool rc = parse_eventlog(evctx, eventlog, size);
     free(eventlog);
 
     return rc;
@@ -378,6 +378,15 @@ static tool_rc init(void) {
                 } else
                 if (sel->hash == TPM2_ALG_SHA256 && pcr->size == TPM2_SHA256_DIGEST_SIZE) {
                     pcr_e = eventlog_ctx.sha256_pcrs[pcr_id];
+                } else
+                if (sel->hash == TPM2_ALG_SHA384 && pcr->size == TPM2_SHA384_DIGEST_SIZE) {
+                    pcr_e = eventlog_ctx.sha384_pcrs[pcr_id];
+                } else
+                if (sel->hash == TPM2_ALG_SHA512 && pcr->size == TPM2_SHA512_DIGEST_SIZE) {
+                    pcr_e = eventlog_ctx.sha512_pcrs[pcr_id];
+                } else
+                if (sel->hash == TPM2_ALG_SM3_256 && pcr->size == TPM2_SM3_256_DIGEST_SIZE) {
+                    pcr_e = eventlog_ctx.sm3_256_pcrs[pcr_id];
                 } else {
                     LOG_WARN("PCR%u unsupported algorithm/size %u/%u", pcr_id, sel->hash, pcr->size);
                     eventlog_fail = 1;
