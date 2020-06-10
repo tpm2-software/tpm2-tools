@@ -138,6 +138,22 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg,
         TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs, TPM2B_DIGEST *digest);
 
 /**
+ * Extend a PCR with a new digest.
+ * @param halg
+ *  The hashing algorithm to use.
+ * @param pcr
+ *  A buffer with the current value of the PCR, will be updated in place.
+ * @param data
+ *  The new digest to be added to the current PCR.
+ * @param length
+ *  Length of the new data to be added to the digest.
+ * @return
+ *  true on success, false on error.
+ */
+bool tpm2_openssl_pcr_extend(TPMI_ALG_HASH halg, BYTE *pcr,
+        const BYTE *data, UINT16 length);
+
+/**
  * Obtains an OpenSSL EVP_CIPHER_CTX dealing with version
  * API changes in OSSL.
  *

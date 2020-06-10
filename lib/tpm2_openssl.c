@@ -167,6 +167,55 @@ out:
     return result;
 }
 
+bool tpm2_openssl_pcr_extend(TPMI_ALG_HASH halg, BYTE *pcr,
+        const BYTE *data, UINT16 length) {
+
+    bool result = false;
+
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(halg);
+    if (!md) {
+        return false;
+    }
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
+    if (!mdctx) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        return false;
+    }
+
+    int rc = EVP_DigestInit_ex(mdctx, md, NULL);
+    if (!rc) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        goto out;
+    }
+
+    // extend operation is pcr = HASH(pcr + data)
+    unsigned size = EVP_MD_size(md);
+    rc = EVP_DigestUpdate(mdctx, pcr, size);
+    if (!rc) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        goto out;
+    }
+
+    rc = EVP_DigestUpdate(mdctx, data, length);
+    if (!rc) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        goto out;
+    }
+
+    rc = EVP_DigestFinal_ex(mdctx, pcr, &size);
+    if (!rc) {
+        LOG_ERR("%s", tpm2_openssl_get_err());
+        goto out;
+    }
+
+    result = true;
+
+out:
+    EVP_MD_CTX_destroy(mdctx);
+    return result;
+}
+
 bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg, TPML_DIGEST *digests,
         TPM2B_DIGEST *digest) {
 
