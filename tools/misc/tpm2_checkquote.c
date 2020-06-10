@@ -343,6 +343,16 @@ static tool_rc init(void) {
     }
 
     if (ctx.flags.eventlog && ctx.flags.pcr) {
+        if (pcrs_from_file(ctx.pcr_file_path, &pcr_select, &temp_pcrs)) {
+            /* pcrs_from_file() logs specific error no need to here */
+            pcrs = &temp_pcrs;
+        } else {
+            goto err;
+        }
+
+        if (pcr_select.count > TPM2_NUM_PCR_BANKS)
+            goto err;
+
         tpm2_eventlog_ctx_t eventlog_ctx = {};
         if (!eventlog_from_file(&eventlog_ctx, ctx.eventlog_path)) {
             LOG_ERR("Failed to process eventlog");
