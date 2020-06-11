@@ -2,7 +2,8 @@
 
 ### next
 
- * man/tpm2_create: Correct max seal data size from 256 bytes to 128 bytes.
+ * man:
+    - tpm2_create: Correct max seal data size from 256 bytes to 128 bytes.
 
  * tpm2\_eventlog: output EV_POST_CODE as string not firmward blob.
 
@@ -15,49 +16,31 @@
  * tpm2\_print:
    - Support printing TPM2B\_PUBLIC data structures.
    - Support printing TPMT\_PUBLIC data structures.
-
- * tss2_*: Fix double-free errors in commands asking for password authorization
-
- * tss2_*: Fix shorthand command -f that was falsely requiring an argument
-
- * tss2_*: Update tss2_encrypt to the new FAPI interface
-   - The argument 'policyPath' is removed which was never read anyway
-
- * tss2_*: Remove the additional '\n' that was appended when redirecting to stdout
-
- * tss2_*: Update mandatory vs optional treatment of arguments according to latest Fapi spec
-
- * tss2_*: tss2_getinfo now retrieves the correct FAPI version from Fapi_GetInfo
-
- * tss2_*: Fix the error handling in case of multiple inputs and/or outputs from stdin/stdout
-
- * tss2_*: Fix syntax errors and update content of man pages according to latest Fapi spec
-
- * tss2_*: Add parameter types to all man pages
-
- * tss2_*: tss2_setappdata now reads from file or stdin allowing to store also binary data
-
- * tss2_*: Fix bash-completion for tss2_pcrextend and tss2_verifysignature
-
- * tss2_*: Add force option to tss2_list
-
- * tss2_*: Make force option consistent in all fapi tools
-
- * tss2_*: Do not decode non-TPM errors
-
- * tss2_*: Enhance integration tests to test changes of optional/mandatory parameters
-
- * tss2_*: Add --hex parameter to tss2_getrandom
-
- * tss2_*: Fix autocompletion issue
-
- * tss2_*: Switch tss2_* to with-"="-style
-
- * tss2_*: Add size parameter to tss2_createseal
-
  * tpm2\_checkqoute:
    - Add EC support.
    - Support loading *tss* signatures.
+
+ * tss2\_\*:
+    - Fix double-free errors in commands asking for password authorization
+    - Fix shorthand command -f that was falsely requiring an argument   
+    - Update tss2_encrypt to the new FAPI interface
+      - The argument 'policyPath' is removed which was never read anyway
+    - Remove the additional '\n' that was appended when redirecting to stdout
+    - Update mandatory vs optional treatment of arguments according to latest Fapi spec
+    - tss2_getinfo now retrieves the correct FAPI version from Fapi_GetInfo
+    - Fix the error handling in case of multiple inputs and/or outputs from stdin/stdout
+    - Fix syntax errors and update content of man pages according to latest Fapi spec
+    - Add parameter types to all man pages
+    - tss2_setappdata now reads from file or stdin allowing to store also binary data
+    - Fix bash-completion for tss2_pcrextend and tss2_verifysignature
+    - Add force option to tss2_list
+    - Make force option consistent in all fapi tools
+    - Do not decode non-TPM errors
+    - Enhance integration tests to test changes of optional/mandatory parameters
+    - Add --hex parameter to tss2_getrandom
+    - Fix autocompletion issue
+    - Switch tss2\_\* to with-"="-style
+    - Add size parameter to tss2_createseal
 
 ### 4.2 2020-04-08
 
