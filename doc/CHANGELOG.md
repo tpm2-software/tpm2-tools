@@ -2,8 +2,16 @@
 
 ### next
 
- * Default hash algorithm is now sha256. Prior versions claimed sha1, but were inconsistent
-   in choice. Best practice is to specify the hash algorithm to avoid suprises.
+ * **Non Backwards Compatible Changes**
+   
+   - Default hash algorithm is now sha256. Prior versions claimed sha1, but were inconsistent
+     in choice. Best practice is to specify the hash algorithm to avoid suprises.
+   
+   - tpm2_tools are now a busybox style commandlet. Ie tpm2\_getrandom becomes tpm2 getrandom.
+     make install will install symlinks to the old tool names and the tpm2 commandlet will
+     interogate argv[0] for the command to run. This will provide backwards compatibility
+     if they are installed. If you wish to use the old names not installed system wide, set
+     DESTDIR during install to a seperate path and set the proper directory on PATH.
 
  * man:
     - tpm2_create: Correct max seal data size from 256 bytes to 128 bytes.
