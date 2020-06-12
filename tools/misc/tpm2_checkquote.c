@@ -219,7 +219,7 @@ out:
     return result;
 }
 
-static bool eventlog_from_file(tpm2_eventlog_ctx_t *evctx, const char *file_path) {
+static bool eventlog_from_file(tpm2_eventlog_context *evctx, const char *file_path) {
 
     unsigned long size;
 
@@ -353,7 +353,7 @@ static tool_rc init(void) {
         if (pcr_select.count > TPM2_NUM_PCR_BANKS)
             goto err;
 
-        tpm2_eventlog_ctx_t eventlog_ctx = {};
+        tpm2_eventlog_context eventlog_ctx = {};
         bool rc = eventlog_from_file(&eventlog_ctx, ctx.eventlog_path);
         if (!rc) {
             LOG_ERR("Failed to process eventlog");

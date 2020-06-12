@@ -409,7 +409,7 @@ bool yaml_specid_callback(TCG_EVENT const *event, void *data) {
     return yaml_specid_event(event, count);
 }
 
-static void yaml_eventlog_pcrs(tpm2_eventlog_ctx_t *ctx) {
+static void yaml_eventlog_pcrs(tpm2_eventlog_context *ctx) {
 
     char hexstr[DIGEST_HEX_STRING_MAX] = { 0, };
 
@@ -474,7 +474,7 @@ static void yaml_eventlog_pcrs(tpm2_eventlog_ctx_t *ctx) {
 bool yaml_eventlog(UINT8 const *eventlog, size_t size) {
 
     size_t count = 0;
-    tpm2_eventlog_ctx_t ctx = {
+    tpm2_eventlog_context ctx = {
         .data = &count,
         .specid_cb = yaml_specid_callback,
         .event2hdr_cb = yaml_event2hdr_callback,

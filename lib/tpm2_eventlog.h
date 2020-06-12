@@ -33,18 +33,18 @@ typedef struct {
     uint8_t sha384_pcrs[TPM2_MAX_PCRS][TPM2_SHA384_DIGEST_SIZE];
     uint8_t sha512_pcrs[TPM2_MAX_PCRS][TPM2_SHA512_DIGEST_SIZE];
     uint8_t sm3_256_pcrs[TPM2_MAX_PCRS][TPM2_SM3_256_DIGEST_SIZE];
-} tpm2_eventlog_ctx_t;
+} tpm2_eventlog_context;
 
 bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
                                   void *data);
 
 bool parse_event2body(TCG_EVENT2 const *event, UINT32 type);
-bool foreach_digest2(tpm2_eventlog_ctx_t *ctx, unsigned pcr_index,
+bool foreach_digest2(tpm2_eventlog_context *ctx, unsigned pcr_index,
                      TCG_DIGEST2 const *event_hdr, size_t count, size_t size);
 bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
                   size_t *event_size, size_t *digests_size);
-bool foreach_event2(tpm2_eventlog_ctx_t *ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size);
+bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size);
 bool specid_event(TCG_EVENT const *event, size_t size, TCG_EVENT_HEADER2 **next);
-bool parse_eventlog(tpm2_eventlog_ctx_t *ctx, BYTE const *eventlog, size_t size);
+bool parse_eventlog(tpm2_eventlog_context *ctx, BYTE const *eventlog, size_t size);
 
 #endif

@@ -25,7 +25,7 @@ static bool foreach_digest2_test_callback(TCG_DIGEST2 const *digest, size_t size
 static void test_foreach_digest2_null(void **state){
 
     (void)state;
-    tpm2_eventlog_ctx_t ctx = {0};
+    tpm2_eventlog_context ctx = {0};
 
     assert_false(foreach_digest2(&ctx, 0, NULL, 0, sizeof(TCG_DIGEST2)));
 }
@@ -34,7 +34,7 @@ static void test_foreach_digest2_size(void **state) {
     (void)state;
     uint8_t buf [sizeof(TCG_DIGEST2) - 1] = { 0, };
     TCG_DIGEST2 *digest = (TCG_DIGEST2*)buf;
-    tpm2_eventlog_ctx_t ctx = { .digest2_cb = foreach_digest2_test_callback };
+    tpm2_eventlog_context ctx = { .digest2_cb = foreach_digest2_test_callback };
 
     assert_false(foreach_digest2(&ctx, 0, digest, 1, sizeof(TCG_DIGEST2) - 1));
 }
@@ -46,7 +46,7 @@ static void test_foreach_digest2(void **state) {
 
     will_return(foreach_digest2_test_callback, true);
 
-    tpm2_eventlog_ctx_t ctx = { .digest2_cb = foreach_digest2_test_callback };
+    tpm2_eventlog_context ctx = { .digest2_cb = foreach_digest2_test_callback };
     assert_true(foreach_digest2(&ctx, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE));
 }
 static void test_foreach_digest2_cbnull(void **state){
@@ -55,7 +55,7 @@ static void test_foreach_digest2_cbnull(void **state){
     uint8_t buf [TCG_DIGEST2_SHA1_SIZE] = {0};
     TCG_DIGEST2* digest = (TCG_DIGEST2*)buf;
 
-    tpm2_eventlog_ctx_t ctx = {0};
+    tpm2_eventlog_context ctx = {0};
     assert_true(foreach_digest2(&ctx, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE));
 }
 static void test_sha1(void **state){
@@ -72,7 +72,7 @@ static void test_sha1(void **state){
     digest->AlgorithmId = TPM2_ALG_SHA1,
     memcpy(digest->Digest, "the magic words are:", TPM2_SHA1_DIGEST_SIZE);
 
-    tpm2_eventlog_ctx_t ctx = {0};
+    tpm2_eventlog_context ctx = {0};
     assert_true(foreach_digest2(&ctx, pcr_index, digest, 1, TCG_DIGEST2_SHA1_SIZE));
     assert_memory_equal(ctx.sha1_pcrs[pcr_index], sha1sum, sizeof(sha1sum));
 }
@@ -92,7 +92,7 @@ static void test_sha256(void **state){
     digest->AlgorithmId = TPM2_ALG_SHA256,
     memcpy(digest->Digest, "The Magic Words are Squeamish Ossifrage, for RSA-129 (from 1977)", TPM2_SHA256_DIGEST_SIZE);
 
-    tpm2_eventlog_ctx_t ctx = {0};
+    tpm2_eventlog_context ctx = {0};
     assert_true(foreach_digest2(&ctx, pcr_index, digest, 1, TCG_DIGEST2_SHA256_SIZE));
     assert_memory_equal(ctx.sha256_pcrs[pcr_index], sha256sum, sizeof(sha256sum));
 }
@@ -104,7 +104,7 @@ static void test_foreach_digest2_cbfail(void **state){
 
     will_return(foreach_digest2_test_callback, false);
 
-    tpm2_eventlog_ctx_t ctx = { .digest2_cb = foreach_digest2_test_callback };
+    tpm2_eventlog_context ctx = { .digest2_cb = foreach_digest2_test_callback };
     assert_false(foreach_digest2(&ctx, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE));
 }
 static void test_digest2_accumulator_callback(void **state) {
@@ -208,7 +208,7 @@ static void test_foreach_event2(void **state){
     will_return(foreach_digest2_test_callback, true);
     will_return(test_event2_callback, true);
 
-    tpm2_eventlog_ctx_t ctx = {
+    tpm2_eventlog_context ctx = {
         .digest2_cb = foreach_digest2_test_callback,
         .event2_cb = test_event2_callback,
         .event2hdr_cb = test_event2hdr_callback,
@@ -229,7 +229,7 @@ static void test_foreach_event2_event2hdr_fail(void **state){
 
     will_return(test_event2hdr_callback, false);
 
-    tpm2_eventlog_ctx_t ctx = {
+    tpm2_eventlog_context ctx = {
         .event2hdr_cb = test_event2hdr_callback,
     };
     assert_false(foreach_event2(&ctx, eventhdr, sizeof(buf)));
@@ -249,7 +249,7 @@ static void test_foreach_event2_digest2_fail(void **state){
     will_return(test_event2hdr_callback, true);
     will_return(foreach_digest2_test_callback, false);
 
-    tpm2_eventlog_ctx_t ctx = {
+    tpm2_eventlog_context ctx = {
         .digest2_cb = foreach_digest2_test_callback,
         .event2hdr_cb = test_event2hdr_callback,
     };
@@ -272,7 +272,7 @@ static void test_foreach_event2_parse_event2body_fail(void **state){
     will_return(test_event2hdr_callback, true);
     will_return(foreach_digest2_test_callback, true);
 
-    tpm2_eventlog_ctx_t ctx = {
+    tpm2_eventlog_context ctx = {
         .digest2_cb = foreach_digest2_test_callback,
         .event2hdr_cb = test_event2hdr_callback,
     };
@@ -294,7 +294,7 @@ static void test_foreach_event2_event2body_fail(void **state){
     will_return(foreach_digest2_test_callback, true);
     will_return(test_event2_callback, false);
 
-    tpm2_eventlog_ctx_t ctx = {
+    tpm2_eventlog_context ctx = {
         .event2hdr_cb = test_event2hdr_callback,
         .digest2_cb = foreach_digest2_test_callback,
         .event2_cb = test_event2_callback,

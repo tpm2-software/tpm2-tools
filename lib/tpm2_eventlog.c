@@ -28,7 +28,7 @@ bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
  * hold the digest. The size of the digest is passed to the callback in the
  * 'size' parameter.
  */
-bool foreach_digest2(tpm2_eventlog_ctx_t *ctx, unsigned pcr_index, TCG_DIGEST2 const *digest, size_t count, size_t size) {
+bool foreach_digest2(tpm2_eventlog_context *ctx, unsigned pcr_index, TCG_DIGEST2 const *digest, size_t count, size_t size) {
 
     if (digest == NULL) {
         LOG_ERR("digest cannot be NULL");
@@ -168,7 +168,7 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
     }
     *event_size = sizeof(*eventhdr);
 
-    tpm2_eventlog_ctx_t ctx = {
+    tpm2_eventlog_context ctx = {
         .data = digests_size,
         .digest2_cb = digest2_accumulator_callback,
     };
@@ -196,7 +196,7 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
     return true;
 }
 
-bool foreach_event2(tpm2_eventlog_ctx_t *ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size) {
+bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size) {
 
     if (eventhdr_start == NULL) {
         LOG_ERR("invalid parameter");
@@ -334,7 +334,7 @@ bool specid_event(TCG_EVENT const *event, size_t size,
     return true;
 }
 
-bool parse_eventlog(tpm2_eventlog_ctx_t *ctx, BYTE const *eventlog, size_t size) {
+bool parse_eventlog(tpm2_eventlog_context *ctx, BYTE const *eventlog, size_t size) {
 
     TCG_EVENT_HEADER2 *next;
     TCG_EVENT *event = (TCG_EVENT*)eventlog;
