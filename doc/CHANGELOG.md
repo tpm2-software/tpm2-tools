@@ -13,6 +13,9 @@
      if they are installed. If you wish to use the old names not installed system wide, set
      DESTDIR during install to a seperate path and set the proper directory on PATH.
 
+    - tpm2\_eventlog's output changed to be YAML compliant. The output before was intended to be YAML
+      compliant but was never properly checked and tested.
+
  * man:
     - tpm2_create: Correct max seal data size from 256 bytes to 128 bytes.
 
