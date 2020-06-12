@@ -28,7 +28,7 @@ bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
  * hold the digest. The size of the digest is passed to the callback in the
  * 'size' parameter.
  */
-bool foreach_digest2(tpm2_eventlog_ctx_t * ctx, int pcrId, TCG_DIGEST2 const *digest, size_t count, size_t size) {
+bool foreach_digest2(tpm2_eventlog_ctx_t *ctx, unsigned pcr_index, TCG_DIGEST2 const *digest, size_t count, size_t size) {
 
     if (digest == NULL) {
         LOG_ERR("digest cannot be NULL");
@@ -51,35 +51,30 @@ bool foreach_digest2(tpm2_eventlog_ctx_t * ctx, int pcrId, TCG_DIGEST2 const *di
             return false;
         }
 
-        uint8_t * pcr = NULL;
-        if (pcrId > TPM2_MAX_PCRS) {
-            LOG_ERR("PCR%d > max %d", pcrId, TPM2_MAX_PCRS);
-        } else
-        if (alg == TPM2_ALG_SHA1) {
-            pcr = ctx->sha1_pcrs[pcrId];
-            ctx->sha1_used |= (1 << pcrId);
-        } else
-        if (alg == TPM2_ALG_SHA256) {
-            pcr = ctx->sha256_pcrs[pcrId];
-            ctx->sha256_used |= (1 << pcrId);
-        } else
-        if (alg == TPM2_ALG_SHA384) {
-            pcr = ctx->sha384_pcrs[pcrId];
-            ctx->sha384_used |= (1 << pcrId);
-        } else
-        if (alg == TPM2_ALG_SHA512) {
-            pcr = ctx->sha512_pcrs[pcrId];
-            ctx->sha512_used |= (1 << pcrId);
-        } else
-        if (alg == TPM2_ALG_SM3_256) {
-            pcr = ctx->sm3_256_pcrs[pcrId];
-            ctx->sm3_256_used |= (1 << pcrId);
+        uint8_t *pcr = NULL;
+        if (pcr_index > TPM2_MAX_PCRS) {
+            LOG_ERR("PCR%d > max %d", pcr_index, TPM2_MAX_PCRS);
+        } else if (alg == TPM2_ALG_SHA1) {
+            pcr = ctx->sha1_pcrs[pcr_index];
+            ctx->sha1_used |= (1 << pcr_index);
+        } else if (alg == TPM2_ALG_SHA256) {
+            pcr = ctx->sha256_pcrs[pcr_index];
+            ctx->sha256_used |= (1 << pcr_index);
+        } else if (alg == TPM2_ALG_SHA384) {
+            pcr = ctx->sha384_pcrs[pcr_index];
+            ctx->sha384_used |= (1 << pcr_index);
+        } else if (alg == TPM2_ALG_SHA512) {
+            pcr = ctx->sha512_pcrs[pcr_index];
+            ctx->sha512_used |= (1 << pcr_index);
+        } else if (alg == TPM2_ALG_SM3_256) {
+            pcr = ctx->sm3_256_pcrs[pcr_index];
+            ctx->sm3_256_used |= (1 << pcr_index);
         } else {
-            LOG_WARN("PCR%d algorithm %d unsupported", pcrId, alg);
+            LOG_WARN("PCR%d algorithm %d unsupported", pcr_index, alg);
         }
 
         if (pcr && !tpm2_openssl_pcr_extend(alg, pcr, digest->Digest, alg_size)) {
-            LOG_ERR("PCR%d extend failed", pcrId);
+            LOG_ERR("PCR%d extend failed", pcr_index);
             return false;
         }
 
@@ -201,7 +196,7 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
     return true;
 }
 
-bool foreach_event2(tpm2_eventlog_ctx_t * ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size) {
+bool foreach_event2(tpm2_eventlog_ctx_t *ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size) {
 
     if (eventhdr_start == NULL) {
         LOG_ERR("invalid parameter");
