@@ -219,7 +219,7 @@ out:
     return result;
 }
 
-static bool eventlog_from_file(tpm2_eventlog_ctx_t * evctx, const char *file_path) {
+static bool eventlog_from_file(tpm2_eventlog_ctx_t *evctx, const char *file_path) {
 
     unsigned long size;
 
@@ -232,13 +232,13 @@ static bool eventlog_from_file(tpm2_eventlog_ctx_t * evctx, const char *file_pat
         return false;
     }
 
-    uint8_t * eventlog = calloc(1, size);
+    uint8_t *eventlog = calloc(1, size);
     if (!eventlog) {
         LOG_ERR("OOM");
         return false;
     }
 
-    uint16_t size_tmp = size; // wtf uint16?
+    uint16_t size_tmp = size;
     if (!files_load_bytes_from_path(file_path, eventlog, &size_tmp)) {
         free(eventlog);
         return false;
@@ -265,7 +265,7 @@ static tool_rc init(void) {
 
     TPM2B_ATTEST *msg = NULL;
     TPML_PCR_SELECTION pcr_select;
-    tpm2_pcrs * pcrs;
+    tpm2_pcrs *pcrs;
     tpm2_pcrs temp_pcrs;
     tool_rc return_value = tool_rc_general_error;
 
@@ -354,7 +354,8 @@ static tool_rc init(void) {
             goto err;
 
         tpm2_eventlog_ctx_t eventlog_ctx = {};
-        if (!eventlog_from_file(&eventlog_ctx, ctx.eventlog_path)) {
+        bool rc = eventlog_from_file(&eventlog_ctx, ctx.eventlog_path);
+        if (!rc) {
             LOG_ERR("Failed to process eventlog");
             goto err;
         }
@@ -363,7 +364,7 @@ static tool_rc init(void) {
         unsigned vi = 0;
         unsigned di = 0;
         for (unsigned i = 0; i < pcr_select.count; i++) {
-            const TPMS_PCR_SELECTION * const sel = &pcr_select.pcrSelections[i];
+            const TPMS_PCR_SELECTION *const sel = &pcr_select.pcrSelections[i];
 
             // Loop through all PCRs in this bank
             const unsigned bank_size = sel->sizeofSelect * 8;
@@ -380,29 +381,25 @@ static tool_rc init(void) {
 
                 // Compare this digest to the computed value from the eventlog
                 const TPM2B_DIGEST *pcr = &pcrs->pcr_values[vi].digests[di];
-                const uint8_t * pcr_q = pcr->buffer;
-		const uint8_t * pcr_e = NULL;
+                const uint8_t *pcr_q = pcr->buffer;
+                const uint8_t *pcr_e = NULL;
 
                 if (sel->hash == TPM2_ALG_SHA1 && pcr->size == TPM2_SHA1_DIGEST_SIZE) {
                     pcr_e = eventlog_ctx.sha1_pcrs[pcr_id];
-                } else
-                if (sel->hash == TPM2_ALG_SHA256 && pcr->size == TPM2_SHA256_DIGEST_SIZE) {
+                } else if (sel->hash == TPM2_ALG_SHA256 && pcr->size == TPM2_SHA256_DIGEST_SIZE) {
                     pcr_e = eventlog_ctx.sha256_pcrs[pcr_id];
-                } else
-                if (sel->hash == TPM2_ALG_SHA384 && pcr->size == TPM2_SHA384_DIGEST_SIZE) {
+                } else if (sel->hash == TPM2_ALG_SHA384 && pcr->size == TPM2_SHA384_DIGEST_SIZE) {
                     pcr_e = eventlog_ctx.sha384_pcrs[pcr_id];
-                } else
-                if (sel->hash == TPM2_ALG_SHA512 && pcr->size == TPM2_SHA512_DIGEST_SIZE) {
+                } else if (sel->hash == TPM2_ALG_SHA512 && pcr->size == TPM2_SHA512_DIGEST_SIZE) {
                     pcr_e = eventlog_ctx.sha512_pcrs[pcr_id];
-                } else
-                if (sel->hash == TPM2_ALG_SM3_256 && pcr->size == TPM2_SM3_256_DIGEST_SIZE) {
+                } else if (sel->hash == TPM2_ALG_SM3_256 && pcr->size == TPM2_SM3_256_DIGEST_SIZE) {
                     pcr_e = eventlog_ctx.sm3_256_pcrs[pcr_id];
                 } else {
                     LOG_WARN("PCR%u unsupported algorithm/size %u/%u", pcr_id, sel->hash, pcr->size);
                     eventlog_fail = 1;
                 }
 
-		if (pcr_e && memcmp(pcr_e, pcr_q, pcr->size) != 0) {
+                if (pcr_e && memcmp(pcr_e, pcr_q, pcr->size) != 0) {
                     LOG_WARN("PCR%u mismatch", pcr_id);
                     eventlog_fail = 1;
                 }
