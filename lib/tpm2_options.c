@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <fcntl.h>
 #include <libgen.h>
@@ -190,8 +191,14 @@ void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
             } else {
                 printf(" ");
             }
-            printf("[ -%c | --%s%s]", opt->val, opt->name,
-                    opt->has_arg ? "=<value>" : "");
+            if (isalpha(opt->val)) {
+                printf("[ -%c | --%s%s]", opt->val, opt->name,
+                        opt->has_arg ? "=<value>" : "");
+            }
+            else {
+                printf("[ --%s%s]", opt->name,
+                        opt->has_arg ? "=<value>" : "");
+            }
             if ((i + 1) % 4 == 0) {
                 printf("\n");
                 indent = true;
