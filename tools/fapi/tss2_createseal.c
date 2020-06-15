@@ -46,6 +46,10 @@ static bool on_option(char key, char *value) {
                 " larger than 2**32 - 1\n", value);
             return false;
         }
+        if (ctx.size == 0) {
+            LOG_ERR("Size parameter must be larger than 0\n");
+            return false;
+        }
         break;
     }
     return true;
@@ -73,9 +77,15 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         return -1;
     }
 
+    if (!ctx.data && !ctx.size) {
+        fprintf (stderr, "One of --data or --size "\
+        "must be used\n");
+        return -1;
+    }
+
     if (ctx.data && ctx.size) {
         fprintf (stderr, "Only one of --data and --size "\
-        "can be used");
+        "can be used\n");
         return -1;
     }
 
