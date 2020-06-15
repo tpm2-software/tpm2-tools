@@ -338,7 +338,7 @@ tpm2_tools = \
 install-exec-hook:
 	for tool in $(notdir $(basename $(tpm2_tools))) ; do \
 		$(LN_S) -f \
-		"$(DESTDIR)$(bindir)/tpm2$(EXEEXT)" \
+		"tpm2$(EXEEXT)" \
 		"$(DESTDIR)$(bindir)/$$tool$(EXEEXT)" ; \
 	done
 
