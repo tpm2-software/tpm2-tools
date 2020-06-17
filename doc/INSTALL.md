@@ -106,7 +106,7 @@ $ sudo dnf builddep tpm2-tools
 The package installed above contains all the dependencies for tpm2-tools included the projects mentioned at the beginning of this section (tpm2-tss and tpm2-abrmd)
 
 For more detailed information about the dependencies of tpm2-tss and tmp2-abrmd, please consult the corresponding links for each project. You can find these links in
-the [Dependency-Matrix](https://github.com/tpm2-software/tpm2-tools/wiki/Dependency-Matrix)
+the [Dependency-Matrix](https://tpm2-software.github.io/versions/)
 
 ## Building
 
