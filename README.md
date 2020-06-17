@@ -19,8 +19,7 @@ for information on how to submit those.
 
 ## Resources
 
-The tpm2-tools wiki:
-<https://github.com/tpm2-software/tpm2-tools/wiki>
+Reference the tutorials at [tpm2-software.github.io](https://tpm2-software.github.io).
 
 TPM 2.0 specifications can be found at [Trusted Computing Group](http://www.trustedcomputinggroup.org/).
 
