@@ -15,14 +15,6 @@
 #include "tpm2_tool.h"
 #include "tpm2_tool_output.h"
 
-#define SUPPORTED_ABI_VERSION \
-{ \
-    .tssCreator = 1, \
-    .tssFamily = 2, \
-    .tssLevel = 1, \
-    .tssVersion = 108, \
-}
-
 static void esys_teardown(ESYS_CONTEXT **esys_context) {
 
     if (esys_context == NULL)
@@ -50,10 +42,9 @@ static void teardown_full(ESYS_CONTEXT **esys_context) {
 
 static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 
-    TSS2_ABI_VERSION abi_version = SUPPORTED_ABI_VERSION;
     ESYS_CONTEXT *esys_ctx;
 
-    TSS2_RC rval = Esys_Initialize(&esys_ctx, tcti_ctx, &abi_version);
+    TSS2_RC rval = Esys_Initialize(&esys_ctx, tcti_ctx, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Initialize, rval);
         return NULL;
