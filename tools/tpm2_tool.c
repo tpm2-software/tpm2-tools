@@ -66,6 +66,9 @@ void tpm2_tool_register(const tpm2_tool * tool) {
 
     if (tool_count < TPM2_TOOLS_MAX) {
         tools[tool_count++] = tool;
+    } else {
+        LOG_ERR("Over tool count");
+        abort();
     }
 }
 
