@@ -40,7 +40,7 @@ static void teardown_full(ESYS_CONTEXT **esys_context) {
     Tss2_TctiLdr_Finalize(&tcti_context);
 }
 
-static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
+static ESYS_CONTEXT *ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 
     ESYS_CONTEXT *esys_ctx;
 
