@@ -85,6 +85,8 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Execute FAPI command with passed arguments */
     r = Fapi_NvExtend(fctx, ctx.nvPath, data, data_len, logData);
     if (r != TSS2_RC_SUCCESS){
+        free (data);
+        free (logData);
         LOG_PERR("Fapi_NvExtend", r);
         return 1;
     }

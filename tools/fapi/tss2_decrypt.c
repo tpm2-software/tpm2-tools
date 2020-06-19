@@ -78,6 +78,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     r = Fapi_Decrypt (fctx, ctx.keyPath, cipherText, cipherTextSize,
         &plainText, &plainTextSize);
     if (r != TSS2_RC_SUCCESS) {
+        free(cipherText);
         LOG_PERR ("Fapi_Decrypt", r);
         return 1;
     }

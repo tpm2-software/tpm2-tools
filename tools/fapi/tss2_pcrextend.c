@@ -82,7 +82,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (ctx.logData) {
         r = open_read_and_close (ctx.logData, (void**)&logData, 0);
         if (r) {
-            Fapi_Free (data);
+            free (data);
             return -1;
         }
     }
@@ -90,6 +90,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Execute FAPI command with passed arguments */
     r = Fapi_PcrExtend(fctx, ctx.pcr, data, eventDataSize, logData);
     if (r != TSS2_RC_SUCCESS){
+        free (data);
         free (logData);
         LOG_PERR ("Fapi_PcrExtend", r);
         return 1;

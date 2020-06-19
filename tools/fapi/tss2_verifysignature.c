@@ -88,6 +88,8 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     r = Fapi_VerifySignature (fctx, ctx.publicKeyPath,
         digest, digestSize, signature, signatureSize);
     if (r != TSS2_RC_SUCCESS){
+        free (digest);
+        free (signature);
         LOG_PERR("Fapi_Key_VerifySignature", r);
         return 1;
     }

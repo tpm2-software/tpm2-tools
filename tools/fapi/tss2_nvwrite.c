@@ -61,6 +61,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Execute FAPI command with passed arguments */
     r = Fapi_NvWrite(fctx, ctx.nvPath, data, data_len);
     if (r != TSS2_RC_SUCCESS){
+        free (data);
         LOG_PERR ("Fapi_NvWrite", r);
         return 1;
     }
