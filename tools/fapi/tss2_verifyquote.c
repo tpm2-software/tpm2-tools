@@ -131,6 +131,10 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         qualifyingDataSize, quoteInfo, signature, signatureSize,
         pcrLog);
     if (r != TSS2_RC_SUCCESS){
+        free (qualifyingData);
+        free (signature);
+        free (quoteInfo);
+        free (pcrLog);
         LOG_PERR ("Fapi_VerifyQuote", r);
         return 1;
     }

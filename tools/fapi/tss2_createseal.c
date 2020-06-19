@@ -121,10 +121,11 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         if(has_asked_for_password){
             free (ctx.authValue);
         }
+        free (data);
         LOG_PERR ("Fapi_CreateSeal", r);
         return 1;
     }
-    Fapi_Free(data);
+    free (data);
     if(has_asked_for_password){
         free (ctx.authValue);
     }

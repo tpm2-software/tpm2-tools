@@ -73,10 +73,11 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         policyRefSize);
     if (r != TSS2_RC_SUCCESS){
         LOG_PERR ("Fapi_AuthorizePolicy", r);
+        free (policyRef);
         return r;
     }
 
-    free(policyRef);
+    free (policyRef);
 
     return r;
 }
