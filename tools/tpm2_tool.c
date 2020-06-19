@@ -59,10 +59,10 @@ static ESYS_CONTEXT *ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 #ifndef TPM2_TOOLS_MAX
 #define TPM2_TOOLS_MAX 1024
 #endif
-static const tpm2_tool * tools[TPM2_TOOLS_MAX];
+static const tpm2_tool *tools[TPM2_TOOLS_MAX];
 static unsigned tool_count;
 
-void tpm2_tool_register(const tpm2_tool * tool) {
+void tpm2_tool_register(const tpm2_tool *tool) {
 
     if (tool_count < TPM2_TOOLS_MAX) {
         tools[tool_count++] = tool;
@@ -72,9 +72,9 @@ void tpm2_tool_register(const tpm2_tool * tool) {
     }
 }
 
-static const char *tpm2_tool_name(const char * arg) {
+static const char *tpm2_tool_name(const char *arg) {
 
-    const char * name = rindex(arg, '/');
+    const char *name = rindex(arg, '/');
     if (name) {
         name++; // skip the '/'
     } else {
@@ -88,11 +88,11 @@ static const char *tpm2_tool_name(const char * arg) {
     return name;
 }
 
-static const tpm2_tool * tpm2_tool_lookup(int *argc, char *** argv)
+static const tpm2_tool *tpm2_tool_lookup(int *argc, char ***argv)
 {
     // find the executable name in the path
     // and skip "tpm2_" prefix if it is present
-    const char * name = tpm2_tool_name((*argv)[0]);
+    const char *name = tpm2_tool_name((*argv)[0]);
 
     // if this was invoked as 'tpm2', then try again with the second argument
     if (strcmp(name, "tpm2") == 0) {
