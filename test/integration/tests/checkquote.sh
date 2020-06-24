@@ -20,7 +20,8 @@ output_quotepcr=quotepcr.out
 
 cleanup() {
   rm -f $output_ek_pub_pem $output_ak_pub_pem $output_ak_pub_name \
-  $output_quote $output_quotesig $output_quotepcr rand.out $ak_ctx
+  $output_quote $output_quotesig $output_quotepcr rand.out $ak_ctx \
+  pcr.bin
 
   tpm2 pcrreset 16
   tpm2 evictcontrol -C o -c $handle_ek 2>/dev/null || true
@@ -82,5 +83,11 @@ tpm2 checkquote -u ecc.ak.tss -m quote.bin -s quote.sig -f quote.pcr -g sha256 -
 tpm2 readpublic -c ecc.ak -f tpmt -o ecc.ak.tpmt
 
 tpm2 checkquote -u ecc.ak.tpmt -m quote.bin -s quote.sig -f quote.pcr -g sha256 -q nonce.bin
+
+# Verify that the plain tpm2_pcrread output can be passed to the checkquote tool
+tpm2 pcrread sha256:15,16,22 -o pcr.bin
+
+tpm2 checkquote -u ecc.ak.tpmt -m quote.bin -s quote.sig -g sha256 -q nonce.bin \
+-f pcr.bin -l sha256:15,16,22
 
 exit 0

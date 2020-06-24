@@ -43,6 +43,7 @@ struct tpm2_verifysig_ctx {
     const char *pubkey_file_path;
     char *eventlog_path;
     tpm2_loaded_object key_context_object;
+    const char *pcr_selection_string;
 };
 
 static tpm2_verifysig_ctx ctx = {
@@ -160,6 +161,128 @@ static TPM2B_ATTEST *message_from_file(const char *msg_file_path) {
     return msg;
 }
 
+static bool parse_selection_data_from_selection_string(FILE *pcr_input,
+    TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
+
+    bool result = pcr_parse_selections(ctx.pcr_selection_string, pcr_select);
+    if (!result) {
+        LOG_ERR("Could not parse PCR selections");
+        return false;
+    }
+
+    /*
+     * A tpm2_pcrs->pcr_values[tpm2_pcrs->count] is a TPML_DIGEST structure
+     * which can hold a maximum of 8 digests. Once the count of 8 is exhausted
+     * we need a new TPML_DIGEST structure.
+     *
+     * The digests count in a list is tracked with
+     * tpm2_pcrs->pcr_values[tpm2_pcrs->count].count
+     *
+     * A total of such lists is tracked by the tpm2_pcrs->count.
+     */
+    unsigned i = 0;
+    unsigned j = 0;
+    unsigned read_size = 0;
+    size_t read_count = 0;
+    unsigned digest_list_count = 0;
+    memset(pcrs, 0, sizeof(tpm2_pcrs));
+    /*
+     * Iterate through all the PCR banks selected.
+     */
+    for (i = 0; i < pcr_select->count; i++) {
+        /*
+         * Ensure all the digests across banks can fit in tpm2_pcrs.
+         */
+        if (digest_list_count >= TPM2_MAX_PCRS - 1) {
+            LOG_ERR("Maximum count for allowed digest lists reached.");
+            return false;
+        }
+
+        /*
+         * Digest size of PCR bank selected in this iteration.
+         */
+        read_size = tpm2_alg_util_get_hash_size(pcr_select->pcrSelections[i].hash);
+
+        /*
+         * Iterate through pcrSelect bytes to find selected PCR index bitmap.
+         */
+        for (j = 0; j < pcr_select->pcrSelections[i].sizeofSelect * 8; j++) {
+            /*
+             * Test if PCR index select is true.
+             */
+            if ((pcr_select->pcrSelections[i].pcrSelect[j / 8] & 1 << (j % 8))
+            != 0) {
+                /*
+                 * Read the digest at a selected PCR index.
+                 */
+                pcrs->pcr_values[digest_list_count].digests[pcrs->pcr_values[
+                    digest_list_count].count].size = read_size;
+                read_count = fread(pcrs->pcr_values[digest_list_count].digests[
+                    pcrs->pcr_values[digest_list_count].count].buffer,
+                    read_size, 1, pcr_input);
+                if (read_count != 1) {
+                    LOG_ERR("Failed to read PCR digests from file");
+                    return false;
+                }
+                /*
+                 * Ensure we don't overrun the allowed digest count in a
+                 * TPML_DIGEST.
+                 */
+                if (pcrs->pcr_values[digest_list_count].count == 7) {
+                    digest_list_count++;
+                } else {
+                    /*
+                     * Ensure we populate the digest in a new list if we
+                     * exhausted the digest count in the current TPML_DIGEST
+                     * instance.
+                     */
+                    pcrs->pcr_values[digest_list_count].count++;
+                }
+            }
+        }
+    }
+    /*
+     * Update the count of total TPML_DIGEST consumed to accomodate all the
+     * selected PCR indices across all the banks.
+     */
+    pcrs->count = digest_list_count + 1;
+
+    return true;
+}
+
+static bool parse_selection_data_from_file(FILE *pcr_input,
+    TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
+
+    // Import TPML_PCR_SELECTION structure to pcr outfile
+    if (fread(pcr_select, sizeof(TPML_PCR_SELECTION), 1, pcr_input) != 1) {
+        LOG_ERR("Failed to read PCR selection from file");
+        return false;
+    }
+
+    // Import PCR digests to pcr outfile
+    if (fread(&pcrs->count, sizeof(UINT32), 1, pcr_input) != 1) {
+        LOG_ERR("Failed to read PCR digests header from file");
+        return false;
+    }
+
+    if (pcrs->count > ARRAY_LEN(pcrs->pcr_values)) {
+        LOG_ERR("Malformed PCR file, pcr count cannot be greater than %zu, got: %zu",
+                ARRAY_LEN(pcrs->pcr_values), pcrs->count);
+        return false;
+    }
+
+    UINT32 j;
+    for (j = 0; j < pcrs->count; j++) {
+        if (fread(&pcrs->pcr_values[j], sizeof(TPML_DIGEST), 1, pcr_input)
+                != 1) {
+            LOG_ERR("Failed to read PCR digest from file");
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static bool pcrs_from_file(const char *pcr_file_path,
         TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
 
@@ -182,35 +305,20 @@ static bool pcrs_from_file(const char *pcr_file_path,
         goto out;
     }
 
-    // Import TPML_PCR_SELECTION structure to pcr outfile
-    if (fread(pcr_select, sizeof(TPML_PCR_SELECTION), 1, pcr_input) != 1) {
-        LOG_ERR("Failed to read PCR selection from file");
-        goto out;
-    }
-
-    // Import PCR digests to pcr outfile
-    if (fread(&pcrs->count, sizeof(UINT32), 1, pcr_input) != 1) {
-        LOG_ERR("Failed to read PCR digests header from file");
-        goto out;
-    }
-
-    if (pcrs->count > ARRAY_LEN(pcrs->pcr_values)) {
-        LOG_ERR("Malformed PCR file, pcr count cannot be greater than %zu, got: %zu",
-                ARRAY_LEN(pcrs->pcr_values), pcrs->count);
-        goto out;
-    }
-
-    UINT32 j;
-    for (j = 0; j < pcrs->count; j++) {
-        if (fread(&pcrs->pcr_values[j], sizeof(TPML_DIGEST), 1, pcr_input)
-                != 1) {
-            LOG_ERR("Failed to read PCR digest from file");
+    if (!ctx.pcr_selection_string) {
+        result = parse_selection_data_from_file(pcr_input, pcr_select, pcrs);
+        if (!result) {
+            goto out;
+        }
+    } else {
+        result = parse_selection_data_from_selection_string(pcr_input,
+            pcr_select, pcrs);
+        if (!result) {
             goto out;
         }
     }
 
     result = true;
-
 out:
     if (pcr_input) {
         fclose(pcr_input);
@@ -483,6 +591,9 @@ static bool on_option(char key, char *value) {
         ctx.eventlog_path = value;
         ctx.flags.eventlog = 1;
         break;
+    case 'l':
+        ctx.pcr_selection_string = value;
+        break;
         /* no default */
     }
 
@@ -498,12 +609,13 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
             { "signature",          required_argument, NULL, 's' },
             { "eventlog",           required_argument, NULL, 'e' },
             { "pcr",                required_argument, NULL, 'f' },
+            { "pcr-list",           required_argument, NULL, 'l' },
             { "public",             required_argument, NULL, 'u' },
             { "qualification",      required_argument, NULL, 'q' },
     };
 
 
-    *opts = tpm2_options_new("g:m:F:s:u:f:q:e:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("g:m:F:s:u:f:q:e:l:", ARRAY_LEN(topts), topts,
             on_option, NULL, TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
