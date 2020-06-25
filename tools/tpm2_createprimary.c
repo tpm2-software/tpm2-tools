@@ -177,10 +177,10 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
-    bool result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs,
+    rc = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs,
             ctx.policy, ctx.unique_file, DEFAULT_ATTRS, &ctx.objdata.in.public);
-    if (!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     /*
@@ -191,7 +191,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     ctx.objdata.in.outside_info.size = sizeof(ctx.objdata.in.outside_info.buffer);
-    result = tpm2_util_bin_from_hex_or_file(ctx.outside_info_data,
+    bool result = tpm2_util_bin_from_hex_or_file(ctx.outside_info_data,
             &ctx.objdata.in.outside_info.size,
             ctx.objdata.in.outside_info.buffer);
     if (!result) {
@@ -213,7 +213,7 @@ skipped_outside_info:
         rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session,
         &ctx.objdata, &cp_hash);
         if (rc == tool_rc_success) {
-            bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+            result = files_save_digest(&cp_hash, ctx.cp_hash_path);
             if (!result) {
                 LOG_ERR("Failed to save cp hash");
                 rc = tool_rc_general_error;
@@ -239,6 +239,7 @@ skipped_outside_info:
         return rc;
     }
 
+    result = true;
     if (ctx.creation_data_file) {
         result = files_save_creation_data(ctx.objdata.out.creation.data,
             ctx.creation_data_file);

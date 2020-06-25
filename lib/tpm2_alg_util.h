@@ -173,7 +173,7 @@ bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public);
  * @param public
  * @return
  */
-bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
+tool_rc tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
         char *auth_policy, char *unique_file, TPMA_OBJECT def_attrs,
         TPM2B_PUBLIC *public);
 
