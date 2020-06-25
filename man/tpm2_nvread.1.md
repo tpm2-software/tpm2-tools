@@ -73,13 +73,13 @@ the various known TCTI modules.d)
 
 ## Read 32 bytes from an index starting at offset 0
 ```bash
-tpm2_nvdefine -Q  1 -C o -s 32 -a "ownerread|policywrite|ownerwrite"
+tpm2_nvdefine -C o -s 32 -a "ownerread|policywrite|ownerwrite" 1
 
-echo "please123abc" > nv.test_w
+echo "please123abc" > nv.dat
 
-tpm2_nvwrite -Q   $nv_test_index -C o -i nv.test_w
+tpm2_nvwrite -C o -i nv.dat 1
 
-tpm2_nvread -Q  1 -C o -s 32 -o 0
+tpm2_nvread -C o -s 32 1
 ```
 
 [returns](common/returns.md)
