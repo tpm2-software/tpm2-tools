@@ -935,7 +935,7 @@ tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *ectx,
     return tool_rc_success;
 }
 
-bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
+tool_rc tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
         char *auth_policy, char *unique_file, TPMA_OBJECT def_attrs,
         TPM2B_PUBLIC *public) {
 
@@ -949,7 +949,7 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
             public->publicArea.authPolicy.buffer,
                 &public->publicArea.authPolicy.size);
         if (!res) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
@@ -962,7 +962,7 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
         bool res = files_load_bytes_from_path(unique_file,
                 (UINT8*) &public->publicArea.unique, &unique_size);
         if (!res) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
@@ -972,7 +972,7 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
         TPM2_ALG_SHA256;
     if (public->publicArea.nameAlg == TPM2_ALG_ERROR) {
         LOG_ERR("Invalid name hashing algorithm, got\"%s\"", name_halg);
-        return false;
+        return tool_rc_unsupported;
     }
 
     /* Set specified attributes or use default */
@@ -980,7 +980,7 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
         bool res = tpm2_attr_util_obj_from_optarg(attrs,
                 &public->publicArea.objectAttributes);
         if (!res) {
-            return res;
+            return tool_rc_unsupported;
         }
     } else {
         public->publicArea.objectAttributes = def_attrs;
@@ -995,7 +995,7 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
     TPM2B_PUBLIC tmp = *public;
     bool res = tpm2_alg_util_handle_ext_alg(alg_details, &tmp);
     if (!res) {
-        return false;
+        return tool_rc_unsupported;
     }
 
     if (attrs && tmp.publicArea.objectAttributes !=
@@ -1007,12 +1007,12 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
                 "not work together, try attributes: \"%s\"", attrs, alg_details,
                 proposed_attrs);
         free(proposed_attrs);
-        return false;
+        return tool_rc_unsupported;
     }
 
     *public = tmp;
 
-    return true;
+    return tool_rc_success;
 }
 
 const char *tpm2_alg_util_ecc_to_str(TPM2_ECC_CURVE curve_id) {
