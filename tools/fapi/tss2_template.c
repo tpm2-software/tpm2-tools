@@ -19,6 +19,9 @@
 #include "tools/fapi/tss2_template.h"
 #include "lib/config.h"
 
+/* needed by tpm2_util and tpm2_option functions */
+bool output_enabled = false;
+
 static struct termios old;
 
 /* When the program is interrupted during callbacks,
@@ -311,13 +314,88 @@ static FAPI_CONTEXT* ctx_init(char const * uri) {
 }
 
 /*
+ * Build a list of the TSS2 tools linked into this executable
+ */
+#ifndef TSS2_TOOLS_MAX
+#define TSS2_TOOLS_MAX 1024
+#endif
+static const tss2_tool *tools[TSS2_TOOLS_MAX];
+static unsigned tool_count;
+
+void tss2_tool_register(const tss2_tool *tool) {
+
+    if (tool_count < TSS2_TOOLS_MAX) {
+        tools[tool_count++] = tool;
+    } else {
+        LOG_ERR("Over tool count");
+        abort();
+    }
+}
+
+static const char *tss2_tool_name(const char *arg) {
+
+    const char *name = rindex(arg, '/');
+    if (name) {
+        name++; // skip the '/'
+    } else {
+        name = arg; // use the full executable name as is
+    }
+
+    if (strncmp(name, "tss2_", 5) == 0) {
+        name += 5;
+    }
+
+    return name;
+}
+
+static const tss2_tool *tss2_tool_lookup(int *argc, char ***argv)
+{
+    // find the executable name in the path
+    // and skip "tss2_" prefix if it is present
+    const char *name = tss2_tool_name((*argv)[0]);
+
+    // if this was invoked as 'tss2', then try again with the second argument
+    if (strcmp(name, "tss2") == 0) {
+        if (--(*argc) == 0) {
+            return NULL;
+        }
+        (*argv)++;
+        name = tss2_tool_name((*argv)[0]);
+    }
+
+
+    // search the tools array for a matching name
+    for(unsigned i = 0 ; i < tool_count ; i++)
+    {
+        const tss2_tool * const tool = tools[i];
+        if (!tool || !tool->name) {
+            continue;
+        }
+        if (strcmp(name, tool->name) == 0) {
+            return tool;
+        }
+    }
+
+    // not found? should print a table of the tools
+    return NULL;
+}
+
+/*
  * This program is a template for TPM2 tools that use the FAPI. It does
  * nothing more than parsing command line options that allow the caller to
  * specify which FAPI function to call.
  */
 int main(int argc, char *argv[]) {
+    const tss2_tool * const tool = tss2_tool_lookup(&argc, &argv);
+    if (!tool) {
+        LOG_ERR("%s: unknown tool. Available tss2 commands:\n", argv[0]);
+        for(unsigned i = 0 ; i < tool_count ; i++) {
+            fprintf(stderr, "%s\n", tools[i]->name);
+        }
+        return EXIT_FAILURE;
+    }
     tpm2_options *tool_opts = NULL;
-    if (!tss2_tool_onstart (&tool_opts)) {
+    if (tool->onstart && !tool->onstart (&tool_opts)) {
         fprintf (stderr,"error retrieving tool options\n");
         return 1;
     }
@@ -354,10 +432,14 @@ int main(int argc, char *argv[]) {
      * rc 0 = success
      * rc -1 = show usage
      */
-    ret = tss2_tool_onrun(fctx);
+    ret = tool->onrun(fctx);
     if (ret < 0) {
         tpm2_print_usage(argv[0], tool_opts);
         ret = 1;
+    }
+
+    if (tool->onexit) {
+        tool->onexit();
     }
 
     /*
