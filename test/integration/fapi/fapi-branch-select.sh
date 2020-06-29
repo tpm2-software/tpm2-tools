@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path=/
+    tss2 delete --path=/
     shut_down
 }
 
@@ -31,28 +31,28 @@ echo 'f0f1f2f3f4f5f6f7f8f9' | xxd -r -p > $POLICY_REF
 
 PADDINGS="RSA_PSS"
 
-tss2_provision
+tss2 provision
 
-tss2_import --path=$POLICY_PCR --importData=$PCR_POLICY_DATA
+tss2 import --path=$POLICY_PCR --importData=$PCR_POLICY_DATA
 
-tss2_import --path=$POLICY_PCR2 --importData=$PCR_POLICY_DATA
+tss2 import --path=$POLICY_PCR2 --importData=$PCR_POLICY_DATA
 
-tss2_import --path=$POLICY_AUTHORIZE --importData=$AUTHORIZE_POLICY_DATA
+tss2 import --path=$POLICY_AUTHORIZE --importData=$AUTHORIZE_POLICY_DATA
 
-tss2_createkey --path=$POLICY_SIGN_KEY_PATH --type="noDa, sign" --authValue=""
+tss2 createkey --path=$POLICY_SIGN_KEY_PATH --type="noDa, sign" --authValue=""
 
-tss2_authorizepolicy --keyPath=$POLICY_SIGN_KEY_PATH --policyPath=$POLICY_PCR \
+tss2 authorizepolicy --keyPath=$POLICY_SIGN_KEY_PATH --policyPath=$POLICY_PCR \
     --policyRef=$POLICY_REF
 
-tss2_authorizepolicy --keyPath=$POLICY_SIGN_KEY_PATH --policyPath=$POLICY_PCR2 \
+tss2 authorizepolicy --keyPath=$POLICY_SIGN_KEY_PATH --policyPath=$POLICY_PCR2 \
     --policyRef=$POLICY_REF
 
-tss2_createkey --path=$KEY_PATH --type="noDa, sign" \
+tss2 createkey --path=$KEY_PATH --type="noDa, sign" \
     --policyPath=$POLICY_AUTHORIZE --authValue=""
 
 expect <<EOF
 # Check if system asks for branch selection
-spawn tss2_sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
+spawn tss2 sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
     --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
 expect {
     "Your choice: " {
@@ -71,7 +71,7 @@ EOF
 
 expect <<EOF
 # Selecting wrong branch
-spawn tss2_sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
+spawn tss2 sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
     --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
 expect {
     "Your choice: " {
