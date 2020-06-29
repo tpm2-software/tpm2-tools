@@ -79,4 +79,4 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     return r;
 }
 
-TSS2_TOOL_REGISTER("authorize_policy", tss2_tool_onstart, tss2_tool_onrun, NULL)
+TSS2_TOOL_REGISTER("authorizepolicy", tss2_tool_onstart, tss2_tool_onrun, NULL)
