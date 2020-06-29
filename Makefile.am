@@ -36,44 +36,7 @@ TESTS =
 
 if HAVE_FAPI
 
-bin_PROGRAMS += \
-    tools/fapi/tss2_decrypt \
-    tools/fapi/tss2_encrypt \
-    tools/fapi/tss2_list \
-    tools/fapi/tss2_changeauth \
-    tools/fapi/tss2_delete \
-    tools/fapi/tss2_import \
-    tools/fapi/tss2_getinfo \
-    tools/fapi/tss2_createkey \
-    tools/fapi/tss2_createseal \
-    tools/fapi/tss2_exportkey \
-    tools/fapi/tss2_getcertificate \
-    tools/fapi/tss2_getplatformcertificates \
-    tools/fapi/tss2_gettpmblobs \
-    tools/fapi/tss2_getappdata \
-    tools/fapi/tss2_setappdata \
-    tools/fapi/tss2_setcertificate \
-    tools/fapi/tss2_sign \
-    tools/fapi/tss2_verifysignature \
-    tools/fapi/tss2_verifyquote \
-    tools/fapi/tss2_createnv \
-    tools/fapi/tss2_nvextend \
-    tools/fapi/tss2_nvincrement \
-    tools/fapi/tss2_nvread \
-    tools/fapi/tss2_nvsetbits \
-    tools/fapi/tss2_nvwrite \
-    tools/fapi/tss2_getdescription \
-    tools/fapi/tss2_setdescription \
-    tools/fapi/tss2_pcrextend \
-    tools/fapi/tss2_quote \
-    tools/fapi/tss2_pcrread \
-    tools/fapi/tss2_authorizepolicy \
-    tools/fapi/tss2_exportpolicy \
-    tools/fapi/tss2_import \
-    tools/fapi/tss2_provision \
-    tools/fapi/tss2_getrandom \
-    tools/fapi/tss2_unseal \
-    tools/fapi/tss2_writeauthorizenv
+bin_PROGRAMS += tools/fapi/tss2
 
 endif
 
@@ -81,150 +44,52 @@ noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
 lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS)
 
-tools_fapi_tss2_decrypt_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_decrypt_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_decrypt_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_template.h \
-    tools/fapi/tss2_decrypt.c
+tools_fapi_tss2_CFLAGS = $(FAPI_CFLAGS)
+tools_fapi_tss2_LDFLAGS = $(TSS2_FAPI_LIBS)
+tools_fapi_tss2_SOURCES = \
+	tools/fapi/tss2_template.c \
+	tools/fapi/tss2_template.h \
+	$(tss2_tools)
 
-tools_fapi_tss2_encrypt_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_encrypt_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_encrypt_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_encrypt.c
+tss2_tools = \
+    tools/fapi/tss2_decrypt.c \
+    tools/fapi/tss2_encrypt.c \
+    tools/fapi/tss2_list.c \
+    tools/fapi/tss2_changeauth.c \
+    tools/fapi/tss2_delete.c \
+    tools/fapi/tss2_import.c \
+    tools/fapi/tss2_getinfo.c \
+    tools/fapi/tss2_createkey.c \
+    tools/fapi/tss2_createseal.c \
+    tools/fapi/tss2_exportkey.c \
+    tools/fapi/tss2_getcertificate.c \
+    tools/fapi/tss2_getplatformcertificates.c \
+    tools/fapi/tss2_gettpmblobs.c \
+    tools/fapi/tss2_getappdata.c \
+    tools/fapi/tss2_setappdata.c \
+    tools/fapi/tss2_setcertificate.c \
+    tools/fapi/tss2_sign.c \
+    tools/fapi/tss2_verifysignature.c \
+    tools/fapi/tss2_verifyquote.c \
+    tools/fapi/tss2_createnv.c \
+    tools/fapi/tss2_nvextend.c \
+    tools/fapi/tss2_nvincrement.c \
+    tools/fapi/tss2_nvread.c \
+    tools/fapi/tss2_nvsetbits.c \
+    tools/fapi/tss2_nvwrite.c \
+    tools/fapi/tss2_getdescription.c \
+    tools/fapi/tss2_setdescription.c \
+    tools/fapi/tss2_pcrextend.c \
+    tools/fapi/tss2_quote.c \
+    tools/fapi/tss2_pcrread.c \
+    tools/fapi/tss2_authorizepolicy.c \
+    tools/fapi/tss2_exportpolicy.c \
+    tools/fapi/tss2_import.c \
+    tools/fapi/tss2_provision.c \
+    tools/fapi/tss2_getrandom.c \
+    tools/fapi/tss2_unseal.c \
+    tools/fapi/tss2_writeauthorizenv.c
 
-tools_fapi_tss2_list_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_list_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_list_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_list.c
-
-tools_fapi_tss2_changeauth_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_changeauth_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_changeauth_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_changeauth.c
-
-tools_fapi_tss2_delete_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_delete_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_delete_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_delete.c
-
-tools_fapi_tss2_import_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_import_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_import_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_import.c
-
-tools_fapi_tss2_createkey_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_createkey_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_createkey_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_createkey.c
-
-tools_fapi_tss2_createseal_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_createseal_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_createseal_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_createseal.c
-
-tools_fapi_tss2_getcertificate_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_getcertificate_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_getcertificate_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_getcertificate.c
-
-tools_fapi_tss2_getplatformcertificates_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_getplatformcertificates_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_getplatformcertificates_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_getplatformcertificates.c
-
-tools_fapi_tss2_gettpmblobs_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_gettpmblobs_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_gettpmblobs_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_gettpmblobs.c
-
-tools_fapi_tss2_getappdata_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_getappdata_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_getappdata_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_getappdata.c
-
-tools_fapi_tss2_setappdata_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_setappdata_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_setappdata_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_setappdata.c
-
-tools_fapi_tss2_exportkey_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_exportkey_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_exportkey_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_exportkey.c
-
-tools_fapi_tss2_setcertificate_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_setcertificate_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_setcertificate_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_setcertificate.c
-
-tools_fapi_tss2_sign_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_sign_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_sign_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_sign.c
-
-tools_fapi_tss2_verifysignature_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_verifysignature_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_verifysignature_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_verifysignature.c
-
-tools_fapi_tss2_verifyquote_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_verifyquote_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_verifyquote_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_verifyquote.c
-
-tools_fapi_tss2_createnv_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_createnv_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_createnv_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_createnv.c
-
-tools_fapi_tss2_nvextend_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_nvextend_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_nvextend_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_nvextend.c
-
-tools_fapi_tss2_nvincrement_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_nvincrement_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_nvincrement_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_nvincrement.c
-
-tools_fapi_tss2_nvread_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_nvread_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_nvread_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_nvread.c
-
-tools_fapi_tss2_nvsetbits_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_nvsetbits_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_nvsetbits_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_nvsetbits.c
-
-tools_fapi_tss2_nvwrite_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_nvwrite_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_nvwrite_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_nvwrite.c
-
-tools_fapi_tss2_getinfo_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_getinfo_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_getinfo_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_getinfo.c
-
-tools_fapi_tss2_getdescription_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_getdescription_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_getdescription_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_getdescription.c
-
-tools_fapi_tss2_setdescription_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_setdescription_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_setdescription_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_setdescription.c
-
-tools_fapi_tss2_pcrextend_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_pcrextend_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_pcrextend_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_pcrextend.c
-
-tools_fapi_tss2_quote_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_quote_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_quote_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_quote.c
-
-tools_fapi_tss2_pcrread_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_pcrread_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_pcrread_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_pcrread.c
-
-tools_fapi_tss2_authorizepolicy_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_authorizepolicy_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_authorizepolicy_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_authorizepolicy.c
-
-tools_fapi_tss2_exportpolicy_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_exportpolicy_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_exportpolicy_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_exportpolicy.c
-
-tools_fapi_tss2_unseal_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_unseal_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_unseal_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_unseal.c
-
-tools_fapi_tss2_provision_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_provision_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_provision_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_provision.c
-
-tools_fapi_tss2_getrandom_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_getrandom_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_getrandom_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_getrandom.c
-
-tools_fapi_tss2_writeauthorizenv_CFLAGS = $(FAPI_CFLAGS)
-tools_fapi_tss2_writeauthorizenv_LDFLAGS = $(TSS2_FAPI_LIBS)
-tools_fapi_tss2_writeauthorizenv_SOURCES = tools/fapi/tss2_template.c tools/fapi/tss2_writeauthorizenv.c
 
 # Bundle all the tools into a single program similar to busybox
 bin_PROGRAMS += tools/tpm2
