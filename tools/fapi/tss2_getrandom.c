@@ -6,9 +6,6 @@
 
 #include "tools/fapi/tss2_template.h"
 
-/* needed by tpm2_util and tpm2_option functions */
-bool output_enabled = false;
-
 /* Context struct used to store passed commandline parameters */
 static struct cxt {
     size_t  numBytes;
@@ -46,7 +43,7 @@ static bool on_option(char key, char *value) {
 }
 
 /* Define possible commandline parameters */
-bool tss2_tool_onstart(tpm2_options **opts) {
+static bool tss2_tool_onstart(tpm2_options **opts) {
     struct option topts[] = {
         {"numBytes", required_argument, NULL, 'n'},
         {"force"    , no_argument      , NULL, 'f'},
@@ -59,7 +56,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
 }
 
 /* Execute specific tool */
-int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
+static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Check availability of required parameters */
     if (!ctx.filename) {
         fprintf (stderr, "No filename for data was provided, use --data\n");
@@ -100,3 +97,5 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     Fapi_Free (data);
     return r;
 }
+
+TSS2_TOOL_REGISTER("getrandom", tss2_tool_onstart, tss2_tool_onrun, NULL)

@@ -5,9 +5,6 @@
 #include <string.h>
 #include "tools/fapi/tss2_template.h"
 
-/* needed by tpm2_util and tpm2_option functions */
-bool output_enabled = false;
-
 /* Context struct used to store passed commandline parameters */
 static struct cxt {
     char  const *policyPath;
@@ -32,7 +29,7 @@ static bool on_option(char key, char *value) {
 }
 
 /* Define possible commandline parameters */
-bool tss2_tool_onstart(tpm2_options **opts) {
+static bool tss2_tool_onstart(tpm2_options **opts) {
     struct option topts[] = {
         {"policyPath", required_argument, NULL, 'P'},
         {"keyPath",    required_argument, NULL, 'p'},
@@ -43,7 +40,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
 }
 
 /* Execute specific tool */
-int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
+static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Check availability of required parameters */
     if (!ctx.policyPath) {
         fprintf (stderr, "policy path to sign is missing, pass" \
@@ -81,3 +78,5 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
 
     return r;
 }
+
+TSS2_TOOL_REGISTER("authorize_policy", tss2_tool_onstart, tss2_tool_onrun, NULL)

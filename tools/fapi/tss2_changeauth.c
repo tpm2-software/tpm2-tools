@@ -6,11 +6,8 @@
 
 #include "tools/fapi/tss2_template.h"
 
-/* needed by tpm2_util and tpm2_option functions */
-bool output_enabled = false;
-
 /* needed to conditionally free variable authValue */
-bool has_asked_for_password = false;
+static bool has_asked_for_password = false;
 
 /* Context struct used to store passed commandline parameters */
 static struct cxt {
@@ -32,7 +29,7 @@ static bool on_option(char key, char *value) {
 }
 
 /* Define possible commandline parameters */
-bool tss2_tool_onstart(tpm2_options **opts) {
+static bool tss2_tool_onstart(tpm2_options **opts) {
     struct option topts[] = {
         {"authValue",  required_argument, NULL, 'a'},
         {"entityPath", required_argument, NULL, 'p'}
@@ -42,7 +39,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
 }
 
 /* Execute specific tool */
-int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
+static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Check availability of required parameters */
     if (!ctx.entityPath) {
         fprintf (stderr, "No entity path provided, use --entityPath\n");
@@ -74,3 +71,5 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
 
     return 0;
 }
+
+TSS2_TOOL_REGISTER("changeauth", tss2_tool_onstart, tss2_tool_onrun, NULL)
