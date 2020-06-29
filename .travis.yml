@@ -14,12 +14,15 @@ env:
   - DOCKER_TAG=opensuse-leap
   - DOCKER_TAG=ubuntu-18.04 TPM2_TSS_VERSION=master
 
-# only one build should report coverage stats
+# only one build should:
+#  - report coverage stats
+#  - report coverity scan info (branch coverity_scan only)
 matrix:
   include:
   - env: ENABLE_COVERAGE=true DOCKER_TAG=ubuntu-18.04
     compiler: gcc
-
+  - env: ENABLE_COVERITY=true DOCKER_TAG=ubuntu-18.04
+    compiler: gcc
 script:
   - ./.ci/travis.run
 
