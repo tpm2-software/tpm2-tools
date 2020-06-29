@@ -374,15 +374,23 @@ static bool sig_load(const char *path, TPMI_ALG_SIG_SCHEME sig_alg,
         TPMI_ALG_HASH halg, TPMT_SIGNATURE *signature) {
 
     signature->sigAlg = sig_alg;
-
+    bool res = false;
     switch (sig_alg) {
     case TPM2_ALG_RSASSA:
         signature->signature.rsassa.hash = halg;
         signature->signature.rsassa.sig.size =
                 sizeof(signature->signature.rsassa.sig.buffer);
-        bool res = files_load_bytes_from_path(path,
+        res = files_load_bytes_from_path(path,
                 signature->signature.rsassa.sig.buffer,
                 &signature->signature.rsassa.sig.size);
+        return res;
+    case TPM2_ALG_RSAPSS:
+        signature->signature.rsapss.hash = halg;
+        signature->signature.rsapss.sig.size =
+                sizeof(signature->signature.rsapss.sig.buffer);
+        res = files_load_bytes_from_path(path,
+                signature->signature.rsapss.sig.buffer,
+                &signature->signature.rsapss.sig.size);
         return res;
     case TPM2_ALG_ECDSA:
         signature->signature.ecdsa.hash = halg;
