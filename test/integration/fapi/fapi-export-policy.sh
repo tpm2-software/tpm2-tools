@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path=/
+    tss2 delete --path=/
     shut_down
 }
 
@@ -20,14 +20,14 @@ POLICY_DATA=$TEMP_DIR/pol_pcr16_0.json
 JSON_POLICY=policy/pcr-policy
 EXPORTED_POLICY=$TEMP_DIR/exported-pcr-policy
 
-tss2_provision
+tss2 provision
 
-tss2_import --path=$JSON_POLICY --importData=$POLICY_DATA
+tss2 import --path=$JSON_POLICY --importData=$POLICY_DATA
 
-tss2_createkey --path=$KEY_PATH --type="noDa, sign" --policyPath=$JSON_POLICY \
+tss2 createkey --path=$KEY_PATH --type="noDa, sign" --policyPath=$JSON_POLICY \
     --authValue=""
 
-tss2_exportpolicy --path=$KEY_PATH --jsonPolicy=$EXPORTED_POLICY --force
+tss2 exportpolicy --path=$KEY_PATH --jsonPolicy=$EXPORTED_POLICY --force
 
 if [ ! -s $EXPORTED_POLICY ]
 then
@@ -37,7 +37,7 @@ fi
 
 expect <<EOF
 # Try with missing path
-spawn tss2_exportpolicy --jsonPolicy=$EXPORTED_POLICY
+spawn tss2 exportpolicy --jsonPolicy=$EXPORTED_POLICY
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -47,7 +47,7 @@ EOF
 
 expect <<EOF
 # Try with missing jsonPolicy
-spawn tss2_exportpolicy --path=$KEY_PATH
+spawn tss2 exportpolicy --path=$KEY_PATH
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"

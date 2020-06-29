@@ -10,7 +10,7 @@ setup_fapi
 function cleanup {
     # If this test is successful, no keys are created. Thus, command below will
     # always fail
-    tss2_delete --path=/ || true
+    tss2 delete --path=/ || true
     shut_down
 }
 
@@ -25,7 +25,7 @@ echo -n "Secret Text!" > $PLAIN_TEXT
 
 expect <<EOF
 # Try with wrong help argument
-spawn tss2_provision -h abc
+spawn tss2 provision -h abc
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -33,15 +33,15 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
-tss2_provision -h man
+tss2 provision -h man
 
-tss2_provision -h no-man
+tss2 provision -h no-man
 
-tss2_provision -v
+tss2 provision -v
 
 expect <<EOF
 # Try with wrong option
-spawn tss2_provision -abcdef
+spawn tss2 provision -abcdef
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"
@@ -49,7 +49,7 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
-tss2_getrandom -v > $VERSION_FILE
+tss2 getrandom -v > $VERSION_FILE
 VERSION=$(cat $VERSION_FILE | cut -d'=' -f 4)
 size=${#VERSION}
 if [ $size -ge 129 ]; then

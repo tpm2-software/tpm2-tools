@@ -21,7 +21,7 @@
  * @return
  *  True on success, false on error.
  */
-bool tss2_tool_onstart(tpm2_options **opts) __attribute__((visibility("hidden")));
+typedef bool (*tss2_tool_onstart_t)(tpm2_options **opts);
 
 /**
  * This is the main interface for tools, after tcti and fapi initialization
@@ -33,12 +33,37 @@ bool tss2_tool_onstart(tpm2_options **opts) __attribute__((visibility("hidden"))
  *  1 on failure
  * -1 to show usage
  */
-int tss2_tool_onrun (FAPI_CONTEXT *fctx) __attribute__((weak, visibility("hidden")));
+typedef int (*tss2_tool_onrun_t)(FAPI_CONTEXT *fctx);
 
 /**
  * Called when the tool is exiting, useful for cleanup.
  */
-void tss2_tool_onexit(void) __attribute__((weak, visibility("hidden")));
+typedef void (*tss2_tool_onexit_t)(void);
+
+typedef struct {
+	const char * name;
+	tss2_tool_onstart_t onstart;
+	tss2_tool_onrun_t onrun;
+	tss2_tool_onexit_t onexit;
+} tss2_tool;
+
+void tss2_tool_register(const tss2_tool * tool);
+
+#define TSS2_TOOL_REGISTER(tool_name,tool_onstart,tool_onrun,tool_onexit) \
+	static const tss2_tool tool = { \
+		.name		= tool_name, \
+		.onstart	= tool_onstart, \
+		.onrun		= tool_onrun, \
+		.onexit		= tool_onexit, \
+	}; \
+	static void \
+	__attribute__((__constructor__)) \
+	__attribute__((__used__)) \
+	_tss2_tool_init(void) \
+	{ \
+		tss2_tool_register(&tool); \
+	}
+
 
 TSS2_RC policy_auth_callback(FAPI_CONTEXT*, char const*, char**, void*);
 int open_write_and_close(const char *path, bool overwrite, const void* output, size_t output_len);

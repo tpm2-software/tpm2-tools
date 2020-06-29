@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path=/
+    tss2 delete --path=/
     shut_down
 }
 
@@ -16,9 +16,9 @@ trap cleanup EXIT
 
 DATA_OUTPUT_FILE=$TEMP_DIR/output.file
 
-tss2_provision
+tss2 provision
 
-tss2_getinfo --info=$DATA_OUTPUT_FILE --force
+tss2 getinfo --info=$DATA_OUTPUT_FILE --force
 
 if [ ! -s $DATA_OUTPUT_FILE ]
 then
@@ -28,7 +28,7 @@ fi
 
 expect <<EOF
 # Try with missing info file
-spawn tss2_getinfo
+spawn tss2 getinfo
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     Command has not failed as expected\n"

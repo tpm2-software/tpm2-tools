@@ -5,9 +5,6 @@
 #include <stdlib.h>
 #include "tools/fapi/tss2_template.h"
 
-/* needed by tpm2_util and tpm2_option functions */
-bool output_enabled = false;
-
 /* Context struct used to store passed commandline parameters */
 static struct cxt {
     char *info;
@@ -28,7 +25,7 @@ static bool on_option(char key, char *value) {
 }
 
 /* Define possible commandline parameters */
-bool tss2_tool_onstart(tpm2_options **opts) {
+static bool tss2_tool_onstart(tpm2_options **opts) {
     struct option topts[] = {
         {"force"   , no_argument      , NULL, 'f'},
         /* output file */
@@ -39,7 +36,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
 }
 
 /* Execute specific tool */
-int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
+static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Check availability of required parameters */
     if (!ctx.info) {
         fprintf (stderr, "info parameter is missing, pass --info\n");
@@ -64,3 +61,5 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     Fapi_Free (info);
     return 0;
 }
+
+TSS2_TOOL_REGISTER("getinfo", tss2_tool_onstart, tss2_tool_onrun, NULL)

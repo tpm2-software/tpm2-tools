@@ -3,9 +3,6 @@
 #include <stdio.h>
 #include "tools/fapi/tss2_template.h"
 
-/* needed by tpm2_util and tpm2_option functions */
-bool output_enabled = false;
-
 /* Context struct used to store passed commandline parameters */
 static struct cxt {
     char *authValueEh;
@@ -30,7 +27,7 @@ static bool on_option(char key, char *value) {
 }
 
 /* Define possible commandline parameters */
-bool tss2_tool_onstart(tpm2_options **opts) {
+static bool tss2_tool_onstart(tpm2_options **opts) {
     struct option topts[] = {
         {"authValueEh",         required_argument, NULL, 'E'},
         {"authValueSh",         required_argument, NULL, 'S'},
@@ -41,7 +38,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
 }
 
 /* Execute specific tool */
-int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
+static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
 
     /* Execute FAPI command with passed arguments */
     TSS2_RC r = Fapi_Provision (fctx, ctx.authValueEh, ctx.authValueSh,
@@ -53,3 +50,5 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
 
     return 0;
 }
+
+TSS2_TOOL_REGISTER("provision", tss2_tool_onstart, tss2_tool_onrun, NULL)

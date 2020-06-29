@@ -8,7 +8,7 @@ start_up
 setup_fapi
 
 function cleanup {
-    tss2_delete --path=/
+    tss2 delete --path=/
     shut_down
 }
 
@@ -24,13 +24,13 @@ IMPORTED_KEY_NAME=importedPubKey
 PADDINGS="RSA_PSS"
 set -x
 
-tss2_provision
+tss2 provision
 echo 0123456789012345678 > $DIGEST_FILE
-tss2_createkey --path=$KEY_PATH --type="noDa, sign" --authValue=$PW1
+tss2 createkey --path=$KEY_PATH --type="noDa, sign" --authValue=$PW1
 
 expect <<EOF
 # Try interactive prompt
-spawn tss2_sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
+spawn tss2 sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
     --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
 expect "Authorize object: "
 send "$PW1\r"
@@ -43,7 +43,7 @@ EOF
 
 expect <<EOF
 # Try interactive prompt with 2 different passwords
-spawn tss2_changeauth --entityPath=$KEY_PATH
+spawn tss2 changeauth --entityPath=$KEY_PATH
 expect "Authorize object Password: "
 send "1\r"
 expect "Authorize object Retype password: "
@@ -67,7 +67,7 @@ EOF
 
 expect <<EOF
 # Try interactive prompt
-spawn tss2_changeauth --entityPath=$KEY_PATH --authValue=$PW2
+spawn tss2 changeauth --entityPath=$KEY_PATH --authValue=$PW2
 expect "Authorize object: "
 send "$PW1\r"
 set ret [wait]
@@ -79,7 +79,7 @@ EOF
 
 expect <<EOF
 # Check if system asks for auth value
-spawn tss2_sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
+spawn tss2 sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
     --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE --force
 expect {
     "Authorize object: " {
