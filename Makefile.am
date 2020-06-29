@@ -199,9 +199,14 @@ tpm2_tools = \
     tools/tpm2_ecdhzgen.c \
     tools/tpm2_zgen2phase.c
 
-# Create the symlinks for each tool to the tpm2 bundled executable
+# Create the symlinks for each tool to the tpm2 and optional tss2 bundled executables
+all_tools = $(tpm2_tools)
+if HAVE_FAPI
+all_tools += $(tss2_tools)
+endif
+
 install-exec-hook:
-	for tool in $(notdir $(basename $(tpm2_tools))) ; do \
+	for tool in $(notdir $(basename $(all_tools))) ; do \
 		$(LN_S) -f \
 		"tpm2$(EXEEXT)" \
 		"$(DESTDIR)$(bindir)/$$tool$(EXEEXT)" ; \
