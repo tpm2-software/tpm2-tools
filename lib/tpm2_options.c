@@ -108,6 +108,10 @@ bool tpm2_options_cat(tpm2_options **dest, tpm2_options *src) {
 }
 
 void tpm2_options_free(tpm2_options *opts) {
+    if (!opts) {
+        return;
+    }
+
     free(opts->short_opts);
     free(opts);
 }
