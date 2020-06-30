@@ -16,6 +16,9 @@
     - tpm2\_eventlog's output changed to be YAML compliant. The output before was intended to be YAML
       compliant but was never properly checked and tested.
 
+ * tpm2_tools (all):
+   - Set stdin/stdout to non-buffering.
+
  * man:
     - tpm2_create: Correct max seal data size from 256 bytes to 128 bytes.
 
