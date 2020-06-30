@@ -126,6 +126,17 @@ static const tpm2_tool *tpm2_tool_lookup(int *argc, char ***argv)
  * nothing more than parsing command line options that allow the caller to
  * specify which TCTI to use for the test.
  */
+static struct tool_context {
+    ESYS_CONTEXT *ectx;
+    tpm2_options *tool_opts;
+} ctx;
+
+static void main_onexit(void) {
+
+    teardown_full(&ctx.ectx);
+    tpm2_options_free(ctx.tool_opts);
+}
+
 int main(int argc, char **argv) {
 
     /* don't buffer stdin/stdout/stderr so pipes work */
@@ -139,27 +150,32 @@ int main(int argc, char **argv) {
         for(unsigned i = 0 ; i < tool_count ; i++) {
             fprintf(stderr, "%s\n", tools[i]->name);
         }
-        return EXIT_FAILURE;
+        exit(tool_rc_general_error);
     }
 
+    atexit(main_onexit);
+
     tool_rc ret = tool_rc_general_error;
-    tpm2_options *tool_opts = NULL;
     if (tool->onstart) {
-        bool res = tool->onstart(&tool_opts);
+        bool res = tool->onstart(&ctx.tool_opts);
         if (!res) {
             LOG_ERR("retrieving tool options");
-            return tool_rc_general_error;
+            exit(tool_rc_general_error);
         }
+    }
+
+    if (tool->onexit) {
+        atexit(tool->onexit);
     }
 
     tpm2_option_flags flags = { .all = 0 };
     TSS2_TCTI_CONTEXT *tcti = NULL;
-    tpm2_option_code rc = tpm2_handle_options(argc, argv, tool_opts, &flags,
+    tpm2_option_code rc = tpm2_handle_options(argc, argv, ctx.tool_opts, &flags,
             &tcti);
     if (rc != tpm2_option_code_continue) {
         ret = rc == tpm2_option_code_err ?
                 tool_rc_general_error : tool_rc_success;
-        goto free_opts;
+        exit(ret);
     }
 
     if (flags.verbose) {
@@ -177,17 +193,15 @@ int main(int argc, char **argv) {
         tpm2_tool_output_disable();
     }
 
-    ESYS_CONTEXT *ectx = NULL;
     if (tcti) {
-        ectx = ctx_init(tcti);
-        if (!ectx) {
-            ret = tool_rc_tcti_error;
-            goto free_opts;
+        ctx.ectx = ctx_init(tcti);
+        if (!ctx.ectx) {
+            exit(tool_rc_tcti_error);
         }
     }
 
     if (flags.enable_errata) {
-        tpm2_errata_init(ectx);
+        tpm2_errata_init(ctx.ectx);
     }
 
     /*
@@ -202,9 +216,9 @@ int main(int argc, char **argv) {
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */
-    ret = tool->onrun(ectx, flags);
+    ret = tool->onrun(ctx.ectx, flags);
     if (tool->onstop) {
-        tool_rc tmp_rc = tool->onstop(ectx);
+        tool_rc tmp_rc = tool->onstop(ctx.ectx);
         /* if onrun() passed, the error code should come from onstop() */
         ret = ret == tool_rc_success ? tmp_rc : ret;
     }
@@ -213,25 +227,10 @@ int main(int argc, char **argv) {
         /* nothing to do here */
         break;
     case tool_rc_option_error:
-        tpm2_print_usage(argv[0], tool_opts);
+        tpm2_print_usage(argv[0], ctx.tool_opts);
         break;
     default:
         LOG_ERR("Unable to run %s", argv[0]);
-    }
-
-    /*
-     * Cleanup contexts & memory allocated for the modified argument vector
-     * passed to execute_tool.
-     */
-    teardown_full(&ectx);
-
-free_opts:
-    if (tool_opts) {
-        tpm2_options_free(tool_opts);
-    }
-
-    if (tool->onexit) {
-        tool->onexit();
     }
 
     exit(ret);
