@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,9 +16,18 @@ typedef struct tpm2_send_ctx tpm2_send_ctx;
 struct tpm2_send_ctx {
     FILE *input;
     FILE *output;
+    tpm2_command_header *command;
 };
 
+typedef void (*sighandler_t)(int);
+
 static tpm2_send_ctx ctx;
+
+static void sig_handler(int signum) {
+    UNUSED(signum);
+
+    exit (tool_rc_success);
+}
 
 static int read_command_from_file(FILE *f, tpm2_command_header **c,
         UINT32 *size) {
@@ -160,35 +170,32 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-
-    tpm2_command_header *command = NULL;
+    sighandler_t old_handler = signal(SIGINT, sig_handler);
+    if(old_handler == SIG_ERR) {
+        LOG_WARN("Could not set SIGINT handler: %s", strerror(errno));
+    }
 
     TSS2_TCTI_CONTEXT *tcti_context;
     TSS2_RC rval = Esys_GetTcti(context, &tcti_context);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetTctiContext, rval);
-        rc = tool_rc_from_tpm(rval);
-        goto out;
+        return tool_rc_from_tpm(rval);
     }
 
     while (1) {
-
         UINT32 size;
-        int result = read_command_from_file(ctx.input, &command, &size);
+        int result = read_command_from_file(ctx.input, &ctx.command, &size);
         if (result < 0) {
             LOG_ERR("failed to read TPM2 command buffer from file");
-            goto out_files;
+            return tool_rc_general_error;
         } else if (result == 0) {
-            /* EOF */
-            rc = tool_rc_success;
-            goto out_files;
+            return tool_rc_success;
         }
 
-        rval = Tss2_Tcti_Transmit(tcti_context, size, command->bytes);
+        rval = Tss2_Tcti_Transmit(tcti_context, size, ctx.command->bytes);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("tss2_tcti_transmit failed: 0x%x", rval);
-            goto out;
+            return tool_rc_from_tpm(rval);
         }
 
         size_t rsize = TPM2_MAX_SIZE;
@@ -197,8 +204,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
                 TSS2_TCTI_TIMEOUT_BLOCK);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("tss2_tcti_receive failed: 0x%x", rval);
-            rc = tool_rc_from_tpm(rval);
-            goto out;
+            return tool_rc_from_tpm(rval);
         }
 
         /*
@@ -208,22 +214,24 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
         result = write_response_to_file(ctx.output, rbuf);
         if (!result) {
             LOG_ERR("Failed writing response to output file.");
-            goto out;
+            return tool_rc_general_error;
         }
 
-        free(command);
-        command = NULL;
+        free(ctx.command);
+        ctx.command = NULL;
     }
 
-out:
-    free(command);
+    /* shouldn't be possible */
+    return tool_rc_success;
+}
 
-out_files:
+static void tpm2_tool_onexit(void) {
+
     close_file(ctx.input);
     close_file(ctx.output);
 
-    return rc;
+    free(ctx.command);
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("send", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)
+TPM2_TOOL_REGISTER("send", tpm2_tool_onstart, tpm2_tool_onrun, NULL, tpm2_tool_onexit)
