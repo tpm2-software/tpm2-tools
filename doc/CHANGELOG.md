@@ -33,6 +33,7 @@
  * tpm2\_checkqoute:
    - Add EC support.
    - Support loading *tss* signatures.
+   - Support loading tpm2 pcrread PCR values by specifying the PCR selection via `-l`.
 
  * tpm2\_createak: add qualified name output as -q.
 
