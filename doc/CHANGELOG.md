@@ -19,6 +19,8 @@
  * tpm2_tools (all):
    - Set stdin/stdout to non-buffering.
 
+   - Fix printing short options when no ascii character is used.
+
  * man:
     - tpm2_create: Correct max seal data size from 256 bytes to 128 bytes.
 
