@@ -19,6 +19,8 @@
  * man:
     - tpm2_create: Correct max seal data size from 256 bytes to 128 bytes.
 
+    - tpm2_nvread: Fix manpage example.
+
  * tpm2\_eventlog: output EV_POST_CODE as string not firmward blob.
 
  * Fix missing handle maps for ESY3 handle breaks. See #1994.
