@@ -50,4 +50,8 @@ $file_input_data
 # Test stdout output and test that stdin pipe works as well.
 cat $file_input_data | tpm2 rsaencrypt -c $file_rsaencrypt_key_ctx > /dev/null
 
+# Test if RSA encryption is possible with OAEP padding scheme
+ tpm2 rsaencrypt -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data \
+ -s oaep < $file_input_data
+
 exit 0
