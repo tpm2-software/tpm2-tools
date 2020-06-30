@@ -93,6 +93,8 @@ static bool on_option(char key, char *value) {
         if (ctx.scheme.scheme == TPM2_ALG_ERROR) {
             return false;
         }
+        ctx.scheme.details.oaep.hashAlg = ctx.scheme.scheme == TPM2_ALG_OAEP ?
+            TPM2_ALG_SHA256 : 0;
         break;
     case 0:
         ctx.cp_hash_path = value;
