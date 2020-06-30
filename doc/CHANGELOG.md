@@ -37,6 +37,8 @@
  
  * tpm2\_send: supports sending and receiving more than 1 command and response buffer.
 
+ * tpm2\_verifysignature: supports verifying RSA-PSS signatures.
+
  * tss2\_\*:
     - Fix double-free errors in commands asking for password authorization
     - Fix shorthand command -f that was falsely requiring an argument   
