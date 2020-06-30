@@ -23,6 +23,10 @@
 
  * Fix missing handle maps for ESY3 handle breaks. See #1994.
 
+ * tpm2\_checkqoute:
+   - Add EC support.
+   - Support loading *tss* signatures.
+
  * tpm2\_createak: add qualified name output as -q.
 
  * tpm2\_readpublic: add qualified name output as -q.
@@ -31,10 +35,6 @@
    - Support printing TPM2B\_PUBLIC data structures.
    - Support printing TPMT\_PUBLIC data structures.
  
- * tpm2\_checkqoute:
-   - Add EC support.
-   - Support loading *tss* signatures.
-
  * tpm2\_send: supports sending and receiving more than 1 command and response buffer.
 
  * tss2\_\*:
