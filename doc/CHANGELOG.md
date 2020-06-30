@@ -31,6 +31,10 @@
 
  * tpm2\_readpublic: add qualified name output as -q.
 
+ * tpm2\_rsaencrypt: fix OAEP RSA encryption failing to to invalid hash selection.
+
+ * tpm2\_rsadecrypt: fix OAEP RSA decryption failing to to invalid hash selection.
+
  * tpm2\_print:
    - Support printing TPM2B\_PUBLIC data structures.
    - Support printing TPMT\_PUBLIC data structures.
