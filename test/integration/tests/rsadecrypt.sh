@@ -86,13 +86,7 @@ tpm2 rsadecrypt -Q -c $file_rsadecrypt_key_ctx -l label.dat -p foo \
 tpm2 rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data \
 -s oaep < $file_input_data
 
-trap - ERR
 tpm2 rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o \
 $file_rsa_de_output_data -s oaep $file_rsa_en_output_data
-if [ $? -eq 0 ]; then
-    echo "tpm2 rsadecrypt should fail with 'hash algorithm not supported or not
-    appropriate'"
-    exit 1
-fi
 
 exit 0
