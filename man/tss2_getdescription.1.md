@@ -10,6 +10,8 @@
 
 **tss2_getdescription** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_getdescription**(1) - This command returns the previously stored application data for an object. If no

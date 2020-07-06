@@ -10,6 +10,8 @@
 
 **tss2_policyexport** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_policyexport**(1) - This commands exports a policy associated with a key

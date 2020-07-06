@@ -10,6 +10,8 @@
 
 **tss2_getappdata** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_getappdata**(1) - This command returns the previously stored application data for an object.
@@ -24,7 +26,7 @@ These are the available options:
 
   * **-p**, **\--path**=_STRING_:
 
-    Path of the object for which the appData will be loaded.
+    Path of the object for which the application data will be loaded.
 
   * **-o**, **\--appData**=_FILENAME_ or _-_ (for stdout):
 

@@ -10,6 +10,8 @@
 
 **tss2_setcertificate** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_setcertificate**(1) - This command associates an x509 certificate in PEM encoding into the path of a key.

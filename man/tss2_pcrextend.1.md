@@ -10,6 +10,8 @@
 
 **tss2_pcrextend** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_pcrextend**(1) - This command extends the data into the PCR listed. The parameter logData is extended into the PCR log. If the logData is NULL, only the PCR extend takes place. All PCRs currently active in the TPM are extended.

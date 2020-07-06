@@ -10,9 +10,15 @@
 
 **tss2_createkey** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
-**tss2_createkey**(1) - This commands creates a key inside the TPM and stores it in the FAPI metadata store and if requested persistently inside the TPM.
+**tss2_createkey**(1) - This commands creates a key inside the TPM and stores it
+in the FAPI metadata store and if requested
+persistently inside the TPM. Depending on the  specified key type, cryptographic
+algorithms and parameters for the created key are determined by the
+corresponding cryptographic profile (cf., **fapi-profile(5)**).
 
 # OPTIONS
 
@@ -53,7 +59,11 @@ These are the available options:
 
     The new UTF-8 password. Optional parameter. If it is neglected then the user
     is queried interactively for a password. To set no password, this option
-    should be used with the empty string ("").
+    should be used with the empty string (""). The maximum password size is
+    determined by the digest size of the chosen name hash algorithm in the
+    cryptographic profile (cf., **fapi-profile(5)**). For example, choosing
+    SHA256 as hash algorithm, allows passwords of a maximum size of 32
+    characters.
 
 [common tss2 options](common/tss2-options.md)
 

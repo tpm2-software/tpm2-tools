@@ -10,10 +10,13 @@
 
 **tss2_encrypt** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_encrypt**(1) - This command encrypts the provided data for a target key
-using the TPM encryption schemes as specified in the crypto profile.
+using the TPM encryption schemes as specified in the cryptographic profile
+(cf., **fapi-profile(5)**).
 
 # OPTIONS
 

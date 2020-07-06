@@ -10,9 +10,11 @@
 
 **tss2_nvsetbits** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
-**tss2_nvsetbits**(1) - This command sets bits in an NV Index that was created as a bit field. Any number of bits from 0 to 64 may be SET. The contents of bitmap are ORed with the current contents of the NV Index.
+**tss2_nvsetbits**(1) - This command sets bits in an NV Index that was created as a bit field. Any number of bits from 0 to 64 may be set. The contents of bitmap are ORed with the current contents of the NV Index.
 
 # OPTIONS
 

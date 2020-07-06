@@ -10,17 +10,22 @@
 
 **tss2_provision** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_provision**(1) - This command provisions a FAPI instance and its associated TPM. The steps taken are:
 
   * Retrieve the EK template, nonce and certificate, verify that they match the TPM's EK and store them in the key store.
   * Set the authValues and policies for the Owner (Storage Hierarchy), the Privacy Administrator (Endorsement Hierarchy) and the lockout authority.
-  * Scan the TPM's nv indices and create entries in the metadata store. This operation MAY use a heuristic to guess the originating programs for nv indices found and name the entries accordingly.
-  * Create the SRK (storage primary key) inside the TPM and make it persistent if required by the FAPI configuration and stored its metadata in the system-wide metadata store. Note that the SRK will not have an authorization value associated.
+  * Scan the TPM's nv indices and create entries in the FAPI metadata store. This operation MAY use a heuristic to guess the originating programs for nv indices found and name the entries accordingly.
+  * Create the SRK (storage primary key) inside the TPM and make it persistent if required by the cryptographic profile (cf., **fapi-profile(5)**) and store its metadata in the system-wide FAPI metadata store. Note that the SRK will not have an authorization value associated.
 
-If an authorization value is associated with the storage hierarchy, it is highly RECOMMENDED that the SRK
+If an authorization value is associated with the storage hierarchy, it is highly recommended that the SRK
 without authorization value is made persistent.
+
+The paths of the different metadata storages for keys and nv indices are configured
+in the FAPI configuration file (cf., **fapi-config(5)**).
 
 # OPTIONS
 

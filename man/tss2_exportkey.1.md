@@ -10,10 +10,13 @@
 
 **tss2_exportkey** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_exportkey**(1) - This command will duplicate a key and encrypt it using the public key of a new parent. The
-exported data will contain the re-wrapped key pointed to by the pathOfKeyToDuplicate and then the JSON encoded policy.
+exported data will contain the re-wrapped key pointed to by the pathOfKeyToDuplicate and then the JSON encoded policy. Encryption is done according to TPM encryption
+schemes specified in the cryptographic profile (cf., **fapi-profile(5)**).
 
 # OPTIONS
 

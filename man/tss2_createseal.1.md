@@ -10,9 +10,12 @@
 
 **tss2_createseal** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
-**tss2_createseal**(1) - This command creates a sealed object and stores it in the FAPI metadata store. If no data is provided (i.e. a NULL-pointer) then the TPM generates random data and fills the sealed object.
+**tss2_createseal**(1) - This command creates a sealed object and stores it in the FAPI metadata store. If no data is provided (i.e. a NULL-pointer) then the TPM generates random data and fills the sealed object. TPM signing schemes are used as specified in
+the cryptographic profile (cf., **fapi-profile(5)**).
 
 # OPTIONS
 
@@ -48,7 +51,11 @@ These are the available options:
 
     The new UTF-8 password. Optional parameter. If it is neglected then the user
     is queried interactively for a password. To set no password, this option
-    should be used with the empty string ("").
+    should be used with the empty string (""). The maximum password size is
+    determined by the digest size of the chosen name hash algorithm in the
+    cryptographic profile (cf., **fapi-profile(5)**). For example, choosing
+    SHA256 as hash algorithm, allows passwords of a maximum size of 32
+    characters.
 
   * **-i**, **\--data**=_FILENAME_ or _-_ (for stdin):
 
