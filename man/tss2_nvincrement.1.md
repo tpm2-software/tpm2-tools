@@ -10,6 +10,8 @@
 
 **tss2_nvincrement** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_nvincrement**(1) - This command increments by 1 an NV index that is of type counter.

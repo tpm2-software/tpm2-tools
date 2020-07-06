@@ -9,6 +9,8 @@
 
 **tss2_getrandom** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_getrandom**(1) - This command uses the TPM to create an array of random bytes.

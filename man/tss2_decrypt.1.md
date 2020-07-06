@@ -10,9 +10,13 @@
 
 **tss2_decrypt** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
-**tss2_decrypt**(1) - This command decrypts data that was encrypted using tss2_encrypt.
+**tss2_decrypt**(1) - This command decrypts data that was encrypted using tss2_encrypt
+using the TPM decryption schemes as specified in the cryptographic profile
+(cf., **fapi-profile(5)**).
 
 
 # OPTIONS

@@ -10,9 +10,13 @@
 
 **tss2_pcrread** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
-**tss2_pcrread**(1) - This command provides a PCRs value and corresponding Event log. The PCR bank to be used per PCR is defined in the cryptographic profile.
+**tss2_pcrread**(1) - This command provides a PCRs value and corresponding event
+log. The PCR bank to be used per PCR is defined in the cryptographic profile
+(cf., **fapi-profile(5)**).
 
 # OPTIONS
 

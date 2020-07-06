@@ -10,6 +10,8 @@
 
 **tss2_getinfo** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_getinfo**(1) - This command returns a UTF-8 string identifying the version of the FAPI, the TPM, configurations and other relevant information in a human readable format.

@@ -10,6 +10,8 @@
 
 **tss2_nvread** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_nvread**(1) - This command reads the entire data from an NV index of the TPM.

@@ -10,6 +10,8 @@
 
 **tss2_import** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_import**(1) - This command imports a JSON encoded policy or policy

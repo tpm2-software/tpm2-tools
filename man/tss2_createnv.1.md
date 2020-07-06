@@ -10,6 +10,8 @@
 
 **tss2_createnv** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_createnv**(1) - This command creates an NV index in the TPM.
@@ -62,7 +64,10 @@ These are the available options:
 
     The new UTF-8 password. Optional parameter. If it is neglected then the user
     is queried interactively for a password. To set no password, this option
-    should be used with the empty string ("").
+    should be used with the empty string (""). The maximum password size is
+    determined by the digest size of the chosen name hash algorithm in the
+    cryptographic profile (cf., **fapi-profile(5)**). For example, choosing
+    SHA256 as hash algorithm, allows passwords of a maximum size of 32 characters.
 
 [common tss2 options](common/tss2-options.md)
 

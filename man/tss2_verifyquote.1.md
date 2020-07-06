@@ -10,12 +10,16 @@
 
 **tss2_verifyquote** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_verifyquote**(1) - This command verifies that the data returned by a quote is valid. This includes
 
   * Reconstructing the quoteInfo's PCR values from the eventLog (if an eventLog was provided)
   * Verifying the quoteInfo using the signature and the publicKeyPath
+
+The used signature verification scheme is specified in the cryptographic profile (cf., **fapi-profile(5)**).
 
 An application using tss2_verifyquote() will further have to
 

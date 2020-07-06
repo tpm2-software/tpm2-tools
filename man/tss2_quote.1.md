@@ -10,9 +10,12 @@
 
 **tss2_quote** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
-**tss2_quote**(1) - This command performs an attestation using the TPM. The PCR bank for each provided PCR index is set in the cryptographic profile.
+**tss2_quote**(1) - This command performs an attestation using the TPM. The PCR bank for each provided PCR index and signing scheme are set in the cryptographic profile
+(cf., **fapi-profile(5)**).
 
 # OPTIONS
 

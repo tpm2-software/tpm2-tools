@@ -10,9 +10,13 @@
 
 **tss2_sign** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
-**tss2_sign**(1) - This command uses a key inside the TPM to sign a digest value.
+**tss2_sign**(1) - This command uses a key inside the TPM to sign a digest value
+using the TPM signing schemes as specified in the cryptographic profile
+(cf., **fapi-profile(5)**).
 
 # OPTIONS
 
@@ -25,7 +29,8 @@ These are the available options:
   * **-s**, **\--padding**=_STRING_:
 
     The padding scheme used. Possible values are "RSA_SSA", "RSA_PSS" (case insensitive). Optional parameter.
-    If omitted, the default padding specified in the crypto profile is used.
+    If omitted, the default padding specified in the cryptographic profile
+    (cf., **fapi-profile(5)**) is used.
 
   * **-c**, **\--certificate**=_FILENAME_ or _-_ (for stdout):
 

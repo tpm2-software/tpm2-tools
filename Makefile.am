@@ -518,6 +518,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[common tcti options\]/d' \
 	    -e '/\[common tss2 options\]/r $(top_srcdir)/man/common/tss2-options.md' \
 	    -e '/\[common tss2 options\]/d' \
+	    -e '/\[common fapi references\]/r $(top_srcdir)/man/common/tss2-fapi-references.md' \
+	    -e '/\[common fapi references\]/d' \
 	    -e '/\[authorization formatting\]/r $(top_srcdir)/man/common/authorizations.md' \
 	    -e '/\[authorization formatting\]/d' \
 	    -e '/\[context object format\]/r $(top_srcdir)/man/common/ctxobj.md' \

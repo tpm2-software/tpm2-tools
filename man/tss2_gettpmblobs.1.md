@@ -10,6 +10,8 @@
 
 **tss2_gettpmblobs** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_gettpmblobs**(1) - This command returns the public and private blobs of an object, such that they could be loaded by a low-level API (e.g. ESAPI). It also returns the policy associated with these blobs in JSON format.

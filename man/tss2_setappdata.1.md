@@ -10,6 +10,8 @@
 
 **tss2_setappdata** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_setappdata**(1) - This command allows an application to associate an arbitrary data blob with a given object. The data is stored and can be returned with tss2_getappdata. Previously stored data is overwritten by this function. If empty data is passed in, the stored data is deleted.

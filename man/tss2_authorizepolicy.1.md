@@ -10,9 +10,11 @@
 
 **tss2_authorizepolicy** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
-**tss2_authorizepolicy**(1) - This command signs a given policy with a given key such that the policy can be referenced from other policies that contain a corresponding PolicyAuthorize elements.
+**tss2_authorizepolicy**(1) - This command signs a given policy with a given key such that the policy can be referenced from other policies that contain a corresponding PolicyAuthorize elements. The signature is done using the TPM signing schemes as specified in the cryptographic profile (cf., **fapi-profile(5)**).
 
 # OPTIONS
 

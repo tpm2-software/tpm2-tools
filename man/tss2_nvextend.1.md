@@ -10,6 +10,8 @@
 
 **tss2_nvextend** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_nvextend**(1) - This command performs an extend operation on an NV index

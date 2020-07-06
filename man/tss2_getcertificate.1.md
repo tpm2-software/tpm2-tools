@@ -10,6 +10,8 @@
 
 **tss2_getcertificate** [*OPTIONS*]
 
+[common fapi references](common/tss2-fapi-references.md)
+
 # DESCRIPTION
 
 **tss2_getcertificate**(1) - This command returns the PEM encoded X.509 certificate associated with the key at path.
