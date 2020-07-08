@@ -54,13 +54,16 @@ the various known TCTI modules.
 # EXAMPLES
 
 ```bash
-echo "secretdata" > secret.data
+tpm2_createprimary -c primary.ctx -Q
 
-tpm2_unseal -c item.context -p abc123 -o out.dat
+tpm2_pcrread -Q -o pcr.bin sha256:0,1,2,3
 
-tpm2_unseal -c 0x81010001 -p "hex:123abc" -o out.dat
+tpm2_createpolicy -Q --policy-pcr -l sha256:0,1,2,3 -f pcr.bin -L pcr.policy
 
-tpm2_unseal -c item.context -p pcr:sha256:0,1=pcr.value -o out.dat
+echo 'secret' | tpm2_create -C primary.ctx -L pcr.policy -i-\
+-u seal.pub -r seal.priv -c seal.ctx -Q
+
+tpm2_unseal -c seal.ctx -p pcr:sha256:0,1,2,3
 ```
 
 [returns](common/returns.md)
