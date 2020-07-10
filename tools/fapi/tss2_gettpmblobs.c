@@ -91,6 +91,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             tpm2bPublicSize);
         if (r) {
             LOG_PERR ("open_write_and_close tpm2bPublic", r);
+            Fapi_Free (tpm2bPublic);
             return 1;
         }
     }
@@ -101,6 +102,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         if (r) {
             LOG_PERR ("open_write_and_close tpm2bPrivate", r);
             Fapi_Free (tpm2bPublic);
+            Fapi_Free (tpm2bPrivate);
             return 1;
         }
     }
@@ -112,6 +114,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             LOG_PERR ("open_write_and_close policy", r);
             Fapi_Free (tpm2bPublic);
             Fapi_Free (tpm2bPrivate);
+            Fapi_Free (policy);
             return 1;
         }
     }

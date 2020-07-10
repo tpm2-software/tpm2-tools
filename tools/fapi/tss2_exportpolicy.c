@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "tools/fapi/tss2_template.h"
 
 /* needed by tpm2_util and tpm2_option functions */
@@ -64,9 +65,11 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     /* Write returned data to file(s) */
-    r = open_write_and_close (ctx.jsonPolicy, ctx.overwrite, jsonPolicy, 0);
+    r = open_write_and_close (ctx.jsonPolicy, ctx.overwrite, jsonPolicy,
+        strlen(jsonPolicy));
     if (r){
         LOG_PERR ("open_write_and_close buffer", r);
+        Fapi_Free (jsonPolicy);
         return 1;
     }
 
