@@ -456,7 +456,13 @@ free_opts:
 
 int open_write_and_close(const char* path, bool overwrite, const void *output,
     size_t output_len) {
-    size_t length = output_len ? output_len : strlen (output);
+
+    size_t length = 0;
+
+    if (output_len){
+        length = output_len;
+    }
+
     if (!path || !strcmp(path, "-")) {
         if (-1 == write (STDOUT_FILENO, output, length)) {
             fprintf (stderr, "write(2) to stdout failed: %m\n");

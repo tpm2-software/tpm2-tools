@@ -85,6 +85,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     r = open_write_and_close (ctx.cipherText, ctx.overwrite, cipherText,
         cipherTextSize);
     if (r) {
+        Fapi_Free (cipherText);
         return 1;
     }
 

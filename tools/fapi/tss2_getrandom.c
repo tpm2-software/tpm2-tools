@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "tools/fapi/tss2_template.h"
 
@@ -77,11 +78,16 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
 
     if (ctx.hex) {
         char* str = malloc (ctx.numBytes*2 + 1);
+        if (!str) {
+            Fapi_Free (data);
+            LOG_ERR ("malloc(2) failed: %m\n");
+            return 1;
+        }
         for (size_t i = 0; i<ctx.numBytes; i++) {
             sprintf(str+i*2,"%02x",data[i]);
         }
         /* Write returned data to file(s) */
-        r = open_write_and_close (ctx.filename, ctx.overwrite, str, 0);
+        r = open_write_and_close (ctx.filename, ctx.overwrite, str, strlen(str));
         free(str);
     }
     else {
