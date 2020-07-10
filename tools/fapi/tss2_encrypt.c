@@ -90,6 +90,7 @@ int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         cipherTextSize);
     if (r) {
         LOG_PERR ("open_write_and_close cipherText", r);
+        Fapi_Free (cipherText);
         return 1;
     }
 
