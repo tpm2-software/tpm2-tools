@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "tools/fapi/tss2_template.h"
 
 /* Context struct used to store passed commandline parameters */
@@ -52,7 +53,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     /* Write returned data to file(s) */
-    r = open_write_and_close (ctx.info, ctx.overwrite, info, 0);
+    r = open_write_and_close (ctx.info, ctx.overwrite, info, strlen(info));
     if (r) {
         Fapi_Free (info);
         return 1;

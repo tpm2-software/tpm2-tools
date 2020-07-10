@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "tools/fapi/tss2_template.h"
 
 /* Context struct used to store passed command line parameters */
@@ -61,8 +62,10 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     /* Write returned data to file(s) */
-    r = open_write_and_close (ctx.jsonPolicy, ctx.overwrite, jsonPolicy, 0);
+    r = open_write_and_close (ctx.jsonPolicy, ctx.overwrite, jsonPolicy,
+        strlen(jsonPolicy));
     if (r){
+        Fapi_Free (jsonPolicy);
         return 1;
     }
 

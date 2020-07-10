@@ -81,6 +81,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Write returned data to file(s) */
     r = open_write_and_close (ctx.data, ctx.overwrite, data, data_len);
     if (r) {
+        Fapi_Free (data);
         return 1;
     }
 
@@ -89,12 +90,13 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             strlen(logData));
         if (r) {
             Fapi_Free (data);
+            Fapi_Free (logData);
             return 1;
         }
     }
 
-    Fapi_Free (logData);
     Fapi_Free (data);
+    Fapi_Free (logData);
 
     return 0;
 }
