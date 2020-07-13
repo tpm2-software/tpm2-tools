@@ -21,11 +21,95 @@ echo "{\"test\": \"myfile\"}" > $PCR_LOG_FILE_WRITE
 PCR_LOG_FILE_READ=$TEMP_DIR/pcr_log_read.file
 PCR_EVENT_DATA=$TEMP_DIR/pcr_event_data.file
 echo "0,1,2,3,4,5,6,7,8,9" > $PCR_EVENT_DATA
+EMPTY_FILE=$TEMP_DIR/empty.file
+BIG_FILE=$TEMP_DIR/big_file.file
+LOG_FILE=$TEMP_DIR/log.file
+touch $LOG_FILE
 
 tss2 provision
 
 tss2 pcrextend --pcr=16 --data=$PCR_EVENT_DATA \
     --logData=$PCR_LOG_FILE_WRITE
+
+echo "tss2 pcrextend with EMPTY_FILE data" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 pcrextend --pcr=16 --data=$EMPTY_FILE \
+    --logData=$PCR_LOG_FILE_WRITE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 pcrextend with BIG_FILE data" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 pcrextend --pcr=16 --data=$BIG_FILE \
+    --logData=$PCR_LOG_FILE_WRITE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 pcrextend with EMPTY_FILE logData" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 pcrextend --pcr=16 --data=$PCR_EVENT_DATA \
+    --logData=$EMPTY_FILE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1 } {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 pcrextend with BIG_FILE logData" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 pcrextend --pcr=16 --data=$PCR_EVENT_DATA \
+    --logData=$BIG_FILE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
 
 tss2 pcrread --pcrIndex=16 --pcrValue=$PCR_DIGEST_FILE \
     --pcrLog=$PCR_LOG_FILE_READ --force
