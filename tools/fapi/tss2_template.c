@@ -211,16 +211,20 @@ char *password = NULL;
 
 TSS2_RC auth_callback(
 #ifdef FAPI_3_0
-    __attribute__((unused)) char const *objectPath,
+    char const                   *objectPath,
     char const                   *description,
     char const                  **auth,
+    void                         *userdata)
+{
 #else /* FAPI_3_0 */
     __attribute__((unused)) FAPI_CONTEXT *fapi_context,
     char const                   *description,
     char                        **auth,
-#endif /* FAPI_3_0 */
-    __attribute__((unused)) void *userdata)
+    void                         *userdata)
 {
+    const char *objectPath = "object";
+#endif /* FAPI_3_0 */
+
     if (password != NULL) {
         free(password);
         password = NULL;
@@ -230,8 +234,12 @@ TSS2_RC auth_callback(
     tcgetattr (STDIN_FILENO, &old);
     new = old;
     new.c_lflag &= ~(ICANON | ECHO);
-    /* TODO: For new CLI-Break add use of objectPath here. */
-    printf ("Authorize object %s: ", description);
+
+    if (userdata) {
+        printf("%s:", (const char *) userdata);
+    } else {
+        printf ("Authorize %s \"%s\": ", objectPath, description);
+    }
     tcsetattr (STDIN_FILENO, TCSANOW, &new);
 
     size_t input_size = 0;
@@ -266,7 +274,7 @@ TSS2_RC auth_callback(
 
 TSS2_RC branch_callback(
 #ifdef FAPI_3_0
-    __attribute__((unused)) char const *objectPath,
+    char const                     *objectPath,
 #else /* FAPI_3_0 */
     __attribute__((unused)) FAPI_CONTEXT *fapi_context,
 #endif /* FAPI_3_0 */
@@ -276,8 +284,11 @@ TSS2_RC branch_callback(
     size_t                         *selectedBranch,
     __attribute__((unused)) void   *userData)
 {
-    /* TODO: For new CLI-Break add use of objectPath here. */
-    printf ("Select a branch for %s\n", description);
+#ifdef FAPI_3_0
+    printf ("Select a branch for %s \"%s\"\n", objectPath, description);
+#else /* FAPI_3_0 */
+    printf ("Select a branch for object \"%s\"\n", description);
+#endif /* FAPI_3_0 */
     for (size_t i = 0; i < numBranches; i++) {
         printf ("%4zu %s\n", i + 1, branchNames[i]);
     }
@@ -484,7 +495,7 @@ char* ask_for_password() {
 #endif /* FAPI_3_0 */
     char *ret_pw = NULL;
 
-    if (auth_callback (NULL, "Password", &pw, NULL))
+    if (auth_callback (NULL, NULL, &pw, "New password"))
         goto error;
 
 #ifdef FAPI_3_0
@@ -493,11 +504,11 @@ char* ask_for_password() {
         fprintf (stderr, "OOM\n");
         return NULL;
     }
-#else
+#else /* FAPI_3_0 */
     ret_pw = pw;
 #endif /* FAPI_3_0 */
 
-    if (auth_callback (NULL, "Retype password", &pw, NULL))
+    if (auth_callback (NULL, NULL, &pw, "Re-enter new password"))
         goto error;
 
     bool eq = !strcmp (ret_pw, pw);
