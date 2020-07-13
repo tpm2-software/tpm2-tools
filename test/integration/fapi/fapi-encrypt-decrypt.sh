@@ -23,6 +23,10 @@ DECRYPTED_FILE=$TEMP_DIR/decrypted.file
 PCR_POLICY_DATA=$TEMP_DIR/pol_pcr16_0.json
 POLICY_PCR=policy/pcr-policy
 TYPES="noDa,decrypt"
+EMPTY_FILE=$TEMP_DIR/empty.file
+BIG_FILE=$TEMP_DIR/big_file.file
+LOG_FILE=$TEMP_DIR/log.file
+touch $LOG_FILE
 
 echo -n "Secret Text!" > $PLAIN_TEXT
 
@@ -84,6 +88,30 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 0} {
     exit 1
 }
 EOF
+
+echo "tss2 encrypt with EMPTY_FILE" # Expected to succeed
+tss2 encrypt --keyPath=$KEY_PATH --plainText=$EMPTY_FILE \
+    --cipherText=$ENCRYPTED_FILE --force
+
+echo "tss2 encrypt with BIG_FILE" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 encrypt --keyPath=$KEY_PATH --plainText=$BIG_FILE \
+    --cipherText=$ENCRYPTED_FILE --force 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
 
 tss2 encrypt --keyPath=$KEY_PATH --plainText=$PLAIN_TEXT \
     --cipherText=$ENCRYPTED_FILE --force
@@ -165,6 +193,46 @@ tss2 decrypt --keyPath=$KEY_PATH --cipherText=$ENCRYPTED_FILE \
 
 if [ "`cat $DECRYPTED_FILE`" != "`cat $PLAIN_TEXT`" ]; then
   echo "Encryption/Decryption failed"
+  exit 1
+fi
+
+echo "tss2 decrypt with EMPTY_FILE" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 decrypt --keyPath=$KEY_PATH --cipherText=$EMPTY_FILE \
+    --plainText=$DECRYPTED_FILE --force 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 decrypt with BIG_FILE" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 decrypt --keyPath=$KEY_PATH --cipherText=$BIG_FILE \
+    --plainText=$DECRYPTED_FILE --force 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
   exit 1
 fi
 

@@ -40,10 +40,19 @@ cat > $WRITE_CERTIFICATE_FILE <<EOF
     -----END CERTIFICATE-----\n"
 EOF
 
+EMPTY_FILE=$TEMP_DIR/empty.file
+BIG_FILE=$TEMP_DIR/big_file.file
+
 tss2 provision
 
 tss2 createkey --path=$KEY_PATH --type="noDa, restricted, decrypt" \
     --authValue=""
+
+echo "tss2 setcertificate with EMPTY_FILE" # Expected to succeed
+tss2 setcertificate --path=$KEY_PATH --x509certData=$EMPTY_FILE
+
+echo "tss2 setcertificate with BIG_FILE" # Expected to succeed
+tss2 setcertificate --path=$KEY_PATH --x509certData=$BIG_FILE
 
 tss2 setcertificate --path=$KEY_PATH --x509certData=$WRITE_CERTIFICATE_FILE
 

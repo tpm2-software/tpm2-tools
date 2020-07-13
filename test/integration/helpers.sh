@@ -531,6 +531,10 @@ EOF
 
     export TSS2_FAPICONF=$tempdir/fapi_config.json
     export TEMP_DIR=$tempdir
+    dd if=/dev/zero of=$tempdir/big_file.file bs=1M count=10
+    touch $tempdir/empty.file
+
+    SANITIZER_FILTER="*"AddressSanitizer"*"
 
     PATH=${BUILDDIR}/tools/fapi:$PATH
 

@@ -18,6 +18,10 @@ PW=abc
 NV_PATH=/nv/Owner/myNVwrite
 DATA_WRITE_FILE=$TEMP_DIR/nv_write_data.file
 DATA_READ_FILE=$TEMP_DIR/nv_read_data.file
+EMPTY_FILE=$TEMP_DIR/empty.file
+BIG_FILE=$TEMP_DIR/big_file.file
+LOG_FILE=$TEMP_DIR/log.file
+touch $LOG_FILE
 
 tss2 provision
 
@@ -26,6 +30,28 @@ echo 1234567890123456789 > $DATA_WRITE_FILE
 tss2 createnv --path=$NV_PATH --type="noDa" --size=20 --authValue=""
 
 tss2 nvwrite --nvPath=$NV_PATH --data=$DATA_WRITE_FILE
+
+echo "tss2 nvwrite with EMPTY_FILE" # Expected to succeed
+tss2 nvwrite --nvPath=$NV_PATH --data=$EMPTY_FILE
+
+echo "tss2 nvwrite with BIG_FILE" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 nvwrite --nvPath=$NV_PATH --data=$BIG_FILE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
 
 tss2 nvread --nvPath=$NV_PATH --data=$DATA_READ_FILE --force
 

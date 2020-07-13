@@ -25,6 +25,12 @@ PCR_LOG=$TEMP_DIR/pcr.log
 printf "01234567890123456789" > $NONCE_FILE
 printf "01234567890123456789" > $PCR_LOG
 
+EMPTY_FILE=$TEMP_DIR/empty.file
+BIG_FILE=$TEMP_DIR/big_file.file
+
+LOG_FILE=$TEMP_DIR/log.file
+touch $LOG_FILE
+
 tss2 provision
 
 tss2 createkey --path=$KEY_PATH --type="noDa, restricted, sign" --authValue=""
@@ -33,12 +39,190 @@ tss2 quote --keyPath=$KEY_PATH --pcrList="16" --qualifyingData=$NONCE_FILE \
     --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG \
     --certificate=$CERTIFICATE_FILE --quoteInfo=$QUOTE_INFO --force
 
+echo "tss2 quote with EMPTY_FILE" # Expected to succeed
+tss2 quote --keyPath=$KEY_PATH --pcrList="16" \
+    --qualifyingData=$EMPTY_FILE --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG \
+    --certificate=$CERTIFICATE_FILE --quoteInfo=$QUOTE_INFO --force
+
+echo "tss2 quote with BIG_FILE" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 quote --keyPath=$KEY_PATH --pcrList=\"16\" \
+    --qualifyingData=$BIG_FILE --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG \
+    --certificate=$CERTIFICATE_FILE --quoteInfo=$QUOTE_INFO --force 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
 tss2 exportkey --pathOfKeyToDuplicate=$KEY_PATH --exportedData=$PUBLIC_QUOTE_KEY --force
 tss2 import --path="ext/myNewParent" --importData=$PUBLIC_QUOTE_KEY
 
 tss2 verifyquote --publicKeyPath="ext/myNewParent" \
     --qualifyingData=$NONCE_FILE --quoteInfo=$QUOTE_INFO \
     --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG
+
+echo "tss2 verifyquote with EMPTY_FILE qualifyingData" # Expected to succeed
+tss2 verifyquote --publicKeyPath="ext/myNewParent" \
+    --qualifyingData=$EMPTY_FILE --quoteInfo=$QUOTE_INFO \
+    --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG
+
+echo "tss2 verifyquote with BIG_FILE qualifyingData" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifyquote --publicKeyPath=\"ext/myNewParent\" \
+    --qualifyingData=$BIG_FILE --quoteInfo=$QUOTE_INFO \
+    --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 verifyquote with EMPTY_FILE signature" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifyquote --publicKeyPath=\"ext/myNewParent\" \
+    --qualifyingData=$NONCE_FILE --quoteInfo=$QUOTE_INFO \
+    --signature=$EMPTY_FILE --pcrLog=$PCR_LOG 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 verifyquote with BIG_FILE signature" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifyquote --publicKeyPath=\"ext/myNewParent\" \
+    --qualifyingData=$NONCE_FILE --quoteInfo=$QUOTE_INFO \
+    --signature=$BIG_FILE --pcrLog=$PCR_LOG 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 verifyquote with EMPTY_FILE quoteInfo" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifyquote --publicKeyPath=\"ext/myNewParent\" \
+    --qualifyingData=$NONCE_FILE --quoteInfo=$EMPTY_FILE \
+    --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 verifyquote with BIG_FILE quoteInfo" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifyquote --publicKeyPath=\"ext/myNewParent\" \
+    --qualifyingData=$NONCE_FILE --quoteInfo=$BIG_FILE \
+    --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 verifyquote with EMPTY_FILE pcrLog" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifyquote --publicKeyPath=\"ext/myNewParent\" \
+    --qualifyingData=$NONCE_FILE --quoteInfo=$QUOTE_INFO \
+    --signature=$SIGNATURE_FILE --pcrLog=$EMPTY_FILE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 verifyquote with BIG_FILE pcrLog" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifyquote --publicKeyPath=\"ext/myNewParent\" \
+    --qualifyingData=$NONCE_FILE --quoteInfo=$QUOTE_INFO \
+    --signature=$SIGNATURE_FILE --pcrLog=$BIG_FILE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
 
 expect <<EOF
 # Try with missing keyPath

@@ -20,10 +20,19 @@ APP_DATA_FILE=$TEMP_DIR/app_data.file
 
 echo -n "abcdef" > $APP_DATA_SET
 
+EMPTY_FILE=$TEMP_DIR/empty.file
+BIG_FILE=$TEMP_DIR/big_file.file
+
 tss2 provision
 
 tss2 createkey --path=$KEY_PATH --type="noDa, restricted, decrypt" \
     --authValue=""
+
+echo "tss2 setappdata with EMPTY_FILE" # Expected to succeed
+tss2 setappdata --path=$KEY_PATH --appData=$EMPTY_FILE
+
+echo "tss2 setappdata with BIG_FILE" # Expected to succeed
+tss2 setappdata --path=$KEY_PATH --appData=$BIG_FILE
 
 tss2 setappdata --path=$KEY_PATH --appData=$APP_DATA_SET
 

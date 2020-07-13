@@ -20,6 +20,11 @@ SIGNATURE_FILE=$TEMP_DIR/signature.file
 PUBLIC_KEY_FILE=$TEMP_DIR/public_key.file
 IMPORTED_KEY_NAME="importedPubKey"
 PUB_KEY_DIR="ext"
+EMPTY_FILE=$TEMP_DIR/empty.file
+BIG_FILE=$TEMP_DIR/big_file.file
+
+LOG_FILE=$TEMP_DIR/log.file
+touch $LOG_FILE
 
 tss2 provision
 echo -n "01234567890123456789" > $DIGEST_FILE
@@ -36,6 +41,86 @@ fi
 tss2 import --path=$IMPORTED_KEY_NAME --importData=$PUBLIC_KEY_FILE
 tss2 verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
     --digest=$DIGEST_FILE --signature=$SIGNATURE_FILE
+
+echo "tss2 verifysignature with EMPTY_FILE digest" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
+    --digest=$EMPTY_FILE --signature=$SIGNATURE_FILE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 verifysignature with BIG_FILE digest" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
+    --digest=$BIG_FILE --signature=$SIGNATURE_FILE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 verifysignature with EMPTY_FILE signature" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
+    --digest=$DIGEST_FILE --signature=$EMPTY_FILE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
+
+echo "tss2 verifysignature with BIG_FILE signature" # Expected to fail
+expect <<EOF
+spawn sh -c "tss2 verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
+    --digest=$DIGEST_FILE --signature=$BIG_FILE 2> $LOG_FILE"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
+    set file [open $LOG_FILE r]
+    set log [read \$file]
+    close $file
+    send_user "[lindex \$log]\n"
+    exit 1
+}
+EOF
+
+if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
+  echo "Error: AddressSanitizer triggered."
+  cat $LOG_FILE
+  exit 1
+fi
 
 # Try without certificate
 if [ "$CRYPTO_PROFILE" = "RSA" ]; then
