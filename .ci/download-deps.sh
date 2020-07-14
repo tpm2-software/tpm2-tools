@@ -7,6 +7,15 @@ function get_deps() {
 	ABRMD_VERSION=2.3.1
 
 	echo "pwd starting: `pwd`"
+	if [ "$TSS_VERSION" = "2.4.0" ]; then
+		if [ "$DOCKER_TAG" = "fedora-30" ]; then
+			yum -y install libgcrypt-devel
+		elif [ "$DOCKER_TAG" = "opensuse-leap" ]; then
+			zypper -n in libgcrypt-devel
+		elif [ "$DOCKER_TAG" = "ubuntu-20.04" -o "$DOCKER_TAG" = "ubuntu-18.04" ]; then
+			apt-get -y install libgcrypt20-dev
+		fi
+	fi
 	pushd "$1"
 	echo "pwd clone tss: `pwd`"
 	if [ ! -d tpm2-tss ]; then
