@@ -13,7 +13,7 @@ task:
     - pkg update -f
     - pkg upgrade -y
     - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive e2fsprogs-libuuid py37-yaml expect
-    - pkg install -y automake glib dbus dbus-glib cmocka wget git libgcrypt openssl json-c vim
+    - pkg install -y automake glib dbus dbus-glib cmocka wget git openssl json-c vim
     - wget --quiet --show-progress --progress=dot:giga "https://downloads.sourceforge.net/project/ibmswtpm2/$ibmtpm_name.tar.gz"
     - shasum -a256 $ibmtpm_name.tar.gz | grep ^a8e874e7a1ae13a1290d7679d846281f72d0eb6a5e4cfbafca5297dbf4e29ea3
     - mkdir -p $ibmtpm_name
