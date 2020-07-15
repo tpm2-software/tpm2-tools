@@ -23,6 +23,8 @@
 
  * tss2_*: tss2_setappdata now reads from file or stdin allowing to store also binary data
 
+ * tss2_*: Memory leaks are fixed in cases when a returned empty non-char output value was passed to file output
+
 ### 4.2.1 - 2020-05-25
 
 * Fix missing handle maps for ESY3 handle breaks. See #1994.
