@@ -72,6 +72,7 @@
     - Fix autocompletion issue
     - Switch tss2\_\* to with-"="-style
     - Add size parameter to tss2_createseal
+    - References to the cryptographic profile (fapi-profile(5)) and config file (fapi-config(5)) man pages from all relevant tss2\_\* man pages
 
 ### 4.2 2020-04-08
 
