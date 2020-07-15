@@ -72,6 +72,7 @@
     - Fix autocompletion issue
     - Switch tss2\_\* to with-"="-style
     - Add size parameter to tss2_createseal
+    - Memory leaks are fixed in cases when a returned empty non-char output value was passed to file output
 
 ### 4.2 2020-04-08
 
