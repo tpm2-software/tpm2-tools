@@ -15,11 +15,35 @@ struct tpm2_policypcr_ctx {
     const char *raw_pcrs_file;
     TPML_PCR_SELECTION pcr_selection;
     const char *policy_out_path;
-    TPM2B_DIGEST *policy_digest;
+    TPM2B_DIGEST *raw_pcr_digest;
     tpm2_session *session;
 };
 
 static tpm2_policypcr_ctx ctx;
+
+static bool on_arg(int argc, char **argv) {
+
+    if ((ctx.raw_pcrs_file && argv[0]) || argc > 1) {
+        LOG_ERR("Specify either pcr-digest or pcr data, not both");
+        return false;
+    }
+
+    ctx.raw_pcr_digest = malloc(sizeof(TPM2B_DIGEST));
+    if (!ctx.raw_pcr_digest) {
+        LOG_ERR("oom");
+        return tool_rc_general_error;
+    }
+    int q;
+    ctx.raw_pcr_digest->size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
+    if ((q = tpm2_util_hex_to_byte_structure(argv[0], &ctx.raw_pcr_digest->size,
+            ctx.raw_pcr_digest->buffer)) != 0) {
+        free(ctx.raw_pcr_digest);
+        LOG_ERR("FAILED: %d", q);
+        return false;
+    }
+
+    return true;
+}
 
 static bool on_option(char key, char *value) {
 
@@ -55,7 +79,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("L:f:l:S:", ARRAY_LEN(topts), topts, on_option,
-    NULL, 0);
+    on_arg, 0);
 
     return *opts != NULL;
 }
@@ -71,7 +95,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     if (!ctx.pcr_selection.count) {
-        LOG_ERR("Must specify -L pcr selection list.");
+        LOG_ERR("Must specify -l pcr selection list.");
         option_fail = true;
     }
 
@@ -86,7 +110,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = tpm2_policy_build_pcr(ectx, ctx.session, ctx.raw_pcrs_file,
-            &ctx.pcr_selection);
+            &ctx.pcr_selection, ctx.raw_pcr_digest);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build pcr policy");
         return rc;
@@ -97,7 +121,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    free(ctx.policy_digest);
+    free(ctx.raw_pcr_digest);
     return tpm2_session_close(&ctx.session);
 }
 

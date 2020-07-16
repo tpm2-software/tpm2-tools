@@ -229,7 +229,7 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
         goto out;
     }
 
-    tmp_rc = tpm2_policy_build_pcr(ectx, s, raw_path, &pcrs);
+    tmp_rc = tpm2_policy_build_pcr(ectx, s, raw_path, &pcrs, NULL);
     if (tmp_rc != tool_rc_success) {
         tpm2_session_close(&s);
         rc = tmp_rc;

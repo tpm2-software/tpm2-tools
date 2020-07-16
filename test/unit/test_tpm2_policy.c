@@ -175,7 +175,7 @@ static void test_tpm2_policy_build_pcr_good(void **state) {
     bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections);
     assert_true(res);
 
-    rc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, NULL, &pcr_selections);
+    rc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, NULL, &pcr_selections, NULL);
     assert_int_equal(rc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
@@ -288,7 +288,8 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     assert_int_equal(trc, tool_rc_success);
     assert_non_null(s);
 
-    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path, &pcr_selections);
+    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path, &pcr_selections,
+        NULL);
     assert_int_equal(trc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
@@ -345,7 +346,8 @@ static void test_tpm2_policy_build_pcr_file_bad_size(void **state) {
     assert_int_equal(trc, tool_rc_success);
     assert_non_null(s);
 
-    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path, &pcr_selections);
+    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path, &pcr_selections,
+        NULL);
     tpm2_session_close(&s);
     assert_null(s);
     assert_int_equal(trc, tool_rc_general_error);
