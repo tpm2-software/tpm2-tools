@@ -80,7 +80,8 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
 }
 
 tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
-        const char *raw_pcrs_file, TPML_PCR_SELECTION *pcr_selections) {
+        const char *raw_pcrs_file, TPML_PCR_SELECTION *pcr_selections,
+        TPM2B_DIGEST *raw_pcr_digest) {
 
     TPML_DIGEST pcr_values = { .count = 0 };
 
@@ -88,6 +89,26 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
         LOG_ERR("No pcr selection data specified!");
         return tool_rc_general_error;
     }
+
+
+    TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+    TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(policy_session);
+    ESYS_TR handle = tpm2_session_get_handle(policy_session);
+
+    /*
+     * If digest of all PCRs is directly given, handle it here.
+     */
+    if (raw_pcr_digest &&
+    raw_pcr_digest->size != tpm2_alg_util_get_hash_size(auth_hash)) {
+        LOG_ERR("Specified PCR digest length not suitable with the policy session digest");
+        return tool_rc_general_error;
+    }
+    // Call the PolicyPCR command
+    if (raw_pcr_digest) {
+        return tpm2_policy_pcr(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, raw_pcr_digest, pcr_selections);
+    }
+
 
     bool result = evaluate_populate_pcr_digests(pcr_selections, raw_pcrs_file,
             &pcr_values);
@@ -139,9 +160,6 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
     }
 
     // Calculate hashes
-    TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(policy_session);
-
     result = tpm2_openssl_hash_pcr_values(auth_hash, &pcr_values, &pcr_digest);
     if (!result) {
         LOG_ERR("Could not hash pcr values");
@@ -149,8 +167,6 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
     }
 
     // Call the PolicyPCR command
-    ESYS_TR handle = tpm2_session_get_handle(policy_session);
-
     return tpm2_policy_pcr(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
             ESYS_TR_NONE, &pcr_digest, pcr_selections);
 }

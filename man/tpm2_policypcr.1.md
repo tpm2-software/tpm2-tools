@@ -14,7 +14,12 @@
 event creates a policy bound to specific PCR values and is useful within larger
 policies constructed using policyor and policyauthorize events. See
 **tpm2_policyor(1)** and **tpm2_policyauthorize(1)** respectively for their
-usages.
+usages. The PCR data factored into the policy can be specified in one of 3 ways:
+1. A file containing a concatenated list of PCR values as in the output from
+   **tpm2_pcrread**.
+2. Requiring the PCR values be read off the TPM by not specifying a PCR file
+   input.
+3. The digest of all the PCR values directly specified as an **argument**.
 
 # OPTIONS
 
@@ -35,6 +40,10 @@ usages.
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
+
+  * **ARGUMENT**:
+    The calculated digest of all PCR values specified as a hex byte stream.
+    Eg: `openssl dgst -sha256 -binary pcr.bin | xxd -p -c 32`
 
 ## References
 
