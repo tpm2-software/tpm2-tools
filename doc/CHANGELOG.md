@@ -37,6 +37,8 @@
 
  * tpm2\_createak: add qualified name output as -q.
 
+ * tpm2\_policypcr: add optional argument for specifying cumulative hash of PCR's.
+
  * tpm2\_readpublic: add qualified name output as -q.
 
  * tpm2\_rsaencrypt: fix OAEP RSA encryption failing to to invalid hash selection.
