@@ -39,6 +39,7 @@ struct tpm_getekcertificate_ctx {
     uint16_t rsa_cert_buffer_size;
     unsigned char *ecc_cert_buffer;
     uint16_t ecc_cert_buffer_size;
+    bool is_cert_raw;
     // EK certificate hosting particulars
     char *ek_server_addr;
     unsigned int SSL_NO_VERIFY;
@@ -586,7 +587,7 @@ static tool_rc process_output(void) {
      *  Convert Intel EK certificates as received in the URL safe variant of
      *  Base 64: https://tools.ietf.org/html/rfc4648#section-5 to PEM
      */
-    if (ctx.rsa_cert_buffer && ctx.is_intc_cert) {
+    if (ctx.rsa_cert_buffer && ctx.is_intc_cert && !ctx.is_cert_raw) {
         char *split = strstr((const char *)ctx.rsa_cert_buffer, "certificate");
         char *copy_buffer = base64_decode(&split, ctx.rsa_cert_buffer_size);
         ctx.rsa_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
@@ -599,7 +600,7 @@ static tool_rc process_output(void) {
         free(copy_buffer);
     }
 
-    if (ctx.ecc_cert_buffer && ctx.is_intc_cert) {
+    if (ctx.ecc_cert_buffer && ctx.is_intc_cert && !ctx.is_cert_raw) {
         char *split = strstr((const char *)ctx.ecc_cert_buffer, "certificate");
         char *copy_buffer = base64_decode(&split, ctx.ecc_cert_buffer_size);
         ctx.ecc_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
@@ -708,6 +709,9 @@ static bool on_option(char key, char *value) {
         ctx.is_tpm2_device_active = false;
         ctx.is_cert_on_nv = false;
         break;
+    case 0:
+        ctx.is_cert_raw = true;
+        break;
     }
     return true;
 }
@@ -720,6 +724,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "allow-unverified", no_argument,       NULL, 'X' },
         { "ek-public",        required_argument, NULL, 'u' },
         { "offline",          no_argument,       NULL, 'x' },
+        { "raw",              no_argument,       NULL,  0  },
     };
 
     *opts = tpm2_options_new("o:u:Xx", ARRAY_LEN(topts), topts, on_option,
