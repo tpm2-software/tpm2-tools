@@ -79,6 +79,11 @@ conditions dictating the certificate location lookup.
     mode. This forces the tool to not look for the EK certificates on the NV
     indices.
 
+  * **--raw**:
+
+    This flags the tool to output the EK certificate as is received from the
+    source: NV/ Web-Hosting.
+
   * **ARGUMENT** the command line argument specifies the URL address for the EK
     certificate portal. This forces the tool to not look for the EK certificates
     on the NV indices.
