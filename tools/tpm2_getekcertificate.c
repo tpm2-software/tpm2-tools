@@ -532,10 +532,87 @@ static tool_rc process_input(ESYS_CONTEXT *ectx) {
     return print_intel_ek_certificate_warning();
 }
 
+static char *base64_decode(char **split, unsigned int cert_length) {
+
+    *split += strlen("certficate\" : ");
+    char *final_string = NULL;
+    int outlen;
+    CURL *curl = curl_easy_init();
+    if (curl) {
+        char *output = curl_easy_unescape(curl, *split, cert_length, &outlen);
+        if (output) {
+            final_string = strdup(output);
+            curl_free(output);
+        }
+    }
+    curl_easy_cleanup(curl);
+    curl_global_cleanup();
+
+    if(final_string) {
+        size_t i;
+        for (i = 0; i < strlen(final_string); i++) {
+            final_string[i] = final_string[i] == '-' ? '+'  : final_string[i];
+            final_string[i] = final_string[i] == '_' ? '/'  : final_string[i];
+            final_string[i] = final_string[i] == '"' ? '\0' : final_string[i];
+            final_string[i] = final_string[i] == '}' ? '\0' : final_string[i];
+        }
+    }
+
+    return final_string;
+}
+
+#define PEM_BEGIN_CERT_LINE "\n-----BEGIN CERTIFICATE-----\n"
+#define PEM_END_CERT_LINE "\n-----END CERTIFICATE-----\n"
 static tool_rc process_output(void) {
 
-    bool retval = true;
+    /*
+     * Check if the cert is from INTC based on certificated data containing
+     * the EK public hash in addition to the certificate data.
+     * If so set the flag.
+     */
+    if (ctx.rsa_cert_buffer) {
+        ctx.is_intc_cert = ctx.is_intc_cert ? ctx.is_intc_cert :
+        !(strncmp((const char *)ctx.rsa_cert_buffer,
+            "{\"pubhash", strlen("{\"pubhash")));
+    }
 
+    if (ctx.ecc_cert_buffer) {
+        ctx.is_intc_cert = ctx.is_intc_cert ? ctx.is_intc_cert :
+        !(strncmp((const char *)ctx.ecc_cert_buffer,
+            "{\"pubhash", strlen("{\"pubhash")));
+    }
+
+    /*
+     *  Convert Intel EK certificates as received in the URL safe variant of
+     *  Base 64: https://tools.ietf.org/html/rfc4648#section-5 to PEM
+     */
+    if (ctx.rsa_cert_buffer && ctx.is_intc_cert) {
+        char *split = strstr((const char *)ctx.rsa_cert_buffer, "certificate");
+        char *copy_buffer = base64_decode(&split, ctx.rsa_cert_buffer_size);
+        ctx.rsa_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
+            strlen(copy_buffer) + strlen(PEM_END_CERT_LINE);
+        strcpy((char *)ctx.rsa_cert_buffer, PEM_BEGIN_CERT_LINE);
+        strcpy((char *)ctx.rsa_cert_buffer + strlen(PEM_BEGIN_CERT_LINE),
+            copy_buffer);
+        strcpy((char *)ctx.rsa_cert_buffer + strlen(PEM_BEGIN_CERT_LINE) +
+            strlen(copy_buffer), PEM_END_CERT_LINE);
+        free(copy_buffer);
+    }
+
+    if (ctx.ecc_cert_buffer && ctx.is_intc_cert) {
+        char *split = strstr((const char *)ctx.ecc_cert_buffer, "certificate");
+        char *copy_buffer = base64_decode(&split, ctx.ecc_cert_buffer_size);
+        ctx.ecc_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
+            strlen(copy_buffer) + strlen(PEM_END_CERT_LINE);
+        strcpy((char *)ctx.ecc_cert_buffer, PEM_BEGIN_CERT_LINE);
+        strcpy((char *)ctx.ecc_cert_buffer + strlen(PEM_BEGIN_CERT_LINE),
+            copy_buffer);
+        strcpy((char *)ctx.ecc_cert_buffer + strlen(PEM_BEGIN_CERT_LINE) +
+            strlen(copy_buffer), PEM_END_CERT_LINE);
+        free(copy_buffer);
+    }
+
+    bool retval = true;
     if (ctx.rsa_cert_buffer) {
         retval = files_write_bytes(
             ctx.ec_cert_file_handle_1 ? ctx.ec_cert_file_handle_1 : stdout,
