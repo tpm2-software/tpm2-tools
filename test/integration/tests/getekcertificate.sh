@@ -79,4 +79,43 @@ if [ "$(md5sum ecc_ek_cert.bin| awk '{ print $1 }')" != \
  exit 1
 fi
 
+# Retrieve EK certificates from NV indices
+RSA_EK_CERT_NV_INDEX=0x01C00002
+ECC_EK_CERT_NV_INDEX=0x01C0000A
+
+define_ek_cert_nv_index() {
+    file_size=`ls -l $1 | awk {'print $5'}`
+
+    tpm2 nvdefine $2 -C p -s $file_size \
+    -a 'ppwrite|ppread|ownerread|authread|no_da|platformcreate'
+
+    tpm2 nvwrite -C p -i $1 $2
+}
+
+## ECC only
+define_ek_cert_nv_index ecc_ek_cert.bin $ECC_EK_CERT_NV_INDEX
+
+tpm2 getekcertificate -o nv_ecc_ek_cert.bin
+
+diff nv_ecc_ek_cert.bin ecc_ek_cert.bin
+
+## RSA only
+tpm2 nvundefine -C p $ECC_EK_CERT_NV_INDEX
+
+define_ek_cert_nv_index rsa_ek_cert.bin $RSA_EK_CERT_NV_INDEX
+
+tpm2 getekcertificate -o nv_rsa_ek_cert.bin
+
+diff nv_rsa_ek_cert.bin rsa_ek_cert.bin
+
+## RSA & ECC
+
+define_ek_cert_nv_index ecc_ek_cert.bin $ECC_EK_CERT_NV_INDEX
+
+tpm2 getekcertificate -o nv_rsa_ek_cert.bin -o nv_ecc_ek_cert.bin
+
+diff nv_ecc_ek_cert.bin ecc_ek_cert.bin
+
+diff nv_rsa_ek_cert.bin rsa_ek_cert.bin
+
 exit 0
