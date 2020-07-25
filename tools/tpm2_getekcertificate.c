@@ -190,6 +190,14 @@ static char *base64_encode(const unsigned char* buffer)
     return final_string;
 }
 
+static size_t writecallback(void *contents, size_t size, size_t nitems,
+    char *CERT_BUFFER) {
+
+    strncpy(CERT_BUFFER, (const char *)contents, nitems * size);
+    ctx.rsa_cert_buffer_size = nitems * size;
+
+    return ctx.rsa_cert_buffer_size;
+}
 static bool retrieve_web_endorsement_certificate(char *b64h) {
 
     size_t len = 1 + strlen(b64h) + strlen(ctx.ek_server_addr);
@@ -248,18 +256,24 @@ static bool retrieve_web_endorsement_certificate(char *b64h) {
         goto out_easy_cleanup;
     }
 
+    rc = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writecallback);
+    if (rc != CURLE_OK) {
+        LOG_ERR("curl_easy_setopt for CURLOPT_WRITEFUNCTION failed: %s",
+                curl_easy_strerror(rc));
+        ret = false;
+        goto out_easy_cleanup;
+    }
     /*
-     * If an output file is specified, write to the file, else curl will use stdout:
-     * https://curl.haxx.se/libcurl/c/CURLOPT_WRITEDATA.html
+     * As only one cert is downloaded at a time, we can simply use
+     * rsa_cert_buffer for either RSA EK cert or ECC EK cert.
      */
-    if (ctx.ec_cert_file_handle_1) {
-        rc = curl_easy_setopt(curl, CURLOPT_WRITEDATA, ctx.ec_cert_file_handle_1);
-        if (rc != CURLE_OK) {
-            LOG_ERR("curl_easy_setopt for CURLOPT_WRITEDATA failed: %s",
-                    curl_easy_strerror(rc));
-            ret = false;
-            goto out_easy_cleanup;
-        }
+    ctx.rsa_cert_buffer = malloc(CURL_MAX_WRITE_SIZE);
+    rc = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)ctx.rsa_cert_buffer);
+    if (rc != CURLE_OK) {
+        LOG_ERR("curl_easy_setopt for CURLOPT_WRITEDATA failed: %s",
+                curl_easy_strerror(rc));
+        ret = false;
+        goto out_easy_cleanup;
     }
 
     rc = curl_easy_perform(curl);
