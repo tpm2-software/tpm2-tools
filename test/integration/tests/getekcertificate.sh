@@ -50,11 +50,10 @@ tpm2 getekcertificate -u test_rsa_ek.pub -x -X > stdout_rsa_ek_cert.bin
 cmp rsa_ek_cert.bin stdout_rsa_ek_cert.bin
 
 # Retrieved certificate should be valid
-if [ "$(md5sum rsa_ek_cert.bin| awk '{ print $1 }')" != \
-"56af9eb8a271bbf7ac41b780acd91ff5" ]; then
- echo "Failed: retrieving RSA endorsement key certificate"
- exit 1
-fi
+tpm2 loadexternal -C e  -u test_rsa_ek.pub -c rsa_key.ctx
+tpm2 readpublic -c rsa_key.ctx -f pem -o test_rsa_ek.pem
+openssl x509 -pubkey -in rsa_ek_cert.bin -noout -out test_ek.pem
+diff test_rsa_ek.pem test_ek.pem
 
 # Sample ECC ek public from a real platform
 echo "007a0023000b000300b20020837197674484b3f81a90cc8d46a5d724fd52
@@ -73,11 +72,10 @@ tpm2 getekcertificate -u test_ecc_ek.pub -x -X > stdout_ecc_ek_cert.bin
 cmp ecc_ek_cert.bin stdout_ecc_ek_cert.bin
 
 # Retrieved certificate should be valid
-if [ "$(md5sum ecc_ek_cert.bin| awk '{ print $1 }')" != \
-"48a7fdb9ad2eec6a71f67092c54770f9" ]; then
- echo "Failed: retrieving ecc endorsement key certificate"
- exit 1
-fi
+tpm2 loadexternal -C e  -u test_ecc_ek.pub -c ecc_key.ctx
+tpm2 readpublic -c ecc_key.ctx -f pem -o test_ecc_ek.pem
+openssl x509 -pubkey -in ecc_ek_cert.bin -noout -out test_ek.pem
+diff test_ecc_ek.pem test_ek.pem
 
 # Retrieve EK certificates from NV indices
 RSA_EK_CERT_NV_INDEX=0x01C00002
@@ -93,6 +91,8 @@ define_ek_cert_nv_index() {
 }
 
 ## ECC only INTC certificate from NV index
+tpm2 getekcertificate -u test_ecc_ek.pub -x -X -o ecc_ek_cert.bin --raw
+
 define_ek_cert_nv_index ecc_ek_cert.bin $ECC_EK_CERT_NV_INDEX
 
 tpm2 getekcertificate -o nv_ecc_ek_cert.pem
@@ -107,6 +107,8 @@ diff nv_ecc_ek_cert.der ecc_test.der
 
 ## RSA only INTC certificate from NV index
 tpm2 nvundefine -C p $ECC_EK_CERT_NV_INDEX
+
+tpm2 getekcertificate -u test_rsa_ek.pub -x -X -o rsa_ek_cert.bin --raw
 
 define_ek_cert_nv_index rsa_ek_cert.bin $RSA_EK_CERT_NV_INDEX
 
