@@ -3,10 +3,14 @@ source helpers.sh
 
 start_up
 
-setup_fapi
+CRYPTO_PROFILE="RSA"
+setup_fapi $CRYPTO_PROFILE
 
 function cleanup {
-    tss2 delete --path=/
+    # In case the test is skipped no key is created and a
+    # failure is expected here. Therefore, we need to pass a successful
+    # execution in any case
+    tss2 delete --path=/ && true
     shut_down
 }
 
@@ -23,6 +27,11 @@ TYPES="noDa,decrypt"
 echo -n "Secret Text!" > $PLAIN_TEXT
 
 set -x
+
+if [ "$CRYPTO_PROFILE" = "ECC" ]; then
+echo ECC currently not supported for encryption. Skipping test.
+exit 077
+fi
 
 tss2 provision
 

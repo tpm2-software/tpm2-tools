@@ -4,7 +4,8 @@ source helpers.sh
 
 start_up
 
-setup_fapi
+CRYPTO_PROFILE="RSA"
+setup_fapi $CRYPTO_PROFILE
 
 function cleanup {
     # Since clean up should already been done during normal run of the test, a

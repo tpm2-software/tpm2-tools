@@ -14,6 +14,18 @@ src_listvar () {
     echo ""
 }
 
+# duplicate fapi tests with ecc
+duplicate () {
+    basedir=$1
+    suffix=$2
+
+    find "${basedir}" \( -iname "${suffix}" ! -iname "*ecc.sh" \) | while read fname; do
+      cp $fname ${fname%.sh}_ecc.sh
+      sed -i -e 's/CRYPTO_PROFILE="RSA"/CRYPTO_PROFILE="ECC"/g' ${fname%.sh}_ecc.sh
+    done
+}
+
+
 VARS_FILE=src_vars.mk
 AUTORECONF=${AUTORECONF:-autoreconf}
 
@@ -25,6 +37,8 @@ echo "Generating file lists: ${VARS_FILE}"
 
   src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
   printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS)\n"
+
+  duplicate "test/integration/fapi" "*.sh"
 
   src_listvar "test/integration/fapi" "*.sh" "FAPI_TESTS"
   printf "ALL_FAPI_TESTS = \$(FAPI_TESTS)\n"

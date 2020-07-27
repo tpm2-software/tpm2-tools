@@ -4,7 +4,8 @@ source helpers.sh
 
 start_up
 
-setup_fapi
+CRYPTO_PROFILE="RSA"
+setup_fapi $CRYPTO_PROFILE
 
 function cleanup {
     tss2 delete --path=/
@@ -49,8 +50,13 @@ tss2 createkey --path=$POLICY_SIGN_KEY_PATH --type="noDa, sign" --authValue=""
 tss2 createkey --path=$SIGN_KEY_PATH --type="noDa, sign" \
     --policyPath=$AUTHORIZE_NV_POLICY  --authValue=""
 
+if [ "$CRYPTO_PROFILE" = "RSA" ]; then
 tss2 sign --keyPath=$SIGN_KEY_PATH --padding="RSA_PSS" --digest=$DIGEST_FILE \
     --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
+else
+tss2 sign --keyPath=$SIGN_KEY_PATH --digest=$DIGEST_FILE \
+    --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
+fi
 
 expect <<EOF
 # Try with missing nvPath
