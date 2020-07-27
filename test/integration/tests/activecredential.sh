@@ -47,9 +47,8 @@ test "$loaded_key_name_yaml" == "$loaded_key_name"
 tpm2 makecredential -Q -e ek.pub -s secret.data -n $loaded_key_name \
 -o mkcred.out
 
-TPM2_RH_ENDORSEMENT=0x4000000B
 tpm2 startauthsession --policy-session -S session.ctx
-tpm2 policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT
+tpm2 policysecret -S session.ctx -c e
 tpm2 activatecredential -Q -c ak.ctx -C 0x81010009 -i mkcred.out \
 -o actcred.out -p akpass -P"session:session.ctx"
 tpm2 flushcontext session.ctx
