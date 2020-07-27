@@ -4,7 +4,8 @@ source helpers.sh
 
 start_up
 
-setup_fapi
+CRYPTO_PROFILE="RSA"
+setup_fapi $CRYPTO_PROFILE
 
 function cleanup {
     # If this test is successful, no keys are created. Thus, command below will

@@ -4,7 +4,8 @@ source helpers.sh
 
 start_up
 
-setup_fapi
+CRYPTO_PROFILE="RSA"
+setup_fapi $CRYPTO_PROFILE
 
 function cleanup {
     tss2 delete --path=/
@@ -27,6 +28,7 @@ tss2 provision
 echo 0123456789012345678 > $DIGEST_FILE
 tss2 createkey --path=$KEY_PATH --type="noDa, sign" --authValue=$PW1
 
+if [ "$CRYPTO_PROFILE" = "RSA" ]; then
 expect <<EOF
 # Try interactive prompt
 spawn tss2 sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
@@ -39,6 +41,20 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 0} {
     exit 1
 }
 EOF
+else
+expect <<EOF
+# Try interactive prompt
+spawn tss2 sign --keyPath=$KEY_PATH --digest=$DIGEST_FILE \
+    --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
+expect "Authorize object: "
+send "$PW1\r"
+set ret [wait]
+if {[lindex \$ret 2] || [lindex \$ret 3] != 0} {
+    send_user "Using interactive prompt has failed\n"
+    exit 1
+}
+EOF
+fi
 
 expect <<EOF
 # Try interactive prompt with 2 different passwords
@@ -76,6 +92,7 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 0} {
 }
 EOF
 
+if [ "$CRYPTO_PROFILE" = "RSA" ]; then
 expect <<EOF
 # Check if system asks for auth value
 spawn tss2 sign --keyPath=$KEY_PATH --padding=$PADDINGS --digest=$DIGEST_FILE \
@@ -94,5 +111,25 @@ expect {
         exit 1
     }
 EOF
+else
+expect <<EOF
+# Check if system asks for auth value
+spawn tss2 sign --keyPath=$KEY_PATH --digest=$DIGEST_FILE \
+    --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE --force
+expect {
+    "Authorize object: " {
+    } eof {
+        send_user "The system has not asked for password\n"
+        exit 1
+    }
+    }
+    send "$PW2\r"
+    set ret [wait]
+    if {[lindex \$ret 2] || [lindex \$ret 3]} {
+        send_user "Passing password has failed\n"
+        exit 1
+    }
+EOF
+fi
 
 exit 0

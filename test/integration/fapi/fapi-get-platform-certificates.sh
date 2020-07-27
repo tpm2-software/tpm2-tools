@@ -4,7 +4,8 @@ source helpers.sh
 
 start_up
 
-setup_fapi
+CRYPTO_PROFILE="RSA"
+setup_fapi $CRYPTO_PROFILE
 
 PATH=${BUILDDIR}/tools/fapi:$PATH
 
