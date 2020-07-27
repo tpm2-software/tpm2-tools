@@ -4,7 +4,8 @@ source helpers.sh
 
 start_up
 
-setup_fapi
+CRYPTO_PROFILE="RSA"
+setup_fapi $CRYPTO_PROFILE
 
 function cleanup {
     tss2 delete --path=/
@@ -41,9 +42,13 @@ tss2 authorizepolicy --keyPath=$POLICY_SIGN_KEY_PATH --policyPath=$POLICY_PCR \
 tss2 createkey --path=$KEY_PATH --type="noDa, sign" \
     --policyPath=$POLICY_AUTHORIZE --authValue=""
 
-tss2 sign --keyPath=$KEY_PATH --padding="RSA_PSS" --digest=$DIGEST_FILE \
-    --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
-
+if [ "$CRYPTO_PROFILE" = "RSA" ]; then
+    tss2 sign --keyPath=$KEY_PATH --padding="RSA_PSS" --digest=$DIGEST_FILE \
+        --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
+else
+    tss2 sign --keyPath=$KEY_PATH --digest=$DIGEST_FILE \
+        --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
+fi
 
 expect <<EOF
 # Try with missing policyPath

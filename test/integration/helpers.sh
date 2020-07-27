@@ -504,7 +504,14 @@ function setup_fapi() {
     KEYSTORE_USER=keystore_user
     KEYSTORE_SYSTEM=keystore_system
     LOG_DIR=log
-    PROFILE_NAME=P_RSA
+    PROFILE_NAME_ECC=P_ECCP256SHA256
+    PROFILE_NAME_RSA=P_RSA2048SHA256
+
+    if [ "$1" = "ECC" ]; then
+        PROFILE_NAME=$PROFILE_NAME_ECC
+    else
+        PROFILE_NAME=$PROFILE_NAME_RSA
+    fi
 
     mkdir -p $tempdir/$KEYSTORE_USER/policy $tempdir/$KEYSTORE_SYSTEM/policy \
         $tempdir/$LOG_DIR
@@ -527,7 +534,7 @@ EOF
 
     PATH=${BUILDDIR}/tools/fapi:$PATH
 
-    setup_profile $tempdir
+    setup_profiles $tempdir
     setup_policies $tempdir
     resetPCR16
 
@@ -538,21 +545,15 @@ function resetPCR16(){
     tpm2 pcrreset 16
 }
 
-function setup_profile() {
-# Setup Profile
-cat > $tempdir/${PROFILE_NAME}.json <<EOF
+function setup_profiles() {
+# Setup Profiles
+cat > $tempdir/${PROFILE_NAME_RSA}.json <<EOF
 {
     "type": "TPM2_ALG_RSA",
     "nameAlg":"TPM2_ALG_SHA256",
-    "srk_template": "system,restricted,decrypt",
-    "srk_persistent": 0,
+    "srk_template": "system,restricted,decrypt,0x81000001",
+    "srk_persistent": 1,
     "ek_template":  "system,restricted,decrypt",
-    "ecc_signing_scheme": {
-        "scheme":"TPM2_ALG_ECDSA",
-        "details":{
-            "hashAlg":"TPM2_ALG_SHA256"
-        },
-    },
     "rsa_signing_scheme": {
         "scheme":"TPM2_ALG_RSAPSS",
         "details":{
@@ -574,16 +575,74 @@ cat > $tempdir/${PROFILE_NAME}.json <<EOF
     "sym_block_size": 16,
     "pcr_selection": [
         { "hash": "TPM2_ALG_SHA1",
-          "pcrSelect": [ 9, 15, 13 ]
+          "pcrSelect": [ ]
         },
         { "hash": "TPM2_ALG_SHA256",
-          "pcrSelect": [ 8, 16, 14 ]
+          "pcrSelect": [ 8, 9 , 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 ]
         }
     ],
     "exponent": 0,
-    "keyBits": 2048
+    "keyBits": 2048,
+    "session_hash_alg": "TPM2_ALG_SHA256",
+    "session_symmetric":{
+        "algorithm":"TPM2_ALG_AES",
+        "keyBits":"128",
+        "mode":"TPM2_ALG_CFB"
+    },
+    "ek_policy": {
+        "description": "Endorsement hierarchy used for policy secret.",
+        "policy":[
+            {
+                "type":"POLICYSECRET",
+                "objectName": "4000000b",
+            }
+        ]
+    }
+
 }
 EOF
+
+cat > $tempdir/${PROFILE_NAME_ECC}.json <<EOF
+{
+    "type": "TPM2_ALG_ECC",
+    "nameAlg":"TPM2_ALG_SHA256",
+    "srk_template": "system,restricted,decrypt,0x81000001",
+    "srk_persistent": 0,
+    "ek_template":  "system,restricted,decrypt",
+    "ecc_signing_scheme": {
+        "scheme":"TPM2_ALG_ECDSA",
+        "details":{
+            "hashAlg":"TPM2_ALG_SHA256"
+        },
+    },
+    "sym_mode":"TPM2_ALG_CFB",
+    "sym_parameters": {
+        "algorithm":"TPM2_ALG_AES",
+        "keyBits":"128",
+        "mode":"TPM2_ALG_CFB"
+    },
+    "sym_block_size": 16,
+    "pcr_selection": [
+       { "hash": "TPM2_ALG_SHA1",
+         "pcrSelect": [ ],
+       },
+       { "hash": "TPM2_ALG_SHA256",
+         "pcrSelect": [ 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 ]
+       }
+    ],
+    "curveID": "TPM2_ECC_NIST_P256",
+    "ek_policy": {
+        "description": "Endorsement hierarchy used for policy secret.",
+        "policy":[
+            {
+                "type":"POLICYSECRET",
+                "objectName": "4000000b",
+            }
+        ]
+    }
+}
+EOF
+
 }
 
 function setup_policies() {
