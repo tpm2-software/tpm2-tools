@@ -5,7 +5,6 @@ source helpers.sh
 handle_ek=0x81010009
 context_ak=ak.ctx
 handle_nv=0x1500018
-handle_hier=0x40000001
 ek_alg=rsa
 ak_alg=rsa
 digestAlg=sha256
@@ -40,7 +39,7 @@ cleanup() {
   tpm2 evictcontrol -Q -C o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
   tpm2 evictcontrol -Q -C o -c $context_ak -P "$ownerpw" 2>/dev/null || true
 
-  tpm2 nvundefine -Q $handle_nv -C $handle_hier \
+  tpm2 nvundefine -Q $handle_nv -C o \
   -P "$ownerpw" 2>/dev/null || true
 
   if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
@@ -79,9 +78,8 @@ loaded_key_name=`cat $output_ak_pub_name | xxd -p -c $file_size`
 tpm2 makecredential -Q -T none -e $output_ek_pub -s $file_input_data \
 -n $loaded_key_name -o $output_mkcredential
 
-TPM2_RH_ENDORSEMENT=0x4000000B
 tpm2 startauthsession --policy-session -S session.ctx
-tpm2 policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT $endorsepw
+tpm2 policysecret -S session.ctx -c e $endorsepw
 tpm2 activatecredential -Q -c $context_ak -C $handle_ek \
 -i $output_mkcredential -o $output_actcredential -p "$akpw" \
 -P "session:session.ctx"
@@ -105,9 +103,9 @@ tpm2 checkquote -Q -u $output_ak_pub_pem -m $output_quote -s $output_quotesig \
 
 
 # Save U key from verifier
-tpm2 nvdefine -Q $handle_nv -C $handle_hier -s 32 -a "ownerread|ownerwrite" \
+tpm2 nvdefine -Q $handle_nv -C o -s 32 -a "ownerread|ownerwrite" \
 -p "indexpass" -P "$ownerpw"
-tpm2 nvwrite -Q $handle_nv -C $handle_hier -P "$ownerpw" -i $file_input_key
-tpm2 nvread -Q $handle_nv -C $handle_hier -s 32 -P "$ownerpw"
+tpm2 nvwrite -Q $handle_nv -C o -P "$ownerpw" -i $file_input_key
+tpm2 nvread -Q $handle_nv -C o -s 32 -P "$ownerpw"
 
 exit 0

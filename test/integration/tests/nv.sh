@@ -17,8 +17,8 @@ file_policy=policy.data
 
 cleanup() {
   tpm2 nvundefine -Q   $nv_test_index -C o 2>/dev/null || true
-  tpm2 nvundefine -Q   0x1500016 -C 0x40000001 2>/dev/null || true
-  tpm2 nvundefine -Q   0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
+  tpm2 nvundefine -Q   0x1500016 -C o 2>/dev/null || true
+  tpm2 nvundefine -Q   0x1500015 -C o -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
   nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy nv.out cap.out yaml.out
@@ -98,7 +98,7 @@ tpm2 pcrread -Q -o $file_pcr_value $pcr_specification
 tpm2 createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value \
 -L $file_policy
 
-tpm2 nvdefine -Q   0x1500016 -C 0x40000001 -s 32 -L $file_policy \
+tpm2 nvdefine -Q   0x1500016 -C o -s 32 -L $file_policy \
 -a "policyread|policywrite"
 
 # Write with index authorization for now, since tpm2 nvwrite does not support
@@ -116,7 +116,7 @@ trap - ERR
 tpm2 nvread   0x1500016 -C 0x1500016 -P "index" 2>/dev/null
 trap onerror ERR
 
-tpm2 nvundefine -Q   0x1500016 -C 0x40000001
+tpm2 nvundefine -Q   0x1500016 -C o
 
 #
 # Test large writes
@@ -197,7 +197,7 @@ trap onerror ERR
 
 tpm2 changeauth -c o owner
 
-tpm2 nvdefine   0x1500015 -C 0x40000001 -s 32 \
+tpm2 nvdefine   0x1500015 -C o -s 32 \
   -a "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \
   -p "index" -P "owner"
 
@@ -210,8 +210,8 @@ tpm2 nvwrite -Q   0x1500015 -C 0x1500015 -P "index" -i nv.test_w
 tpm2 nvread -Q   0x1500015 -C 0x1500015 -P "index"
 
 # use owner password
-tpm2 nvwrite -Q   0x1500015 -C 0x40000001 -P "owner" -i nv.test_w
-tpm2 nvread -Q   0x1500015 -C 0x40000001 -P "owner"
+tpm2 nvwrite -Q   0x1500015 -C o -P "owner" -i nv.test_w
+tpm2 nvread -Q   0x1500015 -C o -P "owner"
 
 # Check a bad password fails
 trap - ERR
@@ -224,7 +224,7 @@ fi
 # Check using authorisation with tpm2 nvundefine
 trap onerror ERR
 
-tpm2 nvundefine   0x1500015 -C 0x40000001 -P "owner"
+tpm2 nvundefine   0x1500015 -C o -P "owner"
 
 # Check nv index can be specified simply as an offset
 tpm2 nvdefine -Q -C o -s 32 -a "ownerread|ownerwrite" 1 -P "owner"
