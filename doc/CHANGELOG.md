@@ -18,6 +18,9 @@
 
     - umask set to 0117 for all tools.
 
+ * tpm2_activatecredential:
+   - The secret data input can now be specified as stdin with **-s -** option.
+
  * tpm2_tools (all):
    - Set stdin/stdout to non-buffering.
 

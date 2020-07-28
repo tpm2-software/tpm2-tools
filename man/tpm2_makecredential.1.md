@@ -21,9 +21,9 @@ by using the **none** TCTI option.
 
     A TPM public key which was used to wrap the seed.
 
-  * **-s**, **\--secret**=_FILE_:
+  * **-s**, **\--secret**=_FILE_ or _STDIN_:
 
-    The secret which will be protected by the key derived from the random seed.
+    The secret which will be protected by the key derived from the random seed. It can be specified as a file or passed from stdin.
 
   * **-n**, **\--name**=_FILE_:
 
