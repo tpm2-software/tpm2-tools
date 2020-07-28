@@ -53,4 +53,6 @@ tpm2 activatecredential -Q -c ak.ctx -C 0x81010009 -i mkcred.out \
 -o actcred.out -p akpass -P"session:session.ctx"
 tpm2 flushcontext session.ctx
 
+diff actcred.out secret.data
+
 exit 0
