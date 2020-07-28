@@ -19,6 +19,7 @@ typedef struct tpm_makecred_ctx tpm_makecred_ctx;
 struct tpm_makecred_ctx {
     TPM2B_NAME object_name;
     char *out_file_path;
+    char *input_secret_data;
     TPM2B_PUBLIC public;
     TPM2B_DIGEST credential;
     struct {
@@ -208,11 +209,7 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 's':
-        ctx.credential.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
-        if (!files_load_bytes_from_path(value, ctx.credential.buffer,
-                &ctx.credential.size)) {
-            return false;
-        }
+        ctx.input_secret_data = strcmp("-", value) ? value : NULL;
         ctx.flags.s = 1;
         break;
     case 'n': {
@@ -250,13 +247,39 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
+static tool_rc process_input(void) {
+
+    if (!ctx.flags.s) {
+        LOG_ERR("Specify the secret either as a file or a '-' for stdin");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.flags.e || !ctx.flags.n || !ctx.flags.o) {
+        LOG_ERR("Expected mandatory options e, n, o.");
+        return tool_rc_option_error;
+    }
+
+    /*
+     * Maximum size of the allowed secret-data size  to fit in TPM2B_DIGEST
+     */
+    ctx.credential.size = TPM2_SHA512_DIGEST_SIZE;
+
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+        ctx.input_secret_data, &ctx.credential.size, ctx.credential.buffer);
+    if (!result) {
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
+}
+
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (!ctx.flags.e || !ctx.flags.n || !ctx.flags.o || !ctx.flags.s) {
-        LOG_ERR("Expected options e, n, o and s.");
-        return tool_rc_option_error;
+    tool_rc rc = process_input();
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     // Run it outside of a TPM
