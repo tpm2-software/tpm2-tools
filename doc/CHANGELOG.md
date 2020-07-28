@@ -21,6 +21,10 @@
  * tpm2_activatecredential:
    - The secret data input can now be specified as stdin with **-s -** option.
 
+   - The public key used for encryption can be specified as **-u** to make it
+     similar to rest of the tools specifying a public key. The old **-e** option
+     is retained for backwards compatibility.
+
  * tpm2_tools (all):
    - Set stdin/stdout to non-buffering.
 

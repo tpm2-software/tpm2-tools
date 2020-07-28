@@ -42,11 +42,11 @@ tpm2 createak -Q -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg \
 file_size=`ls -l $output_ak_pub_name | awk {'print $5'}`
 Loadkeyname=`cat $output_ak_pub_name | xxd -p -c $file_size`
 
-tpm2 makecredential -Q -e $output_ek_pub -s $file_input_data -n $Loadkeyname \
+tpm2 makecredential -Q -u $output_ek_pub -s $file_input_data -n $Loadkeyname \
 -o $output_mkcredential
 
 # use no tpm backend
-tpm2 makecredential -T none -Q -e $output_ek_pub -s $file_input_data \
+tpm2 makecredential -T none -Q -u $output_ek_pub -s $file_input_data \
 -n $Loadkeyname -o $output_mkcredential
 
 exit 0

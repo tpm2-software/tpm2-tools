@@ -19,7 +19,14 @@ by using the **none** TCTI option.
 
   * **-e**, **\--encryption-key**=_FILE_:
 
+    **DEPRECATED**, use **-u** or **--public** instead.
+
+  * **-u**, **\--public**=_FILE_:
+
     A TPM public key which was used to wrap the seed.
+    NOTE: This option is same as **-e** and is added to make it similar with
+    other tools specifying the public key. The old option is retained for
+    backwards compatibility.
 
   * **-s**, **\--secret**=_FILE_ or _STDIN_:
 
