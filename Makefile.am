@@ -101,6 +101,7 @@ tools_tpm2_SOURCES = \
 	$(tpm2_tools)
 
 tpm2_tools = \
+    tools/misc/tpm2_certifyX509certutil.c \
     tools/misc/tpm2_checkquote.c \
     tools/misc/tpm2_eventlog.c \
     tools/misc/tpm2_print.c \
@@ -355,6 +356,7 @@ if HAVE_MAN_PAGES
     dist_man1_MANS := \
     man/man1/tpm2_activatecredential.1 \
     man/man1/tpm2_certify.1 \
+    man/man1/tpm2_certifyX509certutil.1 \
     man/man1/tpm2_changeauth.1 \
     man/man1/tpm2_changeeps.1 \
     man/man1/tpm2_changepps.1 \
