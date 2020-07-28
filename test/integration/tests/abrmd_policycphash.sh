@@ -327,7 +327,7 @@ tpm2 readpublic -c prim.ctx -o prim.pub
 tpm2 create -C prim.ctx -u key.pub -r key.priv -c key.ctx -L authorized.policy
 tpm2 readpublic -c key.ctx -n key.name
 echo "plaintext" > plain.txt
-tpm2 makecredential -e prim.pub  -s plain.txt -n `xxd -p -c 34 key.name` \
+tpm2 makecredential -u prim.pub  -s plain.txt -n `xxd -p -c 34 key.name` \
 -o cred.secret
 tpm2 activatecredential -c key.ctx -C prim.ctx -i cred.secret -o act_cred.secret \
 --cphash cp.hash

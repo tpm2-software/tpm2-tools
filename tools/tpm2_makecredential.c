@@ -199,20 +199,35 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
 
 static bool on_option(char key, char *value) {
 
+    bool res;
     switch (key) {
-    case 'e': {
-        bool res = files_load_public(value, &ctx.public);
+    case 'u':
+        if (ctx.flags.e) {
+            LOG_ERR("Specify public key with **-u** or **-e**, not both");
+            return false;
+        }
+        res = files_load_public(value, &ctx.public);
         if (!res) {
             return false;
         }
         ctx.flags.e = 1;
-    }
+        break;
+    case 'e':
+        if (ctx.flags.e) {
+            LOG_ERR("Specify encryption key with **-u** or **-e**, not both");
+            return false;
+        }
+        res = files_load_public(value, &ctx.public);
+        if (!res) {
+            return false;
+        }
+        ctx.flags.e = 1;
         break;
     case 's':
         ctx.input_secret_data = strcmp("-", value) ? value : NULL;
         ctx.flags.s = 1;
         break;
-    case 'n': {
+    case 'n':
         ctx.object_name.size = BUFFER_SIZE(TPM2B_NAME, name);
         int q;
         if ((q = tpm2_util_hex_to_byte_structure(value, &ctx.object_name.size,
@@ -221,7 +236,6 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.n = 1;
-    }
         break;
     case 'o':
         ctx.out_file_path = value;
@@ -236,12 +250,13 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
       {"encryption-key", required_argument, NULL, 'e'},
+      {"public",         required_argument, NULL, 'u'},
       {"secret",         required_argument, NULL, 's'},
       {"name",           required_argument, NULL, 'n'},
       {"credential-blob",required_argument, NULL, 'o'},
     };
 
-    *opts = tpm2_options_new("e:s:n:o:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("u:e:s:n:o:", ARRAY_LEN(topts), topts, on_option,
         NULL, TPM2_OPTIONS_OPTIONAL_SAPI);
 
     return *opts != NULL;

@@ -75,7 +75,7 @@ tpm2 readpublic -Q -c $context_ak -o $output_ak_pub
 # Validate keys (registrar)
 file_size=`ls -l $output_ak_pub_name | awk {'print $5'}`
 loaded_key_name=`cat $output_ak_pub_name | xxd -p -c $file_size`
-tpm2 makecredential -Q -T none -e $output_ek_pub -s $file_input_data \
+tpm2 makecredential -Q -T none -u $output_ek_pub -s $file_input_data \
 -n $loaded_key_name -o $output_mkcredential
 
 tpm2 startauthsession --policy-session -S session.ctx
