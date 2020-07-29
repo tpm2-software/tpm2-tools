@@ -3,7 +3,7 @@
 
 function get_deps() {
 
-	TSS_VERSION=${TPM2_TSS_VERSION:-2.4.0}
+	TSS_VERSION=${TPM2_TSS_VERSION:-2.4.2}
 	ABRMD_VERSION=2.3.1
 
 	echo "pwd starting: `pwd`"
