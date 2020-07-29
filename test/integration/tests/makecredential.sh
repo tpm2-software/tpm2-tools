@@ -49,4 +49,10 @@ tpm2 makecredential -Q -u $output_ek_pub -s $file_input_data -n $Loadkeyname \
 tpm2 makecredential -T none -Q -u $output_ek_pub -s $file_input_data \
 -n $Loadkeyname -o $output_mkcredential
 
+# use no tpm backend and EK in PEM format
+tpm2 readpublic -c $handle_ek -o ek.pem -f pem -Q
+
+tpm2 makecredential -T none -Q -u ek.pem -G rsa -s $file_input_data \
+-n $Loadkeyname -o $output_mkcredential
+
 exit 0

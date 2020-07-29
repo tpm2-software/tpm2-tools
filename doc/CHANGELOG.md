@@ -25,6 +25,11 @@
      similar to rest of the tools specifying a public key. The old **-e** option
      is retained for backwards compatibility.
 
+   - Add option to specify the key algorithm when the input public key is in PEM
+     format using the new option **-G**, **--key-algorithm**. Can specify either
+     RSA/ECC. When this option is used, input public key is expected to be in
+     PEM format and the default TCG EK template is used for the key properties.
+
  * tpm2_tools (all):
    - Set stdin/stdout to non-buffering.
 

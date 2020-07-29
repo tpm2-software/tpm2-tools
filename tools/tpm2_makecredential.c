@@ -14,12 +14,14 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_identity_util.h"
 #include "tpm2_options.h"
+#include "tpm2_openssl.h"
 
 typedef struct tpm_makecred_ctx tpm_makecred_ctx;
 struct tpm_makecred_ctx {
     TPM2B_NAME object_name;
     char *out_file_path;
     char *input_secret_data;
+    char *public_key_path; /* path to the public portion of an object */
     TPM2B_PUBLIC public;
     TPM2B_DIGEST credential;
     struct {
@@ -28,6 +30,8 @@ struct tpm_makecred_ctx {
         UINT8 n :1;
         UINT8 o :1;
     } flags;
+
+    char *key_type; //type of key attempting to load, defaults to auto attempt
 };
 
 static tpm_makecred_ctx ctx = {
@@ -199,17 +203,13 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
 
 static bool on_option(char key, char *value) {
 
-    bool res;
     switch (key) {
     case 'u':
         if (ctx.flags.e) {
             LOG_ERR("Specify public key with **-u** or **-e**, not both");
             return false;
         }
-        res = files_load_public(value, &ctx.public);
-        if (!res) {
-            return false;
-        }
+        ctx.public_key_path = value;
         ctx.flags.e = 1;
         break;
     case 'e':
@@ -217,10 +217,7 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Specify encryption key with **-u** or **-e**, not both");
             return false;
         }
-        res = files_load_public(value, &ctx.public);
-        if (!res) {
-            return false;
-        }
+        ctx.public_key_path = value;
         ctx.flags.e = 1;
         break;
     case 's':
@@ -241,6 +238,9 @@ static bool on_option(char key, char *value) {
         ctx.out_file_path = value;
         ctx.flags.o = 1;
         break;
+    case 'G':
+        ctx.key_type = value;
+        break;
     }
 
     return true;
@@ -249,20 +249,96 @@ static bool on_option(char key, char *value) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      {"encryption-key", required_argument, NULL, 'e'},
-      {"public",         required_argument, NULL, 'u'},
-      {"secret",         required_argument, NULL, 's'},
-      {"name",           required_argument, NULL, 'n'},
-      {"credential-blob",required_argument, NULL, 'o'},
+      {"encryption-key",  required_argument, NULL, 'e'},
+      {"public",          required_argument, NULL, 'u'},
+      {"secret",          required_argument, NULL, 's'},
+      {"name",            required_argument, NULL, 'n'},
+      {"credential-blob", required_argument, NULL, 'o'},
+      { "key-algorithm",  required_argument, NULL, 'G'},
     };
 
-    *opts = tpm2_options_new("u:e:s:n:o:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("G:u:e:s:n:o:", ARRAY_LEN(topts), topts, on_option,
         NULL, TPM2_OPTIONS_OPTIONAL_SAPI);
 
     return *opts != NULL;
 }
 
+static void set_default_TCG_EK_template(TPMI_ALG_PUBLIC alg) {
+
+    switch (alg) {
+        case TPM2_ALG_RSA:
+            ctx.public.publicArea.parameters.rsaDetail.symmetric.algorithm =
+                    TPM2_ALG_AES;
+            ctx.public.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+            ctx.public.publicArea.parameters.rsaDetail.symmetric.mode.aes =
+                    TPM2_ALG_CFB;
+            ctx.public.publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
+            ctx.public.publicArea.parameters.rsaDetail.keyBits = 2048;
+            ctx.public.publicArea.parameters.rsaDetail.exponent = 0;
+            ctx.public.publicArea.unique.rsa.size = 256;
+            break;
+        case TPM2_ALG_ECC:
+            ctx.public.publicArea.parameters.eccDetail.symmetric.algorithm =
+                    TPM2_ALG_AES;
+            ctx.public.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
+            ctx.public.publicArea.parameters.eccDetail.symmetric.mode.sym =
+                    TPM2_ALG_CFB;
+            ctx.public.publicArea.parameters.eccDetail.scheme.scheme = TPM2_ALG_NULL;
+            ctx.public.publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
+            ctx.public.publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
+            ctx.public.publicArea.unique.ecc.x.size = 32;
+            ctx.public.publicArea.unique.ecc.y.size = 32;
+            break;
+    }
+
+    ctx.public.publicArea.objectAttributes =
+          TPMA_OBJECT_RESTRICTED  | TPMA_OBJECT_ADMINWITHPOLICY
+        | TPMA_OBJECT_DECRYPT     | TPMA_OBJECT_FIXEDTPM
+        | TPMA_OBJECT_FIXEDPARENT | TPMA_OBJECT_SENSITIVEDATAORIGIN;
+
+    static const TPM2B_DIGEST auth_policy = {
+        .size = 32,
+        .buffer = {
+            0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8, 0x1A, 0x90, 0xCC,
+            0x8D, 0x46, 0xA5, 0xD7, 0x24, 0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52,
+            0x0B, 0x64, 0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA
+        }
+    };
+    TPM2B_DIGEST *authp = &ctx.public.publicArea.authPolicy;
+    *authp = auth_policy;
+
+    ctx.public.publicArea.nameAlg = TPM2_ALG_SHA256;
+}
+
 static tool_rc process_input(void) {
+
+    TPMI_ALG_PUBLIC alg = TPM2_ALG_NULL;
+    if (ctx.key_type) {
+        LOG_WARN("Because **-G** is specified, assuming input encryption public key is in PEM format.");
+        alg = tpm2_alg_util_from_optarg(ctx.key_type,
+            tpm2_alg_util_flags_asymmetric);
+        if (alg == TPM2_ALG_ERROR ||
+           (alg != TPM2_ALG_RSA && alg != TPM2_ALG_ECC)) {
+            LOG_ERR("Unsupported key type, got: \"%s\"", ctx.key_type);
+            return tool_rc_general_error;
+        }
+    }
+
+    if (ctx.public_key_path) {
+        bool result = tpm2_openssl_load_public(ctx.public_key_path, alg,
+            &ctx.public);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+    }
+
+    /*
+     * Since it is a PEM we will fixate the key properties from TCG EK
+     * template since we had to choose "a template".
+     */
+    if (ctx.key_type) {
+        set_default_TCG_EK_template(alg);
+    }
 
     if (!ctx.flags.s) {
         LOG_ERR("Specify the secret either as a file or a '-' for stdin");
