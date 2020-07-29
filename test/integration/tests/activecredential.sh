@@ -44,8 +44,10 @@ loaded_key_name=`cat ak.name | xxd -p -c $file_size`
 
 test "$loaded_key_name_yaml" == "$loaded_key_name"
 
-echo "12345678" | tpm2 makecredential -Q -u ek.pub -s - -n $loaded_key_name \
--o mkcred.out
+tpm2 readpublic -c 0x81010009 -o ek.pem -f pem -Q
+
+echo "12345678" | tpm2 makecredential -Q -u ek.pem -s - -n $loaded_key_name \
+-o mkcred.out -G rsa
 
 tpm2 startauthsession --policy-session -S session.ctx
 tpm2 policysecret -S session.ctx -c e

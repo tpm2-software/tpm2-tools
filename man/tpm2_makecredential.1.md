@@ -41,6 +41,12 @@ by using the **none** TCTI option.
     The output file path, recording the two structures output by
     tpm2_makecredential function.
 
+  * **-G**, **\--key-algorithm**=_ALGORITHM_:
+
+    The key algorithm associated with TPM public key. Specify either RSA/ ECC.
+    When this option is used, input public key is expected to be in PEM format
+    and the default TCG EK template is used for the key properties.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
