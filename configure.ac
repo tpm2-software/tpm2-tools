@@ -175,6 +175,10 @@ AS_IF([test "x$enable_unit" != xno], [
     AS_IF([test $EXPECT = missing],
           [AC_MSG_ERROR([Required executable expect not found, some system tests will fail!])])
 
+    AC_CHECK_PROG([OPENSSL], [openssl], yes, no)
+    AS_IF([test $OPENSSL = missing],
+          [AC_MSG_ERROR([Required executable openssl not found, some system tests will fail!])])
+
     unit_test_tool_report="- tpm2_abrmd: $tpm2_abrmd
     - tpm_server: $tpm_server
     - bash: $BASH_SHELL
@@ -183,7 +187,8 @@ AS_IF([test "x$enable_unit" != xno], [
     - ss: $SS
     - shasum: $SHASUM
     - mktemp: $MKTEMP
-    - expect: $EXPECT"
+    - expect: $EXPECT
+    - openssl: $OPENSSL"
 ])
 
 AC_ARG_ENABLE([dlclose],
