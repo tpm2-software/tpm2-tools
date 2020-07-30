@@ -107,7 +107,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         free (ctx.authValue);
     }
 
-    return r;
+    return 0;
 }
 
 TSS2_TOOL_REGISTER("createnv", tss2_tool_onstart, tss2_tool_onrun, NULL)

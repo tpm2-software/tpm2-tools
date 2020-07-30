@@ -66,7 +66,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     TSS2_RC r = open_read_and_close (ctx.cipherText, (void**)&cipherText,
         &cipherTextSize);
     if (r){
-        return r;
+        return 1;
     }
 
     /* Execute FAPI command with passed arguments */
@@ -86,11 +86,11 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         plainTextSize);
     if (r){
         Fapi_Free (plainText);
-        return r;
+        return 1;
     }
 
     Fapi_Free (plainText);
-    return r;
+    return 0;
 }
 
 TSS2_TOOL_REGISTER("decrypt", tss2_tool_onstart, tss2_tool_onrun, NULL)

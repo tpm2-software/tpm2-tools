@@ -73,14 +73,14 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             free (ctx.authValue);
         }
         LOG_PERR ("Fapi_CreateKey", r);
-        return r;
+        return 1;
     }
 
     if(has_asked_for_password){
         free (ctx.authValue);
     }
 
-    return r;
+    return 0;
 }
 
 TSS2_TOOL_REGISTER("createkey", tss2_tool_onstart, tss2_tool_onrun, NULL)

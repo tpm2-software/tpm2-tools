@@ -101,7 +101,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     Fapi_Free (data);
-    return r;
+    return 0;
 }
 
 TSS2_TOOL_REGISTER("getrandom", tss2_tool_onstart, tss2_tool_onrun, NULL)

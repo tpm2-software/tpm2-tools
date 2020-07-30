@@ -102,7 +102,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (ctx.data) {
         r = open_read_and_close (ctx.data, (void**)&data, &dataSize);
         if (r) {
-            return r;
+            return 1;
         }
     }
     else {
