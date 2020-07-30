@@ -16,6 +16,9 @@
 #include <stdarg.h>
 #include <errno.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "tools/fapi/tss2_template.h"
 #include "lib/config.h"
 
@@ -397,6 +400,14 @@ static const tss2_tool *tss2_tool_lookup(int *argc, char ***argv)
  * specify which FAPI function to call.
  */
 int main(int argc, char *argv[]) {
+
+    /* get rid of:
+     *   owner execute (1)
+     *   group execute (1)
+     *   other write + read + execute (7)
+     */
+    umask(0117);
+
     const tss2_tool * const tool = tss2_tool_lookup(&argc, &argv);
     if (!tool) {
         LOG_ERR("%s: unknown tool. Available tss2 commands:\n", argv[0]);
