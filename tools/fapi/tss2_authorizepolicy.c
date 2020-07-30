@@ -61,7 +61,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         r = open_read_and_close (ctx.policyRef, (void**)&policyRef,
             &policyRefSize);
         if (r){
-            return r;
+            return 1;
         }
     }
 
@@ -71,12 +71,12 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (r != TSS2_RC_SUCCESS){
         LOG_PERR ("Fapi_AuthorizePolicy", r);
         free (policyRef);
-        return r;
+        return 1;
     }
 
     free (policyRef);
 
-    return r;
+    return 0;
 }
 
 TSS2_TOOL_REGISTER("authorizepolicy", tss2_tool_onstart, tss2_tool_onrun, NULL)

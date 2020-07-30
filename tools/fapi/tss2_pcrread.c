@@ -102,7 +102,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     Fapi_Free (pcrLog);
     Fapi_Free (pcrValue);
 
-    return r;
+    return 0;
 }
 
 TSS2_TOOL_REGISTER("pcrread", tss2_tool_onstart, tss2_tool_onrun, NULL)
