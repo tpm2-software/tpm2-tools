@@ -9,6 +9,9 @@
 
 #include <tss2/tss2_tctildr.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "log.h"
 #include "tpm2_errata.h"
 #include "tpm2_options.h"
@@ -138,6 +141,13 @@ static void main_onexit(void) {
 }
 
 int main(int argc, char **argv) {
+
+    /* get rid of:
+     *   owner execute (1)
+     *   group execute (1)
+     *   other write + read + execute (7)
+     */
+    umask(0117);
 
     /* don't buffer stdin/stdout/stderr so pipes work */
     setvbuf (stdin, NULL, _IONBF, 0);
