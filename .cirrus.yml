@@ -25,7 +25,7 @@ task:
     - cd -
     - rm -rf $ibmtpm_name $ibmtpm_name.tar.gz
     - mkdir tss
-    - cd tss && git clone https://github.com/tpm2-software/tpm2-tss.git
+    - cd tss && git clone https://github.com/tpm2-software/tpm2-tss.git -b 3.0.x
     - cd tpm2-tss && ./bootstrap && ./configure --disable-doxygen-doc --disable-tcti-swtpm --disable-dependency-tracking && gmake install
     - cd ../../ && rm -rf tss
     - mkdir rm
