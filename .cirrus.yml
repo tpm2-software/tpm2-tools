@@ -21,16 +21,16 @@ task:
     - sed -i '' -e 's/gcc/clang/g' makefile
     - sed -i '' -e 's/-Wall //g' makefile
     - sed -i '' -e 's/-Werror //g' makefile
-    - gmake -j && cp tpm_server /usr/bin/
+    - gmake && cp tpm_server /usr/bin/
     - cd -
     - rm -rf $ibmtpm_name $ibmtpm_name.tar.gz
     - mkdir tss
     - cd tss && git clone https://github.com/tpm2-software/tpm2-tss.git -b 3.0.x
-    - cd tpm2-tss && ./bootstrap && ./configure --disable-doxygen-doc --disable-tcti-swtpm --disable-dependency-tracking && gmake install
+    - cd tpm2-tss && ./bootstrap && ./configure --disable-doxygen-doc --disable-tcti-swtpm --disable-dependency-tracking && gmake -j install
     - cd ../../ && rm -rf tss
     - mkdir rm
     - cd rm && git clone https://github.com/tpm2-software/tpm2-abrmd.git && cd tpm2-abrmd
-    - ./bootstrap && ./configure --disable-dependency-tracking && gmake install
+    - ./bootstrap && ./configure --disable-dependency-tracking && gmake -j install
     - cd ../../ && rm -rf rm
   script:
     - ./bootstrap
