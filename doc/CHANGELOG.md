@@ -53,6 +53,8 @@
 
  * tpm2\_verifysignature: supports verifying RSA-PSS signatures.
 
+ * tpm2\_certifyX509certuti: A tool for creating partial x509 certrificates for the TPM2_CertifyX509 command.
+
  * tss2\_\*:
     - Fix double-free errors in commands asking for password authorization
     - Fix shorthand command -f that was falsely requiring an argument   
