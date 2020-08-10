@@ -402,11 +402,9 @@ static const tss2_tool *tss2_tool_lookup(int *argc, char ***argv)
 int main(int argc, char *argv[]) {
 
     /* get rid of:
-     *   owner execute (1)
-     *   group execute (1)
      *   other write + read + execute (7)
      */
-    umask(0117);
+    umask(0007);
 
     const tss2_tool * const tool = tss2_tool_lookup(&argc, &argv);
     if (!tool) {
