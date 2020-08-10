@@ -16,6 +16,8 @@
     - tpm2\_eventlog's output changed to be YAML compliant. The output before was intended to be YAML
       compliant but was never properly checked and tested.
 
+    - umask set to 0117 for all tools.
+
  * tpm2_tools (all):
    - Set stdin/stdout to non-buffering.
 
