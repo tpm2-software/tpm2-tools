@@ -18,6 +18,16 @@
 
     - umask set to 0117 for all tools.
 
+    - tpm2\_getekcertificate now outputs the INTC EK certificates in PEM format
+      by default. In order to output the URL safe variant of base64 encoded
+      output of the INTC EK certificate use the added option **--raw**.
+
+ * tpm2_getekcertificate:
+   - Add option **--raw** to output EK certificate in URL safe variant base64
+     encoded format. By default it outputs a PEM formatted certificate.
+   - The tool can now output INTC and non INTC EK certificates from NV indices
+     specified by the TCG EK profile specification.
+
  * tpm2_activatecredential:
    - The secret data input can now be specified as stdin with **-s -** option.
 
