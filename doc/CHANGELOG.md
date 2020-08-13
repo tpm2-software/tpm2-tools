@@ -1,6 +1,6 @@
 ## Changelog
 
-### next
+### 4.3.0-rc0 - 2020-08-13
 
  * tss2_*: Fix double-free errors in commands asking for password authorization
 
