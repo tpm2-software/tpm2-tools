@@ -1054,7 +1054,7 @@ tpm2_evictcontrol_skip_esapi_call:
 }
 
 /* This function addresses ESAPI change that changes parameter type from
- * Esys_TR to TPMI_RH_HIERARCHY or TPMI_RH_ENABLES and breaks backwards
+ * TPMI_RH_HIERARCHY or TPMI_RH_ENABLES to ESYS_TR and breaks backwards
  * compatibility.
  * To keep the tools parameters consistent after v4.0 release we need to
  * map the values to appropriate type based on the version of the ESYS API.
