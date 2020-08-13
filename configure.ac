@@ -50,10 +50,9 @@ PKG_CHECK_MODULES([TSS2_ESYS_3_0], [tss2-esys >= 3.0.0],
                   [AC_DEFINE([ESYS_3_0], [1], [Esys3.0])]
                   [AC_SUBST([TSS2_ESYS_CFLAGS], [$TSS2_ESYS_3_0_CFLAGS])
                    AC_SUBST([TSS2_ESYS_LIBS], [$TSS2_ESYS_3_0_LIBS])],
-                  [PKG_CHECK_MODULES([TSS2_ESYS_2_3], [tss2-esys >= 2.4.0],
-                  [AC_DEFINE([ESYS_2_3], [1], [Esys2.3])]
-                  [AC_SUBST([TSS2_ESYS_CFLAGS], [$TSS2_ESYS_2_3_CFLAGS])
-                   AC_SUBST([TSS2_ESYS_LIBS], [$TSS2_ESYS_2_3_LIBS])])])
+                  [PKG_CHECK_MODULES([TSS2_ESYS_2_4], [tss2-esys >= 2.4.0],
+                  [AC_SUBST([TSS2_ESYS_CFLAGS], [$TSS2_ESYS_2_4_CFLAGS])
+                   AC_SUBST([TSS2_ESYS_LIBS], [$TSS2_ESYS_2_4_LIBS])])])
 PKG_CHECK_MODULES([TSS2_TCTILDR], [tss2-tctildr])
 PKG_CHECK_MODULES([TSS2_MU], [tss2-mu])
 PKG_CHECK_MODULES([TSS2_RC], [tss2-rc])
