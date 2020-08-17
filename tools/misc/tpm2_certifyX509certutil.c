@@ -107,7 +107,7 @@ static int fixup_cert(const char *cert)
 
     size = fs.st_size;
     if (size < 100 || size > 255) {
-        LOG_ERR("Wrong cert size %ld", size);
+        LOG_ERR("Wrong cert size %zd", size);
         return tool_rc_general_error; /* there is something wrong with this cert */
     }
 
