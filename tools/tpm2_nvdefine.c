@@ -183,6 +183,48 @@ static void handle_default_attributes(void) {
     }
 }
 
+static void get_max_nv_index_size(ESYS_CONTEXT *ectx, UINT16 *size) {
+
+    *size = 0;
+
+    /* get the max NV index for the TPM */
+    TPMS_CAPABILITY_DATA *capabilities = NULL;
+    tool_rc tmp_rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED,
+            TPM2_MAX_TPM_PROPERTIES, NULL, &capabilities);
+    if (tmp_rc != tool_rc_success) {
+        *size = TPM2_MAX_NV_BUFFER_SIZE;
+        LOG_ERR("Could not get fixed TPM properties");
+        return;
+    }
+
+    TPMS_TAGGED_PROPERTY *properties = capabilities->data.tpmProperties.tpmProperty;
+    UINT32 count = capabilities->data.tpmProperties.count;
+
+    if (!count) {
+        *size = TPM2_MAX_NV_BUFFER_SIZE;
+        LOG_ERR("Could not get maximum NV index size");
+        goto out;
+    }
+
+    UINT32 i;
+    for (i=0; i < count; i++) {
+        if (properties[i].property == TPM2_PT_NV_INDEX_MAX) {
+            *size = properties[i].value;
+            break;
+        }
+    }
+
+    if (*size == 0) {
+        *size = TPM2_MAX_NV_BUFFER_SIZE;
+        LOG_ERR("Could not find max NV indices in capabilities");
+    }
+
+out:
+    free(capabilities);
+
+    return;
+}
+
 static tool_rc handle_no_index_specified(ESYS_CONTEXT *ectx, TPM2_NV_INDEX *chosen) {
 
     tool_rc rc = tool_rc_general_error;
@@ -271,12 +313,12 @@ out:
     return rc;
 }
 
-static tool_rc validate_size(void) {
+static tool_rc validate_size(ESYS_CONTEXT *ectx) {
 
     switch ((ctx.nv_attribute & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT) {
         case TPM2_NT_ORDINARY:
             if (!ctx.size_set) {
-                ctx.size = TPM2_MAX_NV_BUFFER_SIZE;
+                get_max_nv_index_size(ectx, &ctx.size);
             }
             break;
         case TPM2_NT_COUNTER:
@@ -339,7 +381,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    rc = validate_size();
+    rc = validate_size(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
