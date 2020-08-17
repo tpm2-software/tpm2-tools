@@ -11,6 +11,7 @@ bool output_enabled = false;
 
 /* Context struct used to store passed command line parameters */
 static struct cxt {
+    bool            pcr_set;
     uint32_t        pcr;
     char     const *data;
     char     const *logData;
@@ -25,6 +26,7 @@ static bool on_option(char key, char *value) {
                 "larger than 2**32 - 1\n", value);
             return false;
         }
+	ctx.pcr_set = true;
         break;
     case 'i':
         ctx.data = value;
@@ -50,7 +52,7 @@ bool tss2_tool_onstart(tpm2_options **opts) {
 /* Execute specific tool */
 int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Check availability of required parameters */
-    if (!ctx.pcr) {
+    if (!ctx.pcr_set) {
         fprintf (stderr, "No pcr provided, use --pcr\n");
         return -1;
     }
