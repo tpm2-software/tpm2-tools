@@ -203,6 +203,7 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 0:
+	LOG_WARN("Option \"--format\" is deprecated, use \"--scheme\"");
         /* falls through */
     case 'f':
         ctx.format = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
