@@ -203,7 +203,7 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 0:
-        /* Falls-Thru */
+        /* falls through */
     case 'f':
         ctx.format = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
         if (ctx.format == TPM2_ALG_ERROR) {
@@ -233,7 +233,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
             { "digest",         required_argument, NULL, 'd' },
             { "hash-algorithm", required_argument, NULL, 'g' },
             { "message",        required_argument, NULL, 'm' },
-            { "format",         required_argument, NULL, '0' },
+            { "format",         required_argument, NULL,  0  },
             { "scheme",         required_argument, NULL, 'f' },
             { "signature",      required_argument, NULL, 's' },
             { "ticket",         required_argument, NULL, 't' },
