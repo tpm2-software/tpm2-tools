@@ -302,7 +302,7 @@ TSS2_RC branch_callback(
     while (1) {
         printf ("Your choice: ");
         if (scanf ("%zu", selectedBranch) != EOF) {
-            while (getchar () != '\n'); /* Consume all remainign input */
+            while (getchar () != '\n'); /* Consume all remaining input */
             if (*selectedBranch > numBranches || *selectedBranch < 1) {
                 fprintf (stderr, "The entered integer must be positive and "\
                     "less than %zu.\n", numBranches + 1);
