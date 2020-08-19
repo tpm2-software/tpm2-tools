@@ -8,6 +8,7 @@
 
 /* Context struct used to store passed command line parameters */
 static struct cxt {
+    bool            pcr_set;
     uint32_t        pcrIndex;
     char     const *pcrValue;
     char     const *pcrLog;
@@ -26,6 +27,7 @@ static bool on_option(char key, char *value) {
                 "2**32-1\n");
             return false;
         }
+	ctx.pcr_set = true;
         break;
     case 'f':
         ctx.overwrite = true;
@@ -52,7 +54,7 @@ static bool tss2_tool_onstart(tpm2_options **opts) {
 /* Execute specific tool */
 static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     /* Check availability of required parameters */
-    if (!ctx.pcrIndex) {
+    if (!ctx.pcr_set) {
         fprintf (stderr, "No PCR index provided, use --pcrIndex\n");
         return -1;
     }
