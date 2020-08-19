@@ -44,6 +44,8 @@
    - Set stdin/stdout to non-buffering.
 
    - Fix printing short options when no ascii character is used.
+   
+   - Fix policy branch selection menu item from 1 to 0.
 
  * man:
     - tpm2_create: Correct max seal data size from 256 bytes to 128 bytes.
