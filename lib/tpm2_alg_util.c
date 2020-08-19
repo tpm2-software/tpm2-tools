@@ -204,12 +204,12 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
         } else if (!strncmp(scheme, "ecdaa", 5)) {
             do_scheme_halg(scheme, 5, TPM2_ALG_ECDAA);
             /*
-             * ECDAA has both a count and hashing algorithm, scheme
-             * could either be pointing to a null byte or a number,
-             * we need a number
+             * ECDAA has both a commit-counter value and hashing algorithm.
+             * The default commit-counter value is set to zero to use the first
+             * commit-id.
              */
             if (scheme[0] == '\0') {
-                scheme = "4";
+                scheme = "0";
             }
 
             TPMS_SIG_SCHEME_ECDAA *e = &s->scheme.details.ecdaa;

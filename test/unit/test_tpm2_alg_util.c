@@ -776,7 +776,7 @@ static void test_extended_alg_ecc_ecdsa_restricted(void **state) {
     assert_int_equal(e->kdf.details.mgf1.hashAlg, 0);
 
     TPMS_SIG_SCHEME_ECDAA *a = &e->scheme.details.ecdaa;
-    assert_int_equal(a->count, 4);
+    assert_int_equal(a->count, 0);
     assert_int_equal(a->hashAlg, TPM2_ALG_SHA256);
 }
 
