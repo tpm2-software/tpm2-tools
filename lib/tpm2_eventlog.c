@@ -196,6 +196,86 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
     return true;
 }
 
+bool parse_sha1_log_event(tpm2_eventlog_context *ctx, TCG_EVENT const *event, size_t size,
+                      size_t *event_size) {
+
+    uint8_t *pcr = NULL;
+
+    /* enough size for the 1.2 event structure */
+    if (size < sizeof(*event)) {
+        LOG_ERR("insufficient size for SpecID event header");
+        return false;
+    }
+    *event_size = sizeof(*event);
+
+    pcr = ctx->sha1_pcrs[ event->pcrIndex];
+    if (pcr) {
+        tpm2_openssl_pcr_extend(TPM2_ALG_SHA1, pcr, &event->digest[0], 20);
+        ctx->sha1_used |= (1 << event->pcrIndex);
+    }
+
+    /* buffer size must be sufficient to hold event and event data */
+    if (size < sizeof(*event) + (sizeof(event->event[0]) *
+                                 event->eventDataSize)) {
+        LOG_ERR("insufficient size for SpecID event data");
+        return false;
+    }
+    *event_size += event->eventDataSize;
+    return true;
+}
+
+bool foreach_sha1_log_event(tpm2_eventlog_context *ctx, TCG_EVENT const *eventhdr_start, size_t size) {
+
+    if (eventhdr_start == NULL) {
+        LOG_ERR("invalid parameter");
+        return false;
+    }
+
+    if (size == 0) {
+        return true;
+    }
+
+    TCG_EVENT const *eventhdr;
+    size_t event_size;
+    bool ret;
+
+    for (eventhdr = eventhdr_start, event_size = 0;
+         size > 0;
+         eventhdr = (TCG_EVENT*)((uintptr_t)eventhdr + event_size),
+         size -= event_size) {
+
+        ret = parse_sha1_log_event(ctx, eventhdr, size, &event_size);
+        if (!ret) {
+            return ret;
+        }
+
+        TCG_EVENT2 *event = (TCG_EVENT2*)((uintptr_t)&eventhdr->eventDataSize);
+
+        /* event header callback */
+        if (ctx->log_eventhdr_cb != NULL) {
+            ret = ctx->log_eventhdr_cb(eventhdr, event_size, ctx->data);
+            if (ret != true) {
+                return false;
+            }
+        }
+
+        ret = parse_event2body(event, eventhdr->eventType);
+        if (ret != true) {
+            return ret;
+        }
+
+        /* event data callback */
+        if (ctx->event2_cb != NULL) {
+            ret = ctx->event2_cb(event, eventhdr->eventType, ctx->data);
+            if (ret != true) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size) {
 
     if (eventhdr_start == NULL) {
@@ -340,19 +420,27 @@ bool parse_eventlog(tpm2_eventlog_context *ctx, BYTE const *eventlog, size_t siz
     TCG_EVENT *event = (TCG_EVENT*)eventlog;
     bool ret;
 
-    ret = specid_event(event, size, &next);
-    if (!ret) {
+    if (!event) {
         return false;
     }
 
-    size -= (uintptr_t)next - (uintptr_t)eventlog;
-
-    if (ctx->specid_cb) {
-        ret = ctx->specid_cb(event, ctx->data);
+    if (event->eventType == EV_NO_ACTION) {
+        ret = specid_event(event, size, &next);
         if (!ret) {
             return false;
         }
-    }
 
-    return foreach_event2(ctx, next, size);
+        size -= (uintptr_t)next - (uintptr_t)eventlog;
+
+        if (ctx->specid_cb) {
+            ret = ctx->specid_cb(event, ctx->data);
+            if (!ret) {
+                return false;
+            }
+        }
+        return foreach_event2(ctx, next, size);
+    } else {
+        /* No specid event found. sha1 log format will be parsed. */
+        return foreach_sha1_log_event(ctx, event, size);
+    }
 }

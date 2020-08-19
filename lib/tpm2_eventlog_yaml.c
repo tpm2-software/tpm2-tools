@@ -102,6 +102,17 @@ void yaml_event2hdr(TCG_EVENT_HEADER2 const *eventhdr, size_t size) {
 
     return;
 }
+void yaml_sha1_log_eventhdr(TCG_EVENT const *eventhdr, size_t size) {
+
+    (void)size;
+
+    tpm2_tool_output("    PCRIndex: %d\n"
+                     "    EventType: %s\n",
+                     eventhdr->pcrIndex,
+                     eventtype_to_string(eventhdr->eventType));
+
+    return;
+}
 /* converting byte buffer to hex string requires 2x, plus 1 for '\0' */
 #define BYTES_TO_HEX_STRING_SIZE(byte_count) (byte_count * 2 + 1)
 #define DIGEST_HEX_STRING_MAX BYTES_TO_HEX_STRING_SIZE(TPM2_MAX_DIGEST_BUFFER)
@@ -322,6 +333,24 @@ bool yaml_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size,
 
     return true;
 }
+bool yaml_sha1_log_eventhdr_callback(TCG_EVENT const *eventhdr, size_t size,
+                                     void *data_in) {
+
+    (void)data_in;
+
+    yaml_sha1_log_eventhdr(eventhdr, size);
+
+    char hexstr[20 * 2] = { 0, };
+    bytes_to_str(eventhdr->digest, 20, hexstr, sizeof(hexstr));
+
+    tpm2_tool_output("    DigestCount: 1\n"
+                     "    Digests:\n"
+                     "      - AlgorithmId: %s\n"
+                     "        Digest: %s\n",
+                     tpm2_alg_util_algtostr(TPM2_ALG_SHA1, tpm2_alg_util_flags_hash),
+                     hexstr);
+    return true;
+}
 void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
 
     /* digest is 20 bytes, 2 chars / byte and null terminator for string*/
@@ -478,6 +507,7 @@ bool yaml_eventlog(UINT8 const *eventlog, size_t size) {
         .data = &count,
         .specid_cb = yaml_specid_callback,
         .event2hdr_cb = yaml_event2hdr_callback,
+        .log_eventhdr_cb = yaml_sha1_log_eventhdr_callback,
         .digest2_cb = yaml_digest2_callback,
         .event2_cb = yaml_event2data_callback,
     };
