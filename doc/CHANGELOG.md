@@ -45,8 +45,6 @@
 
    - Fix printing short options when no ascii character is used.
    
-   - Fix policy branch selection menu item from 1 to 0.
-
  * man:
     - tpm2_create: Correct max seal data size from 256 bytes to 128 bytes.
 
@@ -104,6 +102,8 @@
     - Add size parameter to tss2_createseal
     - Memory leaks are fixed in cases when a returned empty non-char output value was passed to file output
     - References to the cryptographic profile (fapi-profile(5)) and config file (fapi-config(5)) man pages from all relevant tss2\_\* man pages
+    - Fix policy branch selection menu item from 1 to 0.
+    - Fix index 0 being valid tss2_pcrread
 
 ### 4.2 2020-04-08
 
