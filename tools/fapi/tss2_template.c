@@ -307,7 +307,7 @@ TSS2_RC branch_callback(
                 fprintf (stderr, "The entered integer must be positive and "\
                     "less than %zu.\n", numBranches + 1);
             } else {
-                numBranches--;
+                (*selectedBranch)--; /* the user display/choice is always +1 */
                 return TSS2_RC_SUCCESS;
             }
         } else {
