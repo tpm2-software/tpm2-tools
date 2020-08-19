@@ -270,6 +270,16 @@ do
     )
 done
 
+# Test signing with ecdaa scheme
+head -c30 /dev/urandom | openssl dgst -sha256 -binary > test.rnd
+tpm2 clear
+tpm2 createprimary -Q -C o -c prim.ctx -g sha256 -G rsa
+tpm2 create -Q -g sha256 -G ecc256:ecdaa -u key.pub -r key.priv -C prim.ctx
+tpm2 load -C prim.ctx -u key.pub -r key.priv -n key.name -c key.ctx
+tpm2 readpublic -c key.ctx --format=pem -o key.pem
+tpm2 commit -c key.ctx -t commit.ctr --eccpoint-K K.bin --eccpoint-L L.bin -u E.bin
+tpm2 sign -c key.ctx -g sha256 -o test.sig test.rnd -s ecdaa
+
 # Test that invalid password returns the proper code
 cleanup "no-shut-down"
 
