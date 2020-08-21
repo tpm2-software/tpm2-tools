@@ -27,7 +27,7 @@ echo "Running coverity build"
 
 # Do coverity steps
 # we don't run with clang and we only run if COVERITY_RUN is true
-if [[ "$CC" == clang* || "$COVERITY_RUN" != "true" ]]; then
+if [[ "$CC" == clang* || "$COVERITY_RUN" != "true" || "$COVERITY_DOCKER_TAG" != "$DOCKER_TAG" ]]; then
   echo "Nothing to do on the coverity_scan branch...exiting!"
   exit 0
 fi
