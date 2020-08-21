@@ -83,6 +83,11 @@ must be provided via the **-t** input. The ticket indicates that the TPM perform
     termed as cpHash. NOTE: When this option is selected, The tool will not
     actually execute the command, it simply returns a cpHash.
 
+  * **\--commit-index**=_NATURALNUMBER_
+
+    The commit counter value to determine the key index to use in an ECDAA
+    signing scheme. The default counter value is 0.
+
   * **ARGUMENT** the command line argument specifies the file data for sign.
 
 ## References
