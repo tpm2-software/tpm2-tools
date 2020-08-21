@@ -27,6 +27,8 @@
 
  * tss2_pcrextend: fix extending PCR 0
 
+ * tss2_quote: fix unused TSS2_RC in LOG_ERR
+
 ### 4.2.1 - 2020-05-25
 
 * Fix missing handle maps for ESY3 handle breaks. See #1994.
