@@ -115,6 +115,12 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
         }
     }
 
+    if (ctx.in_scheme.scheme == TPM2_ALG_ECDAA &&
+    ctx.sig_format != signature_format_tss) {
+        LOG_ERR("Only TSS signature format is possible with ECDAA scheme");
+        return tool_rc_option_error;
+    }
+
     if (ctx.cp_hash_path && ctx.output_path) {
         LOG_ERR("Cannot output signature when calculating cpHash");
         return tool_rc_option_error;
