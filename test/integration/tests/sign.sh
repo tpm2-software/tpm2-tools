@@ -278,6 +278,8 @@ tpm2 create -Q -g sha256 -G ecc256:ecdaa -u key.pub -r key.priv -C prim.ctx
 tpm2 load -C prim.ctx -u key.pub -r key.priv -n key.name -c key.ctx
 tpm2 readpublic -c key.ctx --format=pem -o key.pem
 tpm2 commit -c key.ctx -t commit.ctr --eccpoint-K K.bin --eccpoint-L L.bin -u E.bin
+tpm2 commit -c key.ctx -t commit.ctr --eccpoint-K K.bin --eccpoint-L L.bin -u E.bin
+tpm2 sign -c key.ctx -g sha256 -o test.sig test.rnd -s ecdaa --commit-index 1
 tpm2 sign -c key.ctx -g sha256 -o test.sig test.rnd -s ecdaa
 
 # Test that invalid password returns the proper code

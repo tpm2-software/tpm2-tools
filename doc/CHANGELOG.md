@@ -22,6 +22,10 @@
       by default. In order to output the URL safe variant of base64 encoded
       output of the INTC EK certificate use the added option **--raw**.
 
+ * tpm2_sign:
+   - Add option **--commit-index** to specify the commit index to use when
+     performing an ECDAA signature.
+
  * tpm2_getekcertificate:
    - Add option **--raw** to output EK certificate in URL safe variant base64
      encoded format. By default it outputs a PEM formatted certificate.

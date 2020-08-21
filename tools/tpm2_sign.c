@@ -39,6 +39,7 @@ struct tpm_sign_ctx {
     } flags;
 
     char *cp_hash_path;
+    char *commit_index;
 };
 
 static tpm_sign_ctx ctx = {
@@ -99,6 +100,19 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid signature scheme for key type!");
         return rc;
+    }
+
+    if (ctx.in_scheme.scheme != TPM2_ALG_ECDAA && ctx.commit_index) {
+        LOG_ERR("Commit counter is only applicable in an ECDAA scheme.");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.in_scheme.scheme == TPM2_ALG_ECDAA && ctx.commit_index) {
+        bool result = tpm2_util_string_to_uint16(ctx.commit_index,
+            &ctx.in_scheme.details.ecdaa.count);
+        if (!result) {
+            return tool_rc_general_error;
+        }
     }
 
     if (ctx.cp_hash_path && ctx.output_path) {
@@ -225,6 +239,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.cp_hash_path = value;
         break;
+    case 1:
+        ctx.commit_index = value;
+        break;
     case 'f':
         ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
@@ -261,6 +278,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "key-context",          required_argument, NULL, 'c' },
       { "format",               required_argument, NULL, 'f' },
       { "cphash",               required_argument, NULL,  0  },
+      { "commit-index",       required_argument, NULL,  1  },
     };
 
     *opts = tpm2_options_new("p:g:dt:o:c:f:s:", ARRAY_LEN(topts), topts,
