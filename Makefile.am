@@ -597,7 +597,8 @@ dist_bashcomp_DATA+= \
 	dist/bash-completion/tpm2-tools/tss2_provision \
 	dist/bash-completion/tpm2-tools/tss2_getrandom \
 	dist/bash-completion/tpm2-tools/tss2_unseal \
-	dist/bash-completion/tpm2-tools/tss2_writeauthorizenv
+	dist/bash-completion/tpm2-tools/tss2_writeauthorizenv \
+    dist/bash-completion/tpm2-tools/tss2
 endif
 
 install-data-hook:
