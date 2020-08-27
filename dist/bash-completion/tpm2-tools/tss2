@@ -1,0 +1,34 @@
+# bash completion for tss2                   -*- shell-script -*-
+_tss2()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+
+    local commands command
+
+    commands='decrypt encrypt list changeauth delete import getinfo createkey
+    createseal exportkey getcertificate getplatformcertificates gettpmblobs
+    setcertificate getappdata setappdata sign verifysignature verifyquote
+    createnv nvextend nvincrement nvread nvsetbits nvwrite getdescription
+    setdescription pcrextend quote pcrread authorizepolicy exportpolicy
+    provision getrandom unseal writeauthorizenv'
+
+    if ((cword == 1)); then
+        COMPREPLY=($(compgen -W "$commands" -- "$cur"))
+    else
+        command=${words[1]}
+        case $prev in
+            -!(-*) | getrandom)
+                _tss2_getrandom
+                return;;
+            -!(-*)h | --help)
+                COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+                return;;
+            *)
+               COMPREPLY=( $(compgen -W "--help" -- "$cur") )
+               return;;
+        esac
+    fi
+
+} &&
+complete -F _tss2 tss2
