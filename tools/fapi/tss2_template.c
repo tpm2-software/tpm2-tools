@@ -284,7 +284,7 @@ TSS2_RC branch_callback(
             }
         } else {
             fprintf (stderr, "No number received, but EOF.\n");
-            return TSS2_RC_SUCCESS;
+            return TSS2_FAPI_RC_GENERAL_FAILURE;
         }
     }
 }
