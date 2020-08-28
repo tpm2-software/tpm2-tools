@@ -92,7 +92,7 @@
     - References to the cryptographic profile (fapi-profile(5)) and config file (fapi-config(5)) man pages from all relevant tss2\_\* man pages
     - Fix policy branch selection menu item from 1 to 0.
 
-### 4.3.0-rc1 - 2020-08-21
+### 4.3.0 - 2020-08-24
 
  * tss2_*: Fix double-free errors in commands asking for password authorization
 
