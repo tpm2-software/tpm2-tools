@@ -724,6 +724,114 @@ cat > $tempdir/pol_pcr16_0.json <<EOF
 }
 EOF
 
+# Setup Policy with branch for write and branch for read.
+cat > $tempdir/pol_nv_read_write.json <<EOF
+{
+  "description": "Different policy for NV read and NV write",
+  "policy": [
+             {
+              "type": "or",
+              "branches": [
+                {
+                  "name": "NVWrite",
+                  "description": "For NV Write we want to have PCR16 at 0",
+                  "policy": [
+                    {
+                      "type": "commandCode",
+                      "code": "NV_WRITE"
+                    },
+                    {
+                      "type": "pcr",
+                      "pcrs": [
+                        {
+                          "hashAlg": "sha256",
+                          "pcr": 16,
+                          "digest": "0000000000000000000000000000000000000000000000000000000000000000"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "NVRead",
+                  "description": "For NV Read we don't need any auth",
+                  "policy": [
+                    {
+                      "type": "commandCode",
+                      "code": "NV_READ"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+}
+EOF
+
+# Setup Policy with policy password or branch for write and branch for read.
+cat > $tempdir/pol_pwd_nv_read_write.json <<EOF
+{
+  "description":  "Policy password or different policy for NV read and NV write",
+  "policy": [
+    {
+      "type": "or",
+      "branches": [
+        {
+          "name": "Password",
+          "description": "We can always supply the auth value",
+          "policy": [
+            {
+              "type": "password"
+            }
+          ]
+        },
+        {
+          "name": "NVReadWrite",
+          "description": "For NV Read Write we have a special handling",
+          "policy": [
+            {
+              "type": "or",
+              "branches": [
+                {
+                  "name": "NVWrite",
+                  "description": "For NV Write we want to have PCR16 at 0",
+                  "policy": [
+                    {
+                      "type": "commandCode",
+                      "code": "NV_WRITE"
+                    },
+                    {
+                      "type": "pcr",
+                      "pcrs": [
+                        {
+                          "hashAlg": "sha256",
+                          "pcr": 16,
+                          "digest": "0000000000000000000000000000000000000000000000000000000000000000"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "NVRead",
+                  "description": "For NV Read we don't need any auth",
+                  "policy": [
+                    {
+                      "type": "commandCode",
+                      "code": "NV_READ"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+EOF
+
 # Setup Policy Signed
 cat > $tempdir/pol_signed.json <<EOF
 {
