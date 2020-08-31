@@ -34,5 +34,5 @@ task:
     - cd ../../ && rm -rf rm
   script:
     - ./bootstrap
-    - ./configure --enable-unit=yes --disable-dependency-tracking
+    - ./configure --enable-unit=yes --disable-dependency-tracking --disable-fapi
     - gmake -j check || { cat test-suite.log; exit 1; }
