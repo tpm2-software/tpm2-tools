@@ -794,5 +794,12 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     return tool_rc_success;
 }
 
+static void tpm2_tool_onexit(void) {
+
+    if (ctx.out_public) {
+        free(ctx.out_public);
+    }
+}
+
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("getekcertificate", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("getekcertificate", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, tpm2_tool_onexit)
