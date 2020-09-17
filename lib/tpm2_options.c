@@ -273,13 +273,22 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
             break;
         case 'h':
             show_help = true;
-            if (argv[optind]) {
-                if (!strcmp(argv[optind], "man")) {
+            /*
+             * argv[0] = "tool name"
+             * AND
+             * argv[1] = "--help=no/man" argv[2] = 0
+             * OR
+             * argv[1] = "--help" argv[2] = "no/man"
+             */
+            if (argv[optind - 1]) {
+                if (strstr(argv[optind - 1], "no-man") ||
+                    (argv[optind] && strstr(argv[optind], "no-man"))) {
+                    manpager = false;
+                    optind++;
+                } else if (strstr(argv[optind - 1], "man") ||
+                            (argv[optind] && strstr(argv[optind], "man"))) {
                     manpager = true;
                     explicit_manpager = true;
-                    optind++;
-                } else if (!strcmp(argv[optind], "no-man")) {
-                    manpager = false;
                     optind++;
                 } else {
                     show_help = false;
