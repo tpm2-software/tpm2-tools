@@ -451,7 +451,8 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_commit.1 \
     man/man1/tpm2_ecdhkeygen.1 \
     man/man1/tpm2_ecdhzgen.1 \
-    man/man1/tpm2_zgen2phase.1
+    man/man1/tpm2_zgen2phase.1 \
+    man/man1/tpm2.1
 
 if HAVE_FAPI
 dist_man1_MANS += \
