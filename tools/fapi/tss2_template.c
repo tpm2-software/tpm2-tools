@@ -76,8 +76,7 @@ static bool execute_man(char *prog_name, bool show_errors) {
 static tpm2_option_code tss2_handle_options (
     int            argc,
     char         **argv,
-    tpm2_options **tool_opts,
-    FAPI_CONTEXT  *fctx) {
+    tpm2_options **tool_opts) {
     tpm2_option_code rc = tpm2_option_code_err;
     bool show_help = false, manpager = true, explicit_manpager = false;
     struct option long_options [] = {
@@ -129,38 +128,11 @@ static tpm2_option_code tss2_handle_options (
                 fprintf (stderr, "Not enough memory\n");
                 goto out;
             }
-            char *info;
-            TSS2_RC ret = Fapi_GetInfo(fctx, &info);
-            if (ret != TSS2_RC_SUCCESS) {
-                fprintf (stderr, "Fapi_GetInfo returned %u\n", ret);
-                free(prog_name);
-                goto out;
-            }
 
-            char *version = NULL;
-            char *t = strstr(info, "\"version\"");
-            if (t) {
-                t = t + strlen("\"version\"");
-                ret = sscanf(t, "%*[^\"]\"%m[^\"]%*[*]", &version);
-                /* Version string is not larger than 128 characters */
-                if (ret!=1 || strlen(version) > 128 ) {
-                    free(version);
-                    version = "not found";
-                    t = NULL;
-                }
-            }
-            else{
-                version = "not found";
-            }
-            Fapi_Free(info);
-
-            printf("tool=\"%s\" version=\"%s\" fapi-version=\"%s\"\n",
-                basename (prog_name), VERSION, version);
+            printf("tool=\"%s\" version=\"%s\"\n", basename (prog_name),
+                VERSION);
 
             free(prog_name);
-            if (t) {
-                free(version);
-            }
             }
             rc = tpm2_option_code_stop;
             goto out;
@@ -420,6 +392,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     int ret = 1;
+
+    tpm2_option_code rc = tss2_handle_options (argc, argv, &tool_opts);
+
+    if (rc != tpm2_option_code_continue) {
+        ret = rc == tpm2_option_code_err ? 1 : 0;
+        goto free_opts;
+    }
+
     FAPI_CONTEXT *fctx = ctx_init (NULL);
     if (!fctx)
         goto free_opts;
@@ -433,14 +413,6 @@ int main(int argc, char *argv[]) {
     r = Fapi_SetBranchCB (fctx, branch_callback, NULL);
     if (r != TSS2_RC_SUCCESS) {
         fprintf (stderr, "Fapi_SetBranchCB returned %u\n", r);
-        Fapi_Finalize (&fctx);
-        goto free_opts;
-    }
-
-    tpm2_option_code rc = tss2_handle_options (argc, argv, &tool_opts, fctx);
-
-    if (rc != tpm2_option_code_continue) {
-        ret = rc == tpm2_option_code_err ? 1 : 0;
         Fapi_Finalize (&fctx);
         goto free_opts;
     }
