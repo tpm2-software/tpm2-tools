@@ -81,10 +81,10 @@ the various known TCTI modules.
 ## Setup
 ```bash
 # create a primary object
-tpm2_createprimary -o primary.ctx
+tpm2_createprimary -c primary.ctx
 
 # create an hmac key
-tpm2_create -C primary.ctx -Ghmac -o hmac.key
+tpm2_create -C primary.ctx -G hmac -c hmac.key
 ```
 
 ### Perform an HMAC with Default Hash Algorithm
