@@ -290,13 +290,9 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
     s->internal.ectx = ctx;
     dup_path = NULL;
 
-    TPM2_HANDLE sapi_handle = 0;
     TPMA_SESSION attrs = 0;
 
     if (ctx) {
-        tool_rc tmp_rc = tpm2_util_esys_handle_to_sys_handle(ctx, handle,
-                &sapi_handle);
-        UNUSED(tmp_rc);
 
         /* hack this in here, should be done when starting the session */
         tmp_rc = tpm2_sess_get_attributes(ctx, handle, &attrs);
@@ -307,8 +303,7 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
 
     *session = s;
 
-    LOG_INFO("Restored session: ESYS_TR(0x%x) SAPI(0x%x) attrs(0x%x)", handle,
-            sapi_handle, attrs);
+    LOG_INFO("Restored session: ESYS_TR(0x%x) attrs(0x%x)", handle, attrs);
 
     rc = tool_rc_success;
 
@@ -405,11 +400,7 @@ tool_rc tpm2_session_close(tpm2_session **s) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
-    TPM2_HANDLE sapi_handle = 0;
-    tpm2_util_esys_handle_to_sys_handle(session->internal.ectx, handle,
-            &sapi_handle);
-
-    LOG_INFO("Saved session: ESYS_TR(0x%x) SAPI(0x%x)", handle, sapi_handle);
+    LOG_INFO("Saved session: ESYS_TR(0x%x)", handle);
 
     rc = files_save_tpm_context_to_file(session->internal.ectx,
             tpm2_session_get_handle(session), session_file);

@@ -202,31 +202,19 @@ static void test_tpm2_session_save(void **state) {
     tpm2_session_set_path(d, (char *) *state);
 
     tpm2_session *s = NULL;
-    tool_rc rc = tpm2_session_open(CONTEXT, d, &s);
+    tool_rc rc = tpm2_session_open(CONTEXT, d, &s);                    //OPEN
     assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
-    ESYS_TR handle1 = tpm2_session_get_handle(s);
-    TPMI_SH_AUTH_SESSION tpm_handle1;
-    rc = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle1, &tpm_handle1);
-    assert_int_equal(rc, tool_rc_success);
-
-    rc = tpm2_session_close(&s);
+    rc = tpm2_session_close(&s);                                       //CLOSE
     assert_int_equal(rc, tool_rc_success);
     assert_null(s);
 
-    rc = tpm2_session_restore(NULL, (char *) *state, false, &s);
+    rc = tpm2_session_restore(NULL, (char *) *state, false, &s);       //RESTORE
     assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
-    ESYS_TR handle2 = tpm2_session_get_handle(s);
-    TPMI_SH_AUTH_SESSION tpm_handle2;
-    rc = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle2, &tpm_handle2);
-    assert_int_equal(rc, tool_rc_success);
-
-    assert_int_equal(tpm_handle1, tpm_handle2);
-
-    tpm2_session_close(&s);
+    tpm2_session_close(&s);                                            //CLOSE
     assert_null(s);
 }
 
