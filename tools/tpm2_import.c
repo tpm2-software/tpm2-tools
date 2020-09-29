@@ -32,6 +32,7 @@
 #include "tpm2.h"
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_attr_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_errata.h"
 #include "tpm2_identity_util.h"
@@ -430,7 +431,7 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
      */
     if (ctx.attrs) {
         TPMA_OBJECT *obj_attrs = &public.publicArea.objectAttributes;
-        result = tpm2_util_string_to_uint32(ctx.attrs, obj_attrs);
+        result = tpm2_attr_util_obj_from_optarg(ctx.attrs, obj_attrs);
         if (!result) {
             LOG_ERR("Invalid object attribute, got\"%s\"", ctx.attrs);
             return tool_rc_general_error;
