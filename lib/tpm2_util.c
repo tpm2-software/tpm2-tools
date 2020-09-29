@@ -620,31 +620,6 @@ tool_rc tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
             ESYS_TR_NONE, esys_handle);
 }
 
-tool_rc tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
-        ESYS_TR esys_handle, TPM2_HANDLE *sys_handle) {
-
-    TPM2B_NAME *loaded_name = NULL;
-    tool_rc rc = tpm2_tr_get_name(context, esys_handle, &loaded_name);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    size_t offset = 0;
-    TPM2_HANDLE hndl;
-    // TODO: this doesn't produce handles that _look_ right
-    rc = tpm2_mu_tpm2_handle_unmarshal(loaded_name->name, loaded_name->size,
-            &offset, &hndl);
-    if (rc != tool_rc_success) {
-        goto outname;
-    }
-
-    *sys_handle = hndl;
-
-    outname: free(loaded_name);
-
-    return rc;
-}
-
 char *tpm2_util_getenv(const char *name) {
 
     return getenv(name);

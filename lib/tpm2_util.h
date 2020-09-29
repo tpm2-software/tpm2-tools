@@ -379,20 +379,6 @@ tool_rc tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         TPM2_HANDLE sys_handle, ESYS_TR *esys_handle);
 
 /**
- * Get the underlying TPM2_HANDLE for the given ESYS_TR handle
- * @param context
- *  an ESAPI context
- * @param esys_handle
- *  the ESYS_TR for which a TPM handle is desired
- * @param sys_handle
- *  pointer to the TPM2_HANDLE in which to store the output
- * @return
- *  A tool_rc indicating status.
- */
-tool_rc tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
-        ESYS_TR esys_handle, TPM2_HANDLE *sys_handle);
-
-/**
  * Map a TPMI_RH_PROVISION to the corresponding ESYS_TR constant
  * @param inh
  *  The hierarchy to map
