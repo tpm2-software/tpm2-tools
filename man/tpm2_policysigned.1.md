@@ -53,6 +53,11 @@ The optional TPM2 parameters being cpHashA, nonceTPM, policyRef and expiration.
     value an authorization ticket is additionally returned. If expiration value
     is 0 then the policy does not have a time limit on the authorization.
 
+  * **\--cphash-input**=_FILE_:
+
+    The command parameter hash (cpHash), enforcing the TPM command to be
+    authorized as well as its handle and parameter values.
+
   * **\--ticket**=_FILE_:
 
     The ticket file to record the authorization ticket structure.
