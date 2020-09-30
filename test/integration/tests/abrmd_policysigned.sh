@@ -90,9 +90,10 @@ tpm2 createprimary -C o -c prim.ctx -Q
 tpm2 create -u sealing_key.pub -r sealing_key.priv -c sealing_key.ctx \
 -C prim.ctx -i secret.dat -L policy.signed -Q
 ## Unseal secret
-tpm2 startauthsession -S session.ctx --policy-session
+tpm2 startauthsession -S session.ctx --policy-session --nonce-tpm nonce_tpm.bin
 ### Generate signature
 tpm2 policysigned -S session.ctx -c signing_key.ctx -x --raw-data to_sign.bin
+cmp -n32 nonce_tpm.bin to_sign.bin
 openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
 ###Satisfy the policy
 tpm2 policysigned -S session.ctx -g sha256 -s signature.dat -f rsassa \

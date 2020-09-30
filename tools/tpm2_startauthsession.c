@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "log.h"
+#include "files.h"
 #include "object.h"
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
@@ -17,7 +19,8 @@ struct tpm2_startauthsession_ctx {
         tpm2_loaded_object key_context_object;
     } session;
     struct {
-        const char *path;
+        const char *session_path;
+        const char *nonce_tpm_path;
     } output;
 
     tpm2_session_data *session_data;
@@ -43,6 +46,9 @@ static bool on_option(char key, char *value) {
     case 1:
         ctx.is_session_audit_required = true;
         break;
+    case 2:
+        ctx.output.nonce_tpm_path = value;
+        break;
     case 'g':
         ctx.session.halg = tpm2_alg_util_from_optarg(value,
                 tpm2_alg_util_flags_hash);
@@ -52,7 +58,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'S':
-        ctx.output.path = value;
+        ctx.output.session_path = value;
         break;
     case 'c':
         ctx.session.key_context_arg_str = value;
@@ -67,6 +73,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     static struct option topts[] = {
         { "policy-session", no_argument,       NULL,  0 },
         { "audit-session",  no_argument,       NULL,  1 },
+        { "nonce-tpm",      required_argument, NULL,  2},
         { "key-context",    required_argument, NULL, 'c'},
         { "hash-algorithm", required_argument, NULL, 'g'},
         { "session",        required_argument, NULL, 'S'},
@@ -80,7 +87,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static tool_rc is_input_options_valid(void) {
 
-    if (!ctx.output.path) {
+    if (!ctx.output.session_path) {
         LOG_ERR("Expected option -S");
         return tool_rc_option_error;
     }
@@ -121,7 +128,7 @@ static tool_rc setup_session_data(void) {
         return tool_rc_general_error;
     }
 
-    tpm2_session_set_path(ctx.session_data, ctx.output.path);
+    tpm2_session_set_path(ctx.session_data, ctx.output.session_path);
 
     tpm2_session_set_authhash(ctx.session_data, ctx.session.halg);
 
@@ -203,6 +210,19 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = tpm2_session_open(ectx, ctx.session_data, &s);
     if (rc != tool_rc_success) {
         return rc;
+    }
+
+    if (ctx.output.nonce_tpm_path) {
+        TPM2B_NONCE *nonce_tpm;
+        tpm2_session_get_noncetpm(ectx, s, &nonce_tpm);
+
+        bool result = files_save_bytes_to_file(ctx.output.nonce_tpm_path,
+                                            nonce_tpm->buffer,
+                                            nonce_tpm->size);
+        free(nonce_tpm);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
     }
 
     //Process outputs
