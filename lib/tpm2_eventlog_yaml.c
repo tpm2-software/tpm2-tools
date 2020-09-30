@@ -84,7 +84,7 @@ void bytes_to_str(uint8_t const *buf, size_t size, char *dest, size_t dest_size)
 
     size_t i, j;
 
-    for(i = 0, j = 0; i < size && j < dest_size - 1; ++i, j+=2) {
+    for(i = 0, j = 0; i < size && j < dest_size - 2; ++i, j+=2) {
         sprintf(&dest[j], "%02x", buf[i]);
     }
     dest[j] = '\0';
@@ -340,8 +340,8 @@ bool yaml_sha1_log_eventhdr_callback(TCG_EVENT const *eventhdr, size_t size,
 
     yaml_sha1_log_eventhdr(eventhdr, size);
 
-    char hexstr[20 * 2] = { 0, };
-    bytes_to_str(eventhdr->digest, 20, hexstr, sizeof(hexstr));
+    char hexstr[BYTES_TO_HEX_STRING_SIZE(sizeof(eventhdr->digest))] = { 0, };
+    bytes_to_str(eventhdr->digest, sizeof(eventhdr->digest), hexstr, sizeof(hexstr));
 
     tpm2_tool_output("    DigestCount: 1\n"
                      "    Digests:\n"
