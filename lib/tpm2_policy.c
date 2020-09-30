@@ -391,7 +391,8 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         TPMT_SIGNATURE *signature, INT32 expiration, TPM2B_TIMEOUT **timeout,
         TPMT_TK_AUTH **policy_ticket, const char *policy_qualifier_data,
-        bool is_nonce_tpm, const char *raw_data_path) {
+        bool is_nonce_tpm, const char *raw_data_path,
+        const char *cphash_path) {
 
     bool result = true;
 
@@ -405,6 +406,19 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         result = tpm2_util_bin_from_hex_or_file(policy_qualifier_data,
                 &policy_qualifier.size,
                 policy_qualifier.buffer);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+    }
+
+    /*
+     * CpHashA (digest of command parameters for approved command) optional.
+     * If not specified default to NULL
+     */
+    TPM2B_DIGEST cphash = TPM2B_EMPTY_INIT;
+
+    if (cphash_path) {
+        bool result = files_load_digest(cphash_path, &cphash);
         if (!result) {
             return tool_rc_general_error;
         }
@@ -427,7 +441,7 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
      */
     if (raw_data_path) {
         uint16_t raw_data_len = (nonce_tpm ? nonce_tpm->size : 0) +
-            sizeof(INT32) + policy_qualifier.size;
+            sizeof(INT32) + cphash.size + policy_qualifier.size;
 
         uint8_t *raw_data = malloc(raw_data_len);
         if (!raw_data) {
@@ -435,17 +449,22 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
             rc = tool_rc_general_error;
             goto tpm2_policy_build_policysigned_out;
         }
-        //nonceTPM
+        /* nonceTPM */
         uint16_t offset = 0;
         if (nonce_tpm) {
             memcpy(raw_data, nonce_tpm->buffer, nonce_tpm->size);
             offset += nonce_tpm->size;
         }
-        //expiration
+        /* expiration */
         UINT32 endswap_data = tpm2_util_endian_swap_32(expiration);
         memcpy(raw_data + offset, (UINT8 *)&endswap_data, sizeof(INT32));
         offset += sizeof(INT32);
-        //policyRef
+        /* cpHash */
+        if (cphash_path) {
+            memcpy(raw_data + offset, cphash.buffer, cphash.size);
+            offset += cphash.size;
+        }
+        /* policyRef */
         memcpy(raw_data + offset, policy_qualifier.buffer,
             policy_qualifier.size);
 
@@ -463,7 +482,7 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
 
     rc = tpm2_policy_signed(ectx, auth_entity_obj, policy_session_handle,
         signature, expiration, timeout, policy_ticket, &policy_qualifier,
-        nonce_tpm);
+        nonce_tpm, &cphash);
 
 tpm2_policy_build_policysigned_out:
     Esys_Free(nonce_tpm);
