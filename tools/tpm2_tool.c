@@ -156,6 +156,13 @@ int main(int argc, char **argv) {
             tpm2_handle_options(2, options, 0, 0, 0);
             exit(tool_rc_success);
         }
+
+        if ((argc == 2 && (!strcmp(argv[1],"--version") ||
+        !strcmp(argv[1], "-v") ))) {
+            tpm2_handle_options(argc, argv, 0, 0, 0);
+            exit(tool_rc_success);
+        }
+
     }
 
     /* don't buffer stdin/stdout/stderr so pipes work */
