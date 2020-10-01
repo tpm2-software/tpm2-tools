@@ -149,6 +149,15 @@ int main(int argc, char **argv) {
      */
     umask(0117);
 
+    if (!strcmp(argv[0], "tpm2")) {
+        if (argc == 1 || (argc == 2 && (!strcmp(argv[1],"--help") ||
+            !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help=man")))) {
+            char *options[2] = {"tpm2","--help=man"};
+            tpm2_handle_options(2, options, 0, 0, 0);
+            exit(tool_rc_success);
+        }
+    }
+
     /* don't buffer stdin/stdout/stderr so pipes work */
     setvbuf (stdin, NULL, _IONBF, 0);
     setvbuf (stdout, NULL, _IONBF, 0);
