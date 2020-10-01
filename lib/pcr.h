@@ -33,6 +33,18 @@ struct tpm2_pcrs {
 bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs);
 
 /**
+ * Echo out all PCR banks according to g_pcrSelection & g_pcrs->.
+ * Assume that data structures are all little endian.
+ * @param pcrSelect
+ *  Description of which PCR registers are selected.
+ * @param pcrs
+ *  Struct containing PCR digests.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool pcr_print_pcr_struct_le(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs);
+
+/**
  * Set the PCR value into pcrId if string in arg is a valid PCR index.
  * @param arg
  *  PCR index as string
