@@ -23,12 +23,19 @@ fi
 
 #echo "Using $TPM2_TOOL"
 
-# no arguments should produce at least ten lines of output
-NUM_TOOLS=$(tpm2 2>&1 | wc -l)
-if [ -z "$NUM_TOOLS" ] || [ "$NUM_TOOLS" -lt 10 ]; then
-    echo "tpm2 with no arguments did not produce list of tools"
-    fail=1
-fi
+#
+# Disabling this test and leaving a note for traceability because
+# disabling/ deleting tests without rational is a bad thing.
+#
+# Executing tpm2 without argument should now execute the man-page.
+#
+## no arguments should produce at least ten lines of output
+#NUM_TOOLS=$(tpm2 2>&1 | wc -l)
+#if [ -z "$NUM_TOOLS" ] || [ "$NUM_TOOLS" -lt 10 ]; then
+#    echo "tpm2 with no arguments did not produce list of tools"
+#    fail=1
+#fi
+
 
 # busybox style
 if ! tpm2 readclock &>/dev/null ; then

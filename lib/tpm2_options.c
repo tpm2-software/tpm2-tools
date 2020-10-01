@@ -141,17 +141,25 @@ static bool execute_man(char *prog_name, bool show_errors) {
             close(fd);
         }
 
-        /*
-         * Handle the case where the tool is specified as tpm2<space>tool-name
-         */
         const char *manpage = basename(prog_name);
-        if (strncmp(manpage, "tpm2_", strlen("tpm2_"))) {
+        if (!strcmp(manpage, "tpm2")) {
+            /*
+             * Handle the case where tpm2 is specified without tool-name or help
+             */
+            execlp("man", "man", "tpm2", NULL);
+        } else if (strncmp(manpage, "tpm2_", strlen("tpm2_"))) {
+            /*
+             * Handle the case where the tool is specified as tpm2< >tool-name
+             */
             char man_tool_name[MAX_TOOL_NAME_LEN] = {'t','p','m','2','_'};
             strncat(man_tool_name, manpage,
                 strlen(manpage) < (MAX_TOOL_NAME_LEN - strlen("tpm2_")) ?
                     strlen(manpage) : (MAX_TOOL_NAME_LEN - strlen("tpm2_")));
             execlp("man", "man", man_tool_name, NULL);
         } else {
+            /*
+             * Handle the case where the tool is specified as tpm2<_>tool-name
+             */
             execlp("man", "man", manpage, NULL);
         }
     } else {
