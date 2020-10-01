@@ -311,7 +311,7 @@ test_unit_test_tpm2_eventlog_yaml_LDADD = $(CMOCKA_LIBS) $(LDADD)
 
 AM_TESTS_ENVIRONMENT =	\
 	TPM2_ABRMD=tpm2-abrmd; export TPM2_ABRMD; \
-	TPM2_SIM=tpm_server; export TPM2_SIM; \
+	TPM2_SIM=$(TPM2_SIM); export TPM2_SIM; \
 	PATH=$(abs_builddir)/tools:$(abs_builddir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH); \
 	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
 	SRCDIR=$(abs_srcdir); export SRCDIR; BUILDDIR=$(abs_builddir); export BUILDDIR; \
