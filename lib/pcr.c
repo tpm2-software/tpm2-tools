@@ -9,6 +9,7 @@
 #include "log.h"
 #include "pcr.h"
 #include "tpm2.h"
+#include "tpm2_systemdeps.h"
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_util.h"
@@ -175,6 +176,58 @@ static bool pcr_unset_pcr_sections(TPML_PCR_SELECTION *s) {
     }
 
     return true;
+}
+
+bool pcr_print_pcr_struct_le(TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
+
+    UINT32 vi = 0, di = 0, i;
+    bool result = true;
+
+    tpm2_tool_output("pcrs:\n");
+
+    /* Loop through all PCR/hash banks */
+    for (i = 0; i < le32toh(pcr_select->count); i++) {
+        const char *alg_name = tpm2_alg_util_algtostr(
+                le16toh(pcr_select->pcrSelections[i].hash), tpm2_alg_util_flags_hash);
+
+        tpm2_tool_output("  %s:\n", alg_name);
+
+        /* Loop through all PCRs in this bank */
+        unsigned int pcr_id;
+        for (pcr_id = 0; pcr_id < pcr_select->pcrSelections[i].sizeofSelect * 8u;
+                pcr_id++) {
+            if (!tpm2_util_is_pcr_select_bit_set(&pcr_select->pcrSelections[i],
+                    pcr_id)) {
+                continue; // skip non-selected banks
+            }
+            if (vi >= le64toh(pcrs->count) || di >= le32toh(pcrs->pcr_values[vi].count)) {
+                LOG_ERR("Something wrong, trying to print but nothing more");
+                return false;
+            }
+
+            /* Print out PCR ID */
+            tpm2_tool_output("    %-2d: 0x", pcr_id);
+
+            /* Print out current PCR digest value */
+            TPM2B_DIGEST *b = &pcrs->pcr_values[vi].digests[di];
+            int k;
+            for (k = 0; k < le16toh(b->size); k++) {
+                tpm2_tool_output("%02X", b->buffer[k]);
+            }
+            tpm2_tool_output("\n");
+
+            if (++di < le32toh(pcrs->pcr_values[vi].count)) {
+                continue;
+            }
+
+            di = 0;
+            if (++vi < le64toh(pcrs->count)) {
+                continue;
+            }
+        }
+    }
+
+    return result;
 }
 
 bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
