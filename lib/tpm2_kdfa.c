@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <string.h>
+
 #include "log.h"
 #include "tpm2_kdfa.h"
 #include "tpm2_openssl.h"
@@ -8,10 +10,7 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
         TPM2B *context_u, TPM2B *context_v, UINT16 bits,
         TPM2B_MAX_BUFFER *result_key) {
     TPM2B_DIGEST tpm2b_label, tpm2b_bits, tpm2b_i_2;
-    UINT8 *tpm2b_bits_ptr = &tpm2b_bits.buffer[0];
-    UINT8 *tpm2b_i_2_ptr = &tpm2b_i_2.buffer[0];
     TPM2B_DIGEST *buffer_list[8];
-    UINT32 bits_swizzled, i_swizzled;
     TSS2_RC rval = TPM2_RC_SUCCESS;
     int i, j;
     UINT16 bytes = bits / 8;
@@ -21,8 +20,8 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
     tpm2b_i_2.size = 4;
 
     tpm2b_bits.size = 4;
-    bits_swizzled = tpm2_util_endian_swap_32(bits);
-    *(UINT32 *) tpm2b_bits_ptr = bits_swizzled;
+    UINT32 bits_be = tpm2_util_hton_32(bits);
+    memcpy(&tpm2b_bits.buffer[0], &bits_be, sizeof(bits_be));
 
     for(i = 0; label[i] != 0 ;i++ );
 
@@ -58,9 +57,8 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
     while (result_key->size < bytes) {
         TPM2B_DIGEST tmpResult;
         // Inner loop
-
-        i_swizzled = tpm2_util_endian_swap_32(i);
-        *(UINT32 *) tpm2b_i_2_ptr = i_swizzled;
+        bits_be = tpm2_util_hton_32(i);
+        memcpy(&tpm2b_i_2.buffer[0], &bits_be, sizeof(bits_be));
 
         j = 0;
         buffer_list[j++] = (TPM2B_DIGEST *) &(tpm2b_i_2);
