@@ -225,7 +225,6 @@ function recreate_info() {
     a="$a""export TPM2TOOLS_TEST_TCTI=\"$TPM2TOOLS_TEST_TCTI\"\n"
     a="$a""export TPM2TOOLS_TEST_PERSISTENT=\"$TPM2TOOLS_TEST_PERSISTENT\"\n"
     a="$a""export PATH=\"$PATH\"\n"
-    a="$a""TPM2_SIM_NV_CHIP=\"$TPM2_SIM_NV_CHIP\"\n"
     a="$a""TPM2_TOOLS_TEST_FIXTURES=\"$TPM2_TOOLS_TEST_FIXTURES\"\n"
     echo "#!/usr/bin/env bash"
     echo -e "$a"
@@ -283,7 +282,13 @@ function start_sim() {
         fi
         tpm2_sim_cmd_port=$((tpm2_sim_port + 1))
         echo "Attempting to start simulator on port: $tpm2_sim_port"
-        $TPM2_SIM -port $tpm2_sim_port &
+        case "$TPM2_SIM" in
+            *swtpm) "$TPM2_SIM" socket --tpm2 --server port="$tpm2_sim_port" \
+                                       --ctrl type=tcp,port="$tpm2_sim_cmd_port" \
+                                       --flags not-need-init --tpmstate dir="$PWD" &;;
+            *tpm_server) "$TPM2_SIM" -port "$tpm2_sim_port" &;;
+            *) echo "Unknown TPM simulator $TPM2_SIM"; return 1;;
+        esac
         tpm2_sim_pid=$!
         sleep 1
 
@@ -295,8 +300,11 @@ function start_sim() {
         if [[ $tpm2_sim_port_rc -eq 0 ]] && [[ $tpm2_sim_cmd_port_rc -eq 0 ]]; then
             echo "Started simulator on port $tpm2_sim_port in dir \"$PWD\""
             TPM2_SIMPORT=$tpm2_sim_port
-            # set a possible tools tcti to use mssim
-            tpm2tools_tcti="mssim:host=localhost,port=$TPM2_SIMPORT"
+            case "$TPM2_SIM" in
+                *swtpm) tpm2tools_tcti="swtpm:host=localhost,port=$TPM2_SIMPORT";;
+                *tpm_server) tpm2tools_tcti="mssim:host=localhost,port=$TPM2_SIMPORT";;
+                *) echo "Unknown TPM simulator $TPM2_SIM"; return 1;;
+            esac
             echo "tpm2tools_tcti=\"$tpm2tools_tcti\""
             return 0
         else
@@ -326,7 +334,12 @@ function start_abrmd() {
 
             # TCTI information for use with ABRMD
             local name="com.intel.tss2.Tabrmd${TPM2_SIMPORT}"
-            tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:port=$TPM2_SIMPORT"
+            tpm2_tabrmd_opts="--session --dbus-name=$name"
+            case "$TPM2_SIM" in
+                *swtpm) tpm2_tabrmd_opts="$tpm2_tabrmd_opts --tcti=swtpm:port=$TPM2_SIMPORT";;
+                *tpm_server) tpm2_tabrmd_opts="$tpm2_tabrmd_opts --tcti=mssim:port=$TPM2_SIMPORT";;
+                *) echo "Unknown TPM simulator $TPM2_SIM"; return 1;;
+            esac
             echo "TPM2ABRMD_TCTI=\"$tpm2_tabrmd_opts\""
             TPM2ABRMD_TCTI="$tpm2_tabrmd_opts"
         fi

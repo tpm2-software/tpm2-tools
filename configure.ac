@@ -140,9 +140,12 @@ AS_IF([test "x$enable_unit" != xno], [
     AS_IF([test $tpm2_abrmd = no],
           [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])])
 
+    AC_CHECK_PROG([swtpm], [swtpm], yes, no)
     AC_CHECK_PROG([tpm_server], [tpm_server], yes, no)
-    AS_IF([test $tpm_server = no],
-          [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])])
+    AS_IF([test $swtpm = yes], [TPM2_SIM=swtpm],
+          [AS_IF([test $tpm_server = yes], [TPM2_SIM=tpm_server],
+                 [AC_MSG_ERROR([Required executables swtpm or tpm_server not found, try setting PATH])])])
+    AC_SUBST([TPM2_SIM])
 
     AC_CHECK_PROG([BASH_SHELL], [bash], yes, no)
     AS_IF([test $BASH_SHELL = no],
@@ -180,7 +183,7 @@ AS_IF([test "x$enable_unit" != xno], [
           [AC_MSG_ERROR([Required executable openssl not found, some system tests will fail!])])
 
     unit_test_tool_report="- tpm2_abrmd: $tpm2_abrmd
-    - tpm_server: $tpm_server
+    - TPM simulator: $TPM2_SIM
     - bash: $BASH_SHELL
     - python: $PYTHON
     - xxd: $XXD
