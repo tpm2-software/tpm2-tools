@@ -35,8 +35,6 @@ struct tpm2_policysigned_ctx {
 
     const char *raw_data_path;
 
-    const char *cphash_path;
-
     const char *policy_qualifier_data;
 
     union {
@@ -102,9 +100,6 @@ static bool on_option(char key, char *value) {
     case 2:
         ctx.raw_data_path = value;
         break;
-    case 3:
-        ctx.cphash_path = value;
-        break;
     case 'x':
         ctx.is_nonce_tpm = true;
         break;
@@ -135,7 +130,6 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ticket",         required_argument, NULL,  0  },
         { "timeout",        required_argument, NULL,  1  },
         { "raw-data",       required_argument, NULL,  2  },
-        { "cphash",         required_argument, NULL,  3  },
     };
 
     *opts = tpm2_options_new("L:S:g:s:f:c:t:q:x", ARRAY_LEN(topts), topts, on_option,
@@ -208,7 +202,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = tpm2_policy_build_policysigned(ectx, ctx.session,
         &ctx.key_context_object, &ctx.signature, ctx.expiration, &timeout,
         &policy_ticket, ctx.policy_qualifier_data, ctx.is_nonce_tpm,
-        ctx.raw_data_path, ctx.cphash_path);
+        ctx.raw_data_path);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policysigned TPM");
         goto tpm2_tool_onrun_out;
