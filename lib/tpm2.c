@@ -454,12 +454,11 @@ tool_rc tpm2_policy_signed(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session,
         const TPMT_SIGNATURE *signature, INT32 expiration,
         TPM2B_TIMEOUT **timeout, TPMT_TK_AUTH **policy_ticket,
-        TPM2B_NONCE *policy_qualifier, TPM2B_NONCE *nonce_tpm,
-        TPM2B_DIGEST *cphash) {
+        TPM2B_NONCE *policy_qualifier, TPM2B_NONCE *nonce_tpm) {
 
     TSS2_RC rval = Esys_PolicySigned(esys_context, auth_entity_obj->tr_handle,
         policy_session, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, nonce_tpm,
-        cphash, policy_qualifier, expiration, signature, timeout, policy_ticket);
+        NULL, policy_qualifier, expiration, signature, timeout, policy_ticket);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySigned, rval);
         return tool_rc_from_tpm(rval);
@@ -692,7 +691,7 @@ tool_rc tpm2_policy_secret(ESYS_CONTEXT *esys_context,
         TPM2B_TIMEOUT **timeout, TPM2B_NONCE *nonce_tpm,
         TPM2B_NONCE *policy_qualifier, TPM2B_DIGEST *cp_hash) {
 
-    const TPM2B_DIGEST *cphash = NULL;
+    const TPM2B_DIGEST *cp_hash_a = NULL;
 
     ESYS_TR auth_entity_obj_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
@@ -715,7 +714,7 @@ tool_rc tpm2_policy_secret(ESYS_CONTEXT *esys_context,
         }
 
         TSS2_RC rval = Tss2_Sys_PolicySecret_Prepare(sys_context,
-            auth_entity_obj->handle, policy_session, nonce_tpm, cphash,
+            auth_entity_obj->handle, policy_session, nonce_tpm, cp_hash_a,
             policy_qualifier, expiration);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_PolicySecret_Prepare, rval);
@@ -752,7 +751,7 @@ tpm2_policysecret_free_name1:
 
     TSS2_RC rval = Esys_PolicySecret(esys_context, auth_entity_obj->tr_handle,
             policy_session, auth_entity_obj_session_handle, ESYS_TR_NONE,
-            ESYS_TR_NONE, nonce_tpm, cphash, policy_qualifier, expiration, timeout,
+            ESYS_TR_NONE, nonce_tpm, cp_hash_a, policy_qualifier, expiration, timeout,
             policy_ticket);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySecret, rval);
