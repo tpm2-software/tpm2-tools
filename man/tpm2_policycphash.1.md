@@ -26,9 +26,13 @@ in a TPM command is checked against the one specified in the policy.
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-  * **\--cphash**=_FILE_:
+  * **\--cphash-input**=_FILE_:
 
     The file containing the command parameter hash of the command.
+
+  * **\--cphash**=_FILE_:
+
+    **DEPRECATED**, use **--cphash-input** instead.
 
 ## References
 

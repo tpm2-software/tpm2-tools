@@ -23,7 +23,7 @@ cleanup "no-shutdown"
 
 generate_policycphash() {
     tpm2 startauthsession -S session.ctx -g sha256
-    tpm2 policycphash -S session.ctx -L policy.cphash --cphash cp.hash
+    tpm2 policycphash -S session.ctx -L policy.cphash --cphash-input cp.hash
     tpm2 flushcontext session.ctx
     rm session.ctx
 }
@@ -38,7 +38,7 @@ sign_and_verify_policycphash() {
 
 setup_authorized_policycphash() {
     tpm2 startauthsession -S session.ctx --policy-session -g sha256
-    tpm2 policycphash -S session.ctx --cphash cp.hash
+    tpm2 policycphash -S session.ctx --cphash-input cp.hash
     tpm2 policyauthorize -S session.ctx -i policy.cphash -n signing_key.name \
     -t verification.tkt
 }
@@ -46,12 +46,12 @@ setup_authorized_policycphash() {
 setup_owner_policy() {
     tpm2 setprimarypolicy -C o -L policy.cphash -g sha256
     tpm2 startauthsession -S session.ctx --policy-session -g sha256
-    tpm2 policycphash -S session.ctx --cphash cp.hash
+    tpm2 policycphash -S session.ctx --cphash-input cp.hash
 }
 
 start_policy_cphash() {
     tpm2 startauthsession -S session.ctx --policy-session -g sha256
-    tpm2 policycphash -S session.ctx --cphash cp.hash
+    tpm2 policycphash -S session.ctx --cphash-input cp.hash
 }
 
 create_authorized_policy() {
@@ -320,7 +320,7 @@ fi
 trap onerror ERR
 tpm2 flushcontext session.ctx
 
-# Test tpm2 activatecredential
+# Test tpm2 activatecredential (using legacy option --cphash)
 create_authorized_policy
 tpm2 createprimary -C o -c prim.ctx -G rsa
 tpm2 readpublic -c prim.ctx -o prim.pub
@@ -394,12 +394,12 @@ dd if=/dev/urandom of=sym_key_in.bin bs=1 count=16 status=none
 tpm2 duplicate -C new_parent.ctx -c duplicable_key.ctx -G aes \
 -i sym_key_in.bin -r dupprv.bin -s dupseed.dat --cphash cp.hash
 tpm2 startauthsession -S session.ctx -g sha256
-tpm2 policycphash -S session.ctx --cphash cp.hash
+tpm2 policycphash -S session.ctx --cphash-input cp.hash
 tpm2 policycommandcode -S session.ctx -L policy.cphash TPM2_CC_Duplicate
 tpm2 flushcontext session.ctx
 sign_and_verify_policycphash
 tpm2 startauthsession --policy-session -S session.ctx -g sha256
-tpm2 policycphash -S session.ctx --cphash cp.hash
+tpm2 policycphash -S session.ctx --cphash-input cp.hash
 tpm2 policycommandcode -S session.ctx TPM2_CC_Duplicate
 tpm2 policyauthorize -S session.ctx -i policy.cphash -n signing_key.name \
 -t verification.tkt
@@ -409,7 +409,7 @@ tpm2 flushcontext session.ctx
 ## attempt failing scenario
 dd if=/dev/urandom of=sym_key_in.bin bs=1 count=16 status=none
 tpm2 startauthsession --policy-session -S session.ctx -g sha256
-tpm2 policycphash -S session.ctx --cphash cp.hash
+tpm2 policycphash -S session.ctx --cphash-input cp.hash
 tpm2 policycommandcode -S session.ctx TPM2_CC_Duplicate
 tpm2 policyauthorize -S session.ctx -i policy.cphash -n signing_key.name \
 -t verification.tkt
@@ -480,12 +480,12 @@ tpm2 create -C prim.ctx -c key.ctx -G rsa  -u key.pub -r key.priv \
 -L authorized.policy -P primarypass
 tpm2 certify -c prim.ctx -C key.ctx -g sha256 --cphash cp.hash
 tpm2 startauthsession -S session.ctx -g sha256
-tpm2 policycphash -S session.ctx --cphash cp.hash
+tpm2 policycphash -S session.ctx --cphash-input cp.hash
 tpm2 policycommandcode -S session.ctx -L policy.cphash TPM2_CC_Certify
 tpm2 flushcontext session.ctx
 sign_and_verify_policycphash
 tpm2 startauthsession --policy-session -S session.ctx -g sha256
-tpm2 policycphash -S session.ctx --cphash cp.hash
+tpm2 policycphash -S session.ctx --cphash-input cp.hash
 tpm2 policycommandcode -S session.ctx TPM2_CC_Certify
 tpm2 policyauthorize -S session.ctx -i policy.cphash -n signing_key.name \
 -t verification.tkt
@@ -563,7 +563,7 @@ tpm2 hierarchycontrol -C p shEnable clear --cphash cp.hash
 generate_policycphash
 tpm2 setprimarypolicy -C p -L policy.cphash -g sha256
 tpm2 startauthsession -S session.ctx --policy-session -g sha256
-tpm2 policycphash -S session.ctx --cphash cp.hash
+tpm2 policycphash -S session.ctx --cphash-input cp.hash
 tpm2 hierarchycontrol -C p shEnable clear -P "session:session.ctx"
 tpm2 flushcontext session.ctx
 
@@ -586,7 +586,7 @@ tpm2 clear -c l --cphash cp.hash
 generate_policycphash
 tpm2 setprimarypolicy -C l -L policy.cphash -g sha256
 tpm2 startauthsession -S session.ctx --policy-session -g sha256
-tpm2 policycphash -S session.ctx --cphash cp.hash
+tpm2 policycphash -S session.ctx --cphash-input cp.hash
 tpm2 clear -c l "session:session.ctx"
 tpm2 flushcontext session.ctx
 
@@ -596,7 +596,7 @@ tpm2 clearcontrol -C l s --cphash cp.hash
 generate_policycphash
 tpm2 setprimarypolicy -C l -L policy.cphash -g sha256
 tpm2 startauthsession -S session.ctx --policy-session -g sha256
-tpm2 policycphash -S session.ctx --cphash cp.hash
+tpm2 policycphash -S session.ctx --cphash-input cp.hash
 tpm2 clearcontrol -C l s -P "session:session.ctx"
 tpm2 flushcontext session.ctx
 
@@ -607,7 +607,7 @@ tpm2 dictionarylockout -s -n 5 -t 6 -l 7 --cphash cp.hash
 generate_policycphash
 tpm2 setprimarypolicy -C l -L policy.cphash -g sha256
 tpm2 startauthsession -S session.ctx --policy-session -g sha256
-tpm2 policycphash -S session.ctx --cphash cp.hash
+tpm2 policycphash -S session.ctx --cphash-input cp.hash
 tpm2 dictionarylockout -s -n 5 -t 6 -l 7 --cphash cp.hash -p "session:session.ctx"
 tpm2 flushcontext session.ctx
 

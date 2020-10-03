@@ -53,9 +53,10 @@ static bool on_option(char key, char *value) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "policy",  required_argument, NULL, 'L' },
-        { "session", required_argument, NULL, 'S' },
-        { "cphash",  required_argument, NULL,  0  },
+        { "policy",       required_argument, NULL, 'L' },
+        { "session",      required_argument, NULL, 'S' },
+        { "cphash-input", required_argument, NULL,  0  },
+        { "cphash",       required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("L:S:", ARRAY_LEN(topts), topts, on_option, NULL,
