@@ -85,7 +85,7 @@ static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
 
     TPMS_CAPABILITY_DATA *capability_data = NULL;
     if (ctx.nv_index == 0) {
-        tool_rc rc = tpm2_getcap(context, TPM2_CAP_HANDLES, tpm2_util_hton_32(TPM2_HT_NV_INDEX),
+        tool_rc rc = tpm2_getcap(context, TPM2_CAP_HANDLES, TPM2_HT_NV_INDEX << 24,
                 TPM2_PT_NV_INDEX_MAX, NULL, &capability_data);
         if (rc != tool_rc_success) {
             return rc;
