@@ -400,8 +400,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = tpm2_alg_util_public_init(ctx.object.alg, ctx.object.name_alg,
-            ctx.object.attrs, ctx.object.policy, NULL, attrs,
-            &ctx.object.public);
+            ctx.object.attrs, ctx.object.policy, attrs, &ctx.object.public);
     if (rc != tool_rc_success) {
         return rc;
     }
