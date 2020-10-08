@@ -186,9 +186,27 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * Initialize the public properties of the key
      */
     rc = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs,
-            ctx.policy, ctx.unique_file, DEFAULT_ATTRS, &ctx.objdata.in.public);
+            ctx.policy, DEFAULT_ATTRS, &ctx.objdata.in.public);
     if (rc != tool_rc_success) {
         return rc;
+    }
+
+    /* Optional unique data */
+    if (ctx.unique_file) {
+        /*
+         * user is responsible for ensuring that that this buffer is formatted
+         * as TPMU_PUBLIC_ID union.
+         */
+        UINT16 unique_size = sizeof(ctx.objdata.in.public.publicArea.unique);
+        bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+        ctx.unique_file, &unique_size,
+        (uint8_t *) &ctx.objdata.in.public.publicArea.unique);
+        if (!result) {
+            LOG_ERR("Failed to load file data from unique.");
+            return tool_rc_general_error;
+        }
+
+        ctx.unique_file = 0; //Shouldn't need this after removing unique file inference in tpm2_alg_util_public_init
     }
 
     /* Outside data is optional. If not specified default to 0 */

@@ -174,8 +174,7 @@ bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public);
  * @return
  */
 tool_rc tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
-        char *auth_policy, char *unique_file, TPMA_OBJECT def_attrs,
-        TPM2B_PUBLIC *public);
+        char *auth_policy,  TPMA_OBJECT def_attrs, TPM2B_PUBLIC *public);
 
 /**
  * Returns an ECC curve as a friendly name.

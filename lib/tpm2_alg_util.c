@@ -936,8 +936,7 @@ tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *ectx,
 }
 
 tool_rc tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
-        char *auth_policy, char *unique_file, TPMA_OBJECT def_attrs,
-        TPM2B_PUBLIC *public) {
+        char *auth_policy,  TPMA_OBJECT def_attrs, TPM2B_PUBLIC *public) {
 
     memset(public, 0, sizeof(*public));
 
@@ -948,19 +947,6 @@ tool_rc tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attr
         bool res = files_load_bytes_from_path(auth_policy,
             public->publicArea.authPolicy.buffer,
                 &public->publicArea.authPolicy.size);
-        if (!res) {
-            return tool_rc_general_error;
-        }
-    }
-
-    /* load the unique portion of TPMT_PUBLIC from a path if present */
-    if (unique_file) {
-        UINT16 unique_size = sizeof(public->publicArea.unique);
-        /* loaded size may be <= unique_size; user is responsible
-         * for ensuring that that this buffer is formatted as a
-         * TPMU_PUBLIC_ID union. unique_size is max size of the union */
-        bool res = files_load_bytes_from_path(unique_file,
-                (UINT8*) &public->publicArea.unique, &unique_size);
         if (!res) {
             return tool_rc_general_error;
         }
