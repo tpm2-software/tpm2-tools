@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <string.h>
+
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
@@ -82,9 +84,6 @@ static bool on_option(char key, char *value) {
         break;
     case 'u':
         ctx.unique_file = value;
-        if (ctx.unique_file == NULL || ctx.unique_file[0] == '\0') {
-            return false;
-        }
         break;
     case 'L':
         ctx.policy = value;
@@ -149,8 +148,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
-    UNUSED(flags);
+static tool_rc validate_input_options(void) {
 
     if (ctx.cp_hash_path && (ctx.creation_data_file || ctx.creation_hash_file ||
     ctx.creation_ticket_file || ctx.context_file)) {
@@ -158,6 +156,12 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
+    return tool_rc_success;
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /* Parent/ Hierarchy Auth */
     tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
             &ctx.parent.session, false);
     if (rc != tool_rc_success) {
@@ -165,6 +169,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    /* Primary key auth */
     tpm2_session *tmp;
     rc = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
     if (rc != tool_rc_success) {
@@ -177,30 +182,35 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
+    /*
+     * Initialize the public properties of the key
+     */
     rc = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs,
             ctx.policy, ctx.unique_file, DEFAULT_ATTRS, &ctx.objdata.in.public);
     if (rc != tool_rc_success) {
         return rc;
     }
 
+    /* Outside data is optional. If not specified default to 0 */
+    if (ctx.outside_info_data) {
+        ctx.objdata.in.outside_info.size = sizeof(ctx.objdata.in.outside_info.buffer);
+        bool result = tpm2_util_bin_from_hex_or_file(ctx.outside_info_data,
+                &ctx.objdata.in.outside_info.size,
+                ctx.objdata.in.outside_info.buffer);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+    }
+
     /*
-     * Outside data is optional. If not specified default to 0
+     * Template saved regardless of execution of the TPM2_CC_CreatePrimary.
+     *
+     * TODO: Does this need to be part of the no_execute_only_process_params
+     *       along side processing cphash.
+     *
      */
-    if (!ctx.outside_info_data) {
-        goto skipped_outside_info;
-    }
-
-    ctx.objdata.in.outside_info.size = sizeof(ctx.objdata.in.outside_info.buffer);
-    bool result = tpm2_util_bin_from_hex_or_file(ctx.outside_info_data,
-            &ctx.objdata.in.outside_info.size,
-            ctx.objdata.in.outside_info.buffer);
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
-skipped_outside_info:
     if (ctx.template_data_path) {
-        result = files_save_template(&ctx.objdata.in.public.publicArea,
+        bool result = files_save_template(&ctx.objdata.in.public.publicArea,
             ctx.template_data_path);
         if (!result) {
             LOG_ERR("Could not save public template to file.");
@@ -208,45 +218,45 @@ skipped_outside_info:
         }
     }
 
-    if (ctx.cp_hash_path) {
-        TPM2B_DIGEST cp_hash = { .size = 0 };
-        rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session,
-        &ctx.objdata, &cp_hash);
-        if (rc == tool_rc_success) {
-            result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-            if (!result) {
-                LOG_ERR("Failed to save cp hash");
-                rc = tool_rc_general_error;
-            }
+    return tool_rc_success;
+}
+
+static tool_rc no_execute_only_process_params(ESYS_CONTEXT *ectx) {
+
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    tool_rc rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session,
+    &ctx.objdata, &cp_hash);
+
+    if (rc == tool_rc_success) {
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            LOG_ERR("Failed to save cp hash");
+            rc = tool_rc_general_error;
         }
-        return rc;
     }
 
-    rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session, &ctx.objdata,
-    NULL);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
+    return rc;
+}
+
+static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
 
     tpm2_util_public_to_yaml(ctx.objdata.out.public, NULL);
 
-    rc = ctx.context_file ?
-            files_save_tpm_context_to_path(ectx, ctx.objdata.out.handle,
-                    ctx.context_file) :
-            tool_rc_success;
+    tool_rc  rc = ctx.context_file ? files_save_tpm_context_to_path(ectx,
+    ctx.objdata.out.handle, ctx.context_file) : tool_rc_success;
     if (rc != tool_rc_success) {
         LOG_ERR("Failed saving object context.");
         return rc;
     }
 
-    result = true;
+    bool result = true;
     if (ctx.creation_data_file) {
         result = files_save_creation_data(ctx.objdata.out.creation.data,
             ctx.creation_data_file);
     }
     if (!result) {
         LOG_ERR("Failed saving creation data.");
-        rc = tool_rc_general_error;
+        return tool_rc_general_error;
     }
 
     if (ctx.creation_ticket_file) {
@@ -255,7 +265,7 @@ skipped_outside_info:
     }
     if (!result) {
         LOG_ERR("Failed saving creation ticket.");
-        rc = tool_rc_general_error;
+        return tool_rc_general_error;
     }
 
     if (ctx.creation_hash_file) {
@@ -264,10 +274,42 @@ skipped_outside_info:
     }
     if (!result) {
         LOG_ERR("Failed saving creation hash.");
-        rc = tool_rc_general_error;
+        return tool_rc_general_error;
     }
 
-    return rc;
+    return tool_rc_success;
+}
+
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    /* Validate input options */
+    tool_rc rc = validate_input_options();
+    if (rc != tool_rc_success) {
+        return tool_rc_option_error;
+    }
+
+    /* Process inputs */
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /* Process & return uncoditionally if no execute paths are to be executed */
+    if (ctx.cp_hash_path) { // One of the conditions for no execute
+        return no_execute_only_process_params(ectx);
+    }
+
+    /* Dispatch TPM2_CC_CreatePrimary */
+    rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session, &ctx.objdata,
+    NULL);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /* Process outputs and return */
+    return process_outputs(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
