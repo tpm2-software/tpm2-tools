@@ -68,7 +68,18 @@ tpm2 createprimary -C o -G ecc -g sha256 -c prim.ctx -u unique.dat \
 -a "restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda"
 test -f prim.ctx
 rm -f prim.ctx
-
+# test the case with RSA and unique data specified via stdin
+dd if=/dev/urandom bs=256 count=1 status=none | \
+tpm2 createprimary -C o -G rsa -g sha256 -c prim.ctx -u - \
+-a "restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda"
+test -f prim.ctx
+rm -f prim.ctx
+# test the case with ECC and unique data specified via stdin
+dd if=/dev/urandom bs=96 count=1 status=none | \
+tpm2 createprimary -C o -G ecc -g sha256 -c prim.ctx -u - \
+-a "restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda"
+test -f prim.ctx
+rm -f prim.ctx
 
 # Test that -g/-G do not need to be specified.
 tpm2 createprimary -Q -c context.out

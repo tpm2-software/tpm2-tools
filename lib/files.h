@@ -595,4 +595,22 @@ tool_rc files_tpm2b_attest_to_tpms_attest(TPM2B_ATTEST *quoted, TPMS_ATTEST *att
  */
 bool files_load_attest_file(FILE *f, const char *path, TPMS_ATTEST *attest);
 
+/**
+ * @brief
+ * Parse the key type and load the unique data in the object's
+ * TPM2B_PUBLIC area.
+ *
+ * @param file_path
+ * The file to read the unique data from. This can be NULL to indicate stdin
+ * @param public_data
+ * The TPM2B public structure to parse the object type and also to update the
+ * unique data as read from the file or stdin.
+ *
+ * @return
+ * tool_rc type signaling the status at the end of read attempt.
+ *
+ */
+tool_rc files_load_unique_data(const char *file_path,
+TPM2B_PUBLIC *public_data);
+
 #endif /* FILES_H */
