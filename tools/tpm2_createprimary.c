@@ -193,20 +193,13 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
     /* Optional unique data */
     if (ctx.unique_file) {
-        /*
-         * user is responsible for ensuring that that this buffer is formatted
-         * as TPMU_PUBLIC_ID union.
-         */
-        UINT16 unique_size = sizeof(ctx.objdata.in.public.publicArea.unique);
-        bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
-        ctx.unique_file, &unique_size,
-        (uint8_t *) &ctx.objdata.in.public.publicArea.unique);
-        if (!result) {
-            LOG_ERR("Failed to load file data from unique.");
-            return tool_rc_general_error;
+        if (!strcmp(ctx.unique_file, "-")) {
+            ctx.unique_file = 0;
         }
-
-        ctx.unique_file = 0; //Shouldn't need this after removing unique file inference in tpm2_alg_util_public_init
+        rc = files_load_unique_data(ctx.unique_file, &ctx.objdata.in.public);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
     }
 
     /* Outside data is optional. If not specified default to 0 */

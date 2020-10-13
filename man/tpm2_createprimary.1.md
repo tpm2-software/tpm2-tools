@@ -64,7 +64,7 @@ future interactions with the created primary.
      TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|
      TPMA_OBJECT_USERWITHAUTH`
 
-  * **-u**, **\--unique-data**=_FILE_:
+  * **-u**, **\--unique-data**=_FILE_ OR _STDIN_:
 
     An optional file input that contains the unique field of **TPMT_PUBLIC** in
     little-endian format. Primary key creator may place information that causes
@@ -73,6 +73,21 @@ future interactions with the created primary.
     unique and overloads it so that it contains one value when the application
     provides this structure as input and another value when the applications
     receives this structure as output (like public portion of the rsa key).
+
+    If the data is specified as a file, the user is responsible for ensuring
+    that this buffer is formatted per TPMU_PUBLIC_ID union.
+
+    The unique data can also be retrieved from stdin buffer by specifying
+    **"-"** as the **--unique-data** option value and the tool will parse the
+    key type and associate the input data with the unique data buffer associated
+    with the key type.
+
+    NOTE:
+    1. The maximum allowed bytes is dependent on key type and the TPM
+    implementation. Eg. While TSS allows a value upto 512 for MAX_RSA_KEY_BYTES,
+    however the ibmSwTPM implementation supports a value upto 256 bytes.
+    2. The unique input data specified on stdin for ECC is split for specifying
+    the X coordinate and Y coordinate buffers.
 
   * **\--creation-data**=_FILE_:
 

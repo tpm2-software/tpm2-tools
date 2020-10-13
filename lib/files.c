@@ -789,3 +789,86 @@ tool_rc files_tpm2b_attest_to_tpms_attest(TPM2B_ATTEST *quoted, TPMS_ATTEST *att
 
     return tool_rc_success;
 }
+
+tool_rc files_load_unique_data(const char *file_path,
+TPM2B_PUBLIC *public_data) {
+
+    /*
+     * TPM2_MAX_RSA_KEY_BYTES which expands to 512 bytes is the maximum unique
+     * size for RSA and other key types.
+     *
+     * Additionally this may still prove to be a bigger value than what has been
+     * implemented in a TPM. For example the value of MAX_RSA_KEY_BYTES is 256
+     * for ibmSimulator as specified in implementation.h
+     */
+    UINT16 unique_size = TPM2_MAX_RSA_KEY_BYTES;
+    uint8_t file_data[TPM2_MAX_RSA_KEY_BYTES];
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+    file_path, &unique_size, file_data);
+    if (!result) {
+        LOG_ERR("Failed to load unique data from file/ stdin.");
+        return tool_rc_general_error;
+    }
+
+    /*
+     * If the data is specified as a file, the user is responsible for ensuring
+     * that that this buffer is formatted as TPMU_PUBLIC_ID union.
+     */
+    if (file_path) {
+        memcpy(&public_data->publicArea.unique, file_data, unique_size);
+        return tool_rc_success;
+    }
+
+    /* Unstructured stdin unique data paired with a RSA object */
+    if (public_data->publicArea.type == TPM2_ALG_RSA) {
+        public_data->publicArea.unique.rsa.size = unique_size;
+        memcpy(&public_data->publicArea.unique.rsa.buffer, file_data,
+        unique_size);
+    }
+
+    /* Unstructured stdin unique data paired with an ECC object */
+    if (public_data->publicArea.type == TPM2_ALG_ECC) {
+        /* The size limitation is TPM implementation dependent. */
+        if((unique_size / 2) > TPM2_MAX_ECC_KEY_BYTES) {
+            LOG_ERR("Unique data too big for ECC object's allowed unique size");
+            return tool_rc_general_error;
+        }
+        /* Copy data into X and Y coordinates unique buffers */
+        public_data->publicArea.unique.ecc.x.size = (unique_size / 2);
+        memcpy(&public_data->publicArea.unique.ecc.x.buffer, file_data,
+        (unique_size / 2));
+        /* Copy the rest of buffer to y and also adjust size if input is odd */
+        public_data->publicArea.unique.ecc.y.size = (unique_size / 2) +
+        (unique_size % 2);
+        memcpy(&public_data->publicArea.unique.ecc.y.buffer,
+        file_data + (unique_size / 2), (unique_size / 2));
+    }
+
+    /* Unstructured stdin unique data paired with an Keyedhash object */
+    if (public_data->publicArea.type == TPM2_ALG_KEYEDHASH) {
+        /* The size limitation is TPM implementation dependent. */
+        if (unique_size > sizeof(TPMU_HA)) {
+            LOG_ERR("Unique data too big for keyedhash object's allowed unique "
+            "size.");
+            return tool_rc_general_error;
+        }
+        public_data->publicArea.unique.keyedHash.size = unique_size;
+        memcpy(&public_data->publicArea.unique.keyedHash.buffer, file_data,
+        unique_size);
+    }
+
+    /* Unstructured stdin unique data paired with an Symcipher object */
+    if (public_data->publicArea.type == TPM2_ALG_SYMCIPHER) {
+        /* The size limitation is TPM implementation dependent. */
+        if (unique_size > sizeof(TPMU_HA)) {
+            LOG_ERR("Unique data too big for TPM2_ALG_SYMCIPHER object's "
+                    "allowed unique size.");
+            return tool_rc_general_error;
+        }
+        public_data->publicArea.unique.sym.size = unique_size;
+        memcpy(&public_data->publicArea.unique.sym.buffer, file_data,
+        unique_size);
+    }
+
+    return tool_rc_success;
+}
