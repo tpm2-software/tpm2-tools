@@ -122,7 +122,7 @@ bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size) {
     bytes_to_str(digest->Digest, size, hexstr, sizeof(hexstr));
 
     tpm2_tool_output("      - AlgorithmId: %s\n"
-                     "        Digest: %s\n",
+                     "        Digest: \"%s\"\n",
                      tpm2_alg_util_algtostr(digest->AlgorithmId, tpm2_alg_util_flags_hash),
                      hexstr);
 
@@ -172,7 +172,7 @@ static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
     bytes_to_str(variable_data, data->VariableDataLength, var_data,
                  VAR_DATA_HEX_SIZE(data));
 
-    tpm2_tool_output("      VariableData: %s\n", var_data);
+    tpm2_tool_output("      VariableData: \"%s\"\n", var_data);
     free(var_data);
 
     return true;
@@ -262,7 +262,7 @@ bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
                      data->ImageLinkTimeAddress, data->LengthOfDevicePath);
 
     bytes_to_str(data->DevicePath, size - sizeof(*data), buf, devpath_len);
-    tpm2_tool_output("        DevicePath: %s\n", buf);
+    tpm2_tool_output("        DevicePath: \"%s\"\n", buf);
 
     free(buf);
     return true;
@@ -297,7 +297,7 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
                                     event->EventSize);
     default:
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
-        tpm2_tool_output("    Event: %s\n", hexstr);
+        tpm2_tool_output("    Event: \"%s\"\n", hexstr);
         return true;
     }
 }
@@ -346,7 +346,7 @@ bool yaml_sha1_log_eventhdr_callback(TCG_EVENT const *eventhdr, size_t size,
     tpm2_tool_output("    DigestCount: 1\n"
                      "    Digests:\n"
                      "      - AlgorithmId: %s\n"
-                     "        Digest: %s\n",
+                     "        Digest: \"%s\"\n",
                      tpm2_alg_util_algtostr(TPM2_ALG_SHA1, tpm2_alg_util_flags_hash),
                      hexstr);
     return true;
@@ -360,7 +360,7 @@ void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
     tpm2_tool_output("  - EventNum: %zu\n"
                      "    PCRIndex: %" PRIu32 "\n"
                      "    EventType: %s\n"
-                     "    Digest: %s\n"
+                     "    Digest: \"%s\"\n"
                      "    EventSize: %" PRIu32 "\n",
                      (*count)++, event->pcrIndex,
                      eventtype_to_string(event->eventType), digest_hex,
@@ -417,7 +417,7 @@ bool yaml_specid_vendor(TCG_VENDOR_INFO *vendor) {
     }
     bytes_to_str(vendor->vendorInfo, vendor->vendorInfoSize, vendinfo_str,
                  vendor->vendorInfoSize * 2 + 1);
-    tpm2_tool_output("        vendorInfo: %s\n", vendinfo_str);
+    tpm2_tool_output("        vendorInfo: \"%s\"\n", vendinfo_str);
     free(vendinfo_str);
     return true;
 }
