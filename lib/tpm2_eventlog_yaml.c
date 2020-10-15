@@ -213,7 +213,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data) {
     uuid_unparse_lower(data->VariableName, uuidstr);
 
     tpm2_tool_output("    Event:\n"
-                     "    - VariableName: %s\n"
+                     "      VariableName: %s\n"
                      "      UnicodeNameLength: %"PRIu64"\n"
                      "      VariableDataLength: %" PRIu64 "\n",
                      uuidstr, data->UnicodeNameLength,
@@ -230,8 +230,8 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data) {
 bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
 
     tpm2_tool_output("    Event:\n"
-                     "      - BlobBase: 0x%" PRIx64 "\n"
-                     "        BlobLength: 0x%" PRIx64 "\n",
+                     "      BlobBase: 0x%" PRIx64 "\n"
+                     "      BlobLength: 0x%" PRIx64 "\n",
                      data->BlobBase,
                      data->BlobLength);
     return true;
@@ -254,15 +254,15 @@ bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
     }
 
     tpm2_tool_output("    Event:\n"
-                     "      - ImageLocationInMemory: 0x%" PRIx64 "\n"
-                     "        ImageLengthInMemory: %" PRIu64 "\n"
-                     "        ImageLinkTimeAddress: 0x%" PRIx64 "\n"
-                     "        LengthOfDevicePath: %" PRIu64 "\n",
+                     "      ImageLocationInMemory: 0x%" PRIx64 "\n"
+                     "      ImageLengthInMemory: %" PRIu64 "\n"
+                     "      ImageLinkTimeAddress: 0x%" PRIx64 "\n"
+                     "      LengthOfDevicePath: %" PRIu64 "\n",
                      data->ImageLocationInMemory, data->ImageLengthInMemory,
                      data->ImageLinkTimeAddress, data->LengthOfDevicePath);
 
     bytes_to_str(data->DevicePath, size - sizeof(*data), buf, devpath_len);
-    tpm2_tool_output("        DevicePath: \"%s\"\n", buf);
+    tpm2_tool_output("      DevicePath: \"%s\"\n", buf);
 
     free(buf);
     return true;
