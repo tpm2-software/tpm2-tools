@@ -35,8 +35,15 @@ bool foreach_digest2(tpm2_eventlog_context *ctx, unsigned pcr_index, TCG_DIGEST2
         return false;
     }
 
-    bool ret = true;
+    /* Because pcr_index is used for array indexing and bit-shift operations it
+       is 1 less than the max value */
+    if (pcr_index > (TPM2_MAX_PCRS - 1)) {
+        LOG_ERR("PCR Index %d is out of bounds for max available PCRS %d",
+        pcr_index, TPM2_MAX_PCRS);
+        return false;
+    }
 
+    bool ret = true;
     size_t i;
     for (i = 0; i < count; ++i) {
         if (size < sizeof(*digest)) {
@@ -52,9 +59,7 @@ bool foreach_digest2(tpm2_eventlog_context *ctx, unsigned pcr_index, TCG_DIGEST2
         }
 
         uint8_t *pcr = NULL;
-        if (pcr_index > TPM2_MAX_PCRS) {
-            LOG_ERR("PCR%d > max %d", pcr_index, TPM2_MAX_PCRS);
-        } else if (alg == TPM2_ALG_SHA1) {
+        if (alg == TPM2_ALG_SHA1) {
             pcr = ctx->sha1_pcrs[pcr_index];
             ctx->sha1_used |= (1 << pcr_index);
         } else if (alg == TPM2_ALG_SHA256) {
