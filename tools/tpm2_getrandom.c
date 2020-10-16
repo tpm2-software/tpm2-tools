@@ -31,7 +31,6 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
 
     ESYS_TR audit_session_handle = ESYS_TR_NONE;
     TPMI_ALG_HASH param_hash_algorithm = TPM2_ALG_SHA256;
-
     if (ctx.audit_session_path) {
             tool_rc rc = tpm2_session_restore(ectx, ctx.audit_session_path,
             false, &ctx.audit_session);
@@ -43,25 +42,24 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
         param_hash_algorithm = tpm2_session_get_authhash(ctx.audit_session);
     }
 
-    FILE *out = stdout;
-    bool res = true;
-
-    TPM2B_DIGEST *cp_hash = ctx.cp_hash_path ?
-                                calloc(1, sizeof(TPM2B_DIGEST)) : NULL;
-    TPM2B_DIGEST *rp_hash = ctx.rp_hash_path ?
-                                calloc(1, sizeof(TPM2B_DIGEST)) : NULL;
-
+    TPM2B_DIGEST *cp_hash =
+        ctx.cp_hash_path ? calloc(1, sizeof(TPM2B_DIGEST)): NULL;
+    TPM2B_DIGEST *rp_hash =
+        ctx.rp_hash_path ? calloc(1, sizeof(TPM2B_DIGEST)) : NULL;
     TPM2B_DIGEST *random_bytes;
     tool_rc rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &random_bytes,
     cp_hash, rp_hash, audit_session_handle, param_hash_algorithm);
     if (rc != tool_rc_success) {
-        return rc;
+        goto out_skip_output_file;
     }
 
     if (ctx.cp_hash_path) {
-        res = files_save_digest(cp_hash, ctx.cp_hash_path);
+        bool result = files_save_digest(cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
         if (!ctx.rp_hash_path) {
-            goto out;
+            goto out_skip_output_file;
         }
     }
 
@@ -71,18 +69,21 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
                 "Lower your requested amount or"
                 " use --force to override this behavior",
                 random_bytes->size, ctx.num_of_bytes);
-        return tool_rc_general_error;
+        rc = tool_rc_general_error;
+        goto out_skip_output_file;
     }
 
     /*
      * Either open an output file, or if stdout, do nothing as -Q
      * was specified.
      */
+    FILE *out = stdout;
     if (ctx.output_file) {
         out = fopen(ctx.output_file, "wb+");
         if (!out) {
             LOG_ERR("Could not open output file \"%s\", error: %s",
                     ctx.output_file, strerror(errno));
+            rc = tool_rc_general_error;
             goto out;
         }
     } else if (!output_enabled) {
@@ -94,25 +95,31 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
-    res = files_write_bytes(out, random_bytes->buffer, random_bytes->size);
-    if (!res) {
+    bool result = files_write_bytes(out, random_bytes->buffer,
+    random_bytes->size);
+    if (!result) {
+        rc = tool_rc_general_error;
         goto out;
     }
 
     if (ctx.rp_hash_path) {
-        res = files_save_digest(rp_hash, ctx.rp_hash_path);
+        bool result = files_save_digest(rp_hash, ctx.rp_hash_path);
+        rc = result ? tool_rc_success : tool_rc_general_error;
     }
 
 out:
     if (out && out != stdout) {
         fclose(out);
     }
-    if (ctx.rp_hash_path || !ctx.cp_hash_path)
+
+out_skip_output_file:
+    if (ctx.rp_hash_path || !ctx.cp_hash_path) {
         free(random_bytes);
+    }
     free(cp_hash);
     free(rp_hash);
 
-    return res == true ? tool_rc_success : tool_rc_general_error;
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
