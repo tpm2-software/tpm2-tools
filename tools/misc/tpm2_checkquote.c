@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
- #include <openssl/pem.h>
+#include <inttypes.h>
+
+#include <openssl/pem.h>
 #include <openssl/err.h>
 
 #include "files.h"
