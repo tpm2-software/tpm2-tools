@@ -40,23 +40,14 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
     UNUSED(ectx);
 
-    bool ret = false;
-    UINT8 *eventlog;
-    unsigned long size = 0;
-
     if (filename == NULL) {
         LOG_ERR("Missing required positional parameter, try -h / --help");
         return tool_rc_option_error;
     }
-    ret = files_get_file_size_path(filename, &size);
-    if (!ret) {
-        return tool_rc_general_error;
-    }
 
-    UINT16 size_tmp = UINT16_MAX;
-    eventlog = calloc(1, size_tmp);
-    if (eventlog == NULL){
-        LOG_ERR("failed to allocate %lu bytes: %s", size, strerror(errno));
+    unsigned long size = 0;
+    bool ret = files_get_file_size_path(filename, &size);
+    if (!ret) {
         return tool_rc_general_error;
     }
 
@@ -64,21 +55,33 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         LOG_WARN("event log exceeds %" PRIu16 " and will be truncated",
                  UINT16_MAX);
     }
-    ret = files_load_bytes_from_path(filename, eventlog, &size_tmp);
-    if (!ret) {
-        free(eventlog);
+
+    UINT16 size_tmp = UINT16_MAX;
+    UINT8 *eventlog = calloc(1, size_tmp);
+    if (eventlog == NULL){
+        LOG_ERR("failed to allocate %lu bytes: %s", size, strerror(errno));
         return tool_rc_general_error;
     }
 
-    ret = yaml_eventlog(eventlog, size_tmp);
-    if (eventlog)
-        free(eventlog);
-    if (ret) {
-        return tool_rc_success;
-    } else {
-        LOG_ERR("failed to parse tpm2 eventlog");
-        return tool_rc_general_error;
+    tool_rc rc = tool_rc_success;
+    ret = files_load_bytes_from_path(filename, eventlog, &size_tmp);
+    if (!ret) {
+        rc = tool_rc_general_error;
+        goto out;
     }
+
+    ret = yaml_eventlog(eventlog, size_tmp);
+    if (!ret) {
+        LOG_ERR("failed to parse tpm2 eventlog");
+        rc = tool_rc_general_error;
+    }
+
+out:
+    if (eventlog) {
+        free(eventlog);
+    }
+
+    return rc;
 }
 
 // Register this tool with tpm2_tool.c
