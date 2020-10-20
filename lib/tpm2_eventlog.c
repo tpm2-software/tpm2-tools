@@ -421,16 +421,14 @@ bool specid_event(TCG_EVENT const *event, size_t size,
 
 bool parse_eventlog(tpm2_eventlog_context *ctx, BYTE const *eventlog, size_t size) {
 
-    TCG_EVENT_HEADER2 *next;
-    TCG_EVENT *event = (TCG_EVENT*)eventlog;
-    bool ret;
-
-    if (!event) {
+    if(!eventlog || (size < sizeof(TCG_EVENT))) {
         return false;
     }
 
+    TCG_EVENT *event = (TCG_EVENT*)eventlog;
     if (event->eventType == EV_NO_ACTION) {
-        ret = specid_event(event, size, &next);
+        TCG_EVENT_HEADER2 *next;
+        bool ret = specid_event(event, size, &next);
         if (!ret) {
             return false;
         }
@@ -443,9 +441,10 @@ bool parse_eventlog(tpm2_eventlog_context *ctx, BYTE const *eventlog, size_t siz
                 return false;
             }
         }
+
         return foreach_event2(ctx, next, size);
-    } else {
-        /* No specid event found. sha1 log format will be parsed. */
-        return foreach_sha1_log_event(ctx, event, size);
     }
+
+    /* No specid event found. sha1 log format will be parsed. */
+    return foreach_sha1_log_event(ctx, event, size);
 }
