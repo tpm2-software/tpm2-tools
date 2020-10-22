@@ -1,6 +1,6 @@
 ## Changelog
 
-### next
+### 5.0-RC0 - 2020-10-22
 
 #### Non Backwards Compatible Changes
 
