@@ -1,17 +1,17 @@
-% tpm2_ecephermal(1) tpm2-tools | General Commands Manual
+% tpm2_ecephemeral(1) tpm2-tools | General Commands Manual
 
 # NAME
 
-**tpm2_ecephermal**(1) - Creates an ephemeral key for use in a two-phase key
+**tpm2_ecephemeral**(1) - Creates an ephemeral key for use in a two-phase key
 exchange protocol.
 
 # SYNOPSIS
 
-**tpm2_ecephermal** [*OPTIONS*]
+**tpm2_ecephemeral** [*OPTIONS*]
 
 # DESCRIPTION
 
-**tpm2_ecephermal**(1) - Creates an ephemeral key for use in a two-phase key
+**tpm2_ecephemeral**(1) - Creates an ephemeral key for use in a two-phase key
 exchange protocol.
 
 # OPTIONS
@@ -42,7 +42,7 @@ the various known TCTI modules.
 # EXAMPLES
 
 ```bash
-tpm2_ecephermal -u ecc.q -t ecc.ctr ecc256
+tpm2_ecephemeral -u ecc.q -t ecc.ctr ecc256
 ```
 
 [returns](common/returns.md)

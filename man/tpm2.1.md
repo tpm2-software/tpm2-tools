@@ -217,7 +217,7 @@ List of possible tool names. NOTE: Specify only one of these. Look at examples.
 
 **geteccparameters**
 
-**ecephermal**
+**ecephemeral**
 
 **commit**
 

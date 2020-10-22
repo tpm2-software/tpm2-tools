@@ -18,10 +18,10 @@ cleanup "no-shut-down"
 
 # TPM2_EC_Ephemeral
 ## Check if commit counter is zero on first invocation
-tpm2 ecephermal -u pass1_ecc.q -t pass1_ecc.ctr ecc256
+tpm2 ecephemeral -u pass1_ecc.q -t pass1_ecc.ctr ecc256
 xxd -p pass1_ecc.ctr | grep 0000
 ## Check if commit counter increments to 1 on second invocation
-tpm2 ecephermal -u pass2_ecc.q -t pass2_ecc.ctr ecc256
+tpm2 ecephemeral -u pass2_ecc.q -t pass2_ecc.ctr ecc256
 xxd -p pass2_ecc.ctr | grep 0001
 
 # TPM2_Commit
