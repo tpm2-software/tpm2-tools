@@ -39,7 +39,7 @@ the various known TCTI modules.
 # EXAMPLES
 
 We want to authenticate using the TPM objects plaintext authentication value.
-While we could authenticate with an ephermal password session, in this example
+While we could authenticate with an ephemeral password session, in this example
 we will authenticate with the plaintext passphrase in  a policy session instead
 using the **tpm2_policyauthvalue**(1) tool.
 

@@ -1201,8 +1201,8 @@ _tpm2_ecdhzgen()
     } &&
     complete -F _tpm2_ecdhzgen tpm2_ecdhzgen
 # ex: filetype=sh
-# bash completion for tpm2_ecephermal                   -*- shell-script -*-
-_tpm2_ecephermal()
+# bash completion for tpm2_ecephemeral                   -*- shell-script -*-
+_tpm2_ecephemeral()
     {
         local auth_methods=(str: hex: file: file:- session: pcr:)
 
@@ -1245,7 +1245,7 @@ _tpm2_ecephermal()
         -u -t --public --counter " \
         -- "$cur"))
     } &&
-    complete -F _tpm2_ecephermal tpm2_ecephermal
+    complete -F _tpm2_ecephemeral tpm2_ecephemeral
 # ex: filetype=sh
 # bash completion for tpm2_encryptdecrypt                   -*- shell-script -*-
 _tpm2_encryptdecrypt()
@@ -5078,7 +5078,7 @@ _tpm2() {
             _init_completion -s || return
 
             if ((cword == 1)); then
-                COMPREPLY=($(compgen -W "activatecredential certify certifyX509certutil certifycreation changeauth changeeps changepps checkquote clear clearcontrol clockrateadjust commit create createak createek createpolicy createprimary dictionarylockout duplicate ecdhkeygen ecdhzgen ecephermal encryptdecrypt eventlog evictcontrol flushcontext getcap getcommandauditdigest geteccparameters getekcertificate getrandom getsessionauditdigest gettestresult gettime hash hierarchycontrol hmac import incrementalselftest load loadexternal makecredential nvcertify nvdefine nvextend nvincrement nvread nvreadlock nvreadpublic nvsetbits nvundefine nvwrite nvwritelock pcrallocate pcrevent pcrextend pcrread pcrreset policyauthorize policyauthorizenv policyauthvalue policycommandcode policycountertimer policycphash policyduplicationselect policylocality policynamehash policynv policynvwritten policyor policypassword policypcr policyrestart policysecret policysigned policytemplate policyticket print quote rc_decode readclock readpublic rsadecrypt rsaencrypt selftest send setclock setcommandauditstatus setprimarypolicy shutdown sign startauthsession startup stirrandom testparms unseal verifysignature zgen2phase " -- "$cur"))
+                COMPREPLY=($(compgen -W "activatecredential certify certifyX509certutil certifycreation changeauth changeeps changepps checkquote clear clearcontrol clockrateadjust commit create createak createek createpolicy createprimary dictionarylockout duplicate ecdhkeygen ecdhzgen ecephemeral encryptdecrypt eventlog evictcontrol flushcontext getcap getcommandauditdigest geteccparameters getekcertificate getrandom getsessionauditdigest gettestresult gettime hash hierarchycontrol hmac import incrementalselftest load loadexternal makecredential nvcertify nvdefine nvextend nvincrement nvread nvreadlock nvreadpublic nvsetbits nvundefine nvwrite nvwritelock pcrallocate pcrevent pcrextend pcrread pcrreset policyauthorize policyauthorizenv policyauthvalue policycommandcode policycountertimer policycphash policyduplicationselect policylocality policynamehash policynv policynvwritten policyor policypassword policypcr policyrestart policysecret policysigned policytemplate policyticket print quote rc_decode readclock readpublic rsadecrypt rsaencrypt selftest send setclock setcommandauditstatus setprimarypolicy shutdown sign startauthsession startup stirrandom testparms unseal verifysignature zgen2phase " -- "$cur"))
             else
                 tpmcommand=_tpm2_$prev
                 type $tpmcommand &>/dev/null && $tpmcommand

@@ -9,8 +9,8 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
 
-typedef struct tpm_ecephermal_ctx tpm_ecephermal_ctx;
-struct tpm_ecephermal_ctx {
+typedef struct tpm_ecephemeral_ctx tpm_ecephemeral_ctx;
+struct tpm_ecephemeral_ctx {
 
     struct {
         const char *ctx_path;
@@ -37,7 +37,7 @@ struct tpm_ecephermal_ctx {
     uint16_t counter;
 };
 
-static tpm_ecephermal_ctx ctx;
+static tpm_ecephemeral_ctx ctx;
 
 static bool on_option(char key, char *value) {
 

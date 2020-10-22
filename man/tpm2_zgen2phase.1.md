@@ -70,7 +70,7 @@ tpm2_createprimary -C o -c prim.ctx -Q
 
 tpm2_create -C prim.ctx -c key.ctx -u key.pub -r key.priv -G ecc256:ecdh -Q
 
-tpm2_ecephermal -u ecc.q -t ecc.ctr ecc256
+tpm2_ecephemeral -u ecc.q -t ecc.ctr ecc256
 
 tpm2_ecdhkeygen -u ecdh.pub -o ecdh.priv -c key.ctx
 

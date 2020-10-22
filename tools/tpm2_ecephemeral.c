@@ -7,16 +7,16 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 
-typedef struct tpm_ecephermal_ctx tpm_ecephermal_ctx;
-struct tpm_ecephermal_ctx {
+typedef struct tpm_ecephemeral_ctx tpm_ecephemeral_ctx;
+struct tpm_ecephemeral_ctx {
     TPMI_ECC_CURVE curve_id;
     uint16_t counter;
     TPM2B_ECC_POINT *Q;
     char *commit_counter_path;
-    char *ephermal_pub_key_path;
+    char *ephemeral_pub_key_path;
 };
 
-static tpm_ecephermal_ctx ctx = {
+static tpm_ecephemeral_ctx ctx = {
     .curve_id = TPM2_ECC_NONE,
 };
 
@@ -24,7 +24,7 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'u':
-        ctx.ephermal_pub_key_path = value;
+        ctx.ephemeral_pub_key_path = value;
         break;
     case 't':
         ctx.commit_counter_path = value;
@@ -80,8 +80,8 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static tool_rc check_options(void) {
 
-    if (!ctx.ephermal_pub_key_path) {
-        LOG_ERR("Invalid path specified for saving the ephermal public key");
+    if (!ctx.ephemeral_pub_key_path) {
+        LOG_ERR("Invalid path specified for saving the ephemeral public key");
         return tool_rc_option_error;
     }
 
@@ -108,7 +108,7 @@ static tool_rc process_outputs(void) {
         return tool_rc_general_error;
     }
 
-    result = files_save_ecc_point(ctx.Q, ctx.ephermal_pub_key_path);
+    result = files_save_ecc_point(ctx.Q, ctx.ephemeral_pub_key_path);
     if (!result) {
         LOG_ERR("Failed to write out the ECC pub key");
         return tool_rc_general_error;
@@ -128,7 +128,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     // ESAPI call
-    rc = tpm2_ecephermal(ectx, ctx.curve_id, &ctx.Q, &ctx.counter);
+    rc = tpm2_ecephemeral(ectx, ctx.curve_id, &ctx.Q, &ctx.counter);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -141,4 +141,4 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("ecephermal", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)
+TPM2_TOOL_REGISTER("ecephemeral", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)

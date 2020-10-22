@@ -194,7 +194,7 @@ tpm2_tools = \
     tools/tpm2_getcommandauditdigest.c \
     tools/tpm2_getsessionauditdigest.c \
     tools/tpm2_geteccparameters.c \
-    tools/tpm2_ecephermal.c \
+    tools/tpm2_ecephemeral.c \
     tools/tpm2_commit.c \
     tools/tpm2_ecdhkeygen.c \
     tools/tpm2_ecdhzgen.c \
@@ -447,7 +447,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_getcommandauditdigest.1 \
     man/man1/tpm2_getsessionauditdigest.1 \
     man/man1/tpm2_geteccparameters.1 \
-    man/man1/tpm2_ecephermal.1 \
+    man/man1/tpm2_ecephemeral.1 \
     man/man1/tpm2_commit.1 \
     man/man1/tpm2_ecdhkeygen.1 \
     man/man1/tpm2_ecdhzgen.1 \
