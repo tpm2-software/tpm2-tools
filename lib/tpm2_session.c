@@ -326,13 +326,7 @@ tool_rc tpm2_session_get_noncetpm(ESYS_CONTEXT *ectx, tpm2_session *s,
 
 tool_rc tpm2_session_close(tpm2_session **s) {
 
-    tpm2_session *session = *s;
-
-    FILE *session_file = NULL;
-
-    tool_rc rc = tool_rc_general_error;
-
-    if (!session) {
+    if (!*s) {
         return tool_rc_success;
     }
 
@@ -341,29 +335,26 @@ tool_rc tpm2_session_close(tpm2_session **s) {
      *   - password sessions are implicit
      *   - hmac sessions live the life of the tool
      */
+    tool_rc rc = tool_rc_success;
+    tpm2_session *session = *s;
     if (session->output.session_handle == ESYS_TR_PASSWORD) {
-        rc = tool_rc_success;
+        goto out2;
+    }
+
+    const char *path = session->internal.path;
+    FILE *session_file = path ? fopen(path, "w+b") : NULL;
+    if (path && !session_file) {
+        LOG_ERR("Could not open path \"%s\", due to error: \"%s\"", path,
+                strerror(errno));
+        rc = tool_rc_general_error;
         goto out;
     }
 
-    bool flush = session->internal.is_final;
-    const char *path = session->internal.path;
-    if (path) {
-        session_file = fopen(path, "w+b");
-        if (!session_file) {
-            LOG_ERR("Could not open path \"%s\", due to error: \"%s\"", path,
-                    strerror(errno));
-            goto out;
-        }
-    } else {
-        flush = true;
-    }
-
+    bool flush = path ? session->internal.is_final : true;
     if (flush) {
-
         rc = tpm2_flush_context(session->internal.ectx,
                 session->output.session_handle);
-        /* done use rc to inidcate status */
+        /* done, use rc to indicate status */
         goto out;
     }
 
@@ -373,6 +364,7 @@ tool_rc tpm2_session_close(tpm2_session **s) {
     bool result = files_write_header(session_file, SESSION_VERSION);
     if (!result) {
         LOG_ERR("Could not write context file header");
+        rc = tool_rc_general_error;
         goto out;
     }
 
@@ -382,6 +374,7 @@ tool_rc tpm2_session_close(tpm2_session **s) {
             sizeof(session_type));
     if (!result) {
         LOG_ERR("Could not write session type");
+        rc = tool_rc_general_error;
         goto out;
     }
 
@@ -390,6 +383,7 @@ tool_rc tpm2_session_close(tpm2_session **s) {
     result = files_write_16(session_file, hash);
     if (!result) {
         LOG_ERR("Could not write auth hash");
+        rc = tool_rc_general_error;
         goto out;
     }
 
@@ -399,20 +393,19 @@ tool_rc tpm2_session_close(tpm2_session **s) {
      */
 
     ESYS_TR handle = tpm2_session_get_handle(session);
-
     LOG_INFO("Saved session: ESYS_TR(0x%x)", handle);
-
-    rc = files_save_tpm_context_to_file(session->internal.ectx,
-            tpm2_session_get_handle(session), session_file);
+    rc = files_save_tpm_context_to_file(session->internal.ectx, handle,
+    session_file);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not write session context");
+        /* done, free session resources and use rc to indicate status */
     }
 
 out:
     if (session_file) {
         fclose(session_file);
     }
-
+out2:
     tpm2_session_free(s);
 
     return rc;
