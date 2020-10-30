@@ -8,11 +8,11 @@ function get_deps() {
 
 	echo "pwd starting: `pwd`"
 	if [ "$TSS_VERSION" = "2.4.0" ]; then
-		if [ "$DOCKER_TAG" = "fedora-30" ]; then
+		if [ "$DOCKER_IMAGE" = "fedora-30" ]; then
 			yum -y install libgcrypt-devel
-		elif [ "$DOCKER_TAG" = "opensuse-leap" ]; then
+		elif [ "$DOCKER_IMAGE" = "opensuse-leap" ]; then
 			zypper -n in libgcrypt-devel
-		elif [ "$DOCKER_TAG" = "ubuntu-20.04" -o "$DOCKER_TAG" = "ubuntu-18.04" ]; then
+		elif [ "$DOCKER_IMAGE" = "ubuntu-20.04" -o "$DOCKER_IMAGE" = "ubuntu-18.04" ]; then
 			apt-get -y install libgcrypt20-dev
 		fi
 	fi
