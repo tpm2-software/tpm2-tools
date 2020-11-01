@@ -13,6 +13,7 @@
 #include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_openssl.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -992,4 +993,79 @@ bool tpm2_calq_qname(TPM2B_NAME *pqname,
 out:
     EVP_MD_CTX_destroy(mdctx);
     return result;
+}
+
+bool tpm2_safe_read_from_stdin(int length, char *data) {
+    int rc;
+
+    char *buf = malloc(length);
+    char *read_data = malloc(length);
+
+    if (buf == fgets(buf, length, stdin)) {
+        rc = sscanf(buf, "%s", read_data);
+        if (rc != 1) {
+            free(buf);
+            free(read_data);
+            return false;
+        }
+    }
+    else {
+        free(buf);
+        free(read_data);
+        return false;
+    }
+
+    strcpy(data, read_data);
+    free(buf);
+    free(read_data);
+    return true;
+}
+
+bool tpm2_pem_encoded_key_to_fingerprint(const char* pem_encoded_key,
+    char* fingerprint) {
+    char str[1024] = "";
+    char base64[1024] = "";
+    char *token;
+    int rc;
+
+    strcpy(str, pem_encoded_key);
+
+    token = strtok(str, "\n");
+
+    /* walk through other tokens */
+    while ( token != NULL ) {
+        if (!strstr(token, "-----")) {
+            strcat(base64, token);
+        }
+        token = strtok(NULL, "\n");
+    }
+
+    BYTE buffer[1024];
+    size_t buffer_length = 0;
+
+    rc = tpm2_base64_decode(base64, buffer, &buffer_length);
+    if(!rc){
+        LOG_ERR("%s", "tpm2_base64_decode");
+        return false;
+    }
+
+    TPM2B_DIGEST digest;
+    rc = tpm2_openssl_hash_compute_data(TPM2_ALG_SHA256, buffer,
+        buffer_length, &digest);
+    if(!rc){
+        LOG_ERR("%s", "tpm2_openssl_hash_compute_data");
+        return false;
+    }
+
+    rc = tpm2_base64_encode(buffer, buffer_length, base64);
+    if(!rc){
+        LOG_ERR("%s", "tpm2_base64_decode");
+        return false;
+    }
+    strcpy(fingerprint, "SHA256:");
+    strcat(fingerprint, base64);
+
+    fingerprint[strlen(fingerprint)-1] = 0; // remove trailing \n
+
+    return true;
 }

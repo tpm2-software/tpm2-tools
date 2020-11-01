@@ -117,4 +117,30 @@ bool tpm2_convert_sig_load_plain(const char *path,
 
 bool tpm2_public_load_pkey(const char *path, EVP_PKEY **pkey);
 
+/**
+ * Encode a binary buffer to a Base64-encoded String.
+ * @param buffer
+ *  The binary buffer.
+ * @param buffer_length:
+ *  The length of the binary buffer.
+ * @param base64
+ *  The resulting Base64-encoded String.
+ * @return
+ *  true on success, false on error.
+ */
+bool tpm2_base64_encode(BYTE *buffer, size_t buffer_length, char *base64);
+
+/**
+ * Decode a Base64-encoded String to a binary buffer.
+ * @param base64
+ *  The Base64-encoded String.
+ * @param buffer
+ *  The resulting binary buffer, valid on success.
+ * @param buffer_length:
+ *  The length of the resulting binary buffer, valid on success.
+ * @return
+ *  true on success, false on error.
+ */
+bool tpm2_base64_decode(char *base64, BYTE *buffer, size_t *buffer_length);
+
 #endif /* CONVERSION_H */
