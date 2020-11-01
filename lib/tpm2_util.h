@@ -456,4 +456,35 @@ void tpm2_util_print_time(const TPMS_TIME_INFO *current_time);
 bool tpm2_calq_qname(TPM2B_NAME *pqname,
         TPMI_ALG_HASH halg, TPM2B_NAME *name, TPM2B_NAME *qname);
 
+/**
+ * Reads safely from stdin.
+ *
+ * @param length
+ *  Maximum length to read.
+ * @param data
+ *  The output data that was read, valid on success.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool tpm2_safe_read_from_stdin(int length, char *data);
+
+
+/**
+ * Converts a PEM-encoded public key to its sha256 representation (fingerprint).
+ * The resulting Base64-encoded fingerprint format is based on the SSH:
+ * '''
+ *      ssh-keygen -lf id_ecdsa.pub
+ *          256 SHA256:wTUOtZnoSGKwq36mPIN20rCK0Fc1y0zCvHxI2eAvVxU
+ * '''
+ *
+ * @param pem_encoded_key
+ *  The PEM-encoded public key.
+ * @param fingerprint
+ *  The resulting fingerprint, valid on success.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool tpm2_pem_encoded_key_to_fingerprint(const char* pem_encoded_key, char*
+    fingerprint);
+
 #endif /* STRING_BYTES_H */

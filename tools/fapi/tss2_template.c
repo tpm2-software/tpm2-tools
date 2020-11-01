@@ -21,6 +21,9 @@
 
 #include "tools/fapi/tss2_template.h"
 #include "lib/config.h"
+#include "lib/tpm2_alg_util.h"
+
+#define READ_SIZE 1024
 
 /* needed by tpm2_util and tpm2_option functions */
 bool output_enabled = false;
@@ -250,6 +253,106 @@ TSS2_RC auth_callback(
     return TSS2_RC_SUCCESS;
 }
 
+uint8_t *input_signature = NULL;
+
+TSS2_RC sign_callback(
+    char        const *objectPath,
+    char        const *description,
+    char        const *publicKey,
+    char        const *publicKeyHint,
+    uint32_t    hashAlg,
+    uint8_t     const *dataToSign,
+    size_t      dataToSignSize,
+    uint8_t     const **signature,
+    size_t      *signatureSize,
+    void        *userData)
+{
+
+    if (input_signature != NULL) {
+        free(input_signature);
+        input_signature = NULL;
+    }
+
+    int rc;
+    char path[READ_SIZE];
+    char publicKeyHintStr[READ_SIZE];
+
+    if (userData) {
+        printf("%s:", (const char *) userData);
+    } else {
+        const char *hashAlgName = tpm2_alg_util_algtostr(hashAlg,
+            tpm2_alg_util_flags_hash);
+        int cpy_size = 0;
+        if (strlen(publicKeyHint) > 0) {
+            const char* tmp = "the key corresponding to the key hint \"%s\" and";
+            cpy_size = strlen(tmp) - 2 /* remove replaced %s */ +
+                strlen(publicKeyHint);
+            rc = snprintf(publicKeyHintStr, cpy_size+1 /* add \0 */, tmp,
+                publicKeyHint);
+            if (rc != cpy_size){
+                fprintf (stderr, "Command snprintf failed with %d\n", rc);
+                return TSS2_FAPI_RC_GENERAL_FAILURE;
+            }
+        }
+        else {
+            const char* tmp = "the key corresponding to the fingerprint \"%s\" and";
+            char publicKeyHintTmp[READ_SIZE];
+            rc = tpm2_pem_encoded_key_to_fingerprint(publicKey, publicKeyHintTmp);
+            if (rc != true){
+                fprintf (stderr, "Error getting the fingerprint of the "\
+                    "PEM-encoded public key\n");
+                return TSS2_FAPI_RC_GENERAL_FAILURE;
+            }
+            cpy_size = strlen(tmp) - 2 /* remove replaced %s */ +
+                strlen(publicKeyHintTmp);
+            rc = snprintf(publicKeyHintStr, cpy_size+1 /* add \0 */, tmp,
+                publicKeyHintTmp);
+            if (rc != cpy_size){
+                fprintf (stderr, "Command snprintf failed with %d\n", rc);
+                return TSS2_FAPI_RC_GENERAL_FAILURE;
+            }
+        }
+
+        printf("%s: Authorize usage of %s by signing the nonce with %s the hash "\
+            "algorithm \"%s\".\n", description, objectPath, publicKeyHintStr,
+            hashAlgName);
+
+    }
+    printf("Filename for nonce output: ");
+    rc = tpm2_safe_read_from_stdin(READ_SIZE, path);
+    if (rc != true){
+        fprintf (stderr, "Please enter a valid file path\n");
+        return TSS2_FAPI_RC_GENERAL_FAILURE;
+    }
+
+    rc = open_write_and_close(path, true, dataToSign,
+        dataToSignSize);
+    if (rc) {
+        fprintf (stderr, "Could not write to file: %s\n", path);
+        return TSS2_FAPI_RC_GENERAL_FAILURE;
+    }
+
+    printf("Filename for signature input: ");
+    rc = tpm2_safe_read_from_stdin(READ_SIZE, path);
+    if (rc != true){
+        fprintf (stderr, "Please enter a valid file path\n");
+        return TSS2_FAPI_RC_GENERAL_FAILURE;
+    }
+
+    size_t input_signatureSize;
+    rc = open_read_and_close (path, (void**)&input_signature,
+    &input_signatureSize);
+    if (rc) {
+        fprintf (stderr, "Could not read from file path: %s\n", path);
+        return TSS2_FAPI_RC_GENERAL_FAILURE;
+    }
+
+    *signature = input_signature;
+    *signatureSize = input_signatureSize;
+
+    return TSS2_RC_SUCCESS;
+}
+
 TSS2_RC branch_callback(
 #ifdef FAPI_3_0
     char const                     *objectPath,
@@ -410,6 +513,14 @@ int main(int argc, char *argv[]) {
         Fapi_Finalize (&fctx);
         goto free_opts;
     }
+
+    r = Fapi_SetSignCB (fctx, sign_callback, NULL);
+    if (r != TSS2_RC_SUCCESS) {
+        fprintf (stderr, "Fapi_SetSignCB returned %u\n", r);
+        Fapi_Finalize (&fctx);
+        goto free_opts;
+    }
+
     r = Fapi_SetBranchCB (fctx, branch_callback, NULL);
     if (r != TSS2_RC_SUCCESS) {
         fprintf (stderr, "Fapi_SetBranchCB returned %u\n", r);
@@ -443,6 +554,9 @@ free_opts:
     if (tool_opts)
         tpm2_options_free (tool_opts);
     free (password);
+    if (ret == 0){
+        free (input_signature);
+    }
     exit(ret);
 }
 
