@@ -196,8 +196,7 @@ static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
  * EV_EFI_PLATFORM_FIRMWARE_BLOB."
  */
 
-static bool yaml_uefi_post_code(const TCG_EVENT2 * const event)
-{
+static bool yaml_uefi_post_code(const TCG_EVENT2* const event) {
     const size_t len = event->EventSize;
 
     // if length is 16, we treat it as EV_EFI_PLATFORM_FIRMWARE_BLOB
