@@ -208,14 +208,9 @@ static bool yaml_uefi_post_code(const TCG_EVENT2* const event) {
                          "      BlobLength: 0x%" PRIx64 "\n",
                          blob->BlobBase,
                          blob->BlobLength);
-    }
-    // otherwise, we treat it as an ASCII string
-    else {
-        const char * const data = (const char *) event->Event;
-        tpm2_tool_output(
-            "    Event: '%.*s'\n",
-            (int) len,
-            data);
+    } else { // otherwise, we treat it as an ASCII string
+        const char* const data = (const char *) event->Event;
+        tpm2_tool_output("    Event: '%.*s'\n", (int) len, data);
     }
     return true;
 }
