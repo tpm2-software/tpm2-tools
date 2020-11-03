@@ -188,16 +188,36 @@ static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
  * field string of "BIS CODE" in all caps. ...
  * - ACPI flash data prior to any modifications ... should use
  * event field string of "ACPI DATA" in all caps.
+ *
+ * Section 9.2.5 also says "...Below is the definition of the
+ * UEFI_PLATFORM_FIRMWARE_BLOB structure that the CRTM MUST put 
+ * into the Event Log entry TCG_PCR_EVENT2.event[1] field for
+ * event types EV_POST_CODE, EV_S_CRTM_CONTENTS, and
+ * EV_EFI_PLATFORM_FIRMWARE_BLOB."
  */
+
 static bool yaml_uefi_post_code(const TCG_EVENT2 * const event)
 {
-    const char * const data = (const char *) event->Event;
     const size_t len = event->EventSize;
 
-    tpm2_tool_output(
-        "    Event: '%.*s'\n",
-        (int) len,
-        data);
+    // if length is 16, we treat it as EV_EFI_PLATFORM_FIRMWARE_BLOB
+    if (len == 16) {
+        const UEFI_PLATFORM_FIRMWARE_BLOB * const blob = \
+            (const UEFI_PLATFORM_FIRMWARE_BLOB*) event->Event;
+        tpm2_tool_output("    Event:\n"
+                         "      BlobBase: 0x%" PRIx64 "\n"
+                         "      BlobLength: 0x%" PRIx64 "\n",
+                         blob->BlobBase,
+                         blob->BlobLength);
+    }
+    // otherwise, we treat it as an ASCII string
+    else {
+        const char * const data = (const char *) event->Event;
+        tpm2_tool_output(
+            "    Event: '%.*s'\n",
+            (int) len,
+            data);
+    }
     return true;
 }
 /*
