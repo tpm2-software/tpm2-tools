@@ -31,5 +31,6 @@ expect_pass tpm2 eventlog ${srcdir}/test/integration/fixtures/event-uefiaction.b
 expect_pass tpm2 eventlog ${srcdir}/test/integration/fixtures/event-uefiservices.bin
 expect_pass tpm2 eventlog ${srcdir}/test/integration/fixtures/event-uefi-sha1-log.bin
 expect_pass tpm2 eventlog ${srcdir}/test/integration/fixtures/event-bootorder.bin
+expect_pass tpm2 eventlog ${srcdir}/test/integration/fixtures/event-postcode.bin
 
 exit $?
