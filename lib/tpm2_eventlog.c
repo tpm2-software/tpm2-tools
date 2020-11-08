@@ -1,5 +1,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include <tss2/tss2_tpm2_types.h>
 
 #include "log.h"
@@ -281,6 +283,100 @@ bool foreach_sha1_log_event(tpm2_eventlog_context *ctx, TCG_EVENT const *eventhd
     return true;
 }
 
+/*
+ * For event types where digest can be verified from their event payload,
+ * perform verification to ensure event payload was not tempered
+ */
+bool verify_digests(size_t eventnum, TCG_EVENT_HEADER2 const *eventhdr, TCG_EVENT2 *event) {
+
+size_t i;
+
+    TCG_DIGEST2 const *digest = eventhdr->Digests;
+    UINT32 digest_count = eventhdr->DigestCount;
+    UINT32 event_type = eventhdr->EventType;
+    switch (event_type) {
+    /* Digests of these event types are calculated directly from event->Event, thus can be verified  */
+    case EV_S_CRTM_VERSION:
+    case EV_SEPARATOR:
+    case EV_EFI_VARIABLE_DRIVER_CONFIG:
+    case EV_EFI_GPT_EVENT:
+        for (i = 0; i < digest_count; i++) {
+            TPMI_ALG_HASH alg = digest->AlgorithmId;
+            TPM2B_DIGEST calc_digest;
+
+            bool result = tpm2_openssl_hash_compute_data(alg, event->Event,
+            event->EventSize, &calc_digest);
+            if (!result) {
+                LOG_WARN("Event %lu: Cannot calculate hash value from data", eventnum - 1);
+                return false;
+            }
+
+            size_t alg_size = tpm2_alg_util_get_hash_size(alg);
+            if (memcmp(calc_digest.buffer, digest->Digest, alg_size) != 0) {
+                LOG_WARN("Event %lu's digest does not match its payload", eventnum - 1);
+                return false;
+            }
+
+            digest = (TCG_DIGEST2*)((uintptr_t)digest->Digest + alg_size);
+        }
+        break;
+
+    /* Shim and grub use this event type for various tasks */
+    case EV_IPL:
+        /* PCR9: used to measure loaded kernel and initramfs images which cannot
+           be verified from eventlog alone */
+        if (eventhdr->PCRIndex == 9) {
+            return true;
+        }
+
+        /* PCR14: used to measure MokList, MokListX, and MokSBState which cannot
+           be verified from eventlog alone */
+        if (eventhdr->PCRIndex == 14) {
+            return true;
+        }
+
+        /* PCR8: used to measure grub and kernel command line */
+        if (eventhdr->PCRIndex != 8) {
+            LOG_WARN("Event %lu is unexpectedly not extending either PCR 8, 9, or 14", eventnum - 1);
+            return false;
+        }
+
+        /* Digest is applied on the string between "^[a-zA-Z-]+: " and "\0$" */
+        for (i = 0; i < digest_count; i++) {
+            size_t j;
+
+            for (j = 0; j < event->EventSize; j++) {
+                if (event->Event[j] == ' ')
+                    break;
+            }
+
+            if (j + 1 >= event->EventSize || event->Event[event->EventSize - 1] != '\0') {
+                LOG_WARN("Event %lu's event data is in unexpected format", eventnum - 1);
+                return false;
+            }
+
+            TPM2B_DIGEST calc_digest;
+            TPMI_ALG_HASH alg = digest->AlgorithmId;
+            bool result = tpm2_openssl_hash_compute_data(alg,
+            event->Event + (j + 1), event->EventSize - (j + 2), &calc_digest);
+            if (!result) {
+                LOG_WARN("Event %lu: Cannot calculate hash value from data", eventnum - 1);
+                return false;
+            }
+
+            size_t alg_size = tpm2_alg_util_get_hash_size(alg);
+            if (memcmp(calc_digest.buffer, digest->Digest, alg_size) != 0) {
+                LOG_WARN("Event %lu's digest does not match its payload", eventnum - 1);
+                return false;
+            }
+            digest = (TCG_DIGEST2*)((uintptr_t)digest->Digest + alg_size);
+        }
+        break;
+    }
+
+    return true;
+}
+
 bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size) {
 
     if (eventhdr_start == NULL) {
@@ -326,6 +422,11 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
         ret = parse_event2body(event, eventhdr->EventType);
         if (ret != true) {
             return ret;
+        }
+
+        /* digest verification */
+        if (ctx->data != 0) {
+            verify_digests(*(size_t*)ctx->data, eventhdr, event);
         }
 
         /* event data callback */
