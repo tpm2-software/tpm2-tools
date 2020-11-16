@@ -257,6 +257,31 @@ bool yaml_uefi_action(UINT8 const *action, size_t size) {
 
     return true;
 }
+/*
+ * TCG PC Client PFP section 9.4.1
+ * This event type is extensively used by the Shim and Grub on a wide varities
+ * of Linux distributions to measure grub and kernel command line parameters and
+ * the loading of grub, kernel, and initrd images.
+ */
+bool yaml_ipl(UINT8 const *description, size_t size) {
+
+    tpm2_tool_output("    Event:\n"
+                     "      String: |\n");
+
+    /* We need to handle when description contains multiple lines. */
+    size_t i, j;
+    for (i = 0; i < size; i++) {
+        for (j = i; j < size; j++) {
+            if (description[j] == '\n' || description[j] == '\0') {
+                break;
+            }
+        }
+        tpm2_tool_output("        %.*s\n", (int)(j - i), description+i);
+        i = j;
+    }
+
+    return true;
+}
 /* TCG PC Client PFP section 9.2.3 */
 bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
 
@@ -304,6 +329,8 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
         return yaml_uefi_platfwblob((UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event);
     case EV_EFI_ACTION:
         return yaml_uefi_action(event->Event, event->EventSize);
+    case EV_IPL:
+        return yaml_ipl(event->Event, event->EventSize);
     case EV_EFI_BOOT_SERVICES_APPLICATION:
     case EV_EFI_BOOT_SERVICES_DRIVER:
     case EV_EFI_RUNTIME_SERVICES_DRIVER:
