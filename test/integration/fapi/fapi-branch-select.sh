@@ -17,7 +17,7 @@ trap cleanup EXIT
 KEY_PATH="HS/SRK/mySignKey"
 POLICY_SIGN_KEY_PATH="HS/SRK/myPolicySignKey"
 PCR_POLICY_DATA=$TEMP_DIR/pol_pcr16_0.json
-AUTHORIZE_POLICY_DATA=$TEMP_DIR/pol_authorize.json
+AUTHORIZE_POLICY_DATA=$TEMP_DIR/pol_authorize_ref.json
 POLICY_PCR=policy/pcr-policy
 POLICY_PCR2=policy/pcr-policy2
 POLICY_AUTHORIZE=policy/authorize-policy
