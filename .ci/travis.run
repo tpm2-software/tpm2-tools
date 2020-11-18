@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-PROJECT="tpm2-tools"
-COV_PROJECT="01org/tpm2.0-tools"
-COV_EMAIL=william.c.roberts@intel.com
-
 set -e
+
+export PROJECT="tpm2-tools"
 
 # if no DOCKER_IMAGE is set, warn and default to fedora-30
 if [ -z "$DOCKER_IMAGE" ]; then
@@ -21,64 +19,23 @@ fi
 #
 # Execute the build and test procedure by running .ci/docker.run
 #
-if [ "$TRAVIS_BRANCH" != "coverity_scan" ]; then
-  echo "Running non-coverity build"
-  # Do normal CI script
+
+ci_env=""
+if [ "$ENABLE_COVERAGE" == "true" ]; then
   ci_env=$(bash <(curl -s https://codecov.io/env))
-  docker run --cap-add=SYS_PTRACE $ci_env --env-file .ci/docker.env \
-    -v "$(pwd):/workspace/$PROJECT" "ghcr.io/tpm2-software/$DOCKER_IMAGE" \
-    /bin/bash -c "/workspace/$PROJECT/.ci/docker.run"
-
-    exit 0
 fi
 
-# branch is coverity_scan
-echo "Running coverity build"
 
-# Do coverity steps
-# We want to limit this to just one build, so we include it in the build matrix, all the other
-# build matrix builds will just exit 0 quickly.
-if [ "$ENABLE_COVERITY" != "true" ]; then
-  echo "Nothing to do on the coverity_scan branch...exiting!"
-  exit 0
+if [ "$ENABLE_COVERITY" == "true" ]; then
+  echo "Running coverity build"
+  script="coverity.run"
+else
+  echo "Running non-coverity build"
+  script="docker.run"
 fi
 
-# ensure coverity_scan tool is available to the container
-if [ ! -f "$(pwd)/coverity-analysis/bin/cov-build" ]; then
-  curl --data-urlencode "project=$COV_PROJECT" \
-       --data-urlencode "token=$COVERITY_SCAN_TOKEN" \
-       "https://scan.coverity.com/download/linux64" -o coverity_tool.tgz
-
-  curl --data-urlencode "project=$COV_PROJECT" \
-       --data-urlencode "token=$COVERITY_SCAN_TOKEN" \
-       --data-urlencode "md5=1" \
-       "https://scan.coverity.com/download/linux64" -o coverity_tool.md5
-  echo "$(cat coverity_tool.md5)" coverity_tool.tgz | md5sum -c
-fi
-
-echo "unpacking cov-analysis"
-tar -xf coverity_tool.tgz
-mv cov-analysis-* cov-analysis
-
-
-# perform the scan
-docker run --env-file .ci/docker.env \
+docker run --cap-add=SYS_PTRACE $ci_env --env-file .ci/docker.env \
   -v "$(pwd):/workspace/$PROJECT" "ghcr.io/tpm2-software/$DOCKER_IMAGE" \
-  /bin/bash -c "/workspace/$PROJECT/.ci/coverity.run"
-
-# upload the results
-echo "Testing for scan results..."
-scan_file=$(stat --printf='%n' tpm2-*-scan.tgz)
-
-echo "Submitting data to Coverity"
-curl --form token="$COVERITY_SCAN_TOKEN" \
-  --form email="$COV_EMAIL" \
-  --form project="$COV_PROJECT" \
-  --form file=@"$scan_file" \
-  --form version="$TRAVIS_COMMIT" \
-  --form description="$TRAVIS_REPO_SLUG $TRAVIS_BRANCH" \
-  "https://scan.coverity.com/builds?project=$PROJECT"
-
-rm -fr tpm2-*-scan.tgz
+  /bin/bash -c "/workspace/$PROJECT/.ci/$script"
 
 exit 0
