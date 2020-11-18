@@ -25,7 +25,7 @@ tss2 delete --path=/
 
 expect <<EOF
 # Test if still objects in path
-spawn tss2 list --path=/
+spawn tss2 list --searchPath=/
 set ret [wait]
 if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     send_user "Still objects in path\n"
