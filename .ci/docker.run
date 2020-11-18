@@ -3,7 +3,7 @@
 
 set -e
 
-source $TRAVIS_BUILD_DIR/.ci/docker-prelude.sh
+source $DOCKER_BUILD_DIR/.ci/docker-prelude.sh
 
 if [ -d build ]; then
   rm -rf build
