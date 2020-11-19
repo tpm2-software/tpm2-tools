@@ -276,6 +276,13 @@ static bool retrieve_web_endorsement_certificate(char *b64h) {
         goto out_easy_cleanup;
     }
 
+    rc = curl_easy_setopt(curl, CURLOPT_FAILONERROR, true);
+    if (rc != CURLE_OK) {
+        LOG_ERR("curl_easy_setopt for CURLOPT_FAILONERROR failed: %s",
+                curl_easy_strerror(rc));
+        goto out_easy_cleanup;
+    }
+
     rc = curl_easy_perform(curl);
     if (rc != CURLE_OK) {
         LOG_ERR("curl_easy_perform() failed: %s", curl_easy_strerror(rc));
