@@ -42,6 +42,7 @@ static bool on_option(char key, char *value) {
         break;
     case 1:
         ctx.is_session_audit_required = true;
+        ctx.attrs |= TPMA_SESSION_CONTINUESESSION|TPMA_SESSION_AUDIT;
         break;
     case 'g':
         ctx.session.halg = tpm2_alg_util_from_optarg(value,
@@ -141,9 +142,6 @@ static tool_rc setup_session_data(void) {
                     TPMA_SESSION_DECRYPT | \
                     TPMA_SESSION_ENCRYPT;
     }
-
-    ctx.attrs |= ctx.is_session_audit_required ?
-                 TPMA_SESSION_CONTINUESESSION|TPMA_SESSION_AUDIT : 0;
 
     if (ctx.is_session_audit_required || ctx.is_session_encryption_required) {
         tpm2_session_set_attrs(ctx.session_data, ctx.attrs);
