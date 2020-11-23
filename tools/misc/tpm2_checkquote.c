@@ -269,7 +269,7 @@ static bool parse_selection_data_from_file(FILE *pcr_input,
 
     if (le64toh(pcrs->count) > ARRAY_LEN(pcrs->pcr_values)) {
         LOG_ERR("Malformed PCR file, pcr count cannot be greater than %zu, got: %" PRIu64 " ",
-                ARRAY_LEN(pcrs->pcr_values), le64toh(pcrs->count));
+                ARRAY_LEN(pcrs->pcr_values), le64toh((UINT64)pcrs->count));
         return false;
     }
 
