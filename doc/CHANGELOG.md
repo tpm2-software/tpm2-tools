@@ -2,6 +2,9 @@
 
 ### next
 
+  * Fix tpm2_checkquote.c:271:17: error: format ‘%llu’ expects argument of type
+    ‘long long unsigned int’, but argument 6 has type ‘size_t {aka unsigned int}’
+
   * Fix handling of event log EV_POST_CODE data where field is empty and len
     is specified.
 
