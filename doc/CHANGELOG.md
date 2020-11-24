@@ -2,6 +2,8 @@
 
 ### next
 
+  * tpm2_eventlog: support EV_IPL event records.
+
   * Fix tpm2_checkquote.c:271:17: error: format ‘%llu’ expects argument of type
     ‘long long unsigned int’, but argument 6 has type ‘size_t {aka unsigned int}’
 
