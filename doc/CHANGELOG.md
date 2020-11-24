@@ -1,5 +1,10 @@
 ## Changelog
 
+### next
+
+  * Fix handling of event log EV_POST_CODE data where field is empty and len
+    is specified.
+
 ### 5.0 - 2020-11-16
 
 #### Non Backwards Compatible Changes
