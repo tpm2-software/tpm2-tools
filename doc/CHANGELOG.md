@@ -12,6 +12,10 @@
 
   * Fix segfault where optind > argc.
 
+  * Fix fapi-branch-select integration test to correctly use the PolicyRef parameter (triggered by recent bug-fix in tpm2-tss)
+
+  * Fix an outdated parameter in the fapi-provision integration test
+
 ### 5.0 - 2020-11-16
 
 #### Non Backwards Compatible Changes
