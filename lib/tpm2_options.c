@@ -193,8 +193,7 @@ void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     unsigned int i;
     bool indent = true;
     char *command_copy;
-
-    if (!tool_opts) {
+    if (!tool_opts || !command) {
         return;
     }
 
