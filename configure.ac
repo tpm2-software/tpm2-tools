@@ -86,6 +86,12 @@ AC_ARG_WITH([bashcompdir],
                            [with_bashcompdir="${datarootdir}/bash-completion/completions"])])
 AC_SUBST(bashcompdir, [$with_bashcompdir])
 
+AC_ARG_WITH([tpmsim],
+            AS_HELP_STRING([--with-tpmsim=BIN], [simulator used for testing]),
+            [],
+            [])
+AC_SUBST(tpmsim, [$with_tpmsim])
+
 AC_CANONICAL_HOST
 
 # Check OS and set library and compile flags accordingly
@@ -140,11 +146,21 @@ AS_IF([test "x$enable_unit" != xno], [
     AS_IF([test $tpm2_abrmd = no],
           [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])])
 
-    AC_CHECK_PROG([swtpm], [swtpm], yes, no)
-    AC_CHECK_PROG([tpm_server], [tpm_server], yes, no)
-    AS_IF([test $swtpm = yes], [TPM2_SIM=swtpm],
+	AS_IF([test -z "$tpmsim"], [
+        AC_CHECK_PROG([swtpm], [swtpm], yes, no)
+        AC_CHECK_PROG([tpm_server], [tpm_server], yes, no)
+        AS_IF([test $swtpm = yes], [TPM2_SIM=swtpm],
           [AS_IF([test $tpm_server = yes], [TPM2_SIM=tpm_server],
                  [AC_MSG_ERROR([Required executables swtpm or tpm_server not found, try setting PATH])])])
+        ],
+        [
+        AC_CHECK_PROG([HAS_TPM2_SIM], [$tpmsim], yes, no)
+        AS_IF([test "$HAS_TPM2_SIM" = yes],
+            [TPM2_SIM=$tpmsim],
+            [AC_MSG_ERROR([Required executable $tpmsim not found, system tests require a tpm simulator shell!])]
+        )
+        ]
+    )
     AC_SUBST([TPM2_SIM])
 
     AC_CHECK_PROG([BASH_SHELL], [bash], yes, no)
