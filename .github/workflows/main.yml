@@ -52,9 +52,12 @@ jobs:
           DOCKER_IMAGE: ubuntu-18.04
           CC: gcc
         run: ./.ci/travis.run
-      - name: failure
+      - name: failure cat build logs
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
+      - name: failure cat compatibility_testbuild logs
+        if: ${{ failure() }}
+        run: cat compatibility_testbuild/test-suite.log || true
   coverity-test:
     runs-on: ubuntu-latest
     if: contains(github.ref, 'coverity_scan')
