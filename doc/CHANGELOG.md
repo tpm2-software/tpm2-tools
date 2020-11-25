@@ -1,5 +1,11 @@
 ## Changelog
 
+### 4.2.X - next
+
+  * Fix fapi-branch-select integration test to correctly use the PolicyRef parameter (triggered by recent bug-fix in tpm2-tss)
+
+  * Fix an outdated parameter in the fapi-provision integration test
+
 ### 4.2.1 - 2020-05-25
 
 * Fix missing handle maps for ESY3 handle breaks. See #1994.
