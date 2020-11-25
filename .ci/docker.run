@@ -119,7 +119,7 @@ if [[ "${TPM2_TSS_VERSION}" == "master" && "$CC" != clang* ]];then
 
   mkdir compatibility_testbuild
   pushd compatibility_testbuild
-  ../configure --enable-unit --disable-fapi --disable-hardening
+  ../configure --enable-unit --disable-fapi --disable-hardening --with-tpmsim=tpm_server
   make -j$(nproc)
   make check -j$(nproc)
   popd
