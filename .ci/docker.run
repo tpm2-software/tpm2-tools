@@ -100,7 +100,6 @@ if [[ "${TPM2_TSS_VERSION}" == "master" && "$CC" != clang* ]];then
   #
   rm test/integration/tests/symlink.sh
 
-  ./bootstrap
   #
   # Beyond 4.X release, the tpm2-tools were combined into a single
   # busybox style binary "tpm2". The following makes adjustments
@@ -115,6 +114,8 @@ if [[ "${TPM2_TSS_VERSION}" == "master" && "$CC" != clang* ]];then
           sed -i "s/$test/tpm2 $replace/g" $f
       done
   done
+
+  ./bootstrap
 
   mkdir compatibility_testbuild
   pushd compatibility_testbuild
