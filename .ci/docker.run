@@ -83,8 +83,8 @@ popd
 #
 if [[ "${TPM2_TSS_VERSION}" == "master" && "$CC" != clang* ]];then
   echo "tpm2-tools v4.X compatibility test follows"
-  git fetch origin --tags -q
-  git checkout 4.3.0 test/integration/tests -q
+  git fetch origin refs/tags/4.3.0:refs/tags/4.3.0
+  git checkout 4.3.0 test/integration/tests
   git clean -fdx tests/integration/fapi
   #
   # RSA OAEP decryption was enabled as a feature after 4.X and so testing it
