@@ -2,7 +2,10 @@
 
 ### next
 
-  * tpm2_eventlog: support EV_IPL event records.
+  * tpm2_eventlog:
+      - support EV_IPL event records.
+      -  verify eventlog entries by comparing digest values against payload where possible.
+         See [PR #2264](https://github.com/tpm2-software/tpm2-tools/pull/2264).
 
   * Fix tpm2_checkquote.c:271:17: error: format ‘%llu’ expects argument of type
     ‘long long unsigned int’, but argument 6 has type ‘size_t {aka unsigned int}’
