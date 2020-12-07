@@ -210,7 +210,10 @@ static bool yaml_uefi_post_code(const TCG_EVENT2* const event) {
                          blob->BlobLength);
     } else { // otherwise, we treat it as an ASCII string
         const char* const data = (const char *) event->Event;
-        tpm2_tool_output("    Event: '%.*s'\n", (int) len, data);
+        tpm2_tool_output("    Event:\n"
+                         "      Action: |-\n"
+                         "        %.*s\n", (int) len, data);
+
     }
     return true;
 }
@@ -253,7 +256,9 @@ bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
 /* TCG PC Client PFP section 9.4.4 */
 bool yaml_uefi_action(UINT8 const *action, size_t size) {
 
-    tpm2_tool_output("    Event: '%.*s'\n", (int) size, action);
+    tpm2_tool_output("    Event:\n"
+                     "      Action: |-\n"
+                     "        %.*s\n", (int) size, action);
 
     return true;
 }
@@ -266,7 +271,7 @@ bool yaml_uefi_action(UINT8 const *action, size_t size) {
 bool yaml_ipl(UINT8 const *description, size_t size) {
 
     tpm2_tool_output("    Event:\n"
-                     "      String: |\n");
+                     "      String: |-\n");
 
     /* We need to handle when description contains multiple lines. */
     size_t i, j;
