@@ -3,6 +3,7 @@
 ### next
 
   * tpm2_eventlog:
+      - better support for multiline strings if produced.
       - support EV_IPL event records.
       -  verify eventlog entries by comparing digest values against payload where possible.
          See [PR #2264](https://github.com/tpm2-software/tpm2-tools/pull/2264).
