@@ -514,7 +514,7 @@ int main(int argc, char *argv[]) {
         goto free_opts;
     }
 
-    r = Fapi_SetSignCB (fctx, sign_callback, NULL);
+    r = Fapi_SetSignCB (fctx, (Fapi_CB_Sign)sign_callback, NULL);
     if (r != TSS2_RC_SUCCESS) {
         fprintf (stderr, "Fapi_SetSignCB returned %u\n", r);
         Fapi_Finalize (&fctx);
