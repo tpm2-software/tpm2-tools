@@ -256,14 +256,22 @@ TSS2_RC auth_callback(
 uint8_t *input_signature = NULL;
 
 TSS2_RC sign_callback(
+#ifdef FAPI_3_0
     char        const *objectPath,
+#else /* FAPI_3_0 */
+    __attribute__((unused)) FAPI_CONTEXT *fapi_context,
+#endif /* FAPI_3_0 */
     char        const *description,
     char        const *publicKey,
     char        const *publicKeyHint,
     uint32_t    hashAlg,
     uint8_t     const *dataToSign,
     size_t      dataToSignSize,
+#ifdef FAPI_3_0
     uint8_t     const **signature,
+#else /* FAPI_3_0 */
+    uint8_t     **signature,
+#endif /* FAPI_3_0 */
     size_t      *signatureSize,
     void        *userData)
 {
@@ -313,9 +321,15 @@ TSS2_RC sign_callback(
             }
         }
 
+#ifdef FAPI_3_0
         printf("%s: Authorize usage of %s by signing the nonce with %s the hash "\
             "algorithm \"%s\".\n", description, objectPath, publicKeyHintStr,
             hashAlgName);
+#else /* FAPI_3_0 */
+        printf("%s: Authorize usage of the key by signing the nonce with %s the "\
+            "hash algorithm \"%s\".\n", description, publicKeyHintStr,
+            hashAlgName);
+#endif /* FAPI_3_0 */
 
     }
     printf("Filename for nonce output: ");
