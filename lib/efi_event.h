@@ -118,4 +118,42 @@ typedef struct {
     BYTE DevicePath[];
 } PACKED UEFI_IMAGE_LOAD_EVENT;
 
+/* 
+   These structs represent a GUID Partition Table, and are defined in the TGC PC
+   Client Platform Firmware Profile Specification Revision 1.04 Section 9.4.
+   The struct members are defined in the UEFI Specification Version 2.8
+   Section 5.3
+ */
+typedef struct {
+    UINT64 Signature;
+    UINT32 Revision;
+    UINT32 HeaderSize;
+    UINT32 HeaderCRC32;
+    UINT32 Reserved;
+    UINT64 MyLBA;
+    UINT64 AlternateLBA;
+    UINT64 FirstUsableLBA;
+    UINT64 LastUsableLBA;
+    BYTE DiskGUID[16];
+    UINT64 PartitionEntryLBA;
+    UINT32 NumberOfPartitionEntries;
+    UINT32 SizeOfPartitionEntry;
+    UINT32 PartitionEntryArrayCRC32;
+} PACKED UEFI_PARTITION_TABLE_HEADER;
+
+typedef struct {
+    BYTE PartitionTypeGUID[16];
+    BYTE UniquePartitionGUID[16];
+    UINT64 StartingLBA;
+    UINT64 EndingLBA;
+    UINT64 Attributes;
+    BYTE PartitionName[72];
+} PACKED UEFI_PARTITION_ENTRY;
+
+typedef struct {
+    UEFI_PARTITION_TABLE_HEADER UEFIPartitionHeader;
+    UINT64 NumberOfPartitions;
+    UEFI_PARTITION_ENTRY Partitions[];
+} PACKED UEFI_GPT_DATA;
+
 #endif

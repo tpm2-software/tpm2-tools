@@ -309,6 +309,83 @@ bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
     free(buf);
     return true;
 }
+/* TCG PC Client PFP section 9.2.6 */
+bool yaml_gpt(UEFI_GPT_DATA *data, size_t size) {
+
+    if (size < sizeof(*data)) {
+        LOG_ERR("EventSize(%zu) is too small\n", size);
+        return false;
+    }
+
+    UEFI_PARTITION_TABLE_HEADER *header = &data->UEFIPartitionHeader;
+    char guid[37] = { 0 };
+
+    uuid_unparse_lower(header->DiskGUID, guid);
+
+    tpm2_tool_output("    Event:\n"
+                     "      Header:\n"
+                     "        Signature: \"%.*s\"\n"
+                     "        Revision: 0x%" PRIx32 "\n"
+                     "        HeaderSize: %" PRIu32 "\n"
+                     "        HeaderCRC32: 0x%" PRIx32 "\n"
+                     "        MyLBA: 0x%" PRIx64 "\n"
+                     "        AlternateLBA: 0x%" PRIx64 "\n"
+                     "        FirstUsableLBA: 0x%" PRIx64 "\n"
+                     "        LastUsableLBA: 0x%" PRIx64 "\n"
+                     "        DiskGUID: %s\n"
+                     "        PartitionEntryLBA: 0x%" PRIx64 "\n"
+                     "        NumberOfPartitionEntry: %" PRIu32 "\n"
+                     "        SizeOfPartitionEntry: %" PRIu32 "\n"
+                     "        PartitionEntryArrayCRC32: 0x%" PRIx32 "\n"
+                     "      NumberOfPartitions: %" PRIu64 "\n"
+                     "      Partitions:\n",
+                     8, (char*)&header->Signature, /* 8-char ASCII string */
+                     header->Revision,
+                     header->HeaderSize,
+                     header->HeaderCRC32,
+                     header->MyLBA,
+                     header->AlternateLBA,
+                     header->FirstUsableLBA,
+                     header->LastUsableLBA,
+                     guid, 
+                     header->PartitionEntryLBA,
+                     header->NumberOfPartitionEntries,
+                     header->SizeOfPartitionEntry,
+                     header->PartitionEntryArrayCRC32,
+                     data->NumberOfPartitions);
+
+    size -= (sizeof(data->UEFIPartitionHeader) + sizeof(data->NumberOfPartitions));
+
+    UINT64 i;
+    UEFI_PARTITION_ENTRY *partition = data->Partitions;
+    for (i = 0; i < data->NumberOfPartitions; i++) {
+        if (size < sizeof(*partition)) {
+            LOG_ERR("Cannot parse GPT partition entry: insufficient data (%zu)\n", size);
+            return false;
+        }
+
+        uuid_unparse_lower(partition->PartitionTypeGUID, guid);
+        tpm2_tool_output("      - PartitionTypeGUID: %s\n", guid);
+        uuid_unparse_lower(partition->UniquePartitionGUID, guid);
+        tpm2_tool_output("        UniquePartitionGUID: %s\n"
+                         "        StartingLBA: 0x%" PRIx64 "\n"
+                         "        EndingLBA: 0x%" PRIx64 "\n"
+                         "        Attributes: 0x%" PRIx64 "\n"
+                         "        PartitionName: \"%.*s\"\n",
+                         guid,
+                         partition->StartingLBA,
+                         partition->EndingLBA,
+                         partition->Attributes,
+                         72, partition->PartitionName);
+        size -= sizeof(*partition);
+    }
+
+    if (size != 0) {
+        LOG_ERR("EventSize is inconsistent with actual data\n");
+        return false;
+    }
+    return true;
+}
 #define EVENT_BUF_MAX BYTES_TO_HEX_STRING_SIZE(1024)
 bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
 
@@ -339,6 +416,9 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
     case EV_EFI_RUNTIME_SERVICES_DRIVER:
         return yaml_uefi_image_load((UEFI_IMAGE_LOAD_EVENT*)event->Event,
                                     event->EventSize);
+    case EV_EFI_GPT_EVENT:
+        return yaml_gpt((UEFI_GPT_DATA*)event->Event,
+                        event->EventSize);
     default:
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
         tpm2_tool_output("    Event: \"%s\"\n", hexstr);
