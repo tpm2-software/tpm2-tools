@@ -9,6 +9,7 @@
 /* Context struct used to store passed command line parameters */
 static struct cxt {
     uint32_t   *pcrList;
+    size_t     pcrListSize;
     char const *keyPath;
     char const *qualifyingData;
     char const *quoteInfo;
@@ -21,21 +22,20 @@ static struct cxt {
 /**
  * Split the comma separated input, parse each token as number,
  * put the numbers in the array output.  Allocate memory for
- * output to hold the numbers.  The last element of output is -1.
+ * output to hold the numbers.
  *
  * On failure returns false and output is not allocated.
  * On success the caller frees output.
  */
-static inline bool extract_pcrs(char *input, uint32_t **output) {
+static inline bool extract_pcrs(char *input, uint32_t **output, size_t *list_size) {
     size_t size = 1;
     char *temp = input;
     while ((temp = strchr (temp+1, ','))) size++;
-    *output = malloc (sizeof(uint32_t) * (size + 1));
+    *output = malloc (sizeof(uint32_t) * (size));
     if (!*output) {
         fprintf (stderr, "malloc failed: %m\n");
         return false;
     }
-    (*output)[size] = -1;
     char *x = strtok_r (input, ",", &temp);
     if (!tpm2_util_string_to_uint32(x, output[0])) {
         fprintf (stderr, "%s cannot be used as PCR\n", x);
@@ -50,6 +50,9 @@ static inline bool extract_pcrs(char *input, uint32_t **output) {
             return false;
         }
     }
+
+    *list_size = size+1;
+
     return true;
 }
 
@@ -58,7 +61,7 @@ static bool on_option(char key, char *value) {
     (void)value;
     switch (key) {
     case 'x':
-        return extract_pcrs(value, &ctx.pcrList);
+        return extract_pcrs(value, &ctx.pcrList, &ctx.pcrListSize);
     case 'Q':
         ctx.qualifyingData = value;
         break;
@@ -153,7 +156,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     uint8_t *signature;
     size_t signatureSize;
     char *quoteInfo, *pcrLog = NULL, *certificate = NULL;
-    r = Fapi_Quote (fctx, ctx.pcrList, 1, ctx.keyPath,
+    r = Fapi_Quote (fctx, ctx.pcrList, ctx.pcrListSize, ctx.keyPath,
         NULL, qualifyingData, qualifyingDataSize, &quoteInfo,
         &signature, &signatureSize, &pcrLog, &certificate);
     if (r != TSS2_RC_SUCCESS) {
