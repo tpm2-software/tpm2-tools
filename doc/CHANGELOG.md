@@ -2,6 +2,8 @@
 
 ### 4.X - next
 
+  * tss2_quote: Tool now correctly supports to quote against a list of passed PCR registers
+
   * Fix fapi-branch-select integration test to correctly use the PolicyRef parameter (triggered by recent bug-fix in tpm2-tss)
 
   * Fix an outdated parameter in the fapi-provision integration test
