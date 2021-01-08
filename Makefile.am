@@ -198,7 +198,8 @@ tpm2_tools = \
     tools/tpm2_commit.c \
     tools/tpm2_ecdhkeygen.c \
     tools/tpm2_ecdhzgen.c \
-    tools/tpm2_zgen2phase.c
+    tools/tpm2_zgen2phase.c \
+    tools/tpm2_sessionconfig.c
 
 # Create the symlinks for each tool to the tpm2 and optional tss2 bundled executables
 install-exec-hook:
@@ -452,6 +453,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_ecdhkeygen.1 \
     man/man1/tpm2_ecdhzgen.1 \
     man/man1/tpm2_zgen2phase.1 \
+    man/man1/tpm2_sessionconfig.1 \
     man/man1/tpm2.1
 
 if HAVE_FAPI
