@@ -35,18 +35,18 @@ tss2 provision
 
 tss2 createkey --path=$KEY_PATH --type="noDa, restricted, sign" --authValue=""
 
-tss2 quote --keyPath=$KEY_PATH --pcrList="16" --qualifyingData=$NONCE_FILE \
+tss2 quote --keyPath=$KEY_PATH --pcrList="11, 12, 13, 14, 15, 16" --qualifyingData=$NONCE_FILE \
     --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG \
     --certificate=$CERTIFICATE_FILE --quoteInfo=$QUOTE_INFO --force
 
 echo "tss2 quote with EMPTY_FILE" # Expected to succeed
-tss2 quote --keyPath=$KEY_PATH --pcrList="16" \
+tss2 quote --keyPath=$KEY_PATH --pcrList="11, 12, 13, 14, 15, 16" \
     --qualifyingData=$EMPTY_FILE --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG \
     --certificate=$CERTIFICATE_FILE --quoteInfo=$QUOTE_INFO --force
 
 echo "tss2 quote with BIG_FILE" # Expected to fail
 expect <<EOF
-spawn sh -c "tss2 quote --keyPath=$KEY_PATH --pcrList=\"16\" \
+spawn sh -c "tss2 quote --keyPath=$KEY_PATH --pcrList=\"11, 12, 13, 14, 15, 16\" \
     --qualifyingData=$BIG_FILE --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG \
     --certificate=$CERTIFICATE_FILE --quoteInfo=$QUOTE_INFO --force 2> $LOG_FILE"
 set ret [wait]
