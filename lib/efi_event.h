@@ -156,4 +156,24 @@ typedef struct {
     UEFI_PARTITION_ENTRY Partitions[];
 } PACKED UEFI_GPT_DATA;
 
+/*
+ * An UEFI signature database is represented as a concatenated list of
+ * EFI_SIGNATURE_LIST, which contains one or more EFI_SIGNATURE_DATA. These
+ * structs are described in more details in UEFI Spec Section 32.4.1
+ */
+typedef struct {
+    BYTE SignatureType[16];
+    UINT32 SignatureListSize;
+    UINT32 SignatureHeaderSize;
+    UINT32 SignatureSize;
+    // BYTE SignatureHeader[SignatureHeaderSize];
+    // BYTE Signatures[][SignatureSize];
+} PACKED EFI_SIGNATURE_LIST;
+
+typedef struct {
+    BYTE SignatureOwner[16];
+    BYTE SignatureData[];
+} PACKED EFI_SIGNATURE_DATA;
+
+
 #endif
