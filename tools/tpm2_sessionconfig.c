@@ -590,12 +590,22 @@ static bool on_option(char key, char *value) {
 
 static bool on_args(int argc, char **argv) {
 
-    if (argc > 1 || !argc) {
+    if (argc > 1) {
         LOG_ERR("Argument takes one file name for session data");
         return false;
     }
 
     ctx.session_path = argv[0];
+
+    return true;
+}
+
+static bool is_input_option_args_valid(void) {
+
+    if (!ctx.session_path) {
+        LOG_ERR("Must specify session file as an argument.");
+        return false;
+    }
 
     return true;
 }
@@ -627,6 +637,11 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context,
 tpm2_option_flags flags) {
 
     UNUSED(flags);
+
+    bool retval = is_input_option_args_valid();
+    if (!retval) {
+        return tool_rc_option_error;
+    }
 
     tool_rc rc = process_input(esys_context);
     if(rc != tool_rc_success) {
