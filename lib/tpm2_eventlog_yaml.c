@@ -114,7 +114,7 @@ void yaml_sha1_log_eventhdr(TCG_EVENT const *eventhdr, size_t size) {
     return;
 }
 /* converting byte buffer to hex string requires 2x, plus 1 for '\0' */
-#define BYTES_TO_HEX_STRING_SIZE(byte_count) (byte_count * 2 + 1)
+#define BYTES_TO_HEX_STRING_SIZE(byte_count) ((byte_count) * 2 + 1)
 #define DIGEST_HEX_STRING_MAX BYTES_TO_HEX_STRING_SIZE(TPM2_MAX_DIGEST_BUFFER)
 bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size) {
 
@@ -128,18 +128,18 @@ bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size) {
 
     return true;
 }
-bool yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data) {
+char *yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data) {
 
     int ret = 0;
-    char *mbstr = NULL, *tmp = NULL;
     mbstate_t st;
 
     memset(&st, '\0', sizeof(st));
 
-    mbstr = tmp = calloc(data->UnicodeNameLength + 1, MB_CUR_MAX);
+    char *mbstr = calloc(data->UnicodeNameLength + 1, MB_CUR_MAX);
+    char *tmp = mbstr;
     if (mbstr == NULL) {
         LOG_ERR("failed to allocate data: %s\n", strerror(errno));
-        return false;
+        return NULL;
     }
 
     for(size_t i = 0; i < data->UnicodeNameLength; ++i, tmp += ret) {
@@ -147,13 +147,10 @@ bool yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data) {
         if (ret < 0) {
             LOG_ERR("c16rtomb failed: %s", strerror(errno));
             free(mbstr);
-            return false;
+            return NULL;
         }
     }
-    tpm2_tool_output("      UnicodeName: %s\n", mbstr);
-    free(mbstr);
-
-    return true;
+    return mbstr;
 }
 #define VAR_DATA_HEX_SIZE(data) BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength)
 static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
@@ -221,10 +218,15 @@ static bool yaml_uefi_post_code(const TCG_EVENT2* const event) {
  * The tpm2_eventlog module validates the event structure but nothing within
  * the event data buffer so we must do that here.
  */
-static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data) {
+static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type) {
 
-    bool ret;
     char uuidstr[37] = { 0 };
+    size_t start = 0;
+
+    if (size < sizeof(*data)) {
+        LOG_ERR("EventSize is too small\n");
+        return false;
+    }
 
     uuid_unparse_lower(data->VariableName, uuidstr);
 
@@ -235,12 +237,114 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data) {
                      uuidstr, data->UnicodeNameLength,
                      data->VariableDataLength);
 
-    ret = yaml_uefi_var_unicodename(data);
-    if (!ret) {
+    start += sizeof(*data);
+    if (start + data->UnicodeNameLength*2 > size) {
+        LOG_ERR("EventSize is too small\n");
         return false;
     }
 
-    return yaml_uefi_var_data(data);
+    char *ret = yaml_uefi_var_unicodename(data);
+    if (!ret) {
+        return false;
+    }
+    tpm2_tool_output("      UnicodeName: %s\n", ret);
+
+    start += data->UnicodeNameLength*2;
+    /* Try to parse as much as we can without fail-stop. Bugs in firmware, shim, 
+     * grub could produce inconsistent metadata. As long as it is not preventing 
+     * us from parsing the data, we try to continue while giving a warning
+     * message.
+     */
+    if (start + data->VariableDataLength > size) {
+        LOG_ERR("EventSize is inconsistent with actual data\n");
+    }
+
+    /* PK, KEK, db, and dbx are reserved variables names used to store platform
+     * keys, key exchange keys, database keys, and blacklisted database keys,
+     * respectively. 
+     */
+    if (type == EV_EFI_VARIABLE_DRIVER_CONFIG && 
+        ((strlen(ret) == 2 && strncmp(ret, "PK", 2) == 0) ||
+        (strlen(ret) == 3 && strncmp(ret, "KEK", 3) == 0) ||
+        (strlen(ret) == 2 && strncmp(ret, "db", 2) == 0) ||
+        (strlen(ret) == 3 && strncmp(ret, "dbx", 3) == 0))) {
+
+        free(ret);
+        tpm2_tool_output("      VariableData:\n");
+        uint8_t *variable_data = (uint8_t *)&data->UnicodeName[
+            data->UnicodeNameLength];
+        /* iterate through each EFI_SIGNATURE_LIST */
+        while (start < size) {
+            EFI_SIGNATURE_LIST *slist = (EFI_SIGNATURE_LIST *)variable_data;
+            if (start + sizeof(*slist) > size) {
+                LOG_ERR("EventSize is inconsistent with actual data\n");
+                break;
+            }
+
+            if (slist->SignatureSize < 16) {
+                LOG_ERR("SignatureSize is too small\n");
+                break;
+            }
+
+            uuid_unparse_lower(slist->SignatureType, uuidstr);
+            tpm2_tool_output("      - SignatureType: %s\n"
+                             "        SignatureListSize: %" PRIu32 "\n"
+                             "        SignatureHeaderSize: %" PRIu32 "\n"
+                             "        SignatureSize: %" PRIu32 "\n"
+                             "        Keys:\n",
+                             uuidstr, slist->SignatureListSize,
+                             slist->SignatureHeaderSize,
+                             slist->SignatureSize);
+
+            start += (sizeof(*slist) + slist->SignatureHeaderSize);
+            if (start + slist->SignatureSize > size) {
+                LOG_ERR("EventSize is inconsistent with actual data\n");
+                break;
+            }
+
+            int signature_size = slist->SignatureListSize -
+                sizeof(*slist) - slist->SignatureHeaderSize;
+            if (signature_size < 0 || signature_size % slist->SignatureSize != 0) {
+                LOG_ERR("Malformed EFI_SIGNATURE_LIST\n");
+                break;
+            }
+
+            uint8_t *signature = (uint8_t *)slist +
+                sizeof(*slist) + slist->SignatureHeaderSize;
+            int signatures = signature_size / slist->SignatureSize;
+            /* iterate through each EFI_SIGNATURE on the list */
+            int i;
+            for (i = 0; i < signatures; i++) {
+                EFI_SIGNATURE_DATA *s = (EFI_SIGNATURE_DATA *)signature;
+                char *sdata = calloc (1,
+                    BYTES_TO_HEX_STRING_SIZE(slist->SignatureSize-16));
+                if (sdata == NULL) {
+                    LOG_ERR("Failled to allocate data: %s\n", strerror(errno));
+                    return false;
+                }
+                bytes_to_str(s->SignatureData, slist->SignatureSize-16, 
+                    sdata, BYTES_TO_HEX_STRING_SIZE(slist->SignatureSize-16));
+                uuid_unparse_lower(s->SignatureOwner, uuidstr);
+                tpm2_tool_output("        - SignatureOwner: %s\n"
+                                 "          SignatureData: %s\n",
+                                 uuidstr, sdata);
+                free(sdata);
+
+                signature += slist->SignatureSize;
+                start += slist->SignatureSize;
+                if (start > size) {
+                    LOG_ERR("Malformed EFI_SIGNATURE_DATA\n");
+                    break;
+                }
+            }
+            variable_data += slist->SignatureListSize;
+        }
+        return true;
+    }
+    else {
+        free(ret);
+        return yaml_uefi_var_data(data);
+    }
 }
 /* TCG PC Client FPF section 9.2.5 */
 bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
@@ -401,7 +505,8 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
     case EV_EFI_VARIABLE_DRIVER_CONFIG:
     case EV_EFI_VARIABLE_BOOT:
     case EV_EFI_VARIABLE_AUTHORITY:
-        return yaml_uefi_var((UEFI_VARIABLE_DATA*)event->Event);
+        return yaml_uefi_var((UEFI_VARIABLE_DATA*)event->Event,
+                                event->EventSize, type);
     case EV_POST_CODE:
         return yaml_uefi_post_code(event);
     case EV_S_CRTM_CONTENTS:

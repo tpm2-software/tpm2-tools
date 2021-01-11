@@ -11,7 +11,7 @@
 char const *eventtype_to_string (UINT32 event_type);
 void yaml_event2hdr(TCG_EVENT_HEADER2 const *event_hdr, size_t size);
 bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size);
-bool yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data);
+char *yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data);
 bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type);
 bool yaml_digest2_callback(TCG_DIGEST2 const *digest, size_t size, void *data);
 bool yaml_event2hdr_callback(TCG_EVENT_HEADER2 const *event_hdr, size_t size,
