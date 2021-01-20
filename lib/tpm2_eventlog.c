@@ -341,7 +341,8 @@ size_t i;
             return false;
         }
 
-        /* Digest is applied on the string between "^[a-zA-Z-]+: " and "\0$" */
+        /* Digest is applied on the string between "^[a-zA-Z_]+:? " and EOL,
+         * including or excluding the trailing NULL character */
         for (i = 0; i < digest_count; i++) {
             size_t j;
 
@@ -357,6 +358,7 @@ size_t i;
 
             TPM2B_DIGEST calc_digest;
             TPMI_ALG_HASH alg = digest->AlgorithmId;
+            /* First try to calculate the hash excluding the trailing \0 */
             bool result = tpm2_openssl_hash_compute_data(alg,
             event->Event + (j + 1), event->EventSize - (j + 2), &calc_digest);
             if (!result) {
@@ -366,8 +368,18 @@ size_t i;
 
             size_t alg_size = tpm2_alg_util_get_hash_size(alg);
             if (memcmp(calc_digest.buffer, digest->Digest, alg_size) != 0) {
-                LOG_WARN("Event %zu's digest does not match its payload", eventnum - 1);
-                return false;
+                /* Next try to calculate the hash including the trailing \0 */
+                bool result = tpm2_openssl_hash_compute_data(alg,
+                event->Event + (j + 1), event->EventSize - (j + 1), &calc_digest);
+                if (!result) {
+                    LOG_WARN("Event %zu: Cannot calculate hash value from data", eventnum - 1);
+                    return false;
+                }
+
+                if (memcmp(calc_digest.buffer, digest->Digest, alg_size) != 0) {
+                    LOG_WARN("Event %zu's digest does not match its payload", eventnum - 1);
+                    return false;
+                }
             }
             digest = (TCG_DIGEST2*)((uintptr_t)digest->Digest + alg_size);
         }
