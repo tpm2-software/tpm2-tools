@@ -14,7 +14,7 @@ typedef bool (*DIGEST2_CALLBACK)(TCG_DIGEST2 const *digest, size_t size,
 typedef bool (*EVENT2_CALLBACK)(TCG_EVENT_HEADER2 const *event_hdr, size_t size,
                                 void *data);
 typedef bool (*EVENT2DATA_CALLBACK)(TCG_EVENT2 const *event, UINT32 type,
-                                    void *data);
+                                    void *data, int32_t yaml_version);
 typedef bool (*SPECID_CALLBACK)(TCG_EVENT const *event, void *data);
 typedef bool (*LOG_EVENT_CALLBACK)(TCG_EVENT const *event_hdr, size_t size,
                                    void *data);
@@ -37,6 +37,7 @@ typedef struct {
     uint8_t sha384_pcrs[TPM2_MAX_PCRS][TPM2_SHA384_DIGEST_SIZE];
     uint8_t sha512_pcrs[TPM2_MAX_PCRS][TPM2_SHA512_DIGEST_SIZE];
     uint8_t sm3_256_pcrs[TPM2_MAX_PCRS][TPM2_SM3_256_DIGEST_SIZE];
+    int32_t yaml_version;
 } tpm2_eventlog_context;
 
 bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
