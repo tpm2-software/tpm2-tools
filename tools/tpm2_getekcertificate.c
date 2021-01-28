@@ -190,8 +190,8 @@ static char *base64_encode(const unsigned char* buffer)
     return final_string;
 }
 
-static size_t writecallback(void *contents, size_t size, size_t nitems,
-    char *CERT_BUFFER) {
+static size_t writecallback(char *contents, size_t size, size_t nitems,
+    void *CERT_BUFFER) {
 
     strncpy(CERT_BUFFER, (const char *)contents, nitems * size);
     ctx.rsa_cert_buffer_size = nitems * size;
