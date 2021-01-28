@@ -219,7 +219,7 @@ static bool yaml_uefi_post_code(const TCG_EVENT2* const event) {
  * the event data buffer so we must do that here.
  */
 static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
-                          int32_t yaml_version) {
+                          uint32_t eventlog_version) {
 
     char uuidstr[37] = { 0 };
     size_t start = 0;
@@ -260,7 +260,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
         LOG_ERR("EventSize is inconsistent with actual data\n");
     }
 
-    if (yaml_version == 2) {
+    if (eventlog_version == 2) {
         /* PK, KEK, db, and dbx are reserved variables names used to store platform
          * keys, key exchange keys, database keys, and blacklisted database keys,
          * respectively.
@@ -342,26 +342,22 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                     variable_data += slist->SignatureListSize;
                 }
                 return true;
-            }
-            else if ((strlen(ret) == 10 && strncmp(ret, "SecureBoot", 10) == 0)) {
+            } else if ((strlen(ret) == 10 && strncmp(ret, "SecureBoot", 10) == 0)) {
                 free(ret);
                 tpm2_tool_output("      VariableData:\n"
                                  "        Enabled:");
                 if (data->VariableDataLength == 0) {
                     tpm2_tool_output("'No'\n");
-                }
-                else if (data->VariableDataLength > 1) {
+                } else if (data->VariableDataLength > 1) {
                     LOG_ERR("SecureBoot data length %" PRIu64 " > 1\n",
                             data->VariableDataLength);
                     return false;
-                }
-                else {
+                } else {
                     uint8_t *variable_data = (uint8_t *)&data->UnicodeName[
                         data->UnicodeNameLength];
                     if (*variable_data == 0) {
                         tpm2_tool_output("'No'\n");
-                    }
-                    else {
+                    } else {
                         tpm2_tool_output("'Yes'\n");
                     }
                 }
@@ -442,14 +438,14 @@ bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
 }
 #define EVENT_BUF_MAX BYTES_TO_HEX_STRING_SIZE(1024)
 /* TCG PC Client PFP section 9.2.6 */
-bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, int32_t yaml_version) {
+bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
 
-    if (yaml_version == 2) {
-        if (size < sizeof(*data)) {
-            LOG_ERR("EventSize(%zu) is too small\n", size);
-            return false;
-        }
+    if (size < sizeof(*data)) {
+        LOG_ERR("EventSize(%zu) is too small\n", size);
+        return false;
+    }
 
+    if (eventlog_version == 2) {
         UEFI_PARTITION_TABLE_HEADER *header = &data->UEFIPartitionHeader;
         char guid[37] = { 0 };
 
@@ -517,8 +513,7 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, int32_t yaml_version) {
             LOG_ERR("EventSize is inconsistent with actual data\n");
             return false;
         }
-    }
-    else {
+    } else {
         char hexstr[EVENT_BUF_MAX] = { 0, };
         bytes_to_str((UINT8*)data, size, hexstr, sizeof(hexstr));
         tpm2_tool_output("    Event: \"%s\"\n", hexstr);
@@ -526,7 +521,7 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, int32_t yaml_version) {
     return true;
 }
 
-bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, int32_t yaml_version) {
+bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, uint32_t eventlog_version) {
 
     char hexstr[EVENT_BUF_MAX] = { 0, };
 
@@ -541,7 +536,7 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, int32_t yaml_version)
     case EV_EFI_VARIABLE_BOOT:
     case EV_EFI_VARIABLE_AUTHORITY:
         return yaml_uefi_var((UEFI_VARIABLE_DATA*)event->Event,
-                                event->EventSize, type, yaml_version);
+                                event->EventSize, type, eventlog_version);
     case EV_POST_CODE:
         return yaml_uefi_post_code(event);
     case EV_S_CRTM_CONTENTS:
@@ -558,7 +553,7 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, int32_t yaml_version)
                                     event->EventSize);
     case EV_EFI_GPT_EVENT:
         return yaml_gpt((UEFI_GPT_DATA*)event->Event,
-                        event->EventSize, yaml_version);
+                        event->EventSize, eventlog_version);
     default:
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
         tpm2_tool_output("    Event: \"%s\"\n", hexstr);
@@ -566,11 +561,11 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, int32_t yaml_version)
     }
 }
 bool yaml_event2data_callback(TCG_EVENT2 const *event, UINT32 type,
-                              void *data, int32_t yaml_version) {
+                              void *data, uint32_t eventlog_version) {
 
     (void)data;
 
-    return yaml_event2data(event, type, yaml_version);
+    return yaml_event2data(event, type, eventlog_version);
 }
 bool yaml_digest2_callback(TCG_DIGEST2 const *digest, size_t size,
                             void *data_in) {
@@ -764,7 +759,13 @@ static void yaml_eventlog_pcrs(tpm2_eventlog_context *ctx) {
     }
 }
 
-bool yaml_eventlog(UINT8 const *eventlog, size_t size, INT32 yaml_version) {
+bool yaml_eventlog(UINT8 const *eventlog, size_t size, uint32_t eventlog_version) {
+
+    if (eventlog_version < MIN_EVLOG_YAML_VERSION || 
+        eventlog_version > MAX_EVLOG_YAML_VERSION) {
+        LOG_ERR("Unexpected YAML version number: %u\n", eventlog_version);
+        return false;
+    }
 
     size_t count = 0;
     tpm2_eventlog_context ctx = {
@@ -774,11 +775,11 @@ bool yaml_eventlog(UINT8 const *eventlog, size_t size, INT32 yaml_version) {
         .log_eventhdr_cb = yaml_sha1_log_eventhdr_callback,
         .digest2_cb = yaml_digest2_callback,
         .event2_cb = yaml_event2data_callback,
-        .yaml_version = yaml_version,
+        .eventlog_version = eventlog_version,
     };
 
     tpm2_tool_output("---\n");
-    tpm2_tool_output("version: %d\n", yaml_version);
+    tpm2_tool_output("version: %u\n", eventlog_version);
     tpm2_tool_output("events:\n");
     bool rc = parse_eventlog(&ctx, eventlog, size);
     if (!rc) {

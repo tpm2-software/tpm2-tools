@@ -14,9 +14,8 @@
 
 static char *filename = NULL;
 
-const int allowed_yaml_versions[] = {1, 2};
 /* Set the default YAML version */
-static int yaml_version = 1;
+static uint32_t eventlog_version = 1;
 
 static bool on_positional(int argc, char **argv) {
 
@@ -33,19 +32,20 @@ static bool on_positional(int argc, char **argv) {
 
 static bool on_option(char key, char *value) {
 
-    int version;
+    uint32_t version;
 
     switch (key) {
-    case 'y':
-        version = atoi(value);
-        for (unsigned int i = 0; i < sizeof(allowed_yaml_versions)/sizeof(int); i++) {
-            if (version == allowed_yaml_versions[i]) {
-                yaml_version = version;
-                return true;
-            }
+    case 0:
+        if (!tpm2_util_string_to_uint32(value, &version)) {
+            LOG_ERR("Cannot parse eventlog version: %s\n", value);
+            return false;
         }
-        LOG_ERR("Unexpected YAML version number: %d\n", version);
-        return false;
+        if (version < MIN_EVLOG_YAML_VERSION || version > MAX_EVLOG_YAML_VERSION) {
+            LOG_ERR("Unexpected YAML version number: %u\n", version);
+            return false;
+        }
+        eventlog_version = version;
+        break;
     }
     return true;
 }
@@ -53,7 +53,7 @@ static bool on_option(char key, char *value) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-         { "yaml-version",         required_argument, NULL, 'y' },
+         { "eventlog-version",         required_argument, NULL, 0 },
     };
 
     *opts = tpm2_options_new("y:", ARRAY_LEN(topts), topts, on_option,
@@ -97,7 +97,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    ret = yaml_eventlog(eventlog, size_tmp, yaml_version);
+    ret = yaml_eventlog(eventlog, size_tmp, eventlog_version);
     if (!ret) {
         LOG_ERR("failed to parse tpm2 eventlog");
         rc = tool_rc_general_error;

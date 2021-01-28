@@ -274,7 +274,7 @@ bool foreach_sha1_log_event(tpm2_eventlog_context *ctx, TCG_EVENT const *eventhd
         /* event data callback */
         if (ctx->event2_cb != NULL) {
             ret = ctx->event2_cb(event, eventhdr->eventType, ctx->data,
-                                 ctx->yaml_version);
+                                 ctx->eventlog_version);
             if (ret != true) {
                 return false;
             }
@@ -444,7 +444,7 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
 
         /* event data callback */
         if (ctx->event2_cb != NULL) {
-            ret = ctx->event2_cb(event, eventhdr->EventType, ctx->data, ctx->yaml_version);
+            ret = ctx->event2_cb(event, eventhdr->EventType, ctx->data, ctx->eventlog_version);
             if (ret != true) {
                 return false;
             }

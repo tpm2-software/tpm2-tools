@@ -64,14 +64,23 @@ static void test_yaml_digest2_callback(void **state) {
     digest->AlgorithmId = TPM2_ALG_SHA1;
     assert_true(yaml_digest2_callback(digest, TPM2_SHA1_DIGEST_SIZE, &count));
 }
-static void test_yaml_event2data(void **state) {
+static void test_yaml_event2data_version1(void **state) {
 
     (void)state;
     uint8_t buf [sizeof(TCG_EVENT2) + 6];
     TCG_EVENT2 *event = (TCG_EVENT2*)buf;
 
     event->EventSize = 6;
-    assert_true(yaml_event2data(event, EV_PREBOOT_CERT));
+    assert_true(yaml_event2data(event, EV_PREBOOT_CERT, 1));
+}
+static void test_yaml_event2data_version2(void **state) {
+
+    (void)state;
+    uint8_t buf [sizeof(TCG_EVENT2) + 6];
+    TCG_EVENT2 *event = (TCG_EVENT2*)buf;
+
+    event->EventSize = 6;
+    assert_true(yaml_event2data(event, EV_PREBOOT_CERT, 2));
 }
 static void test_yaml_event2hdr_callback(void **state){
 
@@ -99,7 +108,7 @@ static void test_yaml_eventlog(void **state){
 
     (void)state;
 
-    assert_false(yaml_eventlog(NULL, 0));
+    assert_false(yaml_eventlog(NULL, 0, 1));
 }
 int main(void) {
 
@@ -137,7 +146,8 @@ int main(void) {
         cmocka_unit_test(test_yaml_event2hdr_callback),
         cmocka_unit_test(test_yaml_event2hdr_callback_nulldata),
         cmocka_unit_test(test_yaml_digest2_callback),
-        cmocka_unit_test(test_yaml_event2data),
+        cmocka_unit_test(test_yaml_event2data_version1),
+        cmocka_unit_test(test_yaml_event2data_version2),
         cmocka_unit_test(test_yaml_eventlog),
     };
 
