@@ -42,7 +42,7 @@ struct tpm2_startauthsession_ctx {
     tpm2_session_data *session_data;
     TPMA_SESSION attrs;
     bool is_real_policy_session;
-    bool is_session_encryption_required;
+    bool is_session_encryption_possibly_needed;
     bool is_session_audit_required;
 };
 
@@ -82,9 +82,11 @@ static bool on_option(char key, char *value) {
         break;
     case 'c':
         ctx.session.tpmkey.key_context_arg_str = value;
+        ctx.is_session_encryption_possibly_needed = true;
         break;
     case 2:
         ctx.session.bind.bind_context_arg_str = value;
+        ctx.is_session_encryption_possibly_needed = true;
         break;
     case 3:
         ctx.session.bind.bind_context_auth_str = value;
@@ -167,6 +169,20 @@ static tool_rc setup_session_data(void) {
 
     tpm2_session_set_authhash(ctx.session_data, ctx.session.halg);
 
+    if (ctx.is_session_encryption_possibly_needed) {
+        TPMT_SYM_DEF sym = {
+            .algorithm = TPM2_ALG_AES,
+            .keyBits = {
+                .aes = 128
+                       },
+            .mode = {
+                .aes = TPM2_ALG_CFB
+                    }
+        };
+
+        tpm2_session_set_symmetric(ctx.session_data, &sym);
+    }
+
     if (ctx.session.bind.bind_context_arg_str) {
         tpm2_session_set_bind(ctx.session_data,
         ctx.session.bind.bind_context_object.tr_handle);
@@ -176,32 +192,23 @@ static tool_rc setup_session_data(void) {
         tpm2_session_set_key(ctx.session_data,
         ctx.session.tpmkey.key_context_object.tr_handle);
     }
-/*
- * Backwards compatibility behavior/ side-effect:
- *
- * 1. It is not required that the tpmkey and bind entity are the same object.
- * 2. The session is not required to be setup for parameter encryption if the
- *    tpmkey and bind object is specified.
- *
- * To be backwards compatible, if a bind object is not specified, the two are
- * enforced to be the same object.
- *
- * To change/ fix this behavior:
- * 1. Use the tpm2_sessionconfig tool to configure the sessionAttributes and
- *    parameter encryption method.
- * 2. Specify a bind object with the new option which should circumvent the
- *    side-effect entirely.
- */
-    if (ctx.is_session_encryption_required &&
+
+    if (ctx.session.tpmkey.key_context_arg_str &&
     !ctx.session.bind.bind_context_arg_str) {
-    /* if it has an encryption key, set it as both the salt encryption key and bind key */
+        /*
+         * Note:
+         * 1. It is not required that the tpmkey and bind entity are the
+         *    same object.
+         * 2. Session can be salted and bounded, but even with this setup
+         *    parameter encryption isn't a must.
+         *
+         * Backwards-compatibility:
+         * If a bind object is not specified and tpmkey is, then:
+         * 1. Set bind-key = tpmkey
+         * 2. Set session parameter encryption flags.
+         */
         tpm2_session_set_bind(ctx.session_data,
                 ctx.session.tpmkey.key_context_object.tr_handle);
-
-        TPMT_SYM_DEF sym = { .algorithm = TPM2_ALG_AES, .keyBits =
-                { .aes = 128 }, .mode = { .aes = TPM2_ALG_CFB } };
-
-        tpm2_session_set_symmetric(ctx.session_data, &sym);
 
         ctx.attrs |= TPMA_SESSION_DECRYPT | TPMA_SESSION_ENCRYPT;
     }
@@ -239,8 +246,6 @@ static tool_rc process_input_data(ESYS_CONTEXT *ectx) {
         if (rc != tool_rc_success) {
             return rc;
         }
-
-        ctx.is_session_encryption_required = true;
 
         /* if loaded object is non-permanant, it should ideally be persistent */
         if (ctx.session.tpmkey.key_context_object.handle) {
