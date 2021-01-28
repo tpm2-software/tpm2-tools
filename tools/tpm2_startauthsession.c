@@ -47,6 +47,7 @@ struct tpm2_startauthsession_ctx {
 };
 
 static tpm2_startauthsession_ctx ctx = {
+    .attrs = TPMA_SESSION_CONTINUESESSION,
     .session = {
         .type = TPM2_SE_TRIAL,
         .halg = TPM2_ALG_SHA256
@@ -66,7 +67,7 @@ static bool on_option(char key, char *value) {
          * However, this option does start the HMAC session required for audit.
          */
         ctx.is_session_audit_required = true;
-        ctx.attrs |= TPMA_SESSION_CONTINUESESSION|TPMA_SESSION_AUDIT;
+        ctx.attrs |= TPMA_SESSION_AUDIT;
         break;
     case 'g':
         ctx.session.halg = tpm2_alg_util_from_optarg(value,
@@ -118,6 +119,7 @@ static tool_rc is_input_options_valid(void) {
         return tool_rc_option_error;
     }
 
+    /* Trial-session: neither real_policy nor audit/hmac session */
     if (!ctx.is_real_policy_session && !ctx.is_session_audit_required &&
     ctx.session.tpmkey.key_context_arg_str) {
         LOG_ERR("Trial sessions cannot be additionally used as encrypt/decrypt "
@@ -201,14 +203,10 @@ static tool_rc setup_session_data(void) {
 
         tpm2_session_set_symmetric(ctx.session_data, &sym);
 
-        ctx.attrs = TPMA_SESSION_CONTINUESESSION | \
-                    TPMA_SESSION_DECRYPT | \
-                    TPMA_SESSION_ENCRYPT;
+        ctx.attrs |= TPMA_SESSION_DECRYPT | TPMA_SESSION_ENCRYPT;
     }
 
-    if (ctx.is_session_audit_required || ctx.is_session_encryption_required) {
-        tpm2_session_set_attrs(ctx.session_data, ctx.attrs);
-    }
+    tpm2_session_set_attrs(ctx.session_data, ctx.attrs);
 
     return tool_rc_success;
 }
