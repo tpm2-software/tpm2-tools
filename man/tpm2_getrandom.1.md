@@ -41,8 +41,7 @@ Output defaults to *stdout* and binary format unless otherwise specified with
 
   * **-S**, **\--session**=_FILE_:
 
-    An HMAC session to be used as an audit session. The session can
-    be created using **tpm2_startauthsession**.
+    The session created using **tpm2_startauthsession**.
 
   * **\--cphash**=_FILE_:
 

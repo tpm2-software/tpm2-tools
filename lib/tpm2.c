@@ -3881,14 +3881,9 @@ tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx,
 
 tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
         TPM2B_DIGEST **random, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-        ESYS_TR audit_session_handle, TPMI_ALG_HASH param_hash_algorithm) {
+        ESYS_TR session_handle, TPMI_ALG_HASH param_hash_algorithm) {
 
-    tool_rc rc = audit_session_handle == ESYS_TR_NONE ? tool_rc_success :
-    evaluate_sessions_for_audit(ectx, audit_session_handle);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
+    tool_rc rc = tool_rc_success;
     TSS2_SYS_CONTEXT *sys_context = NULL;
     TSS2_RC rval;
     if (cp_hash || rp_hash) {
@@ -3923,7 +3918,7 @@ tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
         }
     }
 
-    rval = Esys_GetRandom(ectx, audit_session_handle, ESYS_TR_NONE,
+    rval = Esys_GetRandom(ectx, session_handle, ESYS_TR_NONE,
         ESYS_TR_NONE, count, random);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetRandom, rval);
