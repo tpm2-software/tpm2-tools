@@ -38,6 +38,11 @@ This will work with direct TPM access, but note that internally this calls a
     Start an HMAC session to be used as an audit session. Default without
     this option is **TPM2_SE_TRIAL**.
 
+  * **\--hmac-session**:
+
+    Start an HMAC session of type **TPM_SE_HMAC**. Default without this option
+    is **TPM2_SE_TRIAL**.
+
   * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm used in computation of the policy digest.

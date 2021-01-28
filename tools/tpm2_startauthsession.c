@@ -42,6 +42,7 @@ struct tpm2_startauthsession_ctx {
     tpm2_session_data *session_data;
     TPMA_SESSION attrs;
     bool is_real_policy_session;
+    bool is_hmac_session;
     bool is_session_encryption_possibly_needed;
     bool is_session_audit_required;
     /* Salted/ Bounded session combinations */
@@ -65,6 +66,7 @@ static bool on_option(char key, char *value) {
         ctx.is_real_policy_session = true;
         break;
     case 1:
+        ctx.is_hmac_session = true;
         ctx.is_session_audit_required = true;
         ctx.attrs |= TPMA_SESSION_AUDIT;
         break;
@@ -99,6 +101,10 @@ static bool on_option(char key, char *value) {
         ctx.session.tpmkey.key_context_arg_str = value;
         ctx.is_session_encryption_possibly_needed = true;
         break;
+    case 5:
+        ctx.is_hmac_session = true;
+        ctx.is_session_encryption_possibly_needed = true;
+        break;
     }
 
     return true;
@@ -112,6 +118,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "bind-context",   required_argument, NULL,  2 },
         { "bind-auth",      required_argument, NULL,  3 },
         { "tpmkey-context", required_argument, NULL,  4 },
+        { "hmac-session",   no_argument,       NULL,  5 },
         { "hash-algorithm", required_argument, NULL, 'g'},
         { "session",        required_argument, NULL, 'S'},
         { "key-context",    required_argument, NULL, 'c'},
@@ -131,7 +138,7 @@ static tool_rc is_input_options_valid(void) {
     }
 
     /* Trial-session: neither real_policy nor audit/hmac session */
-    if (!ctx.is_real_policy_session && !ctx.is_session_audit_required &&
+    if (!ctx.is_real_policy_session && !ctx.is_hmac_session &&
     ctx.is_session_encryption_possibly_needed) {
         LOG_ERR("Trial sessions cannot be additionally used as encrypt/decrypt "
                 "session");
@@ -167,8 +174,15 @@ static tool_rc is_input_options_valid(void) {
         return tool_rc_option_error;
     }
 
-    if (ctx.is_session_audit_required) {
-        LOG_WARN("Starting an HMAC session for use with auditing.");
+    /*
+     * A session cannot be without a purpose.
+     */
+    if (!(ctx.attrs & TPMA_SESSION_AUDIT) &&
+    !(ctx.attrs & TPMA_SESSION_ENCRYPT) &&
+    !(ctx.attrs & TPMA_SESSION_DECRYPT) && ctx.is_hmac_session) {
+        LOG_WARN("Session has to be used either for auth and/or audit and/or "
+                 "parameter-encryption/decryption. Use session-config tool to "
+                 "specify the use");
     }
 
     return tool_rc_success;
@@ -180,10 +194,9 @@ static tool_rc setup_session_data(void) {
         ctx.session.type = TPM2_SE_POLICY;
     }
 
-    if (ctx.is_session_audit_required) {
+    if (ctx.is_hmac_session) {
         ctx.session.type = TPM2_SE_HMAC;
     }
-
 
     ctx.session_data = tpm2_session_data_new(ctx.session.type);
     if (!ctx.session_data) {
