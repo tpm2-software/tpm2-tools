@@ -44,8 +44,7 @@ tool_rc tpm2_context_load(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_flush_context(ESYS_CONTEXT *esys_context, ESYS_TR flush_handle);
 
 tool_rc tpm2_start_auth_session(ESYS_CONTEXT *esys_context, ESYS_TR tpm_key,
-        ESYS_TR bind, ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-        const TPM2B_NONCE *nonce_caller, TPM2_SE session_type,
+        ESYS_TR bind, const TPM2B_NONCE *nonce_caller, TPM2_SE session_type,
         const TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH auth_hash,
         ESYS_TR *session_handle);
 

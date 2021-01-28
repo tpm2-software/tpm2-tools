@@ -43,13 +43,27 @@ This will work with direct TPM access, but note that internally this calls a
 
   * **-c**, **\--key-context**=_OBJECT_:
 
-    Set the session encryption and bind key. When using this, sensitive data
-    transmitted to the TPM will be encrypted with AES128CFB. **This prevents bus
-    snooping attacks.**
+    Set the tpmkey for salt encryption.
+
+    If bind object is not additionally specified, The following backwards
+    compatibility behavior or side-effect is retained:
+    - The bind object is set to be the same as tpmkey.
+    - The session attributes are configured for parameter encryption.
+
+    To set up the session for parameter encryption use the
+    **tpm2_sessionconfig** tool.
 
   * **-S**, **\--session**=_FILE_:
 
     The name of the policy session file, required.
+
+  * **\--bind-context**=_FILE_:
+
+    Set the session bind key.
+
+  * **\--bind-auth**=_AUTH_:
+
+    Set the authorization value for the bind object.
 
 ## References
 

@@ -124,8 +124,7 @@ static tool_rc start_auth_session(tpm2_session *session) {
                     &session->input->nonce_caller : NULL;
 
     tool_rc rc = tpm2_start_auth_session(session->internal.ectx, d->key,
-            d->bind, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, nonce,
-            d->session_type, &d->symmetric, d->auth_hash,
+            d->bind, nonce, d->session_type, &d->symmetric, d->auth_hash,
             &session->output.session_handle);
     if (rc != tool_rc_success) {
         return rc;
