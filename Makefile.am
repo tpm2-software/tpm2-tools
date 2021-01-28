@@ -45,7 +45,7 @@ lib_libcommon_a_SOURCES = $(LIB_SRC)
 lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS)
 
 tools_fapi_tss2_CFLAGS = $(FAPI_CFLAGS) -DTSS2_TOOLS_MAX="$(words $(tss2_tools))"
-tools_fapi_tss2_LDFLAGS = $(TSS2_FAPI_LIBS)
+tools_fapi_tss2_LDFLAGS = $(EXTRA_LDFLAGS) $(TSS2_FAPI_LIBS)
 tools_fapi_tss2_SOURCES = \
 	tools/fapi/tss2_template.c \
 	tools/fapi/tss2_template.h \
