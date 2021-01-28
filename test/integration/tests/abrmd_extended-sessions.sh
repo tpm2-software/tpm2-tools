@@ -112,18 +112,21 @@ else
 fi
 
 # Test bounded sessions work with bind entities with auth
-tpm2_createprimary -C o -c prim.ctx -p primepass -Q
+tpm2 createprimary -Q -C o -c prim.ctx -p primepass
 ## Test with bounded and salted session
-tpm2_startauthsession -S session.ctx --audit-session --key-context prim.ctx \
+tpm2 startauthsession -S session.ctx --audit-session --tpmkey-context prim.ctx \
 --bind-context prim.ctx --bind-auth primepass
-tpm2_sessionconfig session.ctx --enable-audit
-tpm2_getrandom 8 -S session.ctx
-tpm2_flushcontext session.ctx
+tpm2 getrandom 8 -S session.ctx
+tpm2 flushcontext session.ctx
 ## Test with bounded only session
-tpm2_startauthsession -S session.ctx --audit-session \
+tpm2 startauthsession -S session.ctx --audit-session \
 --bind-context prim.ctx  --bind-auth primepass
-tpm2_sessionconfig session.ctx --enable-audit
-tpm2_getrandom 8 -S session.ctx
-tpm2_flushcontext session.ctx
+tpm2 getrandom 8 -S session.ctx
+tpm2 flushcontext session.ctx
+## Test with salted only session
+tpm2 startauthsession -S session.ctx --audit-session \
+--tpmkey-context prim.ctx
+tpm2 getrandom 8 -S session.ctx
+tpm2 flushcontext session.ctx
 
 exit 0

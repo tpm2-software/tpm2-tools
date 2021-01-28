@@ -44,6 +44,10 @@ struct tpm2_startauthsession_ctx {
     bool is_real_policy_session;
     bool is_session_encryption_possibly_needed;
     bool is_session_audit_required;
+    /* Salted/ Bounded session combinations */
+    bool is_salted;
+    bool is_bounded;
+    bool is_salt_and_bind_obj_same;
 };
 
 static tpm2_startauthsession_ctx ctx = {
@@ -61,11 +65,6 @@ static bool on_option(char key, char *value) {
         ctx.is_real_policy_session = true;
         break;
     case 1:
-        /*
-         * Backwards compatibility behavior/ side-effect:
-         * Use tpm2_sessionconfig instead to mark session for audit.
-         * However, this option does start the HMAC session required for audit.
-         */
         ctx.is_session_audit_required = true;
         ctx.attrs |= TPMA_SESSION_AUDIT;
         break;
@@ -81,15 +80,24 @@ static bool on_option(char key, char *value) {
         ctx.output.path = value;
         break;
     case 'c':
+        ctx.is_salt_and_bind_obj_same = true;
         ctx.session.tpmkey.key_context_arg_str = value;
+        ctx.session.bind.bind_context_arg_str = value;
         ctx.is_session_encryption_possibly_needed = true;
+        ctx.attrs |= (TPMA_SESSION_DECRYPT | TPMA_SESSION_ENCRYPT);
         break;
     case 2:
+        ctx.is_bounded = true;
         ctx.session.bind.bind_context_arg_str = value;
         ctx.is_session_encryption_possibly_needed = true;
         break;
     case 3:
         ctx.session.bind.bind_context_auth_str = value;
+        break;
+    case 4:
+        ctx.is_salted = true;
+        ctx.session.tpmkey.key_context_arg_str = value;
+        ctx.is_session_encryption_possibly_needed = true;
         break;
     }
 
@@ -101,11 +109,12 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     static struct option topts[] = {
         { "policy-session", no_argument,       NULL,  0 },
         { "audit-session",  no_argument,       NULL,  1 },
-        { "key-context",    required_argument, NULL, 'c'},
         { "bind-context",   required_argument, NULL,  2 },
         { "bind-auth",      required_argument, NULL,  3 },
+        { "tpmkey-context", required_argument, NULL,  4 },
         { "hash-algorithm", required_argument, NULL, 'g'},
         { "session",        required_argument, NULL, 'S'},
+        { "key-context",    required_argument, NULL, 'c'},
     };
 
     *opts = tpm2_options_new("g:S:c:", ARRAY_LEN(topts), topts, on_option,
@@ -123,12 +132,36 @@ static tool_rc is_input_options_valid(void) {
 
     /* Trial-session: neither real_policy nor audit/hmac session */
     if (!ctx.is_real_policy_session && !ctx.is_session_audit_required &&
-    ctx.session.tpmkey.key_context_arg_str) {
+    ctx.is_session_encryption_possibly_needed) {
         LOG_ERR("Trial sessions cannot be additionally used as encrypt/decrypt "
                 "session");
         return tool_rc_option_error;
     }
 
+    /*
+     * Only use --key-context if both bind and tpmkey objects are the same.
+     */
+    if (ctx.is_salted && ctx.is_salt_and_bind_obj_same) {
+        LOG_ERR("Specify --key-context or tpmkey-context, not both.");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.is_bounded && ctx.is_salt_and_bind_obj_same) {
+        LOG_ERR("Specify --key-context or --bind-context, not both.");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.session.bind.bind_context_auth_str &&
+    !ctx.session.bind.bind_context_arg_str) {
+        LOG_ERR("Specify the bind entity when specifying the bind auth "
+                "even when bind is same as tpmkey object.");
+        return tool_rc_option_error;
+    }
+
+    /*
+     * Setting sessions for audit should be handled with tpm2_sessionconfig
+     * The following support is for backwards compatibility
+     */
     if (ctx.is_real_policy_session && ctx.is_session_audit_required) {
         LOG_ERR("Policy sessions cannot be additionally used for audit");
         return tool_rc_option_error;
@@ -136,13 +169,6 @@ static tool_rc is_input_options_valid(void) {
 
     if (ctx.is_session_audit_required) {
         LOG_WARN("Starting an HMAC session for use with auditing.");
-    }
-
-    if (ctx.session.bind.bind_context_auth_str &&
-    !ctx.session.bind.bind_context_arg_str) {
-        LOG_ERR("Specify the bind entity when specifying the bind auth "
-                "even when bind is same as tpmkey(key-context)");
-        return tool_rc_option_error;
     }
 
     return tool_rc_success;
@@ -193,26 +219,6 @@ static tool_rc setup_session_data(void) {
         ctx.session.tpmkey.key_context_object.tr_handle);
     }
 
-    if (ctx.session.tpmkey.key_context_arg_str &&
-    !ctx.session.bind.bind_context_arg_str) {
-        /*
-         * Note:
-         * 1. It is not required that the tpmkey and bind entity are the
-         *    same object.
-         * 2. Session can be salted and bounded, but even with this setup
-         *    parameter encryption isn't a must.
-         *
-         * Backwards-compatibility:
-         * If a bind object is not specified and tpmkey is, then:
-         * 1. Set bind-key = tpmkey
-         * 2. Set session parameter encryption flags.
-         */
-        tpm2_session_set_bind(ctx.session_data,
-                ctx.session.tpmkey.key_context_object.tr_handle);
-
-        ctx.attrs |= TPMA_SESSION_DECRYPT | TPMA_SESSION_ENCRYPT;
-    }
-
     tpm2_session_set_attrs(ctx.session_data, ctx.attrs);
 
     return tool_rc_success;
@@ -220,19 +226,14 @@ static tool_rc setup_session_data(void) {
 
 static tool_rc process_input_data(ESYS_CONTEXT *ectx) {
 
-/*
- * Backwards compatibility behavior/ side-effect:
- *
- * The presence of a tpmkey and bind object should not result in setting up the
- * session for parameter encryption. It is not a requirement. IOW one can have
- * a salted and bounded session and not perform parameter encryption.
- *
- * However, it should also be noted that, the sessionkey from which the parameter
- * encryption key is derived, can only be created if tpmkey and or and or bind
- * object are specified.
- *
- * This behavior can be fixed by using the **tpm2_sessionconfig** tool.
- */
+    /*
+     * Backwards compatibility behavior/ side-effect:
+     *
+     * The presence of a tpmkey and bind object should not result in setting up
+     * the session for parameter encryption. It is not a requirement. IOW one
+     * can have a salted and bounded session and not perform parameter
+     * encryption.
+     */
 
     if (ctx.session.tpmkey.key_context_arg_str) {
     /*

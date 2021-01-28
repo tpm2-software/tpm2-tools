@@ -10,10 +10,10 @@
 
 # DESCRIPTION
 
-**tpm2_startauthsession**(1) - Starts a session with the TPM. The default is
-to start a *trial* session unless the **-a** option is specified.
-Saves the policy session data to a file. This file can then be used in subsequent
-tools that can use a policy file for authorization or policy events.
+**tpm2_startauthsession**(1) - Starts a session with the TPM. The default is to
+start a *trial* session unless the **-a** option is specified. Saves the policy
+session data to a file. This file can then be used in subsequent tools that can
+use a policy file for authorization or policy events.
 
 This will not work with resource managers (RMs) outside of [tpm2-abrmd](https://
 github.com/tpm2-software/tpm2-abrmd), as most RMs will flush session handles
@@ -27,8 +27,9 @@ This will work with direct TPM access, but note that internally this calls a
 
   * **\--policy-session**:
 
-    Start a policy session of type **TPM_SE_POLICY**. Default without this option
-    is **TPM_SE_TRIAL**.
+    Start a policy session of type **TPM_SE_POLICY**. Default without this
+    option is **TPM_SE_TRIAL**.
+
     **NOTE**: A *trial* session is used when building a policy and a *policy*
     session is used when authenticating with a policy.
 
@@ -43,15 +44,10 @@ This will work with direct TPM access, but note that internally this calls a
 
   * **-c**, **\--key-context**=_OBJECT_:
 
-    Set the tpmkey for salt encryption.
-
-    If bind object is not additionally specified, The following backwards
-    compatibility behavior or side-effect is retained:
-    - The bind object is set to be the same as tpmkey.
-    - The session attributes are configured for parameter encryption.
-
-    To set up the session for parameter encryption use the
-    **tpm2_sessionconfig** tool.
+    Set the tpmkey and bind objects to be the same.
+    Session parameter encryption is turned on.
+    Session parameter decryption is turned on.
+    Parameter encryption/decryption symmetric-key set to AES-CFB.
 
   * **-S**, **\--session**=_FILE_:
 
@@ -59,11 +55,21 @@ This will work with direct TPM access, but note that internally this calls a
 
   * **\--bind-context**=_FILE_:
 
-    Set the session bind key.
+    Set the bind object.
+    Session parameter encryption is off. Use **tpm2_sessionconfig** to turn on.
+    Session parameter decryption is off. Use **tpm2_sessionconfig** to turn on.
+    Parameter encryption/decryption symmetric-key set to AES-CFB.
 
   * **\--bind-auth**=_AUTH_:
 
     Set the authorization value for the bind object.
+
+  * **\--tpmkey-context**=_FILE_:
+
+    Set the tpmkey object.
+    Session parameter encryption is off. Use **tpm2_sessionconfig** to turn on.
+    Session parameter decryption is off. Use **tpm2_sessionconfig** to turn on.
+    Parameter encryption/decryption symmetric-key set to AES-CFB.
 
 ## References
 
