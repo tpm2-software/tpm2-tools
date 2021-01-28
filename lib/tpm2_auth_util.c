@@ -46,7 +46,7 @@ static bool handle_hex_password(const char *password, TPM2B_AUTH *auth) {
     return true;
 }
 
-static bool handle_str_password(const char *password, TPM2B_AUTH *auth) {
+bool handle_str_password(const char *password, TPM2B_AUTH *auth) {
 
     /* str may or may not have the str: prefix */
     bool is_str_prefix = !strncmp(password, STR_PREFIX, STR_PREFIX_LEN);

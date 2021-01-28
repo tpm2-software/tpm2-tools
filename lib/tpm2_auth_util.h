@@ -62,4 +62,16 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx, const char *password,
 tool_rc tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR for_auth,
         tpm2_session *session, ESYS_TR *handle);
 
+/**
+ * Populate a string password in a TPM2B_AUTH structure.
+ *
+ * @param password
+ *   The string password or auth value.
+ * @param auth
+ *   The TPM2B_AUTH structure to populate.
+ * @return
+ *   Boolean indicating the success of the operation.
+ */
+bool handle_str_password(const char *password, TPM2B_AUTH *auth);
+
 #endif /* SRC_PASSWORD_UTIL_H_ */
