@@ -47,11 +47,7 @@ bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
         return false;
     }
 
-    if ((result->size + append->size) < result->size) {
-        return false;
-    }
-
-    if ((result->size + append->size) > TPM2_MAX_DIGEST_BUFFER) {
+    if (((UINT32)result->size + append->size) > TPM2_MAX_DIGEST_BUFFER) {
         return false;
     }
 
