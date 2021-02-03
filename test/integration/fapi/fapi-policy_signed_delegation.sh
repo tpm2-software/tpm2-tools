@@ -327,7 +327,7 @@ expect -c "
     expect \"Filename for nonce output: \" {
       send \"$OUTPUT_FILE\r\"
       expect \"Filename for signature input: \" {
-        exec openssl dgst -sha256 -sign $TEMP_DIR/key_user_priv.pem -out $SIGNATURE_FILE $OUTPUT_FILE
+        exec openssl dgst -sha256 -sign $TEMP_DIR/key_user_priv.pem $OUTPUT_FILE > $SIGNATURE_FILE
         send \"$SIGNATURE_FILE\r\"
       }
     }
@@ -350,7 +350,7 @@ expect -c "
       expect \"Filename for nonce output: \" {
           send \"$OUTPUT_FILE\r\"
           expect \"Filename for signature input: \" {
-              exec openssl dgst -sha256 -sign $TEMP_DIR/key_delegated_priv.pem -out $SIGNATURE_FILE $OUTPUT_FILE
+              exec openssl dgst -sha256 -sign $TEMP_DIR/key_delegated_priv.pem $OUTPUT_FILE > $SIGNATURE_FILE
               send \"$SIGNATURE_FILE\r\"
           }
       }
