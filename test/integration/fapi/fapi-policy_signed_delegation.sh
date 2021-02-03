@@ -80,14 +80,54 @@ BIG_FILE=$TEMP_DIR/big_file.file
 
 # 0. Create Keys
 
-openssl ecparam -name secp256r1 -genkey -noout -out $TEMP_DIR/key_backend_priv.pem
-openssl ec -in $TEMP_DIR/key_backend_priv.pem -pubout -out $TEMP_DIR/key_backend_pub.pem
+# Write private pem key to file
+cat > $TEMP_DIR/key_backend_priv.pem <<EOF
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEICf0OXKKsPkEVR1jsPOKSQQJnJVimamLYwLDZwJDj7etoAoGCCqGSM49
+AwEHoUQDQgAEAw+PKFksCw+ikD76l6BMeXfebcZxGf8QGWT2MOy8tOfpe6m+6MUU
+m2GUijGPkvCTjtJPOJz//XMom+k+7OaWmA==
+-----END EC PRIVATE KEY-----
+EOF
 
-openssl ecparam -name secp256r1 -genkey -noout -out $TEMP_DIR/key_user_priv.pem
-openssl ec -in $TEMP_DIR/key_user_priv.pem -pubout -out $TEMP_DIR/key_user_pub.pem
+cat > $TEMP_DIR/key_backend_pub.pem <<EOF
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAw+PKFksCw+ikD76l6BMeXfebcZx
+Gf8QGWT2MOy8tOfpe6m+6MUUm2GUijGPkvCTjtJPOJz//XMom+k+7OaWmA==
+-----END PUBLIC KEY-----
+EOF
 
-openssl ecparam -name secp256r1 -genkey -noout -out $TEMP_DIR/key_delegated_priv.pem
-openssl ec -in $TEMP_DIR/key_delegated_priv.pem -pubout -out $TEMP_DIR/key_delegated_pub.pem
+cp $TEMP_DIR/key_backend_priv.pem $TEMP_DIR/key_user_priv.pem
+cp $TEMP_DIR/key_backend_priv.pem $TEMP_DIR/key_delegated_priv.pem
+
+cp $TEMP_DIR/key_backend_pub.pem $TEMP_DIR/key_user_pub.pem
+cp $TEMP_DIR/key_backend_pub.pem $TEMP_DIR/key_delegated_pub.pem
+
+# echo "key_backend_priv"
+# cat $TEMP_DIR/key_backend_priv.pem
+
+# echo "key_backend_pub"
+# cat $TEMP_DIR/key_backend_pub.pem
+
+# echo "key_user_priv"
+# cat $TEMP_DIR/key_user_priv.pem
+
+# echo "key_user_pub"
+# cat $TEMP_DIR/key_user_pub.pem
+
+# echo "key_delegated_priv"
+# cat $TEMP_DIR/key_delegated_priv.pem
+
+# echo "key_delegated_pub"
+# cat $TEMP_DIR/key_delegated_pub.pem
+
+#openssl ecparam -name secp256r1 -genkey -noout -out $TEMP_DIR/key_backend_priv.pem
+#openssl ec -in $TEMP_DIR/key_backend_priv.pem -pubout -out $TEMP_DIR/key_backend_pub.pem
+
+#openssl ecparam -name secp256r1 -genkey -noout -out $TEMP_DIR/key_user_priv.pem
+#openssl ec -in $TEMP_DIR/key_user_priv.pem -pubout -out $TEMP_DIR/key_user_pub.pem
+
+#openssl ecparam -name secp256r1 -genkey -noout -out $TEMP_DIR/key_delegated_priv.pem
+#openssl ec -in $TEMP_DIR/key_delegated_priv.pem -pubout -out $TEMP_DIR/key_delegated_pub.pem
 
 # 1. Create necessary policy templates
 
@@ -314,8 +354,8 @@ echo -n 01234567890123456789 > $DIGEST_FILE
 
 ### Import the authorized policies
 tss2 import --path $PATH_POL_AUTHORIZED_USER --importData $TEMP_DIR/$POLICY_AUTHORIZED_USER
-tss2 import --path $PATH_POL_AUTHORIZED_OFFLINE_DELEGATION --importData $TEMP_DIR/$POLICY_AUTHORIZED_OFFLINE_DELEGATION
-tss2 import --path $PATH_POL_AUTHORIZED_SUB_POLICY --importData $TEMP_DIR/$POLICY_AUTHORIZED_SUB_POLICY
+#tss2 import --path $PATH_POL_AUTHORIZED_OFFLINE_DELEGATION --importData $TEMP_DIR/$POLICY_AUTHORIZED_OFFLINE_DELEGATION
+#tss2 import --path $PATH_POL_AUTHORIZED_SUB_POLICY --importData $TEMP_DIR/$POLICY_AUTHORIZED_SUB_POLICY
 
 ## 4.1 User authorizes key usage with the user policy
 echo "User authorizes key usage with the user policy"
@@ -340,13 +380,19 @@ expect -c "
   }
 "
 
+echo ""
+
+tss2 delete --path $PATH_POL_AUTHORIZED_USER
+tss2 import --path $PATH_POL_AUTHORIZED_OFFLINE_DELEGATION --importData $TEMP_DIR/$POLICY_AUTHORIZED_OFFLINE_DELEGATION
+tss2 import --path $PATH_POL_AUTHORIZED_SUB_POLICY --importData $TEMP_DIR/$POLICY_AUTHORIZED_SUB_POLICY
+
 ## 4.2 Delegated User authorizes key usage with the offline delegation policy
 echo "Delegated User authorizes key usage with the offline delegation policy"
 
 expect -c "  
     spawn tss2 sign --keyPath=$PATH_FEATURE_KEY_SIGN --digest=$DIGEST_FILE --signature=$TEST_SIGNATURE_FILE -f
     expect -re \"Select a branch .*\" {
-      send \"2\r\"
+      send \"1\r\"
       expect \"Filename for nonce output: \" {
           send \"$OUTPUT_FILE\r\"
           expect \"Filename for signature input: \" {
