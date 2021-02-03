@@ -1069,3 +1069,42 @@ bool tpm2_pem_encoded_key_to_fingerprint(const char* pem_encoded_key,
 
     return true;
 }
+
+tool_rc tpm2_util_aux_sessions_setup( ESYS_CONTEXT *ectx,
+uint8_t session_cnt, const char **session_path, ESYS_TR *session_handle,
+TPMI_ALG_HASH *param_hash_algorithm, tpm2_session **session) {
+
+    /*
+     * If no aux sessions were specified, simply return.
+     */
+    if (!session_cnt) {
+        return tool_rc_success;
+    }
+
+    if (session_cnt > 3) {
+        LOG_ERR("A max of 3 sessions allowed");
+        return tool_rc_general_error;
+    }
+
+    uint8_t session_idx = 0;
+    for (session_idx = 0; session_idx < (session_cnt); session_idx++) {
+        if (session_path[session_idx]) {
+                tool_rc rc = tpm2_session_restore(ectx, session_path[session_idx],
+                false, &session[session_idx]);
+            if (rc != tool_rc_success) {
+                LOG_ERR("Could not restore aux-session #%s",
+                session_path[session_idx]);
+                return rc;
+            }
+            session_handle[session_idx] =
+                tpm2_session_get_handle(session[session_idx]);
+        }
+    }
+    /*
+     * Parameter hash alg is setup as that of the session alg of first session
+     */
+    if (param_hash_algorithm) {
+        *param_hash_algorithm = tpm2_session_get_authhash(session[0]);
+    }
+    return tool_rc_success;
+}

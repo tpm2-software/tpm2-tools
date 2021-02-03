@@ -41,7 +41,9 @@ Output defaults to *stdout* and binary format unless otherwise specified with
 
   * **-S**, **\--session**=_FILE_:
 
-    The session created using **tpm2_startauthsession**.
+    The session created using **tpm2_startauthsession**. Multiple of these can
+    be specified. For example, you can have one session for auditing and another
+    for encryption of the parameters.
 
   * **\--cphash**=_FILE_:
 

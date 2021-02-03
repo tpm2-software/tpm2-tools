@@ -487,4 +487,27 @@ bool tpm2_safe_read_from_stdin(int length, char *data);
 bool tpm2_pem_encoded_key_to_fingerprint(const char* pem_encoded_key, char*
     fingerprint);
 
+/**
+ * Restores session handles to be used as auxilary sessions in addition to the
+ * possible authorization sessions with a command.
+ *
+ * @param ectx
+ *  The ESAPI context
+ * @param session_cnt
+ *  Total number of sessions to restore
+ * @param session_path
+ *  An array of string data specifying the individual session file path
+ * @param session_handle
+ *  An array of session handles updated as a result resuming sessions
+ * @param param_hash_algorithm
+ *  TPM_Hash_Alg value updated from session hash alg
+ * @param session
+ *  An array of session structures updated as a result of resuming sessions
+ * @return
+ *  Success: tool_rc_success, Faiure: tool_rc_general_error
+ */
+tool_rc tpm2_util_aux_sessions_setup( ESYS_CONTEXT *ectx,
+uint8_t session_cnt, const char **session_path, ESYS_TR *session_handle,
+TPMI_ALG_HASH *param_hash_algorithm, tpm2_session **session);
+
 #endif /* STRING_BYTES_H */
