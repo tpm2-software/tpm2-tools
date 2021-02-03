@@ -12,15 +12,18 @@
 #include "tpm2.h"
 #include "tpm2_capability.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_random_ctx tpm_random_ctx;
+#define MAX_AUX_SESSIONS 3
 struct tpm_random_ctx {
     char *output_file;
     UINT16 num_of_bytes;
     bool force;
     bool hex;
-    tpm2_session *session;
-    const char *session_path;
+    uint8_t session_cnt;
+    tpm2_session *session[MAX_AUX_SESSIONS];
+    const char *session_path[MAX_AUX_SESSIONS];
     const char *cp_hash_path;
     const char *rp_hash_path;
 };
@@ -29,26 +32,25 @@ static tpm_random_ctx ctx;
 
 static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
 
-    ESYS_TR session_handle = ESYS_TR_NONE;
+    /* Restore aux sessions */
     TPMI_ALG_HASH param_hash_algorithm = TPM2_ALG_SHA256;
-    if (ctx.session_path) {
-            tool_rc rc = tpm2_session_restore(ectx, ctx.session_path,
-            false, &ctx.session);
-        if (rc != tool_rc_success) {
-            LOG_ERR("Could not restore audit session");
-            return rc;
-        }
-        session_handle = tpm2_session_get_handle(ctx.session);
-        param_hash_algorithm = tpm2_session_get_authhash(ctx.session);
+    ESYS_TR session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE};
+    tool_rc rc = tpm2_util_aux_sessions_setup(ectx, ctx.session_cnt,
+    ctx.session_path, session_handle, &param_hash_algorithm,
+    ctx.session);
+    if (rc != tool_rc_success) {
+        return rc;
     }
-
+    /* Setup buffers for command and response parameter hashes */
     TPM2B_DIGEST *cp_hash =
         ctx.cp_hash_path ? calloc(1, sizeof(TPM2B_DIGEST)): NULL;
     TPM2B_DIGEST *rp_hash =
         ctx.rp_hash_path ? calloc(1, sizeof(TPM2B_DIGEST)) : NULL;
+
     TPM2B_DIGEST *random_bytes;
-    tool_rc rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &random_bytes,
-    cp_hash, rp_hash, session_handle, param_hash_algorithm);
+    rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &random_bytes,
+    cp_hash, rp_hash, session_handle[0], session_handle[1], session_handle[2],
+    param_hash_algorithm);
     if (rc != tool_rc_success) {
         goto out_skip_output_file;
     }
@@ -143,7 +145,12 @@ static bool on_option(char key, char *value) {
         ctx.rp_hash_path = value;
         break;
     case 'S':
-        ctx.session_path = value;
+        ctx.session_path[ctx.session_cnt] = value;
+        if (ctx.session_cnt < MAX_AUX_SESSIONS) {
+            ctx.session_cnt++;
+        } else {
+            return false;
+        }
         break;
         /* no default */
     }
@@ -241,11 +248,16 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
-    if (ctx.session_path) {
-        return tpm2_session_close(&ctx.session);
+    uint8_t session_idx = 0;
+    tool_rc rc = tool_rc_success;
+    for(session_idx = 0; session_idx < ctx.session_cnt; session_idx++) {
+        if (ctx.session_path[session_idx]) {
+            rc = tpm2_session_close(&ctx.session[session_idx]);
+        }
     }
-    return tool_rc_success;
+    return rc;
 }
 
 // Register this tool with tpm2_tool.c

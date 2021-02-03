@@ -32,6 +32,13 @@ tpm2 getrandom -Q --hex 4 > random.out
 s=`ls -l random.out | awk {'print $5'}`
 test $s -eq 0
 
+# test if multiple sessions can be specified
+tpm2 createprimary -C o -c prim.ctx -Q
+tpm2 startauthsession -S audit_session.ctx --audit-session
+tpm2 startauthsession -S enc_session.ctx --hmac-session --tpmkey-context prim.ctx
+tpm2 sessionconfig enc_session.ctx --enable-encrypt
+tpm2 getrandom 8 -S enc_session.ctx -S audit_session.ctx
+
 # negative tests
 trap - ERR
 
