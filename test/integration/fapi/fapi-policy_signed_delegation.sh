@@ -98,7 +98,7 @@ cat <<EOF > $TEMP_DIR/$POLICY_AUTH_BACKEND_PEM
     "policy":[
         {
             "type": "POLICYAUTHORIZE",
-            "policyRef": [ 1, 2, 3, 4, 5 ],
+            "policyRef": [ 0, 2, 3, 4, 5 ],
             "keyPEM": "`cat $TEMP_DIR/key_backend_pub.pem`"
         }
     ]
@@ -137,7 +137,7 @@ cat <<EOF > $TEMP_DIR/$POLICY_OFFLINE_DELEGATION
     "policy":[
         {
             "type": "POLICYAUTHORIZE",
-            "policyRef": [ 1, 2, 3, 4, 5 ],
+            "policyRef": [ 5, 2, 3, 4, 5 ],
             "keyPEM": "`cat $TEMP_DIR/key_user_pub.pem`"
         },
         {
@@ -193,7 +193,7 @@ tss2 delete --path HS/SRK/tmpkey
 tss2 delete --path $PATH_POL_USER
 
 digest_user=`cat $TEMP_DIR/$POLICY_TO_BE_SIGNED_USER | jsonValue "digest" 1` 
-digest_user="$digest_user""0102030405"
+digest_user="$digest_user""0002030405"
 
 echo -n $digest_user | \
     xxd -r -p | openssl dgst -sha256 -sign $TEMP_DIR/key_backend_priv.pem -hex | \
@@ -207,7 +207,7 @@ tss2 delete --path HS/SRK/tmpkey
 tss2 delete --path $PATH_POL_OFFLINE_DELEGATION
 
 digest_offline_delegation=`cat $TEMP_DIR/$POLICY_TO_BE_SIGNED_OFFLINE_DELEGATION | jsonValue "digest" 1` 
-digest_offline_delegation="$digest_offline_delegation""0102030405" #"0504030201"
+digest_offline_delegation="$digest_offline_delegation""0002030405"
 
 echo -n $digest_offline_delegation | \
     xxd -r -p | openssl dgst -sha256 -sign $TEMP_DIR/key_backend_priv.pem -hex | \
@@ -221,7 +221,7 @@ tss2 delete --path HS/SRK/tmpkey
 tss2 delete --path $PATH_POL_SUB_POLICY
 
 digest_sub_policy=`cat $TEMP_DIR/$POLICY_TO_BE_SIGNED_SUB_POLICY | jsonValue "digest" 1` 
-digest_sub_policy="$digest_sub_policy""0102030405" #"0504030201"
+digest_sub_policy="$digest_sub_policy""0502030405"
 
 echo -n $digest_sub_policy | \
     xxd -r -p | openssl dgst -sha256 -sign $TEMP_DIR/key_user_priv.pem -hex | \
@@ -235,7 +235,7 @@ POLICY_AUTH_TEMPLATE_USER=$(cat <<EOF
     "policyAuthorizations":[
         {
             "type": "pem",
-            "policyRef": [ 1, 2, 3, 4, 5 ],
+            "policyRef": [ 0, 2, 3, 4, 5 ],
             "key": "`cat $TEMP_DIR/key_backend_pub.pem`",
             "signature": "`cat signed_user_policy.sig`"
         }
@@ -262,7 +262,7 @@ POLICY_AUTH_TEMPLATE_OFFLINE_DELEGATION=$(cat <<EOF
     "policyAuthorizations":[
         {
             "type": "pem",
-            "policyRef": [ 1, 2, 3, 4, 5 ],
+            "policyRef": [ 0, 2, 3, 4, 5 ],
             "key": "`cat $TEMP_DIR/key_backend_pub.pem`",
             "signature": "`cat signed_policy_offline_delegation.sig`"
         }
@@ -286,7 +286,7 @@ POLICY_AUTH_TEMPLATE_SUB_POLICY=$(cat <<EOF
     "policyAuthorizations":[
         {
             "type": "pem",
-            "policyRef": [ 1, 2, 3, 4, 5 ],
+            "policyRef": [ 5, 2, 3, 4, 5 ],
             "key": "`cat $TEMP_DIR/key_user_pub.pem`",
             "signature": "`cat signed_policy_sub_policy.sig`"
         }
@@ -318,17 +318,31 @@ tss2 import --path $PATH_POL_AUTHORIZED_OFFLINE_DELEGATION --importData $TEMP_DI
 tss2 import --path $PATH_POL_AUTHORIZED_SUB_POLICY --importData $TEMP_DIR/$POLICY_AUTHORIZED_SUB_POLICY
 
 ## 4.1 User authorizes key usage with the user policy
-echo "User authorizes key usage with the user policy"
+echo "1. User authorizes key usage with the user policy"
 
-expect -c "  
+expect -c "
   spawn tss2 sign --keyPath=$PATH_FEATURE_KEY_SIGN --digest=$DIGEST_FILE --signature=$TEST_SIGNATURE_FILE -f
-  expect -re \"Select a branch .*\" {
-    send \"1\r\"
+  expect -re \"Select a branch for P_RSA2048SHA256/HS/SRK/signkey .* Your choice:\" {
+    set branches [split \$expect_out(buffer) \"\n\"]
+    set lstSize [llength \$branches]
+    set index 0
+    foreach branch \$branches {
+      if {[regexp -nocase \"/policy/pol_authorized_user\" \$branch]} {
+        send \"\$index\r\"
+        break
+      }
+      incr index
+    }
+    if {\$index >= \$lstSize} {
+      send_user \"\nError: Branch @ index \$index not found\n\"
+      exit 1
+    }
     expect \"Filename for nonce output: \" {
       send \"$OUTPUT_FILE\r\"
       expect \"Filename for signature input: \" {
         exec openssl dgst -sha256 -sign $TEMP_DIR/key_user_priv.pem -out $SIGNATURE_FILE $OUTPUT_FILE
         send \"$SIGNATURE_FILE\r\"
+        send_user \"\n\"
       }
     }
     set ret [wait]
@@ -341,17 +355,31 @@ expect -c "
 "
 
 ## 4.2 Delegated User authorizes key usage with the offline delegation policy
-echo "Delegated User authorizes key usage with the offline delegation policy"
+echo "2. Delegated User authorizes key usage with the offline delegation policy"
 
-expect -c "  
+expect -c "
     spawn tss2 sign --keyPath=$PATH_FEATURE_KEY_SIGN --digest=$DIGEST_FILE --signature=$TEST_SIGNATURE_FILE -f
-    expect -re \"Select a branch .*\" {
-      send \"2\r\"
+    expect -re \"Select a branch for P_RSA2048SHA256/HS/SRK/signkey .* Your choice:\" {
+      set branches [split \$expect_out(buffer) \"\n\"]
+      set lstSize [llength \$branches]
+      set index 0
+      foreach branch \$branches {
+        if {[regexp -nocase \"/policy/pol_authorized_offline_delegation\" \$branch]} {
+          send \"\$index\r\"
+          break
+        }
+        incr index
+      }
+      if {\$index >= \$lstSize} {
+        send_user \"\nError: Branch @ index \$index not found\n\"
+        exit 1
+      }
       expect \"Filename for nonce output: \" {
           send \"$OUTPUT_FILE\r\"
           expect \"Filename for signature input: \" {
               exec openssl dgst -sha256 -sign $TEMP_DIR/key_delegated_priv.pem -out $SIGNATURE_FILE $OUTPUT_FILE
               send \"$SIGNATURE_FILE\r\"
+              send_user \"\n\"
           }
       }
       set ret [wait]
