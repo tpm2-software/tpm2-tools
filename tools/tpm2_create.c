@@ -18,6 +18,11 @@
     |TPMA_OBJECT_USERWITHAUTH
 
 typedef struct tpm_create_ctx tpm_create_ctx;
+/*
+ * Since the first session is the parent authorization session, it is
+ * provided by the auth interface.
+ */
+#define MAX_AUX_SESSIONS 2
 struct tpm_create_ctx {
     struct {
         const char *ctx_path;
@@ -57,6 +62,10 @@ struct tpm_create_ctx {
     } flags;
 
     char *cp_hash_path;
+
+    uint8_t aux_session_cnt;
+    tpm2_session *aux_session[MAX_AUX_SESSIONS];
+    const char *aux_session_path[MAX_AUX_SESSIONS];
 };
 
 #define DEFAULT_KEY_ALG "rsa2048"
@@ -103,7 +112,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         if (ctx.cp_hash_path) {
             tmp_rc = tpm2_create_loaded(ectx, &ctx.parent.object,
                 &ctx.object.sensitive, &template, &object_handle, &out_private,
-                &out_public, &cp_hash);
+                &out_public, &cp_hash, ESYS_TR_NONE, ESYS_TR_NONE);
             if (tmp_rc == tool_rc_success) {
                 bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
                 if (!result) {
@@ -114,9 +123,16 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
             return tmp_rc;
         }
 
+        ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
+        tmp_rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, aux_session_handle, NULL, ctx.aux_session);
+        if (tmp_rc != tool_rc_success) {
+            return tmp_rc;
+        }
+
         tmp_rc = tpm2_create_loaded(ectx, &ctx.parent.object,
                 &ctx.object.sensitive, &template, &object_handle, &out_private,
-                &out_public, NULL);
+                &out_public, NULL, aux_session_handle[0], aux_session_handle[1]);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
@@ -138,7 +154,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
             tmp_rc = tpm2_create(ectx, &ctx.parent.object,
                 &ctx.object.sensitive, &ctx.object.public, &outside_info,
                 &ctx.creation_pcr, &out_private, &out_public, NULL, NULL, NULL,
-                &cp_hash);
+                &cp_hash, ESYS_TR_NONE, ESYS_TR_NONE);
             if (tmp_rc == tool_rc_success) {
                 result = files_save_digest(&cp_hash, ctx.cp_hash_path);
                 if (!result) {
@@ -148,13 +164,22 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
             }
             return tmp_rc;
         }
+
+        ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
+        tmp_rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, aux_session_handle, NULL, ctx.aux_session);
+        if (tmp_rc != tool_rc_success) {
+            return tmp_rc;
+        }
+
         TPM2B_CREATION_DATA *creation_data = NULL;
         TPM2B_DIGEST *creation_hash = NULL;
         TPMT_TK_CREATION *creation_ticket = NULL;
         tmp_rc = tpm2_create(ectx, &ctx.parent.object,
                 &ctx.object.sensitive, &ctx.object.public, &outside_info,
                 &ctx.creation_pcr, &out_private, &out_public, &creation_data,
-                &creation_hash, &creation_ticket, NULL);
+                &creation_hash, &creation_ticket, NULL, aux_session_handle[0],
+                aux_session_handle[1]);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
@@ -305,6 +330,14 @@ static bool on_option(char key, char *value) {
     case 2:
         ctx.cp_hash_path = value;
         break;
+    case 'S':
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
+            ctx.aux_session_cnt++;
+        } else {
+            return false;
+        }
+        break;
     };
 
     return true;
@@ -331,10 +364,11 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "outside-info",   required_argument, NULL, 'q' },
       { "pcr-list",       required_argument, NULL, 'l' },
       { "cphash",         required_argument, NULL,  2  },
+      { "session",        required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:l:", ARRAY_LEN(topts), topts,
-            on_option, NULL, 0);
+    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:l:S:",
+    ARRAY_LEN(topts), topts, on_option, NULL, 0);
 
     return *opts != NULL;
 }
@@ -439,9 +473,21 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
 
-    return tpm2_session_close(&ctx.parent.object.session);
+    uint8_t session_idx = 0;
+    tool_rc tmp_rc = tool_rc_success;
+    for(session_idx = 0; session_idx < ctx.aux_session_cnt; session_idx++) {
+        if (ctx.aux_session_path[session_idx]) {
+            tmp_rc = tpm2_session_close(&ctx.aux_session[session_idx]);
+        }
+    }
+    tool_rc rc = tpm2_session_close(&ctx.parent.object.session);
+
+    return rc != tool_rc_success ? rc :
+           tmp_rc != tool_rc_success ? tmp_rc :
+           tool_rc_success;
 }
 
 // Register this tool with tpm2_tool.c
