@@ -104,4 +104,15 @@ tpm2 create -C prim.ctx -u key.pub -r key.priv --creation-data creation.data \
 xxd -p creation.data | tr -d '\n' | \
 grep `cat pcr_data.bin | openssl dgst -sha256 -binary | xxd -p | tr -d '\n'`
 
+# Test if additional sessions can be specified
+tpm2 clear
+tpm2 createprimary -C o -c prim.ctx -Q
+tpm2 startauthsession -S audit_session.ctx --audit-session
+tpm2 startauthsession -S enc_session.ctx --hmac-session -c prim.ctx
+tpm2 create -C prim.ctx -u key.pub -r key.priv -p apple \
+ -S enc_session.ctx \
+ -S audit_session.ctx
+tpm2 flushcontext audit_session.ctx
+tpm2 flushcontext enc_session.ctx
+
 exit 0

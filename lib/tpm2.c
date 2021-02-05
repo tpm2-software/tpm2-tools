@@ -1293,7 +1293,8 @@ tool_rc tpm2_create(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
         const TPM2B_DATA *outside_info, const TPML_PCR_SELECTION *creation_pcr,
         TPM2B_PRIVATE **out_private, TPM2B_PUBLIC **out_public,
         TPM2B_CREATION_DATA **creation_data, TPM2B_DIGEST **creation_hash,
-        TPMT_TK_CREATION **creation_ticket, TPM2B_DIGEST *cp_hash) {
+        TPMT_TK_CREATION **creation_ticket, TPM2B_DIGEST *cp_hash,
+        ESYS_TR shandle2, ESYS_TR shandle3) {
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context, parent_obj->tr_handle,
@@ -1341,7 +1342,7 @@ tpm2_create_free_name1:
     }
 
     TSS2_RC rval = Esys_Create(esys_context, parent_obj->tr_handle, shandle1,
-            ESYS_TR_NONE, ESYS_TR_NONE, in_sensitive, in_public, outside_info,
+            shandle2, shandle3, in_sensitive, in_public, outside_info,
             creation_pcr, out_private, out_public, creation_data, creation_hash,
             creation_ticket);
     if (rval != TSS2_RC_SUCCESS) {
@@ -1358,7 +1359,7 @@ tool_rc tpm2_create_loaded(ESYS_CONTEXT *esys_context,
         const TPM2B_SENSITIVE_CREATE *in_sensitive,
         const TPM2B_TEMPLATE *in_public, ESYS_TR *object_handle,
         TPM2B_PRIVATE **out_private, TPM2B_PUBLIC **out_public,
-        TPM2B_DIGEST *cp_hash) {
+        TPM2B_DIGEST *cp_hash, ESYS_TR shandle2, ESYS_TR shandle3) {
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context, parent_obj->tr_handle,
@@ -1406,7 +1407,7 @@ tpm2_createloaded_free_name1:
     }
 
     TSS2_RC rval = Esys_CreateLoaded(esys_context, parent_obj->tr_handle,
-            shandle1, ESYS_TR_NONE, ESYS_TR_NONE, in_sensitive, in_public,
+            shandle1, shandle2, shandle3, in_sensitive, in_public,
             object_handle, out_private, out_public);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_CreateLoaded, rval);
