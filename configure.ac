@@ -295,7 +295,7 @@ AS_IF([test "$HOSTOS" = "Linux"],
        add_c_flag([-Wstringop-truncation])
        add_c_flag([-Wduplicated-branches])
        add_c_flag([-Wduplicated-cond])
-       add_hardened_c_flag([-Wbool-compare])],[])
+       add_c_flag([-Wbool-compare])],[])
 
 # Best attempt, strip unused stuff from the binary to reduce size.
 # Rather than nesting these and making them ugly just use a counter.
