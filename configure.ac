@@ -287,8 +287,8 @@ AC_DEFUN([add_c_flag], [
 # -D_GNU_SOURCE is required for execvpe() in options.c
 add_c_flag([-D_GNU_SOURCE], [AC_MSG_ERROR([Cannot enable -D_GNU_SOURCE])])
 
-# Enable C99 mode, since we use some of these features.
-add_c_flag([-std=c99], [AC_MSG_ERROR([Cannot enable -std=c99])])
+# Enable gnu99 mode, since we use some of these features.
+add_c_flag([-std=gnu99], [AC_MSG_ERROR([Cannot enable -std=gnu99])])
 
 # Best attempt compiler options that are on newer versions of GCC that
 # we can't widely enforce without killing other peoples builds.
