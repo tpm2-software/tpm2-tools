@@ -463,7 +463,7 @@ static tool_rc init(void) {
         if (pcr_select.count > TPM2_NUM_PCR_BANKS)
             goto err;
 
-        tpm2_eventlog_context eventlog_ctx = {};
+        tpm2_eventlog_context eventlog_ctx = { 0 };
         bool rc = eventlog_from_file(&eventlog_ctx, ctx.eventlog_path);
         if (!rc) {
             LOG_ERR("Failed to process eventlog");
