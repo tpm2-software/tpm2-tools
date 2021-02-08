@@ -647,7 +647,6 @@ out:
 }
 
 bool tpm2_base64_encode(BYTE *buffer, size_t buffer_length, char *base64) {
-    int rc;
 
     unsigned char out[1024];
     int outl;
@@ -655,12 +654,16 @@ bool tpm2_base64_encode(BYTE *buffer, size_t buffer_length, char *base64) {
     EVP_ENCODE_CTX *ctx = EVP_ENCODE_CTX_new();
     EVP_EncodeInit(ctx);
 
-    rc = EVP_EncodeUpdate(ctx, out, &outl, buffer, buffer_length);
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
+    EVP_EncodeUpdate(ctx, out, &outl, buffer, buffer_length);
+#else
+    int rc = EVP_EncodeUpdate(ctx, out, &outl, buffer, buffer_length);
     if(rc < 0) {
         LOG_ERR("EVP_DecodeUpdate failed with %d\n", rc);
         EVP_ENCODE_CTX_free(ctx);
         return false;
     }
+#endif
 
     EVP_EncodeFinal(ctx, out, &outl); // no return value
 
