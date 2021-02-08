@@ -122,6 +122,18 @@ int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s) {
     return 1;
 }
 
+EVP_ENCODE_CTX *EVP_ENCODE_CTX_new(void) {
+	EVP_ENCODE_CTX *ctx = OPENSSL_malloc(sizeof(EVP_ENCODE_CTX));
+	if (ctx) {
+		memset(ctx, 0, sizeof(*ctx));
+	}
+	return ctx;
+}
+
+void EVP_ENCODE_CTX_free(EVP_ENCODE_CTX *ctx) {
+    OPENSSL_free(ctx);
+}
+
 #endif
 
 bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg, BYTE *buffer,

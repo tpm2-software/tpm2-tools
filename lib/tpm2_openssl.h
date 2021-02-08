@@ -36,6 +36,8 @@
 int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
 void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
 int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
+EVP_ENCODE_CTX *EVP_ENCODE_CTX_new(void);
+void EVP_ENCODE_CTX_free(EVP_ENCODE_CTX *ctx);
 #endif
 
 /**
