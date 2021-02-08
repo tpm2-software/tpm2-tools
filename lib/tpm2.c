@@ -2962,7 +2962,8 @@ tpm2_nvsetbits_skip_esapi_call:
 
 tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
-        TPM2B_MAX_NV_BUFFER *data, TPM2B_DIGEST *cp_hash) {
+        TPM2B_MAX_NV_BUFFER *data, TPM2B_DIGEST *cp_hash, ESYS_TR shandle2,
+        ESYS_TR shandle3) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -3028,8 +3029,8 @@ tpm2_nvextend_free_name1:
     }
 
     rval = Esys_NV_Extend(esys_context, auth_hierarchy_obj->tr_handle,
-            esys_tr_nv_handle, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
-            ESYS_TR_NONE, data);
+            esys_tr_nv_handle, auth_hierarchy_obj_session_handle, shandle2,
+            shandle3, data);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_Extend, rval);
         return tool_rc_from_tpm(rval);

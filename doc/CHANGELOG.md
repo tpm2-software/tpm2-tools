@@ -2,6 +2,10 @@
 
 ### next
 
+  * tpm2_nvextend:
+      - Added option **-S**, **--session** to specify auxilary sessions for
+        audit and encryption.
+
   * tpm2_eventlog:
       - better support for multiline strings if produced.
       - support EV_IPL event records.

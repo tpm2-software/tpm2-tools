@@ -286,4 +286,26 @@ if [ "$check" != "$expected" ]; then
 	exit 1
 fi
 
+# Test nvextend with aux sessions
+tpm2 clear
+
+tpm2 nvdefine -C o -a "nt=extend|ownerread|policywrite|ownerwrite" \
+$nv_test_index
+
+tpm2 createprimary -C o -c prim.ctx
+tpm2 startauthsession -S enc_session.ctx --hmac-session -c prim.ctx
+
+echo "foo" | tpm2 nvextend -C o -i- $nv_test_index -S enc_session.ctx
+
+tpm2 flushcontext enc_session.ctx
+rm enc_session.ctx
+rm prim.ctx
+
+check=$(tpm2 nvread -C o $nv_test_index | xxd -p -c 64 | sed s/'^0*'//)
+expected="1c8457de84bb43c18d5e1d75c43e393bdaa7bca8d25967eedd580c912db65e3e"
+if [ "$check" != "$expected" ]; then
+	echo "Expected setbits read value of \"$expected\", got \"$check\""
+	exit 1
+fi
+
 exit 0
