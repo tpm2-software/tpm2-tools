@@ -12,6 +12,11 @@
 #include "tpm2_tool.h"
 
 typedef struct tpm_nvdefine_ctx tpm_nvdefine_ctx;
+/*
+ * Since the first session is the authorization session for NVIndex, it is
+ * provided by the auth interface.
+ */
+#define MAX_AUX_SESSIONS 2
 struct tpm_nvdefine_ctx {
     struct {
         const char *ctx_path;
@@ -29,6 +34,10 @@ struct tpm_nvdefine_ctx {
     char *index_auth_str;
 
     char *cp_hash_path;
+
+    uint8_t aux_session_cnt;
+    tpm2_session *aux_session[MAX_AUX_SESSIONS];
+    const char *aux_session_path[MAX_AUX_SESSIONS];
 };
 
 static tpm_nvdefine_ctx ctx = {
@@ -66,19 +75,28 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_success;
     if (!ctx.cp_hash_path) {
+        ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
+        rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, aux_session_handle, NULL, ctx.aux_session);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
         rc = tpm2_nv_definespace(ectx, &ctx.auth_hierarchy.object,
-                &ctx.nv_auth, &public_info, NULL);
+        &ctx.nv_auth, &public_info, NULL, aux_session_handle[0],
+        aux_session_handle[1]);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to create NV index 0x%x.", ctx.nv_index);
             return rc;
         }
+
         tpm2_tool_output("nv-index: 0x%x\n", ctx.nv_index);
         goto nvdefine_out;
     }
 
     TPM2B_DIGEST cp_hash = { .size = 0 };
     rc = tpm2_nv_definespace(ectx, &ctx.auth_hierarchy.object,
-        &ctx.nv_auth, &public_info, &cp_hash);;
+        &ctx.nv_auth, &public_info, &cp_hash, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -132,6 +150,14 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.cp_hash_path = value;
         break;
+    case 'S':
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
+            ctx.aux_session_cnt++;
+        } else {
+            return false;
+        }
+        break;
     }
 
     return true;
@@ -152,9 +178,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "index-auth",     required_argument, NULL, 'p' },
         { "policy",         required_argument, NULL, 'L' },
         { "cphash",         required_argument, NULL,  0  },
+        { "session",        required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("C:s:a:P:p:L:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("S:C:s:a:P:p:L:", ARRAY_LEN(topts), topts, on_option,
             on_arg, 0);
 
     return *opts != NULL;
@@ -390,11 +417,26 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
+
+    tool_rc rc = tool_rc_success;
     if (!ctx.cp_hash_path) {
-        return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+        rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
     }
-    return tool_rc_success;
+
+    uint8_t session_idx = 0;
+    tool_rc tmp_rc = tool_rc_success;
+    for(session_idx = 0; session_idx < ctx.aux_session_cnt; session_idx++) {
+        if (ctx.aux_session_path[session_idx]) {
+            tmp_rc = tpm2_session_close(&ctx.aux_session[session_idx]);
+        }
+    }
+
+    return rc != tool_rc_success ? rc :
+           tmp_rc != tool_rc_success ? tmp_rc :
+           tool_rc_success;
+
 }
 
 // Register this tool with tpm2_tool.c
