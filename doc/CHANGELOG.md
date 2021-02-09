@@ -24,8 +24,18 @@
   * Fix fapi-branch-select integration test to correctly use the PolicyRef parameter (triggered by recent bug-fix in tpm2-tss)
 
   * Fix an outdated parameter in the fapi-provision integration test
-  
+
   * Support policy signed policies by implementing Fapi_SetSignCB in tss2 tools.
+
+  * tools/tpm2_checkquote: fix missing initializer
+
+  * tpm2_convert: fix EVP_EncodeUpdate usage for OSSL < 1.1.0
+
+  * openssl: fix EVP_ENCODE_CTX_(new|free)
+
+  * configure: make build gnu99
+
+  * configure: make -Wbool-compare non fatal
 
 ### 5.0 - 2020-11-16
 
