@@ -3729,7 +3729,8 @@ tool_rc tpm2_changepps(ESYS_CONTEXT *ectx,
 }
 
 tool_rc tpm2_unseal(ESYS_CONTEXT *esys_context, tpm2_loaded_object *sealkey_obj,
-        TPM2B_SENSITIVE_DATA **out_data, TPM2B_DIGEST *cp_hash) {
+TPM2B_SENSITIVE_DATA **out_data, TPM2B_DIGEST *cp_hash, ESYS_TR shandle2,
+ESYS_TR shandle3) {
 
     ESYS_TR sealkey_obj_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context, sealkey_obj->tr_handle,
@@ -3777,7 +3778,7 @@ tpm2_unseal_free_name1:
     }
 
     TSS2_RC rval = Esys_Unseal(esys_context, sealkey_obj->tr_handle,
-            sealkey_obj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE, out_data);
+            sealkey_obj_session_handle, shandle2, shandle3, out_data);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Unseal, rval);
         return tool_rc_from_tpm(rval);

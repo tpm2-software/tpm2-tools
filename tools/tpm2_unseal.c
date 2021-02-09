@@ -8,6 +8,11 @@
 #include "tpm2_tool.h"
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
+/*
+ * Since the first session is the authorization session for seal object, it is
+ * provided by the auth interface.
+ */
+#define MAX_AUX_SESSIONS 2
 struct tpm_unseal_ctx {
     struct {
         const char *ctx_path;
@@ -18,6 +23,10 @@ struct tpm_unseal_ctx {
     char *output_file_path;
 
     char *cp_hash_path;
+
+    uint8_t aux_session_cnt;
+    tpm2_session *aux_session[MAX_AUX_SESSIONS];
+    const char *aux_session_path[MAX_AUX_SESSIONS];
 };
 
 static tpm_unseal_ctx ctx;
@@ -29,7 +38,7 @@ tool_rc unseal_and_save(ESYS_CONTEXT *ectx) {
     if (ctx.cp_hash_path) {
         TPM2B_DIGEST cp_hash = { .size = 0 };
         tool_rc rc = tpm2_unseal(ectx, &ctx.sealkey.object, &output_data,
-            &cp_hash);
+            &cp_hash, ESYS_TR_NONE, ESYS_TR_NONE);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -41,7 +50,15 @@ tool_rc unseal_and_save(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    tool_rc rc = tpm2_unseal(ectx, &ctx.sealkey.object, &output_data, NULL);
+    ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
+    tool_rc rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+    ctx.aux_session_path, aux_session_handle, NULL, ctx.aux_session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    rc = tpm2_unseal(ectx, &ctx.sealkey.object, &output_data, NULL,
+    aux_session_handle[0], aux_session_handle[1]);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -105,6 +122,14 @@ static bool on_option(char key, char *value) {
         ctx.cp_hash_path = value;
         break;
         /* no default */
+    case 'S':
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
+            ctx.aux_session_cnt++;
+        } else {
+            return false;
+        }
+        break;
     }
 
     return true;
@@ -116,10 +141,11 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth",             required_argument, NULL, 'p' },
       { "output",           required_argument, NULL, 'o' },
       { "object-context",   required_argument, NULL, 'c' },
-      { "cphash",            required_argument, NULL, 0  },
+      { "cphash",           required_argument, NULL,  0  },
+      { "session",          required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("p:o:c:", ARRAY_LEN(topts), topts, on_option, NULL,
+    *opts = tpm2_options_new("S:p:o:c:", ARRAY_LEN(topts), topts, on_option, NULL,
             0);
 
     return *opts != NULL;
@@ -138,9 +164,27 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.sealkey.object.session);
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.cp_hash_path) {
+        rc = tpm2_session_close(&ctx.sealkey.object.session);
+    }
+
+    uint8_t session_idx = 0;
+    tool_rc tmp_rc = tool_rc_success;
+    for(session_idx = 0; session_idx < ctx.aux_session_cnt; session_idx++) {
+        if (ctx.aux_session_path[session_idx]) {
+            tmp_rc = tpm2_session_close(&ctx.aux_session[session_idx]);
+        }
+    }
+
+    return rc != tool_rc_success ? rc :
+           tmp_rc != tool_rc_success ? tmp_rc :
+           tool_rc_success;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("unseal", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("unseal", tpm2_tool_onstart, tpm2_tool_onrun,
+tpm2_tool_onstop, NULL)

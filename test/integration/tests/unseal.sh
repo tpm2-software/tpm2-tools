@@ -142,4 +142,20 @@ if [ $? != 3 ]; then
   exit 1
 fi
 
+# Test unsealing with encrypted sessions
+trap onerror ERR
+
+tpm2 createprimary -Q -C o -c prim.ctx
+tpm2 startauthsession -S enc_session.ctx --hmac-session -c prim.ctx
+tpm2 sessionconfig enc_session.ctx --disable-encrypt
+
+tpm2 create -Q -C prim.ctx -u seal_key.pub -r seal_key.priv -c seal_key.ctx \
+-p sealkeypass -i- <<< $secret -S enc_session.ctx
+
+tpm2 sessionconfig enc_session.ctx --enable-encrypt
+unsealed=`tpm2 unseal -c seal_key.ctx -p sealkeypass -S enc_session.ctx`
+test "$unsealed" == "$secret"
+
+tpm2 flushcontext enc_session.ctx
+
 exit 0
