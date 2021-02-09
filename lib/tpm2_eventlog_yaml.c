@@ -93,9 +93,9 @@ void yaml_event2hdr(TCG_EVENT_HEADER2 const *eventhdr, size_t size) {
 
     (void)size;
 
-    tpm2_tool_output("    PCRIndex: %d\n"
-                     "    EventType: %s\n"
-                     "    DigestCount: %d\n",
+    tpm2_tool_output("  PCRIndex: %d\n"
+                     "  EventType: %s\n"
+                     "  DigestCount: %d\n",
                      eventhdr->PCRIndex,
                      eventtype_to_string(eventhdr->EventType),
                      eventhdr->DigestCount);
@@ -106,8 +106,8 @@ void yaml_sha1_log_eventhdr(TCG_EVENT const *eventhdr, size_t size) {
 
     (void)size;
 
-    tpm2_tool_output("    PCRIndex: %d\n"
-                     "    EventType: %s\n",
+    tpm2_tool_output("  PCRIndex: %d\n"
+                     "  EventType: %s\n",
                      eventhdr->pcrIndex,
                      eventtype_to_string(eventhdr->eventType));
 
@@ -121,8 +121,8 @@ bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size) {
     char hexstr[DIGEST_HEX_STRING_MAX] = { 0, };
     bytes_to_str(digest->Digest, size, hexstr, sizeof(hexstr));
 
-    tpm2_tool_output("      - AlgorithmId: %s\n"
-                     "        Digest: \"%s\"\n",
+    tpm2_tool_output("  - AlgorithmId: %s\n"
+                     "    Digest: \"%s\"\n",
                      tpm2_alg_util_algtostr(digest->AlgorithmId, tpm2_alg_util_flags_hash),
                      hexstr);
 
@@ -169,7 +169,7 @@ static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
     bytes_to_str(variable_data, data->VariableDataLength, var_data,
                  VAR_DATA_HEX_SIZE(data));
 
-    tpm2_tool_output("      VariableData: \"%s\"\n", var_data);
+    tpm2_tool_output("    VariableData: \"%s\"\n", var_data);
     free(var_data);
 
     return true;
@@ -200,15 +200,15 @@ static bool yaml_uefi_post_code(const TCG_EVENT2* const event) {
     if (len == 16) {
         const UEFI_PLATFORM_FIRMWARE_BLOB * const blob = \
             (const UEFI_PLATFORM_FIRMWARE_BLOB*) event->Event;
-        tpm2_tool_output("    Event:\n"
-                         "      BlobBase: 0x%" PRIx64 "\n"
-                         "      BlobLength: 0x%" PRIx64 "\n",
+        tpm2_tool_output("  Event:\n"
+                         "    BlobBase: 0x%" PRIx64 "\n"
+                         "    BlobLength: 0x%" PRIx64 "\n",
                          blob->BlobBase,
                          blob->BlobLength);
     } else { // otherwise, we treat it as an ASCII string
         const char* const data = (const char *) event->Event;
-        tpm2_tool_output("    Event: |-\n"
-                         "      %.*s\n", (int) len, data);
+        tpm2_tool_output("  Event: |-\n"
+                         "    %.*s\n", (int) len, data);
 
     }
     return true;
@@ -231,10 +231,10 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
 
     uuid_unparse_lower(data->VariableName, uuidstr);
 
-    tpm2_tool_output("    Event:\n"
-                     "      VariableName: %s\n"
-                     "      UnicodeNameLength: %"PRIu64"\n"
-                     "      VariableDataLength: %" PRIu64 "\n",
+    tpm2_tool_output("  Event:\n"
+                     "    VariableName: %s\n"
+                     "    UnicodeNameLength: %"PRIu64"\n"
+                     "    VariableDataLength: %" PRIu64 "\n",
                      uuidstr, data->UnicodeNameLength,
                      data->VariableDataLength);
 
@@ -248,7 +248,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
     if (!ret) {
         return false;
     }
-    tpm2_tool_output("      UnicodeName: %s\n", ret);
+    tpm2_tool_output("    UnicodeName: %s\n", ret);
 
     start += data->UnicodeNameLength*2;
     /* Try to parse as much as we can without fail-stop. Bugs in firmware, shim,
@@ -272,7 +272,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 (strlen(ret) == 3 && strncmp(ret, "dbx", 3) == 0)) {
 
                 free(ret);
-                tpm2_tool_output("      VariableData:\n");
+                tpm2_tool_output("    VariableData:\n");
                 uint8_t *variable_data = (uint8_t *)&data->UnicodeName[
                     data->UnicodeNameLength];
                 /* iterate through each EFI_SIGNATURE_LIST */
@@ -289,11 +289,11 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                     }
 
                     uuid_unparse_lower(slist->SignatureType, uuidstr);
-                    tpm2_tool_output("      - SignatureType: %s\n"
-                                     "        SignatureListSize: %" PRIu32 "\n"
-                                     "        SignatureHeaderSize: %" PRIu32 "\n"
-                                     "        SignatureSize: %" PRIu32 "\n"
-                                     "        Keys:\n",
+                    tpm2_tool_output("    - SignatureType: %s\n"
+                                     "      SignatureListSize: %" PRIu32 "\n"
+                                     "      SignatureHeaderSize: %" PRIu32 "\n"
+                                     "      SignatureSize: %" PRIu32 "\n"
+                                     "      Keys:\n",
                                      uuidstr, slist->SignatureListSize,
                                      slist->SignatureHeaderSize,
                                      slist->SignatureSize);
@@ -327,8 +327,8 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                         bytes_to_str(s->SignatureData, slist->SignatureSize-16,
                             sdata, BYTES_TO_HEX_STRING_SIZE(slist->SignatureSize-16));
                         uuid_unparse_lower(s->SignatureOwner, uuidstr);
-                        tpm2_tool_output("        - SignatureOwner: %s\n"
-                                         "          SignatureData: %s\n",
+                        tpm2_tool_output("      - SignatureOwner: %s\n"
+                                         "        SignatureData: %s\n",
                                          uuidstr, sdata);
                         free(sdata);
 
@@ -344,8 +344,8 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 return true;
             } else if ((strlen(ret) == 10 && strncmp(ret, "SecureBoot", 10) == 0)) {
                 free(ret);
-                tpm2_tool_output("      VariableData:\n"
-                                 "        Enabled: ");
+                tpm2_tool_output("    VariableData:\n"
+                                 "      Enabled: ");
                 if (data->VariableDataLength == 0) {
                     tpm2_tool_output("'No'\n");
                 } else if (data->VariableDataLength > 1) {
@@ -366,7 +366,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
             /* Other variables will be printed as a hex string */
         } else if (type == EV_EFI_VARIABLE_AUTHORITY) {
             free(ret);
-            tpm2_tool_output("      VariableData:\n");
+            tpm2_tool_output("    VariableData:\n");
             
             EFI_SIGNATURE_DATA *s= (EFI_SIGNATURE_DATA *)&data->UnicodeName[
                 data->UnicodeNameLength];
@@ -379,8 +379,8 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
             bytes_to_str(s->SignatureData, data->VariableDataLength - 16,
                 sdata, BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - 16));
             uuid_unparse_lower(s->SignatureOwner, uuidstr);
-            tpm2_tool_output("      - SignatureOwner: %s\n"
-                             "        SignatureData: %s\n",
+            tpm2_tool_output("    - SignatureOwner: %s\n"
+                             "      SignatureData: %s\n",
                              uuidstr, sdata);
             free(sdata);
             return true;
@@ -394,9 +394,9 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
 /* TCG PC Client FPF section 9.2.5 */
 bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
 
-    tpm2_tool_output("    Event:\n"
-                     "      BlobBase: 0x%" PRIx64 "\n"
-                     "      BlobLength: 0x%" PRIx64 "\n",
+    tpm2_tool_output("  Event:\n"
+                     "    BlobBase: 0x%" PRIx64 "\n"
+                     "    BlobLength: 0x%" PRIx64 "\n",
                      data->BlobBase,
                      data->BlobLength);
     return true;
@@ -404,8 +404,8 @@ bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
 /* TCG PC Client PFP section 9.4.4 */
 bool yaml_uefi_action(UINT8 const *action, size_t size) {
 
-    tpm2_tool_output("    Event: |-\n"
-                     "      %.*s\n", (int) size, action);
+    tpm2_tool_output("  Event: |-\n"
+                     "    %.*s\n", (int) size, action);
 
     return true;
 }
@@ -417,8 +417,8 @@ bool yaml_uefi_action(UINT8 const *action, size_t size) {
  */
 bool yaml_ipl(UINT8 const *description, size_t size) {
 
-    tpm2_tool_output("    Event:\n"
-                     "      String: |-\n");
+    tpm2_tool_output("  Event:\n"
+                     "    String: |-\n");
 
     /* We need to handle when description contains multiple lines. */
     size_t i, j;
@@ -428,7 +428,7 @@ bool yaml_ipl(UINT8 const *description, size_t size) {
                 break;
             }
         }
-        tpm2_tool_output("        %.*s\n", (int)(j - i), description+i);
+        tpm2_tool_output("      %.*s\n", (int)(j - i), description+i);
         i = j;
     }
 
@@ -444,16 +444,16 @@ bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
         return false;
     }
 
-    tpm2_tool_output("    Event:\n"
-                     "      ImageLocationInMemory: 0x%" PRIx64 "\n"
-                     "      ImageLengthInMemory: %" PRIu64 "\n"
-                     "      ImageLinkTimeAddress: 0x%" PRIx64 "\n"
-                     "      LengthOfDevicePath: %" PRIu64 "\n",
+    tpm2_tool_output("  Event:\n"
+                     "    ImageLocationInMemory: 0x%" PRIx64 "\n"
+                     "    ImageLengthInMemory: %" PRIu64 "\n"
+                     "    ImageLinkTimeAddress: 0x%" PRIx64 "\n"
+                     "    LengthOfDevicePath: %" PRIu64 "\n",
                      data->ImageLocationInMemory, data->ImageLengthInMemory,
                      data->ImageLinkTimeAddress, data->LengthOfDevicePath);
 
     bytes_to_str(data->DevicePath, size - sizeof(*data), buf, devpath_len);
-    tpm2_tool_output("      DevicePath: \"%s\"\n", buf);
+    tpm2_tool_output("    DevicePath: \"%s\"\n", buf);
 
     free(buf);
     return true;
@@ -473,23 +473,23 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
 
         uuid_unparse_lower(header->DiskGUID, guid);
 
-        tpm2_tool_output("    Event:\n"
-                         "      Header:\n"
-                         "        Signature: \"%.*s\"\n"
-                         "        Revision: 0x%" PRIx32 "\n"
-                         "        HeaderSize: %" PRIu32 "\n"
-                         "        HeaderCRC32: 0x%" PRIx32 "\n"
-                         "        MyLBA: 0x%" PRIx64 "\n"
-                         "        AlternateLBA: 0x%" PRIx64 "\n"
-                         "        FirstUsableLBA: 0x%" PRIx64 "\n"
-                         "        LastUsableLBA: 0x%" PRIx64 "\n"
-                         "        DiskGUID: %s\n"
-                         "        PartitionEntryLBA: 0x%" PRIx64 "\n"
-                         "        NumberOfPartitionEntry: %" PRIu32 "\n"
-                         "        SizeOfPartitionEntry: %" PRIu32 "\n"
-                         "        PartitionEntryArrayCRC32: 0x%" PRIx32 "\n"
-                         "      NumberOfPartitions: %" PRIu64 "\n"
-                         "      Partitions:\n",
+        tpm2_tool_output("  Event:\n"
+                         "    Header:\n"
+                         "      Signature: \"%.*s\"\n"
+                         "      Revision: 0x%" PRIx32 "\n"
+                         "      HeaderSize: %" PRIu32 "\n"
+                         "      HeaderCRC32: 0x%" PRIx32 "\n"
+                         "      MyLBA: 0x%" PRIx64 "\n"
+                         "      AlternateLBA: 0x%" PRIx64 "\n"
+                         "      FirstUsableLBA: 0x%" PRIx64 "\n"
+                         "      LastUsableLBA: 0x%" PRIx64 "\n"
+                         "      DiskGUID: %s\n"
+                         "      PartitionEntryLBA: 0x%" PRIx64 "\n"
+                         "      NumberOfPartitionEntry: %" PRIu32 "\n"
+                         "      SizeOfPartitionEntry: %" PRIu32 "\n"
+                         "      PartitionEntryArrayCRC32: 0x%" PRIx32 "\n"
+                         "    NumberOfPartitions: %" PRIu64 "\n"
+                         "    Partitions:\n",
                          8, (char*)&header->Signature, /* 8-char ASCII string */
                          header->Revision,
                          header->HeaderSize,
@@ -516,13 +516,13 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
             }
 
             uuid_unparse_lower(partition->PartitionTypeGUID, guid);
-            tpm2_tool_output("      - PartitionTypeGUID: %s\n", guid);
+            tpm2_tool_output("    - PartitionTypeGUID: %s\n", guid);
             uuid_unparse_lower(partition->UniquePartitionGUID, guid);
-            tpm2_tool_output("        UniquePartitionGUID: %s\n"
-                             "        StartingLBA: 0x%" PRIx64 "\n"
-                             "        EndingLBA: 0x%" PRIx64 "\n"
-                             "        Attributes: 0x%" PRIx64 "\n"
-                             "        PartitionName: \"%.*s\"\n",
+            tpm2_tool_output("      UniquePartitionGUID: %s\n"
+                             "      StartingLBA: 0x%" PRIx64 "\n"
+                             "      EndingLBA: 0x%" PRIx64 "\n"
+                             "      Attributes: 0x%" PRIx64 "\n"
+                             "      PartitionName: \"%.*s\"\n",
                              guid,
                              partition->StartingLBA,
                              partition->EndingLBA,
@@ -538,7 +538,7 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
     } else {
         char hexstr[EVENT_BUF_MAX] = { 0, };
         bytes_to_str((UINT8*)data, size, hexstr, sizeof(hexstr));
-        tpm2_tool_output("    Event: \"%s\"\n", hexstr);
+        tpm2_tool_output("  Event: \"%s\"\n", hexstr);
     }
     return true;
 }
@@ -547,7 +547,7 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, uint32_t eventlog_ver
 
     char hexstr[EVENT_BUF_MAX] = { 0, };
 
-    tpm2_tool_output("    EventSize: %" PRIu32 "\n", event->EventSize);
+    tpm2_tool_output("  EventSize: %" PRIu32 "\n", event->EventSize);
 
     if (event->EventSize == 0) {
         return true;
@@ -578,7 +578,7 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, uint32_t eventlog_ver
                         event->EventSize, eventlog_version);
     default:
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
-        tpm2_tool_output("    Event: \"%s\"\n", hexstr);
+        tpm2_tool_output("  Event: \"%s\"\n", hexstr);
         return true;
     }
 }
@@ -606,11 +606,11 @@ bool yaml_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size,
         return false;
     }
 
-    tpm2_tool_output("  - EventNum: %zu\n", (*count)++);
+    tpm2_tool_output("- EventNum: %zu\n", (*count)++);
 
     yaml_event2hdr(eventhdr, size);
 
-    tpm2_tool_output("    Digests:\n");
+    tpm2_tool_output("  Digests:\n");
 
     return true;
 }
@@ -624,10 +624,10 @@ bool yaml_sha1_log_eventhdr_callback(TCG_EVENT const *eventhdr, size_t size,
     char hexstr[BYTES_TO_HEX_STRING_SIZE(sizeof(eventhdr->digest))] = { 0, };
     bytes_to_str(eventhdr->digest, sizeof(eventhdr->digest), hexstr, sizeof(hexstr));
 
-    tpm2_tool_output("    DigestCount: 1\n"
-                     "    Digests:\n"
-                     "      - AlgorithmId: %s\n"
-                     "        Digest: \"%s\"\n",
+    tpm2_tool_output("  DigestCount: 1\n"
+                     "  Digests:\n"
+                     "  - AlgorithmId: %s\n"
+                     "    Digest: \"%s\"\n",
                      tpm2_alg_util_algtostr(TPM2_ALG_SHA1, tpm2_alg_util_flags_hash),
                      hexstr);
     return true;
@@ -638,11 +638,11 @@ void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
     char digest_hex[2*sizeof(event->digest) + 1] = {};
     bytes_to_str(event->digest, sizeof(event->digest), digest_hex, sizeof(digest_hex));
 
-    tpm2_tool_output("  - EventNum: %zu\n"
-                     "    PCRIndex: %" PRIu32 "\n"
-                     "    EventType: %s\n"
-                     "    Digest: \"%s\"\n"
-                     "    EventSize: %" PRIu32 "\n",
+    tpm2_tool_output("- EventNum: %zu\n"
+                     "  PCRIndex: %" PRIu32 "\n"
+                     "  EventType: %s\n"
+                     "  Digest: \"%s\"\n"
+                     "  EventSize: %" PRIu32 "\n",
                      (*count)++, event->pcrIndex,
                      eventtype_to_string(event->eventType), digest_hex,
                      event->eventDataSize);
@@ -654,15 +654,15 @@ void yaml_specid(TCG_SPECID_EVENT* specid) {
     char sig_str[sizeof(specid->Signature) + 1] = { '\0', };
     memcpy(sig_str, specid->Signature, sizeof(specid->Signature));
 
-    tpm2_tool_output("    SpecID:\n"
-                     "      - Signature: %s\n"
-                     "        platformClass: %" PRIu32 "\n"
-                     "        specVersionMinor: %" PRIu8 "\n"
-                     "        specVersionMajor: %" PRIu8 "\n"
-                     "        specErrata: %" PRIu8 "\n"
-                     "        uintnSize: %" PRIu8 "\n"
-                     "        numberOfAlgorithms: %" PRIu32 "\n"
-                     "        Algorithms:\n",
+    tpm2_tool_output("  SpecID:\n"
+                     "  - Signature: %s\n"
+                     "    platformClass: %" PRIu32 "\n"
+                     "    specVersionMinor: %" PRIu8 "\n"
+                     "    specVersionMajor: %" PRIu8 "\n"
+                     "    specErrata: %" PRIu8 "\n"
+                     "    uintnSize: %" PRIu8 "\n"
+                     "    numberOfAlgorithms: %" PRIu32 "\n"
+                     "    Algorithms:\n",
                      sig_str,
                      specid->platformClass, specid->specVersionMinor,
                      specid->specVersionMajor, specid->specErrata,
@@ -673,9 +673,9 @@ void yaml_specid(TCG_SPECID_EVENT* specid) {
 void yaml_specid_algs(TCG_SPECID_ALG const *alg, size_t count) {
 
     for (size_t i = 0; i < count; ++i, ++alg) {
-        tpm2_tool_output("          - Algorithm[%zu]:\n"
-                         "            algorithmId: %s\n"
-                         "            digestSize: %" PRIu16 "\n",
+        tpm2_tool_output("    - Algorithm[%zu]:\n"
+                         "      algorithmId: %s\n"
+                         "      digestSize: %" PRIu16 "\n",
                          i,
                          tpm2_alg_util_algtostr(alg->algorithmId,
                                                 tpm2_alg_util_flags_hash),
@@ -686,7 +686,7 @@ bool yaml_specid_vendor(TCG_VENDOR_INFO *vendor) {
 
     char *vendinfo_str;
 
-    tpm2_tool_output("        vendorInfoSize: %" PRIu8 "\n", vendor->vendorInfoSize);
+    tpm2_tool_output("    vendorInfoSize: %" PRIu8 "\n", vendor->vendorInfoSize);
     if (vendor->vendorInfoSize == 0) {
         return true;
     }
@@ -698,7 +698,7 @@ bool yaml_specid_vendor(TCG_VENDOR_INFO *vendor) {
     }
     bytes_to_str(vendor->vendorInfo, vendor->vendorInfoSize, vendinfo_str,
                  vendor->vendorInfoSize * 2 + 1);
-    tpm2_tool_output("        vendorInfo: \"%s\"\n", vendinfo_str);
+    tpm2_tool_output("    vendorInfo: \"%s\"\n", vendinfo_str);
     free(vendinfo_str);
     return true;
 }
