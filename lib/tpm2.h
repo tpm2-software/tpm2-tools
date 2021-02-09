@@ -352,7 +352,8 @@ tool_rc tpm2_changepps(ESYS_CONTEXT *ectx,
     tpm2_session *platform_hierarchy_session);
 
 tool_rc tpm2_unseal(ESYS_CONTEXT *esys_context, tpm2_loaded_object *sealkey_obj,
-        TPM2B_SENSITIVE_DATA **out_data, TPM2B_DIGEST *cp_hash);
+TPM2B_SENSITIVE_DATA **out_data, TPM2B_DIGEST *cp_hash, ESYS_TR shandle2,
+ESYS_TR shandle3);
 
 tool_rc tpm2_policy_authorize_nv(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_entity_obj, TPM2_HANDLE nv_index,
