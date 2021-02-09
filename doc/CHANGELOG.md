@@ -2,6 +2,10 @@
 
 ### next
 
+  * tpm2_nvdefine:
+      - Added option **-S**, **--session** to specify auxiliary sessions for
+        audit and encryption.
+
   * tpm2_nvextend:
       - Added option **-S**, **--session** to specify auxilary sessions for
         audit and encryption.

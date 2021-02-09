@@ -2505,7 +2505,8 @@ tpm2_import_skip_esapi_call:
 
 tool_rc tpm2_nv_definespace(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, const TPM2B_AUTH *auth,
-        const TPM2B_NV_PUBLIC *public_info, TPM2B_DIGEST *cp_hash) {
+        const TPM2B_NV_PUBLIC *public_info, TPM2B_DIGEST *cp_hash,
+        ESYS_TR shandle2, ESYS_TR shandle3) {
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
@@ -2557,8 +2558,8 @@ tpm2_nvdefinespace_free_name1:
     }
 
     TSS2_RC rval = Esys_NV_DefineSpace(esys_context,
-            auth_hierarchy_obj->tr_handle, shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-            auth, public_info, &nvHandle);
+    auth_hierarchy_obj->tr_handle, shandle1, shandle2, shandle3, auth,
+    public_info, &nvHandle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to define NV area at index 0x%X",
                 public_info->nvPublic.nvIndex);

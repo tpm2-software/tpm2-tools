@@ -76,6 +76,12 @@ uses the first free index. The tool outputs the nv index defined on success.
     termed as cpHash. NOTE: When this option is selected, The tool will not
     actually execute the command, it simply returns a cpHash.
 
+  * **-S**, **\--session**=_FILE_:
+
+    The session created using **tpm2_startauthsession**. Multiple of these can
+    be specified. For example, you can have one session for auditing and another
+    for encryption/decryption of the parameters.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 
