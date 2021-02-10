@@ -371,7 +371,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
             EFI_SIGNATURE_DATA *s= (EFI_SIGNATURE_DATA *)&data->UnicodeName[
                 data->UnicodeNameLength];
             char *sdata = calloc (1,
-                BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength-16));
+                BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - 16));
             if (sdata == NULL) {
                 LOG_ERR("Failled to allocate data: %s\n", strerror(errno));
                 return false;
