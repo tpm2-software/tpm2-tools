@@ -377,7 +377,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 return false;
             }
             bytes_to_str(s->SignatureData, data->VariableDataLength - 16,
-                sdata, BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength-16));
+                sdata, BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - 16));
             uuid_unparse_lower(s->SignatureOwner, uuidstr);
             tpm2_tool_output("      - SignatureOwner: %s\n"
                              "        SignatureData: %s\n",
