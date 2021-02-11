@@ -8,8 +8,7 @@ task:
     ibmtpm_name: ibmtpm1637
     TSS2_LOG: "all+ERROR;tcti+TRACE"
   freebsd_instance:
-    matrix:
-      image_family: freebsd-12-1
+    image_family: freebsd-12-2
   install_script:
     - pkg update -f
     - pkg upgrade -y
