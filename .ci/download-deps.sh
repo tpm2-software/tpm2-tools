@@ -3,8 +3,15 @@
 
 function get_deps() {
 
-	TSS_VERSION=2.4.0
-	ABRMD_VERSION=2.3.1
+	export TSS_VERSION=${TPM2_TSS_VERSION:-3.0.2}
+	ABRMD_VERSION=2.3.3
+	EXTRA_CONFIG_FLAGS=''
+
+	pkg_conf_path="$(pkg-config --variable pc_path pkg-config | cut -d: -f 1-1)"
+	if [ "$pkg_conf_path" != "/usr/lib/pkgconfig" ]; then
+		echo "Detected non-standard pkgconfig path: \"$pkg_conf_path\""
+		EXTRA_CONFIG_FLAGS="--with-pkgconfigdir=\"$pkg_conf_path\""
+	fi
 
 	echo "pwd starting: `pwd`"
 	if [ "$TSS_VERSION" = "2.4.0" ]; then
@@ -24,7 +31,7 @@ function get_deps() {
 		pushd tpm2-tss
 		echo "pwd build tss: `pwd`"
 		./bootstrap
-		./configure --disable-doxygen-doc CFLAGS=-g
+		./configure --disable-doxygen-doc $EXTRA_CONFIG_FLAGS CFLAGS=-g
 		make -j4
 		make install
 		popd
@@ -40,7 +47,7 @@ function get_deps() {
 		pushd tpm2-abrmd
 		echo "pwd build abrmd: `pwd`"
 		./bootstrap
-		./configure CFLAGS=-g
+		./configure $EXTRA_CONFIG_FLAGS CFLAGS=-g
 		make -j4
 		make install
 		popd
