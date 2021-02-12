@@ -230,7 +230,6 @@ function recreate_info() {
     a="$a""export TPM2TOOLS_TEST_TCTI=\"$TPM2TOOLS_TEST_TCTI\"\n"
     a="$a""export TPM2TOOLS_TEST_PERSISTENT=\"$TPM2TOOLS_TEST_PERSISTENT\"\n"
     a="$a""export PATH=\"$PATH\"\n"
-    a="$a""TPM2_TOOLS_TEST_FIXTURES=\"$TPM2_TOOLS_TEST_FIXTURES\"\n"
     echo "#!/usr/bin/env bash"
     echo -e "$a"
     local script="$tpm2_test_original_cwd""/""$0"

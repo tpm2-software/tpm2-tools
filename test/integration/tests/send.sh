@@ -3,7 +3,7 @@
 source helpers.sh
 
 # assume this script is run from the test/ directory
-TPM2_COMMAND_FILE="$TPM2_TOOLS_TEST_FIXTURES/get-capability-tpm-prop-fixed.bin"
+TPM2_COMMAND_FILE="${abs_srcdir}/test/integration/fixtures/get-capability-tpm-prop-fixed.bin"
 
 start_up
 

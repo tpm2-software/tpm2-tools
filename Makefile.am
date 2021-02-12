@@ -316,6 +316,7 @@ AM_TESTS_ENVIRONMENT =	\
 	export PATH=$(abs_builddir)/tools:$(abs_builddir)/tools/misc:$(abs_top_srcdir)/test/integration:$(abs_builddir)/tools/fapi:$(PATH); \
 	export TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
 	export abs_builddir=$(abs_builddir); \
+	export abs_srcdir=$(abs_srcdir); \
 	export PYTHON=$(PYTHON); \
 	export TPM2_TOOLS_TEST_FIXTURES;
 
