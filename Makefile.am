@@ -311,20 +311,20 @@ test_unit_test_tpm2_eventlog_yaml_CFLAGS = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_eventlog_yaml_LDADD = $(CMOCKA_LIBS) $(LDADD)
 
 AM_TESTS_ENVIRONMENT =	\
-	TPM2_ABRMD=tpm2-abrmd; export TPM2_ABRMD; \
-	TPM2_SIM=$(TPM2_SIM); export TPM2_SIM; \
-	PATH=$(abs_builddir)/tools:$(abs_builddir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH); \
-	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
-	SRCDIR=$(abs_srcdir); export SRCDIR; BUILDDIR=$(abs_builddir); export BUILDDIR; \
+	export TPM2_ABRMD=tpm2-abrmd; \
+	export TPM2_SIM=$(TPM2_SIM); \
+	export PATH=$(abs_builddir)/tools:$(abs_builddir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH); \
+	export TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
+	export SRCDIR=$(abs_srcdir); export BUILDDIR=$(abs_builddir); \
 	export PYTHON=$(PYTHON); \
 	export TPM2_TOOLS_TEST_FIXTURES;
 
 if PERSISTENT
     AM_TESTS_ENVIRONMENT +=	\
-        TPM2TOOLS_TEST_PERSISTENT=true; export TPM2TOOLS_TEST_PERSISTENT;
+        TPM2TOOLS_TEST_PERSISTENT=true;
 else
     AM_TESTS_ENVIRONMENT +=	\
-        TPM2TOOLS_TEST_PERSISTENT=false; export TPM2TOOLS_TEST_PERSISTENT;
+        TPM2TOOLS_TEST_PERSISTENT=false;
 endif
 
 SH_LOG_COMPILER = dbus-run-session bash
