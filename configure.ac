@@ -143,8 +143,11 @@ AS_IF([test "x$enable_unit" != xno], [
     PKG_CHECK_MODULES([CMOCKA],[cmocka])
 
     AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd], yes, no)
-    AS_IF([test $tpm2_abrmd = no],
-          [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])])
+    AS_IF([test $tpm2_abrmd = yes],
+	  [TPM2_ABRMD=tpm2-abrmd],
+          [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])]
+    )
+    AC_SUBST([TPM2_ABRMD])
 
 	AS_IF([test -z "$tpmsim"], [
         AC_CHECK_PROG([swtpm], [swtpm], yes, no)
