@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
+set -E
+shopt -s expand_aliases
+
+alias python=${PYTHON-python}
+
 yaml_validate() {
     python -c 'import yaml,sys; yaml.safe_load(sys.stdin)'
 }

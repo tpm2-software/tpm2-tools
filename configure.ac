@@ -119,8 +119,8 @@ AM_CONDITIONAL([PERSISTENT], [test "x$enable_persistent" != xno])
 
 dnl macro that checks for specific modules in python
 AC_DEFUN([AC_PYTHON_MODULE],
-[AC_MSG_CHECKING([for module $1 in python])
-  echo "import $1" | python - 2>/dev/null
+[AC_MSG_CHECKING([for module $1 in $PYTHON])
+  echo "import $1" | $PYTHON - 2>/dev/null
   if test $? -ne 0 ; then
     AC_MSG_ERROR([not found])
   else
@@ -167,9 +167,10 @@ AS_IF([test "x$enable_unit" != xno], [
     AS_IF([test $BASH_SHELL = no],
           [AC_MSG_ERROR([Required executable bash not found, system tests require a bash shell!])])
 
-    AC_CHECK_PROG([PYTHON], [python], yes, no)
-    AS_IF([test $PYTHON = no],
-          [AC_MSG_ERROR([Required executable python not found, some system tests will fail!])])
+    AM_PATH_PYTHON([2.7],
+        [],
+        [AC_MSG_ERROR([Required executable python not found, some system tests will fail!])]
+    )
 
     AC_PYTHON_MODULE([yaml])
 
