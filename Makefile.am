@@ -316,6 +316,7 @@ AM_TESTS_ENVIRONMENT =	\
 	PATH=$(abs_builddir)/tools:$(abs_builddir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH); \
 	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
 	SRCDIR=$(abs_srcdir); export SRCDIR; BUILDDIR=$(abs_builddir); export BUILDDIR; \
+	export PYTHON=$(PYTHON); \
 	export TPM2_TOOLS_TEST_FIXTURES;
 
 if PERSISTENT

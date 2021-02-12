@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 set -E
+shopt -s expand_aliases
+
+# We get what python interpreter to run from configure, so alias python here
+# to make subordiante scripts work.
+alias python=${PYTHON:-python}
 
 # Return 0 if run by a TPM simulator, return 1 otherwise
 is_simulator() {
