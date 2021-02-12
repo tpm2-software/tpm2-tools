@@ -44,6 +44,8 @@
   * configure: make build gnu99
 
   * configure: make -Wbool-compare non fatal
+  
+  * configure handles searching for python executable more gracefully, thus just having python3, will work.
 
 ### 5.0 - 2020-11-16
 
