@@ -315,7 +315,7 @@ AM_TESTS_ENVIRONMENT =	\
 	export TPM2_SIM=$(TPM2_SIM); \
 	export PATH=$(abs_builddir)/tools:$(abs_builddir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH); \
 	export TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
-	export SRCDIR=$(abs_srcdir); export BUILDDIR=$(abs_builddir); \
+	export BUILDDIR=$(abs_builddir); \
 	export PYTHON=$(PYTHON); \
 	export TPM2_TOOLS_TEST_FIXTURES;
 
