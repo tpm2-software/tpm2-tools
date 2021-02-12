@@ -554,7 +554,7 @@ EOF
 
     SANITIZER_FILTER="*"AddressSanitizer"*"
 
-    PATH=${BUILDDIR}/tools/fapi:$PATH
+    PATH=${abs_builddir}/tools/fapi:$PATH
 
     setup_profiles $tempdir
     setup_policies $tempdir

@@ -7,7 +7,7 @@ start_up
 CRYPTO_PROFILE="RSA"
 setup_fapi $CRYPTO_PROFILE
 
-PATH=${BUILDDIR}/tools/fapi:$PATH
+PATH=${abs_builddir}/tools/fapi:$PATH
 
 function cleanup {
     tss2 delete --path=/
