@@ -345,11 +345,11 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
             } else if ((strlen(ret) == 10 && strncmp(ret, "SecureBoot", 10) == 0)) {
                 free(ret);
                 tpm2_tool_output("      VariableData:\n"
-                                 "        Enabled:");
+                                 "        Enabled: ");
                 if (data->VariableDataLength == 0) {
                     tpm2_tool_output("'No'\n");
                 } else if (data->VariableDataLength > 1) {
-                    LOG_ERR("SecureBoot data length %" PRIu64 " > 1\n",
+                    LOG_ERR("SecureBoot value length %" PRIu64 " is unexpectedly > 1\n",
                             data->VariableDataLength);
                     return false;
                 } else {
