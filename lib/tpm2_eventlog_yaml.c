@@ -384,6 +384,24 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                              uuidstr, sdata);
             free(sdata);
             return true;
+        } else if (type == EV_EFI_VARIABLE_BOOT) {
+            if ((strlen(ret) == 9 && strncmp(ret, "BootOrder", 9) == 0)) {
+                free(ret);
+                tpm2_tool_output("    VariableData:\n");
+                
+                if (data->VariableDataLength % 2 != 0) {
+                    LOG_ERR("BootOrder value length %" PRIu64 " is not divisible by 2\n",
+                            data->VariableDataLength);
+                    return false;
+                }
+
+                uint8_t *variable_data = (uint8_t *)&data->UnicodeName[
+                    data->UnicodeNameLength];
+                for (uint64_t i = 0; i < data->VariableDataLength / 2; i++) {
+                    tpm2_tool_output("    - Boot%04x\n", *((uint16_t*)variable_data + i));
+                }
+                return true;
+            }
         }
         /* Other event types will be printed as a hex string */
     }
