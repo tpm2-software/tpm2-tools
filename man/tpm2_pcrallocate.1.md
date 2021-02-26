@@ -68,6 +68,11 @@ tpm2_pcrallocate
 tpm2_pcrallocate -P abc sha1:7,8,9,10,16,17,18,19+sha256:all
 ```
 
+## To completly switch from SHA1 bank to SHA256 with a platform authorization
+```bash
+tpm2_pcrallocate -P abc sha1:none+sha256:all
+```
+
 [returns](common/returns.md)
 
 [footer](common/footer.md)
