@@ -1,10 +1,12 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_nv_util.h"
@@ -30,6 +32,7 @@ struct tpm_nvdefine_ctx {
     TPMA_NV nv_attribute;
     TPM2B_AUTH nv_auth;
 
+    TPMI_ALG_HASH halg;
     char *policy_file;
     char *index_auth_str;
 
@@ -45,6 +48,7 @@ static tpm_nvdefine_ctx ctx = {
         .ctx_path = "o",
     },
     .nv_auth = TPM2B_EMPTY_INIT,
+    .halg = TPM2_ALG_SHA256,
 };
 
 static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
@@ -52,7 +56,7 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
     TPM2B_NV_PUBLIC public_info = TPM2B_EMPTY_INIT;
 
     public_info.nvPublic.nvIndex = ctx.nv_index;
-    public_info.nvPublic.nameAlg = TPM2_ALG_SHA256;
+    public_info.nvPublic.nameAlg = ctx.halg;
 
     // Now set the attributes.
     public_info.nvPublic.attributes = ctx.nv_attribute;
@@ -158,6 +162,14 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'g':
+        ctx.halg = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_hash);
+        if (ctx.halg == TPM2_ALG_ERROR) {
+            LOG_ERR("Invalid choice for name digest hash algorithm");
+            return false;
+        }
+        break;
     }
 
     return true;
@@ -175,13 +187,14 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "size",           required_argument, NULL, 's' },
         { "attributes",     required_argument, NULL, 'a' },
         { "hierarchy-auth", required_argument, NULL, 'P' },
+        { "hash-algorithm", required_argument, NULL, 'g' },
         { "index-auth",     required_argument, NULL, 'p' },
         { "policy",         required_argument, NULL, 'L' },
         { "cphash",         required_argument, NULL,  0  },
         { "session",        required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("S:C:s:a:P:p:L:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("S:C:s:a:P:p:L:g:", ARRAY_LEN(topts), topts, on_option,
             on_arg, 0);
 
     return *opts != NULL;
@@ -341,6 +354,7 @@ out:
 }
 
 static tool_rc validate_size(ESYS_CONTEXT *ectx) {
+    UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.halg);
 
     switch ((ctx.nv_attribute & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT) {
         case TPM2_NT_ORDINARY:
@@ -362,11 +376,11 @@ static tool_rc validate_size(ESYS_CONTEXT *ectx) {
             break;
         case TPM2_NT_EXTEND:
             if (!ctx.size_set) {
-                // Currently the NV define doesn't allow changing name algorithm, so this OK
-                ctx.size = TPM2_SHA256_DIGEST_SIZE;
-            } else if (ctx.size != TPM2_SHA256_DIGEST_SIZE) {
+                ctx.size = hash_size;
+            } else if (ctx.size != hash_size) {
                 LOG_ERR("Size is invalid for an NV index type: \"extend\","
-                        " it must match the name hash algorithm size of 32");
+                        " it must match the name hash algorithm size of %"
+                        PRIu16, hash_size);
                 return tool_rc_general_error;
             }
             break;
