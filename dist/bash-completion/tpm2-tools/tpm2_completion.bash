@@ -2445,11 +2445,14 @@ _tpm2_nvdefine()
             -L | --policy)
                 _filedir
                 return;;
+            -g | --hash-algorithm)
+                COMPREPLY=($(compgen -W "${hash_methods[*]}" -- "$cur"))
+                return;;
         esac
 
         COMPREPLY=($(compgen -W "-h --help -v --version -V --verbose -Q --quiet \
         -Z --enable-erata -T --tcti \
-        -C -s -a -P -p -L --hierarchy --size --attributes --hierarchy-auth --index-auth --policy --cphash " \
+        -C -s -a -P -p -L --hierarchy --size --attributes --hierarchy-auth --index-auth --policy --hash-algorithm --cphash " \
         -- "$cur"))
     } &&
     complete -F _tpm2_nvdefine tpm2_nvdefine
