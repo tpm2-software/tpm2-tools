@@ -1294,12 +1294,12 @@ tool_rc tpm2_create(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
         TPM2B_PRIVATE **out_private, TPM2B_PUBLIC **out_public,
         TPM2B_CREATION_DATA **creation_data, TPM2B_DIGEST **creation_hash,
         TPMT_TK_CREATION **creation_ticket, TPM2B_DIGEST *cp_hash,
-        TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
-        ESYS_TR shandle3) {
+        TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+        ESYS_TR shandle2, ESYS_TR shandle3) {
 
     TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
-    if (cp_hash->size) {
+    if (cp_hash->size || rp_hash->size) {
         rc = tpm2_getsapicontext(esys_context, &sys_context);
 
         if(rc != tool_rc_success) {
@@ -1326,12 +1326,17 @@ tool_rc tpm2_create(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
         rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
             parameter_hash_algorithm, cp_hash);
 
+tpm2_create_free_name1:
+        Esys_Free(name1);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
         /*
          * Exit here without making the ESYS call since we just need the cpHash
          */
-tpm2_create_free_name1:
-        Esys_Free(name1);
-        goto tpm2_create_skip_esapi_call;
+        if (!rp_hash->size) {
+            goto tpm2_create_skip_esapi_call;
+        }
     }
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
@@ -1350,6 +1355,11 @@ tpm2_create_free_name1:
         return tool_rc_from_tpm(rval);
     }
 
+    if (rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
+    }
+
 tpm2_create_skip_esapi_call:
     return rc;
 }
@@ -1359,12 +1369,13 @@ tool_rc tpm2_create_loaded(ESYS_CONTEXT *esys_context,
         const TPM2B_SENSITIVE_CREATE *in_sensitive,
         const TPM2B_TEMPLATE *in_public, ESYS_TR *object_handle,
         TPM2B_PRIVATE **out_private, TPM2B_PUBLIC **out_public,
-        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
-        ESYS_TR shandle2, ESYS_TR shandle3) {
+        TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+        ESYS_TR shandle3) {
 
     TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
-    if (cp_hash->size) {
+    if (cp_hash->size || rp_hash->size) {
         rc = tpm2_getsapicontext(esys_context, &sys_context);
 
         if(rc != tool_rc_success) {
@@ -1391,12 +1402,17 @@ tool_rc tpm2_create_loaded(ESYS_CONTEXT *esys_context,
         rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
             parameter_hash_algorithm, cp_hash);
 
+tpm2_createloaded_free_name1:
+        Esys_Free(name1);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
         /*
          * Exit here without making the ESYS call since we just need the cpHash
          */
-tpm2_createloaded_free_name1:
-        Esys_Free(name1);
-        goto tpm2_createloaded_skip_esapi_call;
+        if (!rp_hash->size) {
+            goto tpm2_createloaded_skip_esapi_call;
+        }
     }
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
@@ -1412,6 +1428,11 @@ tpm2_createloaded_free_name1:
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_CreateLoaded, rval);
         return tool_rc_from_tpm(rval);
+    }
+
+    if (rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
     }
 
 tpm2_createloaded_skip_esapi_call:
