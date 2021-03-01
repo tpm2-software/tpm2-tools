@@ -125,6 +125,11 @@ These options for creating the TPM entity:
     termed as cpHash. NOTE: When this option is selected, The tool will not
     actually execute the command, it simply returns a cpHash.
 
+* **\--rphash**=_FILE_
+
+     File path to record the hash of the response parameters. This is commonly
+     termed as rpHash.
+
   * **-S**, **\--session**=_FILE_:
 
     The session created using **tpm2_startauthsession**. Multiple of these can

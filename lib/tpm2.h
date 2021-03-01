@@ -190,16 +190,17 @@ tool_rc tpm2_create(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
         TPM2B_PRIVATE **out_private, TPM2B_PUBLIC **out_public,
         TPM2B_CREATION_DATA **creation_data, TPM2B_DIGEST **creation_hash,
         TPMT_TK_CREATION **creation_ticket, TPM2B_DIGEST *cp_hash,
-        TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
-        ESYS_TR shandle3);
+        TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+        ESYS_TR shandle2, ESYS_TR shandle3);
 
 tool_rc tpm2_create_loaded(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *parent_obj,
         const TPM2B_SENSITIVE_CREATE *in_sensitive,
         const TPM2B_TEMPLATE *in_public, ESYS_TR *object_handle,
         TPM2B_PRIVATE **out_private, TPM2B_PUBLIC **out_public,
-        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
-        ESYS_TR shandle2, ESYS_TR shandle3);
+        TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+        ESYS_TR shandle3);
 
 tool_rc tpm2_object_change_auth(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *parent_object, tpm2_loaded_object *object,

@@ -63,8 +63,10 @@ struct tpm_create_ctx {
     /*
      * Parameter hashes
      */
-    TPM2B_DIGEST cp_hash;
     const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    const char *rp_hash_path;
+    TPM2B_DIGEST rp_hash;
     TPMI_ALG_HASH parameter_hash_algorithm;
     bool is_command_dispatch;
 
@@ -120,8 +122,8 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         tmp_rc = tpm2_create_loaded(ectx, &ctx.parent.object,
             &ctx.object.sensitive, &template, &ctx.object.object_handle,
             &ctx.object.out_private, &ctx.object.out_public, &ctx.cp_hash,
-            ctx.parameter_hash_algorithm, ctx.aux_session_handle[0],
-            ctx.aux_session_handle[1]);
+            &ctx.rp_hash, ctx.parameter_hash_algorithm,
+            ctx.aux_session_handle[0], ctx.aux_session_handle[1]);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
@@ -143,7 +145,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
             &ctx.object.outside_info, &ctx.object.creation_pcr,
             &ctx.object.out_private, &ctx.object.out_public,
             &ctx.object.creation_data, &ctx.object.creation_hash,
-            &ctx.object.creation_ticket, &ctx.cp_hash,
+            &ctx.object.creation_ticket, &ctx.cp_hash, &ctx.rp_hash,
             ctx.parameter_hash_algorithm, ctx.aux_session_handle[0],
             ctx.aux_session_handle[1]);
         if (tmp_rc != tool_rc_success) {
@@ -281,6 +283,18 @@ create_out:
     if (ctx.object.ctx_path) {
         rc = files_save_tpm_context_to_path(ectx, ctx.object.object_handle,
             ctx.object.ctx_path);
+        
+        if (rc != tool_rc_success) {
+            goto out;
+        }
+    }
+
+    if (ctx.rp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.rp_hash, ctx.rp_hash_path);
+
+        if (!is_file_op_success) {
+            rc = tool_rc_general_error;
+        }
     }
 
 out:
@@ -371,9 +385,10 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    const char **rphash_path = ctx.rp_hash_path ? &ctx.rp_hash_path : 0;
 
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
-        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+        cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
@@ -382,7 +397,8 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * rphash && !cphash  [Y]
      * rphash && cphash   [Y]
      */
-    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
+        false : true;
 
     return rc;
 }
@@ -399,8 +415,9 @@ static tool_rc check_options(void) {
         return tool_rc_option_error;
     }
 
-    if (ctx.cp_hash_path && (ctx.object.public_path || ctx.object.private_path
-        || ctx.object.creation_data_file || ctx.object.creation_hash_file ||
+    if (ctx.cp_hash_path && !ctx.rp_hash_path &&
+       (ctx.object.public_path || ctx.object.private_path ||
+        ctx.object.creation_data_file || ctx.object.creation_hash_file ||
         ctx.object.creation_ticket_file || ctx.object.ctx_path)) {
         LOG_ERR("CpHash Error: Cannot specify pub, priv, creation - data, hash, ticket");
         return tool_rc_option_error;
@@ -486,6 +503,9 @@ static bool on_option(char key, char *value) {
     case 2:
         ctx.cp_hash_path = value;
         break;
+    case 3:
+        ctx.rp_hash_path = value;
+        break;
     case 'S':
         ctx.aux_session_path[ctx.aux_session_cnt] = value;
         if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
@@ -521,6 +541,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "outside-info",   required_argument, NULL, 'q' },
       { "pcr-list",       required_argument, NULL, 'l' },
       { "cphash",         required_argument, NULL,  2  },
+      { "rphash",         required_argument, NULL,  3  },
       { "session",        required_argument, NULL, 'S' },
     };
 
