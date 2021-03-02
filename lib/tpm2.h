@@ -182,7 +182,7 @@ tool_rc tpm2_activatecredential(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *activatehandle, tpm2_loaded_object *keyhandle,
         const TPM2B_ID_OBJECT *credential_blob,
         const TPM2B_ENCRYPTED_SECRET *secret, TPM2B_DIGEST **cert_info,
-        TPM2B_DIGEST *cp_hash);
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_create(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
         const TPM2B_SENSITIVE_CREATE *in_sensitive, const TPM2B_PUBLIC *in_public,

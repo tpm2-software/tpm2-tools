@@ -13,6 +13,7 @@
 #include "tpm2_tool.h"
 
 typedef struct tpm_activatecred_ctx tpm_activatecred_ctx;
+#define MAX_SESSIONS 3
 struct tpm_activatecred_ctx {
     /*
      * Inputs
@@ -43,13 +44,15 @@ struct tpm_activatecred_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
-static tpm_activatecred_ctx ctx;
+static tpm_activatecred_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
+};
 
 static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
@@ -58,7 +61,7 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
      */
     return tpm2_activatecredential(ectx, &ctx.credentialed_key.object,
         &ctx.credential_key.object, &ctx.credential_blob, &ctx.secret,
-        &ctx.cert_info_data, ctx.cphash);
+        &ctx.cert_info_data, &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -193,7 +196,16 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.credential_key.object.session,
+        ctx.credentialed_key.object.session,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
