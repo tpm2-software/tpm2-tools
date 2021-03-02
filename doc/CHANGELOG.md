@@ -2,6 +2,10 @@
 
 ### next
 
+  * tpm2_activatecredential:
+      - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
+        of the response parameters. This is commonly termed as rpHash.
+
   * tpm2_create:
        - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
          of the response parameters. This is commonly termed as rpHash.
