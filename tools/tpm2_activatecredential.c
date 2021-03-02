@@ -46,8 +46,10 @@ struct tpm_activatecred_ctx {
      */
     const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
-    bool is_command_dispatch;
+    const char *rp_hash_path;
+    TPM2B_DIGEST rp_hash;
     TPMI_ALG_HASH parameter_hash_algorithm;
+    bool is_command_dispatch;
 };
 
 static tpm_activatecred_ctx ctx = {
@@ -61,7 +63,8 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
      */
     return tpm2_activatecredential(ectx, &ctx.credentialed_key.object,
         &ctx.credential_key.object, &ctx.credential_blob, &ctx.secret,
-        &ctx.cert_info_data, &ctx.cp_hash, ctx.parameter_hash_algorithm);
+        &ctx.cert_info_data, &ctx.cp_hash, &ctx.rp_hash,
+        ctx.parameter_hash_algorithm);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -70,12 +73,17 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
-    tool_rc rc = ctx.cp_hash_path ? (files_save_digest(&ctx.cp_hash,
-        ctx.cp_hash_path) ? tool_rc_success : tool_rc_general_error) :
-        tool_rc_success;
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
 
-    if (!ctx.is_command_dispatch || rc != tool_rc_success) {
-        return rc;
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    if (!ctx.is_command_dispatch) {
+        return tool_rc_success;
     }
 
     /*
@@ -88,11 +96,18 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     }
     tpm2_tool_output("\n");
 
-    rc = files_save_bytes_to_file(ctx.output_file, ctx.cert_info_data->buffer,
-        ctx.cert_info_data->size) ? tool_rc_success : tool_rc_general_error;
+    is_file_op_success = files_save_bytes_to_file(ctx.output_file,
+        ctx.cert_info_data->buffer, ctx.cert_info_data->size);
     free(ctx.cert_info_data);
+    if (!is_file_op_success) {
+        return tool_rc_general_error;
+    }
 
-    return rc;
+    if (ctx.rp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.rp_hash, ctx.rp_hash_path);
+    }
+
+    return is_file_op_success ? tool_rc_success : tool_rc_general_error;
 }
 
 static bool read_cert_secret(void) {
@@ -203,14 +218,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    const char **rphash_path = ctx.rp_hash_path ? &ctx.rp_hash_path : 0;
 
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
-        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+        cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * !rphash && !cphash [Y]
+     * !rphash && cphash  [N]
+     * rphash && !cphash  [Y]
+     * rphash && cphash   [Y]
      */
-    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
+        false : true;
 
     return rc;
 }
@@ -252,6 +273,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.cp_hash_path = value;
         break;
+    case 1:
+        ctx.rp_hash_path = value;
+        break;
     }
 
     return true;
@@ -267,6 +291,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
          {"credential-blob",         required_argument, NULL, 'i'},
          {"certinfo-data",           required_argument, NULL, 'o'},
          {"cphash",                  required_argument, NULL,  0 },
+         {"rphash",                  required_argument, NULL,  1 },
     };
 
     *opts = tpm2_options_new("c:C:p:P:i:o:", ARRAY_LEN(topts), topts, on_option,

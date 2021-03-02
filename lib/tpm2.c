@@ -1207,23 +1207,23 @@ tool_rc tpm2_tr_set_auth(ESYS_CONTEXT *esys_context, ESYS_TR handle,
 }
 
 tool_rc tpm2_activatecredential(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *activatehandleobj, tpm2_loaded_object *keyhandleobj,
-        const TPM2B_ID_OBJECT *credential_blob,
-        const TPM2B_ENCRYPTED_SECRET *secret, TPM2B_DIGEST **cert_info,
-        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+    tpm2_loaded_object *activatehandleobj, tpm2_loaded_object *keyhandleobj,
+    const TPM2B_ID_OBJECT *credential_blob, const TPM2B_ENCRYPTED_SECRET *secret,
+    TPM2B_DIGEST **cert_info, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
+    TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
-    if (cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+    if (cp_hash->size || rp_hash->size) {
         rc = tpm2_getsapicontext(esys_context, &sys_context);
+
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
             return rc;
         }
+    }
 
+    if (cp_hash->size) {
         TSS2_RC rval = Tss2_Sys_ActivateCredential_Prepare(sys_context,
             activatehandleobj->handle, keyhandleobj->handle, credential_blob,
             secret);
@@ -1248,14 +1248,16 @@ tool_rc tpm2_activatecredential(ESYS_CONTEXT *esys_context,
         rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
             parameter_hash_algorithm, cp_hash);
 
-        /*
-         * Exit here without making the ESYS call since we just need the cpHash
-         */
 tpm2_activatecredential_free_name1_name2:
         Esys_Free(name2);
 tpm2_activatecredential_free_name1:
         Esys_Free(name1);
-        goto tpm2_activatecredential_skip_esapi_call;
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        if (!rp_hash->size) {
+            goto tpm2_activatecredential_skip_esapi_call;
+        }
     }
 
     ESYS_TR keyobj_session_handle = ESYS_TR_NONE;
@@ -1281,6 +1283,11 @@ tpm2_activatecredential_free_name1:
         LOG_PERR(Esys_ActivateCredential, rval);
         rc = tool_rc_from_tpm(rval);
         return rc;
+    }
+
+    if (rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
     }
 
 tpm2_activatecredential_skip_esapi_call:
