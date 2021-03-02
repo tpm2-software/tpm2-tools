@@ -16,10 +16,9 @@ restartCount. The structure is output as YAML to stdout. The YAML output is
 defined as:
 
 ```yaml
-time: 13673142     # 64 bit value of time since last _TPM_Init or TPM2_Startup
-                   # in ms.
+time: 13673142     # 64 bit value of time TPM has been powered on in ms.
 clock_info:
-  clock: 13673142  # 64 bit value of time TPM has been powered on in ms.
+  clock: 13673142  # 64 bit value of time TPM has been powered on since last TPM2_Clear in ms.
   reset_count: 0   # 32 bit value of the number of TPM Resets since the last
                    # TPM2_Clear.
   restart_count: 0 # 32 bit value of the number of times that TPM2_Shutdown or
