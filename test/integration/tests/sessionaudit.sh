@@ -71,4 +71,41 @@ diff \
 <( cat zero.bin cphash.bin rphash.bin | openssl dgst -sha256 -binary ) \
 <( tail -c 32 att.data )
 
+#
+# Get audit digest for a TPM command TPM2_CC_Create in an audit session
+#
+tpm2 clear
+
+tpm2 createprimary -Q -C e -c prim.ctx
+
+tpm2 create -Q -C prim.ctx -c signing_key.ctx -u signing_key.pub \
+-r signing_key.priv
+
+tpm2 createprimary -C o -c prim.ctx -G rsa
+tpm2 readpublic -c prim.ctx -o prim.pub
+tpm2 create -C prim.ctx -u key.pub -r key.priv -c key.ctx
+tpm2 readpublic -c key.ctx -n key.name
+echo "plaintext" > plain.txt
+tpm2 makecredential -u prim.pub  -s plain.txt -n `xxd -p -c 34 key.name` \
+-o cred.secret
+
+tpm2 startauthsession -S session.ctx --audit-session
+
+tpm2 activatecredential -c key.ctx -C prim.ctx -i cred.secret \
+-o act_cred.secret -S session.ctx --cphash cp.hash --rphash rp.hash
+
+tpm2 getsessionauditdigest -c signing_key.ctx -m att.data -s att.sig \
+-S session.ctx
+
+dd if=/dev/zero bs=1 count=32 status=none of=zero.bin
+dd if=cp.hash skip=2 bs=1 count=32 status=none of=cphash.bin
+dd if=rp.hash skip=2 bs=1 count=32 status=none of=rphash.bin
+
+diff \
+<( cat zero.bin cphash.bin rphash.bin | openssl dgst -sha256 -binary ) \
+<( tail -c 32 att.data )
+
+#
+# End
+#
 exit 0

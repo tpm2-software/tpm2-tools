@@ -1210,7 +1210,7 @@ tool_rc tpm2_activatecredential(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *activatehandleobj, tpm2_loaded_object *keyhandleobj,
     const TPM2B_ID_OBJECT *credential_blob, const TPM2B_ENCRYPTED_SECRET *secret,
     TPM2B_DIGEST **cert_info, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle3) {
 
     TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
@@ -1276,9 +1276,9 @@ tpm2_activatecredential_free_name1:
     }
 
     TSS2_RC rval = Esys_ActivateCredential(esys_context,
-            activatehandleobj->tr_handle, keyhandleobj->tr_handle,
-            activateobj_session_handle, keyobj_session_handle, ESYS_TR_NONE,
-            credential_blob, secret, cert_info);
+        activatehandleobj->tr_handle, keyhandleobj->tr_handle,
+        activateobj_session_handle, keyobj_session_handle, shandle3,
+        credential_blob, secret, cert_info);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ActivateCredential, rval);
         rc = tool_rc_from_tpm(rval);
