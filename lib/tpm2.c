@@ -1636,7 +1636,7 @@ tool_rc tpm2_certify(ESYS_CONTEXT *ectx, tpm2_loaded_object *certifiedkey_obj,
     tpm2_loaded_object *signingkey_obj, TPM2B_DATA *qualifying_data,
     TPMT_SIG_SCHEME *scheme, TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle3) {
 
     TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
@@ -1703,7 +1703,7 @@ tpm2_certify_free_name1:
 
     TSS2_RC rval = Esys_Certify(ectx, certifiedkey_obj->tr_handle,
             signingkey_obj->tr_handle, certifiedkey_session_handle,
-            signingkey_session_handle, ESYS_TR_NONE, qualifying_data, scheme,
+            signingkey_session_handle, shandle3, qualifying_data, scheme,
             certify_info, signature);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Eys_Certify, rval);
