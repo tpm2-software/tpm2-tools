@@ -1633,27 +1633,13 @@ tpm2_hierarchychangeauth_skip_esapi_call:
 }
 
 tool_rc tpm2_certify(ESYS_CONTEXT *ectx, tpm2_loaded_object *certifiedkey_obj,
-        tpm2_loaded_object *signingkey_obj, TPM2B_DATA *qualifying_data,
-        TPMT_SIG_SCHEME *scheme, TPM2B_ATTEST **certify_info,
-        TPMT_SIGNATURE **signature, TPM2B_DIGEST *cp_hash) {
+    tpm2_loaded_object *signingkey_obj, TPM2B_DATA *qualifying_data,
+    TPMT_SIG_SCHEME *scheme, TPM2B_ATTEST **certify_info,
+    TPMT_SIGNATURE **signature, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
-    ESYS_TR certifiedkey_session_handle = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, certifiedkey_obj->tr_handle,
-            certifiedkey_obj->session, &certifiedkey_session_handle);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get session handle for TPM object");
-        return rc;
-    }
-
-    ESYS_TR signingkey_session_handle = ESYS_TR_NONE;
-    rc = tpm2_auth_util_get_shandle(ectx, signingkey_obj->tr_handle,
-            signingkey_obj->session, &signingkey_session_handle);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get session handle for key");
-        return rc;
-    }
-
-    if (cp_hash) {
+    tool_rc rc = tool_rc_success;
+    if (cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
@@ -1665,7 +1651,8 @@ tool_rc tpm2_certify(ESYS_CONTEXT *ectx, tpm2_loaded_object *certifiedkey_obj,
         }
 
         TSS2_RC rval = Tss2_Sys_Certify_Prepare(sys_context,
-        certifiedkey_obj->handle, signingkey_obj->handle, qualifying_data, scheme);
+            certifiedkey_obj->handle, signingkey_obj->handle, qualifying_data,
+            scheme);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_Certify_Prepare, rval);
             return tool_rc_general_error;
@@ -1683,10 +1670,8 @@ tool_rc tpm2_certify(ESYS_CONTEXT *ectx, tpm2_loaded_object *certifiedkey_obj,
             goto tpm2_certify_free_name1_name2;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(certifiedkey_obj->session));
         rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
-            tpm2_session_get_authhash(certifiedkey_obj->session), cp_hash);
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
@@ -1698,6 +1683,22 @@ tpm2_certify_free_name1:
         goto tpm2_certify_skip_esapi_call;
     }
 
+    ESYS_TR certifiedkey_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx, certifiedkey_obj->tr_handle,
+        certifiedkey_obj->session, &certifiedkey_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get session handle for TPM object");
+        return rc;
+    }
+
+    ESYS_TR signingkey_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx, signingkey_obj->tr_handle,
+        signingkey_obj->session, &signingkey_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get session handle for key");
+        return rc;
+    }
+
     TSS2_RC rval = Esys_Certify(ectx, certifiedkey_obj->tr_handle,
             signingkey_obj->tr_handle, certifiedkey_session_handle,
             signingkey_session_handle, ESYS_TR_NONE, qualifying_data, scheme,
@@ -1705,7 +1706,6 @@ tpm2_certify_free_name1:
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Eys_Certify, rval);
         rc = tool_rc_from_tpm(rval);
-        return rc;
     }
 
 tpm2_certify_skip_esapi_call:
