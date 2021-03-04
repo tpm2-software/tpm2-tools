@@ -47,6 +47,8 @@ struct tpm_certify_ctx {
      */
     const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
+    const char *rp_hash_path;
+    TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
     TPMI_ALG_HASH parameter_hash_algorithm;
 };
@@ -68,8 +70,9 @@ static tool_rc certify(ESYS_CONTEXT *ectx) {
      */
 
     return tpm2_certify(ectx, &ctx.certified_key.object,
-        &ctx.signing_key.object, &qualifying_data, &ctx.scheme, &ctx.certify_info,
-        &ctx.signature, &ctx.cp_hash, ctx.parameter_hash_algorithm);
+        &ctx.signing_key.object, &qualifying_data, &ctx.scheme,
+        &ctx.certify_info, &ctx.signature, &ctx.cp_hash, &ctx.rp_hash,
+        ctx.parameter_hash_algorithm);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -103,6 +106,13 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
 
     is_file_op_success = tpm2_convert_sig_save(ctx.signature, ctx.sig_fmt,
         ctx.file_path.sig);
+    if (!is_file_op_success) {
+        goto out;
+    }
+
+    if (ctx.rp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.rp_hash, ctx.rp_hash_path);
+    }
 
 out:
     free(ctx.certify_info);
@@ -215,14 +225,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    const char **rphash_path = ctx.rp_hash_path ? &ctx.rp_hash_path : 0;
 
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
-        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+        cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * !rphash && !cphash [Y]
+     * !rphash && cphash  [N]
+     * rphash && !cphash  [Y]
+     * rphash && cphash   [Y]
      */
-    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
+        false : true;
 
     return rc;
 }
@@ -234,7 +250,8 @@ static tool_rc check_options(void) {
         return tool_rc_option_error;
     }
 
-    if (ctx.cp_hash_path && (ctx.file_path.attest || ctx.file_path.sig)) {
+    if (ctx.cp_hash_path && !ctx.rp_hash_path &&
+       (ctx.file_path.attest || ctx.file_path.sig)) {
         LOG_ERR("Cannot specify output options when calculating cpHash");
         return tool_rc_option_error;
     }
@@ -273,6 +290,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.cp_hash_path = value;
         break;
+    case 1:
+        ctx.rp_hash_path = value;
+        break;
     case 'f':
         ctx.sig_fmt = tpm2_convert_sig_fmt_from_optarg(value);
         if (ctx.sig_fmt == signature_format_err) {
@@ -295,6 +315,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "signature",            required_argument, NULL, 's' },
       { "format",               required_argument, NULL, 'f' },
       { "cphash",               required_argument, NULL,  0  },
+      { "rphash",               required_argument, NULL,  1  },
     };
 
     *opts = tpm2_options_new("P:p:g:o:s:c:C:f:", ARRAY_LEN(topts), topts,
