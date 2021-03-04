@@ -11,6 +11,7 @@
 #include "tpm2_options.h"
 
 typedef struct tpm_certify_ctx tpm_certify_ctx;
+#define MAX_AUX_SESSIONS 1 // two sessions provided by auth interface
 #define MAX_SESSIONS 3
 struct tpm_certify_ctx {
     /*
@@ -51,11 +52,20 @@ struct tpm_certify_ctx {
     TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
     TPMI_ALG_HASH parameter_hash_algorithm;
+
+    /*
+     * Aux sessions
+     */
+    uint8_t aux_session_cnt;
+    tpm2_session *aux_session[MAX_AUX_SESSIONS];
+    const char *aux_session_path[MAX_AUX_SESSIONS];
+    ESYS_TR aux_session_handle[MAX_AUX_SESSIONS];
 };
 
 static tpm_certify_ctx ctx = {
     .sig_fmt = signature_format_tss,
-    .parameter_hash_algorithm = TPM2_ALG_ERROR
+    .aux_session_handle[0] = ESYS_TR_NONE,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static tool_rc certify(ESYS_CONTEXT *ectx) {
@@ -72,7 +82,7 @@ static tool_rc certify(ESYS_CONTEXT *ectx) {
     return tpm2_certify(ectx, &ctx.certified_key.object,
         &ctx.signing_key.object, &qualifying_data, &ctx.scheme,
         &ctx.certify_info, &ctx.signature, &ctx.cp_hash, &ctx.rp_hash,
-        ctx.parameter_hash_algorithm);
+        ctx.parameter_hash_algorithm, ctx.aux_session_handle[0]);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -200,6 +210,11 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 2. Restore auxiliary sessions
      */
+    rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, ctx.aux_session_handle, ctx.aux_session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
 
     /*
      * 3. Command specific initializations
@@ -221,7 +236,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     tpm2_session *all_sessions[MAX_SESSIONS] = {
         ctx.certified_key.object.session,
         ctx.signing_key.object.session,
-        0
+        ctx.aux_session[0]
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
@@ -298,6 +313,16 @@ static bool on_option(char key, char *value) {
         if (ctx.sig_fmt == signature_format_err) {
             return false;
         }
+        break;
+    case 'S':
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
+            ctx.aux_session_cnt++;
+        } else {
+            LOG_ERR("Specify a max of 3 sessions");
+            return false;
+        }
+        break;
     }
 
     return true;
@@ -316,9 +341,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "format",               required_argument, NULL, 'f' },
       { "cphash",               required_argument, NULL,  0  },
       { "rphash",               required_argument, NULL,  1  },
+      { "session",              required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("P:p:g:o:s:c:C:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:o:s:c:C:f:S:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
@@ -383,6 +409,15 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     /*
      * 3. Close auxiliary sessions
      */
+    size_t i = 0;
+    for(i = 0; i < ctx.aux_session_cnt; i++) {
+        if (ctx.aux_session_path[i]) {
+            tmp_rc = tpm2_session_close(&ctx.aux_session[i]);
+            if (tmp_rc != tool_rc_success) {
+                rc = tmp_rc;
+            }
+        }
+    }
 
     return rc;
 }
