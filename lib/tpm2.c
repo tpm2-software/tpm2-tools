@@ -3535,7 +3535,7 @@ tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
     TPMT_TK_CREATION *creation_ticket, TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2, ESYS_TR shandle3) {
 
     TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
@@ -3593,7 +3593,7 @@ tpm2_certifycreation_free_name1:
 
     TSS2_RC rval = Esys_CertifyCreation(esys_context, signingkey_obj->tr_handle,
         certifiedkey_obj->tr_handle, signingkey_obj_session_handle,
-        ESYS_TR_NONE, ESYS_TR_NONE, policy_qualifier, creation_hash, in_scheme,
+        shandle2, shandle3, policy_qualifier, creation_hash, in_scheme,
         creation_ticket, certify_info, signature);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_CertifyCreation, rval);

@@ -426,7 +426,7 @@ tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
     TPMT_TK_CREATION *creation_ticket, TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm);
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2, ESYS_TR shandle3);
 
 tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *signingkey_obj, tpm2_loaded_object *nvindex_authobj,
