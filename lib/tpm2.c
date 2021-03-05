@@ -3534,20 +3534,21 @@ tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
     TPM2B_DIGEST *creation_hash, TPMT_SIG_SCHEME *in_scheme,
     TPMT_TK_CREATION *creation_ticket, TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier,
-    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
+    TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
-    if (cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+    if (cp_hash->size || rp_hash->size) {
         rc = tpm2_getsapicontext(esys_context, &sys_context);
+
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
             return rc;
         }
+    }
 
+    if (cp_hash->size) {
         TSS2_RC rval = Tss2_Sys_CertifyCreation_Prepare(sys_context,
         signingkey_obj->handle, certifiedkey_obj->handle, policy_qualifier,
         creation_hash, in_scheme, creation_ticket);
@@ -3571,14 +3572,16 @@ tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
         rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
             parameter_hash_algorithm, cp_hash);
 
-        /*
-         * Exit here without making the ESYS call since we just need the cpHash
-         */
 tpm2_certifycreation_free_name1_name2:
         Esys_Free(name2);
 tpm2_certifycreation_free_name1:
         Esys_Free(name1);
-        goto tpm2_certifycreation_skip_esapi_call;
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        if (!rp_hash->size || rc != tool_rc_success) {
+            goto tpm2_certifycreation_skip_esapi_call;
+        }
     }
 
     ESYS_TR signingkey_obj_session_handle = ESYS_TR_NONE;
@@ -3595,6 +3598,11 @@ tpm2_certifycreation_free_name1:
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_CertifyCreation, rval);
         return tool_rc_from_tpm(rval);
+    }
+
+    if (rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
     }
 
 tpm2_certifycreation_skip_esapi_call:
