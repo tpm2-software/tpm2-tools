@@ -12,6 +12,7 @@
 #include "tpm2_convert.h"
 #include "tpm2_options.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_certifycreation_ctx tpm_certifycreation_ctx;
 struct tpm_certifycreation_ctx {
     /*
@@ -54,10 +55,10 @@ struct tpm_certifycreation_ctx {
    /*
     * Parameter hashes
     */
-    char *cp_hash_path;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
-    TPM2B_DIGEST *cphash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static tpm_certifycreation_ctx ctx = {
@@ -74,7 +75,7 @@ static tool_rc certifycreation(ESYS_CONTEXT *ectx) {
     return tpm2_certifycreation(ectx, &ctx.signing_key.object,
         &ctx.certified_key.object, &ctx.creation_hash, &ctx.in_scheme,
         &ctx.creation_ticket, &ctx.certify_info, &ctx.signature,
-        &ctx.policy_qualifier, ctx.cphash);
+        &ctx.policy_qualifier, &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc process_output(void) {
@@ -196,7 +197,16 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.certified_key.object.session,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
