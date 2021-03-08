@@ -40,6 +40,8 @@ struct changeauth_ctx {
      */
     const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
+    const char *rp_hash_path;
+    TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
     TPMI_ALG_HASH parameter_hash_algorithm;
 };
@@ -51,13 +53,13 @@ static changeauth_ctx ctx = {
 static tool_rc hierarchy_change_auth(ESYS_CONTEXT *ectx) {
 
     return tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, ctx.new_auth,
-        &ctx.cp_hash, ctx.parameter_hash_algorithm);
+        &ctx.cp_hash, &ctx.rp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc nv_change_auth(ESYS_CONTEXT *ectx) {
 
     return tpm2_nv_change_auth(ectx, &ctx.object.obj, ctx.new_auth,
-        &ctx.cp_hash, ctx.parameter_hash_algorithm);
+        &ctx.cp_hash, &ctx.rp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc object_change_auth(ESYS_CONTEXT *ectx) {
@@ -68,7 +70,7 @@ static tool_rc object_change_auth(ESYS_CONTEXT *ectx) {
     }
 
     return tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
-        ctx.new_auth, &ctx.out_private, &ctx.cp_hash,
+        ctx.new_auth, &ctx.out_private, &ctx.cp_hash, &ctx.rp_hash,
         ctx.parameter_hash_algorithm);
 }
 
@@ -131,7 +133,12 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
 
         if (!is_file_op_success) {
             LOG_ERR("Failed to save the sensitive key portion");
+            return tool_rc_general_error;
         }
+    }
+
+    if (ctx.rp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.rp_hash, ctx.rp_hash_path);
     }
 
     return is_file_op_success ? tool_rc_success : tool_rc_general_error;
@@ -214,12 +221,19 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    const char **rphash_path = ctx.rp_hash_path ? &ctx.rp_hash_path : 0;
 
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
-        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+        cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
 
-    /* 4.b Determine if TPM2_CC_<command> is to be dispatched */
-    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+    /* 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * !rphash && !cphash [Y]
+     * !rphash && cphash  [N]
+     * rphash && !cphash  [Y]
+     * rphash && cphash   [Y]
+     */
+    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
+        false : true;
 
     return tool_rc_success;
 }
@@ -230,6 +244,10 @@ static tool_rc check_options(void) {
     if (!ctx.object.ctx) {
         LOG_ERR("Expected object information via -c");
         return tool_rc_option_error;
+    }
+
+    if (ctx.cp_hash_path && !ctx.rp_hash_path) {
+        LOG_WARN("Auth not changed. Only cpHash is calculated.");
     }
 
     return tool_rc_success;
@@ -268,6 +286,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.cp_hash_path = value;
         break;
+    case 1:
+        ctx.rp_hash_path = value;
+        break;
         /*no default */
     }
 
@@ -281,7 +302,8 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "object-context", required_argument, NULL, 'c' },
         { "parent-context", required_argument, NULL, 'C' },
         { "private",        required_argument, NULL, 'r' },
-         {"cphash",         required_argument, NULL,  0  },
+        { "cphash",         required_argument, NULL,  0  },
+        { "rphash",         required_argument, NULL,  1  },
     };
     *opts = tpm2_options_new("p:c:C:r:", ARRAY_LEN(topts), topts,
                              on_option, on_arg, 0);
