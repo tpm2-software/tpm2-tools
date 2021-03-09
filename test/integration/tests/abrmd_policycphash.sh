@@ -676,4 +676,20 @@ setup_authorized_policycphash
 tpm2 hmac -c key.ctx plain.txt -o hmac.bin -p "session:session.ctx"
 tpm2 flushcontext session.ctx
 
+# Test if specifying the <halg>: in the cphash path has effect on cphash alg
+TPM2_ALG_SHA256_SZ=34
+TPM2_ALG_SHA1_SZ=22
+
+## Default must be sha256
+expected_hash_len=$TPM2_ALG_SHA256_SZ
+tpm2 getrandom 8 --cphash cp.hash
+file_size=`ls -l cp.hash | awk {'print $5'}`
+test $file_size -eq $expected_hash_len
+
+## Check if a specific hash can be enforced with <halg>:
+expected_hash_len=$TPM2_ALG_SHA1_SZ
+tpm2 getrandom 8 --cphash sha1:cp.hash
+file_size=`ls -l cp.hash | awk {'print $5'}`
+test $file_size -eq $expected_hash_len
+
 exit 0

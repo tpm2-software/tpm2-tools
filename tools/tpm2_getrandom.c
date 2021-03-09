@@ -12,64 +12,98 @@
 #include "tpm2.h"
 #include "tpm2_capability.h"
 #include "tpm2_tool.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_random_ctx tpm_random_ctx;
 #define MAX_AUX_SESSIONS 3
+#define MAX_SESSIONS 3
 struct tpm_random_ctx {
-    char *output_file;
+    /*
+     * Input options
+     */
     UINT16 num_of_bytes;
     bool force;
     bool hex;
-    uint8_t session_cnt;
-    tpm2_session *session[MAX_AUX_SESSIONS];
-    const char *session_path[MAX_AUX_SESSIONS];
+
+    /*
+     * Outputs
+     */
+    char *output_file;
+    TPM2B_DIGEST *random_bytes;
+
+    /*
+     * Parameter hashes
+     */
     const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
     const char *rp_hash_path;
+    TPM2B_DIGEST rp_hash;
+    TPMI_ALG_HASH parameter_hash_algorithm;
+    bool is_command_dispatch;
+
+    /*
+     * Aux Sessions
+     */
+    uint8_t aux_session_cnt;
+    tpm2_session *aux_session[MAX_AUX_SESSIONS];
+    const char *aux_session_path[MAX_AUX_SESSIONS];
+    ESYS_TR aux_session_handle[MAX_AUX_SESSIONS];
 };
 
-static tpm_random_ctx ctx;
+static tpm_random_ctx ctx = {
+    .aux_session_handle[0] = ESYS_TR_NONE,
+    .aux_session_handle[1] = ESYS_TR_NONE,
+    .aux_session_handle[2] = ESYS_TR_NONE,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
+};
 
-static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
+static tool_rc get_random(ESYS_CONTEXT *ectx) {
 
-    /* Restore aux sessions */
-    ESYS_TR session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE};
-    tool_rc rc = tpm2_util_aux_sessions_setup(ectx, ctx.session_cnt,
-        ctx.session_path, session_handle, ctx.session);
+    /*
+     * 1. TPM2_CC_<command> OR Retrieve cpHash
+     */
+    tool_rc rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &ctx.random_bytes,
+        &ctx.cp_hash, &ctx.rp_hash, ctx.aux_session_handle[0],
+        ctx.aux_session_handle[1], ctx.aux_session_handle[2],
+        ctx.parameter_hash_algorithm);
     if (rc != tool_rc_success) {
-        return rc;
-    }
-    /* Setup buffers for command and response parameter hashes */
-    TPM2B_DIGEST *cp_hash =
-        ctx.cp_hash_path ? calloc(1, sizeof(TPM2B_DIGEST)): NULL;
-    TPM2B_DIGEST *rp_hash =
-        ctx.rp_hash_path ? calloc(1, sizeof(TPM2B_DIGEST)) : NULL;
-
-    TPMI_ALG_HASH param_hash_algorithm = TPM2_ALG_SHA256;
-    TPM2B_DIGEST *random_bytes;
-    rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &random_bytes,
-    cp_hash, rp_hash, session_handle[0], session_handle[1], session_handle[2],
-    param_hash_algorithm);
-    if (rc != tool_rc_success) {
-        goto out_skip_output_file;
+        LOG_ERR("Failed getrandom");
     }
 
+    return rc;
+}
+
+static tool_rc process_outputs(void) {
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+
+    bool is_file_op_success = true;
     if (ctx.cp_hash_path) {
-        bool result = files_save_digest(cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-        }
-        if (!ctx.rp_hash_path) {
-            goto out_skip_output_file;
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
         }
     }
+
+    if (!ctx.is_command_dispatch) {
+        return tool_rc_success;
+    }
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
 
     /* ensure we got the expected number of bytes unless force is set */
-    if (!ctx.force && random_bytes->size != ctx.num_of_bytes) {
+    tool_rc rc = tool_rc_success;
+    if (!ctx.force && ctx.random_bytes->size != ctx.num_of_bytes) {
         LOG_ERR("Got %"PRIu16" bytes, expected: %"PRIu16"\n"
                 "Lower your requested amount or"
                 " use --force to override this behavior",
-                random_bytes->size, ctx.num_of_bytes);
+                ctx.random_bytes->size, ctx.num_of_bytes);
         rc = tool_rc_general_error;
         goto out_skip_output_file;
     }
@@ -92,20 +126,22 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.hex) {
-        tpm2_util_print_tpm2b2(out, random_bytes);
+        tpm2_util_print_tpm2b2(out, ctx.random_bytes);
         goto out;
     }
 
-    bool result = files_write_bytes(out, random_bytes->buffer,
-    random_bytes->size);
-    if (!result) {
+    is_file_op_success = files_write_bytes(out, ctx.random_bytes->buffer,
+        ctx.random_bytes->size);
+    if (!is_file_op_success) {
         rc = tool_rc_general_error;
         goto out;
     }
 
-    if (ctx.rp_hash_path) {
-        bool result = files_save_digest(rp_hash, ctx.rp_hash_path);
-        rc = result ? tool_rc_success : tool_rc_general_error;
+    if(ctx.rp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.rp_hash, ctx.rp_hash_path);
+        if (!is_file_op_success) {
+            rc = tool_rc_general_error;
+        }
     }
 
 out:
@@ -114,11 +150,120 @@ out:
     }
 
 out_skip_output_file:
-    if (ctx.rp_hash_path || !ctx.cp_hash_path) {
-        free(random_bytes);
+    if (!ctx.cp_hash_path) {
+        free(ctx.random_bytes);
     }
-    free(cp_hash);
-    free(rp_hash);
+
+    return rc;
+}
+
+static tool_rc get_max_random(ESYS_CONTEXT *ectx, UINT32 *value) {
+
+    TPMS_CAPABILITY_DATA *cap_data = NULL;
+    tool_rc rc = tpm2_capability_get(ectx, TPM2_CAP_TPM_PROPERTIES,
+            TPM2_PT_FIXED, TPM2_MAX_TPM_PROPERTIES, &cap_data);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    UINT32 i;
+    for (i = 0; i < cap_data->data.tpmProperties.count; i++) {
+        TPMS_TAGGED_PROPERTY *p = &cap_data->data.tpmProperties.tpmProperty[i];
+        if (p->property == TPM2_PT_MAX_DIGEST) {
+            *value = p->value;
+            free(cap_data);
+            return tool_rc_success;
+        }
+    }
+
+    LOG_ERR("TPM does not have property TPM2_PT_MAX_DIGEST");
+    free(cap_data);
+
+    return tool_rc_general_error;
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     * Note: Old-auth value is ignored when calculating cpHash.
+     */
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+    tool_rc rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, ctx.aux_session_handle, ctx.aux_session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 3. Command specific initializations
+     */
+
+    /*
+     * Error if bytes requested is bigger than max hash size, which is what TPMs
+     * should bound their requests by and always have available per the spec.
+     *
+     * Per 16.1 of:
+     *  - https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-3-Commands-01.38.pdf
+     *
+     *  Allow the force flag to override this behavior.
+     */
+    if (!ctx.force) {
+        UINT32 max = 0;
+        rc = get_max_random(ectx, &max);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        if (ctx.num_of_bytes > max) {
+            LOG_ERR("TPM getrandom is bounded by max hash size, which is: "
+                    "%"PRIu32"\n"
+                    "Please lower your request (preferred) and try again or"
+                    " use --force (advanced)", max);
+            return tool_rc_general_error;
+        }
+    }
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.aux_session[0],
+        ctx.aux_session[1],
+        ctx.aux_session[2]
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    const char **rphash_path = ctx.rp_hash_path ? &ctx.rp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
+
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * !rphash && !cphash [Y]
+     * !rphash && cphash  [N]
+     * rphash && !cphash  [Y]
+     * rphash && cphash   [Y]
+     */
+    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
+        false : true;
 
     return rc;
 }
@@ -144,10 +289,11 @@ static bool on_option(char key, char *value) {
         ctx.rp_hash_path = value;
         break;
     case 'S':
-        ctx.session_path[ctx.session_cnt] = value;
-        if (ctx.session_cnt < MAX_AUX_SESSIONS) {
-            ctx.session_cnt++;
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
+            ctx.aux_session_cnt++;
         } else {
+            LOG_ERR("Specify a max of 3 sessions");
             return false;
         }
         break;
@@ -155,30 +301,6 @@ static bool on_option(char key, char *value) {
     }
 
     return true;
-}
-
-static tool_rc get_max_random(ESYS_CONTEXT *ectx, UINT32 *value) {
-
-    TPMS_CAPABILITY_DATA *cap_data = NULL;
-    tool_rc rc = tpm2_capability_get(ectx, TPM2_CAP_TPM_PROPERTIES,
-            TPM2_PT_FIXED, TPM2_MAX_TPM_PROPERTIES, &cap_data);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    UINT32 i;
-    for (i = 0; i < cap_data->data.tpmProperties.count; i++) {
-        TPMS_TAGGED_PROPERTY *p = &cap_data->data.tpmProperties.tpmProperty[i];
-        if (p->property == TPM2_PT_MAX_DIGEST) {
-            *value = p->value;
-            free(cap_data);
-            return tool_rc_success;
-        }
-    }
-
-    LOG_ERR("TPM does not have property TPM2_PT_MAX_DIGEST");
-    free(cap_data);
-    return tool_rc_general_error;
 }
 
 static bool on_args(int argc, char **argv) {
@@ -219,45 +341,61 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     /*
-     * Error if bytes requested is bigger than max hash size, which is what TPMs
-     * should bound their requests by and always have available per the spec.
-     *
-     * Per 16.1 of:
-     *  - https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-3-Commands-01.38.pdf
-     *
-     *  Allow the force flag to override this behavior.
+     * 1. Process options
      */
-    if (!ctx.force) {
-        UINT32 max = 0;
-        tool_rc rc = get_max_random(ectx, &max);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
 
-        if (ctx.num_of_bytes > max) {
-            LOG_ERR("TPM getrandom is bounded by max hash size, which is: "
-                    "%"PRIu32"\n"
-                    "Please lower your request (preferred) and try again or"
-                    " use --force (advanced)", max);
-            return tool_rc_general_error;
-        }
+    /*
+     * 2. Process inputs
+     */
+    tool_rc rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    return get_random_and_save(ectx);
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = get_random(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_outputs();
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
     UNUSED(ectx);
-    uint8_t session_idx = 0;
+
+    /*
+     * 1. Free objects
+     */
+
+    /*
+     * 2. Close authorization sessions
+     */
+
+    /*
+     * 3. Close auxiliary sessions
+     */
     tool_rc rc = tool_rc_success;
-    for(session_idx = 0; session_idx < ctx.session_cnt; session_idx++) {
-        if (ctx.session_path[session_idx]) {
-            rc = tpm2_session_close(&ctx.session[session_idx]);
+    tool_rc tmp_rc = tool_rc_success;
+    size_t i = 0;
+    for(i = 0; i < ctx.aux_session_cnt; i++) {
+        if (ctx.aux_session_path[i]) {
+            tmp_rc = tpm2_session_close(&ctx.aux_session[i]);
+        }
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
         }
     }
+
     return rc;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("getrandom", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("getrandom", tpm2_tool_onstart, tpm2_tool_onrun,
+tpm2_tool_onstop, NULL)

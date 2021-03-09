@@ -3886,54 +3886,51 @@ tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx,
 tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
         TPM2B_DIGEST **random, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
         ESYS_TR session_handle_1, ESYS_TR session_handle_2,
-        ESYS_TR session_handle_3, TPMI_ALG_HASH param_hash_algorithm) {
+        ESYS_TR session_handle_3, TPMI_ALG_HASH parameter_hash_algorithm) {
 
-    tool_rc rc = tool_rc_success;
     TSS2_SYS_CONTEXT *sys_context = NULL;
-    TSS2_RC rval;
-    if (cp_hash || rp_hash) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
+    tool_rc rc = tool_rc_success;
+    if (cp_hash->size || rp_hash->size) {
         rc = tpm2_getsapicontext(ectx, &sys_context);
-        if(rc != tool_rc_success) {
+
+        if (rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
             return rc;
         }
     }
 
-    if (cp_hash) {
-        rval = Tss2_Sys_GetRandom_Prepare(sys_context, count);
+    if (cp_hash->size) {
+        TSS2_RC rval = Tss2_Sys_GetRandom_Prepare(sys_context, count);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_GetRandom_Prepare, rval);
             return tool_rc_general_error;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(param_hash_algorithm);
         rc = tpm2_sapi_getcphash(sys_context, NULL, NULL, NULL,
-        param_hash_algorithm, cp_hash);
+            parameter_hash_algorithm, cp_hash);
         if (rc != tool_rc_success) {
             return rc;
         }
+
         /*
          * Exit here without making the ESYS call since if we only need cpHash
          */
-        if (!rp_hash) {
+        if (!rp_hash->size || rc != tool_rc_success) {
             goto tpm2_getrandom_skip_esapi_call;
         }
     }
 
-    rval = Esys_GetRandom(ectx, session_handle_1, session_handle_2,
+    TSS2_RC rval = Esys_GetRandom(ectx, session_handle_1, session_handle_2,
         session_handle_3, count, random);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetRandom, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    if (rp_hash) {
+    if (rp_hash->size) {
         rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
-        param_hash_algorithm);
-    }
+            parameter_hash_algorithm);
+    } 
 
 tpm2_getrandom_skip_esapi_call:
     return rc;
