@@ -1449,7 +1449,8 @@ tool_rc tpm2_object_change_auth(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *parent_object, tpm2_loaded_object *object,
     const TPM2B_AUTH *new_auth, TPM2B_PRIVATE **out_private,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3) {
 
     TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
@@ -1506,7 +1507,7 @@ tpm2_objectchangeauth_free_name1:
     }
 
     TSS2_RC rval = Esys_ObjectChangeAuth(esys_context, object->tr_handle,
-            parent_object->tr_handle, shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+            parent_object->tr_handle, shandle1, shandle2, shandle3,
             new_auth, out_private);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ObjectChangeAuth, rval);
@@ -1524,7 +1525,8 @@ tpm2_objectchangeauth_skip_esapi_call:
 
 tool_rc tpm2_nv_change_auth(ESYS_CONTEXT *esys_context, tpm2_loaded_object *nv,
     const TPM2B_AUTH *new_auth, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3) {
 
     TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = (cp_hash->size || rp_hash->size) ?
@@ -1569,7 +1571,7 @@ tpm2_nvchangeauth_free_name1:
     }
 
     TSS2_RC rval = Esys_NV_ChangeAuth(esys_context, nv->tr_handle, shandle1,
-            ESYS_TR_NONE, ESYS_TR_NONE, new_auth);
+            shandle2, shandle3, new_auth);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_ChangeAuth, rval);
         return tool_rc_from_tpm(rval);
@@ -1587,7 +1589,8 @@ tpm2_nvchangeauth_skip_esapi_call:
 tool_rc tpm2_hierarchy_change_auth(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *hierarchy, const TPM2B_AUTH *new_auth,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3) {
 
     TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = (cp_hash->size || rp_hash->size) ?
@@ -1632,7 +1635,7 @@ tpm2_hierarchychangeauth_free_name1:
     }
 
     TSS2_RC rval = Esys_HierarchyChangeAuth(esys_context, hierarchy->tr_handle,
-            shandle1, ESYS_TR_NONE, ESYS_TR_NONE, new_auth);
+            shandle1, shandle2, shandle3, new_auth);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_HierarchyChangeAuth, rval);
         return tool_rc_from_tpm(rval);

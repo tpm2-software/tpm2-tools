@@ -207,16 +207,19 @@ tool_rc tpm2_object_change_auth(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *parent_object, tpm2_loaded_object *object,
     const TPM2B_AUTH *new_auth, TPM2B_PRIVATE **out_private,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm);
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3);
 
 tool_rc tpm2_nv_change_auth(ESYS_CONTEXT *esys_context, tpm2_loaded_object *nv,
     const TPM2B_AUTH *new_auth, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm);
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3);
 
 tool_rc tpm2_hierarchy_change_auth(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *hierarchy, const TPM2B_AUTH *new_auth,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm);
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3);
 
 tool_rc tpm2_certify(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *certifiedkey_obj,
