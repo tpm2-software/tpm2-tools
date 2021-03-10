@@ -114,7 +114,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!ctx.cp_hash_path) {
         ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
         tool_rc tmp_rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
-        ctx.aux_session_path, aux_session_handle, NULL, ctx.aux_session);
+            ctx.aux_session_path, aux_session_handle, ctx.aux_session);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }

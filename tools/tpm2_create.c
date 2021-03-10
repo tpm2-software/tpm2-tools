@@ -125,7 +125,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
         ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
         tmp_rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
-        ctx.aux_session_path, aux_session_handle, NULL, ctx.aux_session);
+            ctx.aux_session_path, aux_session_handle, ctx.aux_session);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
@@ -167,7 +167,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
         ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
         tmp_rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
-        ctx.aux_session_path, aux_session_handle, NULL, ctx.aux_session);
+            ctx.aux_session_path, aux_session_handle, ctx.aux_session);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
