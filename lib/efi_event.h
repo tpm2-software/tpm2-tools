@@ -175,5 +175,16 @@ typedef struct {
     BYTE SignatureData[];
 } PACKED EFI_SIGNATURE_DATA;
 
+/*
+ * EFI_LOAD_OPTION describes a load option variable. This struct is described
+ * in more details in UEFI Spec Section 3.1.3
+ */
+typedef struct {
+    UINT32 Attributes;
+    UINT16 FilePathListLength;
+    UINT16 Description[];
+    // EFI_DEVICE_PATH_PROTOCOL FilePathList[];
+    // UINT8 OptionalData[];
+} PACKED EFI_LOAD_OPTION;
 
 #endif
