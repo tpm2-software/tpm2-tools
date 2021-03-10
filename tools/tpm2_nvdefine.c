@@ -81,7 +81,7 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
     if (!ctx.cp_hash_path) {
         ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
         rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
-        ctx.aux_session_path, aux_session_handle, NULL, ctx.aux_session);
+            ctx.aux_session_path, aux_session_handle, ctx.aux_session);
         if (rc != tool_rc_success) {
             return rc;
         }

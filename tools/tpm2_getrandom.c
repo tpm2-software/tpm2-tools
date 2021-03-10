@@ -33,11 +33,9 @@ static tpm_random_ctx ctx;
 static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
 
     /* Restore aux sessions */
-    TPMI_ALG_HASH param_hash_algorithm = TPM2_ALG_SHA256;
     ESYS_TR session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE};
     tool_rc rc = tpm2_util_aux_sessions_setup(ectx, ctx.session_cnt,
-    ctx.session_path, session_handle, &param_hash_algorithm,
-    ctx.session);
+        ctx.session_path, session_handle, ctx.session);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -47,6 +45,7 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
     TPM2B_DIGEST *rp_hash =
         ctx.rp_hash_path ? calloc(1, sizeof(TPM2B_DIGEST)) : NULL;
 
+    TPMI_ALG_HASH param_hash_algorithm = TPM2_ALG_SHA256;
     TPM2B_DIGEST *random_bytes;
     rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &random_bytes,
     cp_hash, rp_hash, session_handle[0], session_handle[1], session_handle[2],

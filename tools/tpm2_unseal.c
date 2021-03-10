@@ -52,7 +52,7 @@ tool_rc unseal_and_save(ESYS_CONTEXT *ectx) {
 
     ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
     tool_rc rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
-    ctx.aux_session_path, aux_session_handle, NULL, ctx.aux_session);
+        ctx.aux_session_path, aux_session_handle, ctx.aux_session);
     if (rc != tool_rc_success) {
         return rc;
     }

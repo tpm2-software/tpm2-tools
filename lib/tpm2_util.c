@@ -15,6 +15,7 @@
 #include "tpm2_attr_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_openssl.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -1070,9 +1071,10 @@ bool tpm2_pem_encoded_key_to_fingerprint(const char* pem_encoded_key,
     return true;
 }
 
-tool_rc tpm2_util_aux_sessions_setup( ESYS_CONTEXT *ectx,
-uint8_t session_cnt, const char **session_path, ESYS_TR *session_handle,
-TPMI_ALG_HASH *param_hash_algorithm, tpm2_session **session) {
+#define MAX_SESSION_CNT 3
+tool_rc tpm2_util_aux_sessions_setup(ESYS_CONTEXT *ectx, uint8_t session_cnt,
+    const char **session_path, ESYS_TR *session_handle,
+    tpm2_session **session) {
 
     /*
      * If no aux sessions were specified, simply return.
@@ -1081,7 +1083,7 @@ TPMI_ALG_HASH *param_hash_algorithm, tpm2_session **session) {
         return tool_rc_success;
     }
 
-    if (session_cnt > 3) {
+    if (session_cnt > MAX_SESSION_CNT) {
         LOG_ERR("A max of 3 sessions allowed");
         return tool_rc_general_error;
     }
@@ -1089,8 +1091,8 @@ TPMI_ALG_HASH *param_hash_algorithm, tpm2_session **session) {
     uint8_t session_idx = 0;
     for (session_idx = 0; session_idx < (session_cnt); session_idx++) {
         if (session_path[session_idx]) {
-                tool_rc rc = tpm2_session_restore(ectx, session_path[session_idx],
-                false, &session[session_idx]);
+                tool_rc rc = tpm2_session_restore(ectx,
+                    session_path[session_idx], false, &session[session_idx]);
             if (rc != tool_rc_success) {
                 LOG_ERR("Could not restore aux-session #%s",
                 session_path[session_idx]);
@@ -1100,11 +1102,139 @@ TPMI_ALG_HASH *param_hash_algorithm, tpm2_session **session) {
                 tpm2_session_get_handle(session[session_idx]);
         }
     }
-    /*
-     * Parameter hash alg is setup as that of the session alg of first session
-     */
-    if (param_hash_algorithm) {
-        *param_hash_algorithm = tpm2_session_get_authhash(session[0]);
-    }
+
     return tool_rc_success;
+}
+
+static TPMI_ALG_HASH calc_phash_alg_from_phash_path(const char **phash_path) {
+
+    if (!*phash_path) {
+        return TPM2_ALG_ERROR;
+    }
+
+    /*
+     * Expecting single token, so tokenize just once.
+     */
+    char *str = malloc(strlen(*phash_path) + 1);
+    strcpy(str, *phash_path);
+    char *token = strtok(str, ":");
+
+    TPMI_ALG_HASH hashalg = tpm2_alg_util_from_optarg(
+        token, tpm2_alg_util_flags_hash);
+    /*
+     * Adjust the pHash path to skip the <halg>:
+     */
+    if (hashalg != TPM2_ALG_ERROR) {
+        *phash_path += strlen(token) + 1;
+    }
+
+    free(str);
+    return hashalg;
+}
+
+static TPMI_ALG_HASH tpm2_util_calc_phash_algorithm_from_session_types(
+    ESYS_CONTEXT *ectx, tpm2_session **sessions) {
+
+    TPMI_ALG_HASH rethash = TPM2_ALG_SHA256;
+
+    size_t session_idx = 0;
+    for (session_idx = 0; session_idx < MAX_SESSION_CNT; session_idx++) {
+        if(!sessions[session_idx]) {
+            continue;
+        }
+
+        TPM2_SE session_type = tpm2_session_get_type(sessions[session_idx]);
+        if (session_type != TPM2_SE_HMAC && session_type != TPM2_SE_POLICY) {
+            continue;
+        }
+
+        /*
+         * If this is an audit session, use that session halg.
+         * Note: Audit sessions are always HMAC type.
+         */
+        if (session_type == TPM2_SE_HMAC) {
+            TPMA_SESSION attrs = 0;
+            ESYS_TR session_handle = tpm2_session_get_handle(
+                sessions[session_idx]);
+            tool_rc tmp_rc = tpm2_sess_get_attributes(ectx, session_handle,
+                &attrs);
+            UNUSED(tmp_rc);
+
+            if (attrs & TPMA_SESSION_AUDIT) {
+                rethash = tpm2_session_get_authhash(sessions[session_idx]);
+                break;
+            }
+        }
+
+        /*
+         * If no other sessions remain, simply use this sessions halg.
+         */
+        rethash = tpm2_session_get_authhash(sessions[session_idx]);
+    }
+
+    return rethash;
+}
+
+/*
+ * It should be noted that the auths aren't checked when calculating the pHash,
+ * instead the sessions are consumed to determine the pHash algorithm.
+ *
+ * 1. If phash_path is preceded with <halg>: use that as phash-halg return
+ * Otherwise
+ *
+ *  Consume session only if it is a policy-session or an hmac-session
+ *  1. If only hmac or policy session is specified, return that session's halg
+ *  2. If hmac-session with audit is specified, return that session's halg
+ *  3. If policy-session, then return policy-session's halg
+ *
+ * Otherwise
+ *  return SHA256
+ *
+ */
+TPMI_ALG_HASH tpm2_util_calculate_phash_algorithm(ESYS_CONTEXT *ectx,
+    const char **cphash_path, TPM2B_DIGEST *cp_hash, const char **rphash_path,
+    TPM2B_DIGEST *rp_hash, tpm2_session **sessions) {
+
+    if (!cphash_path && !rphash_path) {
+        return TPM2_ALG_ERROR;
+    }
+
+    TPMI_ALG_HASH cphash_alg = cphash_path ? calc_phash_alg_from_phash_path(
+        cphash_path) : TPM2_ALG_ERROR;
+
+    TPMI_ALG_HASH rphash_alg = rphash_path ? calc_phash_alg_from_phash_path(
+        rphash_path) : TPM2_ALG_ERROR;
+    /*
+     * Default to cphash_alg if both are specified.
+     * This removes the conflict if cphash_alg and rphash_alg don't match.
+     * This also sets the cphash_alg if only rphash_alg is specified and vice
+     * versa.
+     */
+    TPMI_ALG_HASH phash_alg = cphash_alg != TPM2_ALG_ERROR ? cphash_alg :
+        (rphash_alg != TPM2_ALG_ERROR ? rphash_alg : TPM2_ALG_ERROR);
+
+    /*
+     * pHash was enforced with <halg>:phash_path
+     */
+    if (phash_alg != TPM2_ALG_ERROR) {
+        goto out;
+    }
+
+    phash_alg = tpm2_util_calc_phash_algorithm_from_session_types(ectx,
+        sessions);
+
+out:
+    /*
+     * Calculate size here because with pHash_path information there is no
+     * confusion on whether or not to set cp or rp sizes or both.
+     */
+    if (cphash_path) {
+        cp_hash->size = tpm2_alg_util_get_hash_size(phash_alg);
+    }
+
+    if (rphash_path) {
+        rp_hash->size = tpm2_alg_util_get_hash_size(phash_alg);
+    }
+
+    return phash_alg;
 }
