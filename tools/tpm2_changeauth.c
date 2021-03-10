@@ -10,6 +10,7 @@
 #include "tpm2_options.h"
 
 typedef struct changeauth_ctx changeauth_ctx;
+#define MAX_SESSIONS 3
 struct changeauth_ctx {
     /*
      * Inputs
@@ -37,23 +38,26 @@ struct changeauth_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
-    TPM2B_DIGEST *cphash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
-static changeauth_ctx ctx;
+static changeauth_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
+};
 
 static tool_rc hierarchy_change_auth(ESYS_CONTEXT *ectx) {
 
     return tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, ctx.new_auth,
-        ctx.cphash);
+        &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc nv_change_auth(ESYS_CONTEXT *ectx) {
 
-    return tpm2_nv_change_auth(ectx, &ctx.object.obj, ctx.new_auth, ctx.cphash);
+    return tpm2_nv_change_auth(ectx, &ctx.object.obj, ctx.new_auth,
+        &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc object_change_auth(ESYS_CONTEXT *ectx) {
@@ -64,7 +68,8 @@ static tool_rc object_change_auth(ESYS_CONTEXT *ectx) {
     }
 
     return tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
-        ctx.new_auth, &ctx.out_private, ctx.cphash);
+        ctx.new_auth, &ctx.out_private, &ctx.cp_hash,
+        ctx.parameter_hash_algorithm);
 }
 
 static tool_rc change_authorization(ESYS_CONTEXT *ectx) {
@@ -202,7 +207,16 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
 
     /* 4.a Determine pHash length and alg */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.object.obj.session,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /* 4.b Determine if TPM2_CC_<command> is to be dispatched */
     ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
