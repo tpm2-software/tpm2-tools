@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uchar.h>
+#include <regex.h>
 
 #include <tss2/tss2_tpm2_types.h>
 
@@ -402,6 +403,58 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 }
                 return true;
             }
+
+            regex_t regex;
+            int r;
+
+            r = regcomp(&regex, "^Boot[0-9a-fA-F]\\{4\\}$", 0);
+            if (r != 0) {
+                free(ret);
+                LOG_ERR("regcomp() returned %d\n", r);
+                return false;
+            }
+
+            r = regexec(&regex, ret, 0, NULL, 0);
+            if (r == 0) {
+                free(ret);
+                tpm2_tool_output("    VariableData:\n"
+                                 "      Enabled: ");
+                EFI_LOAD_OPTION *loadopt = (EFI_LOAD_OPTION*)&data->UnicodeName[
+                    data->UnicodeNameLength];
+
+                if (loadopt->Attributes & 1) {
+                    tpm2_tool_output("'Yes'\n");
+                } else {
+                    tpm2_tool_output("'No'\n");
+                }
+
+                tpm2_tool_output("      FilePathListLength: %" PRIu16 "\n",
+                    loadopt->FilePathListLength);
+
+                tpm2_tool_output("      Description: \"");
+                int i;
+                for (i = 0; (wchar_t)loadopt->Description[i] != 0; i++) {
+                    wchar_t c = (wchar_t)loadopt->Description[i];
+                    tpm2_tool_output("%lc", c);
+                }
+                tpm2_tool_output("\"\n");
+
+                uint8_t *devpath = (uint8_t*)&loadopt->Description[++i];
+                size_t devpath_len =  (data->VariableDataLength -
+                    sizeof(EFI_LOAD_OPTION) - sizeof(UINT16) * i) * 2 + 1;
+
+                char *buf = calloc(1, devpath_len);
+                if (!buf) {
+                    LOG_ERR("failed to allocate memory: %s\n", strerror(errno));
+                    return false;
+                }
+
+                bytes_to_str(devpath, data->VariableDataLength -
+                    sizeof(EFI_LOAD_OPTION) - sizeof(UINT16) * i, buf, devpath_len);
+                tpm2_tool_output("      DevicePath: \"%s\"\n", buf);
+                free(buf);
+                return true;
+            }
         }
         /* Other event types will be printed as a hex string */
     }
@@ -456,7 +509,7 @@ bool yaml_ipl(UINT8 const *description, size_t size) {
 bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
 
     size_t devpath_len = (size - sizeof(*data)) * 2 + 1;
-    char *buf = calloc (1, devpath_len);
+    char *buf = calloc(1, devpath_len);
     if (!buf) {
         LOG_ERR("failed to allocate memory: %s\n", strerror(errno));
         return false;
