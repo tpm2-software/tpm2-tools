@@ -11,7 +11,9 @@
 
 typedef struct changeauth_ctx changeauth_ctx;
 struct changeauth_ctx {
-
+    /*
+     * Inputs
+     */
     struct {
         const char *ctx;
         tpm2_loaded_object obj;
@@ -23,90 +25,212 @@ struct changeauth_ctx {
         const char *ctx;
         tpm2_loaded_object obj;
         tpm2_session *new;
+
+    /*
+     * Outputs
+     */
         const char *out_path;
     } object;
+    TPM2B_PRIVATE *out_private;
+    const TPM2B_AUTH *new_auth;
 
+    /*
+     * Parameter hashes
+     */
     char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    TPM2B_DIGEST *cphash;
+    bool is_command_dispatch;
 };
 
 static changeauth_ctx ctx;
 
-static tool_rc hierarchy_change_auth(ESYS_CONTEXT *ectx,
-        const TPM2B_AUTH *new_auth) {
+static tool_rc hierarchy_change_auth(ESYS_CONTEXT *ectx) {
 
-    if (ctx.cp_hash_path) {
-        TPM2B_DIGEST cp_hash = { .size = 0 };
-        tool_rc rc = tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, new_auth,
-            &cp_hash);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-        }
-        return rc;
-    }
-
-    return tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, new_auth, NULL);
+    return tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, ctx.new_auth,
+        ctx.cphash);
 }
 
-static tool_rc nv_change_auth(ESYS_CONTEXT *ectx, const TPM2B_AUTH *new_auth) {
+static tool_rc nv_change_auth(ESYS_CONTEXT *ectx) {
 
-    if (ctx.cp_hash_path) {
-        TPM2B_DIGEST cp_hash = { .size = 0 };
-        tool_rc rc = tpm2_nv_change_auth(ectx, &ctx.object.obj, new_auth,
-            &cp_hash);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-        }
-        return rc;
-    }
-
-    return tpm2_nv_change_auth(ectx, &ctx.object.obj, new_auth, NULL);
+    return tpm2_nv_change_auth(ectx, &ctx.object.obj, ctx.new_auth, ctx.cphash);
 }
 
-static tool_rc object_change_auth(ESYS_CONTEXT *ectx,
-        const TPM2B_AUTH *new_auth) {
+static tool_rc object_change_auth(ESYS_CONTEXT *ectx) {
 
     if (!ctx.object.out_path) {
         LOG_ERR("Require private output file path option -r");
         return tool_rc_general_error;
     }
 
-    TPM2B_PRIVATE *out_private = NULL;
+    return tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
+        ctx.new_auth, &ctx.out_private, ctx.cphash);
+}
 
-    if (ctx.cp_hash_path) {
-        TPM2B_DIGEST cp_hash = { .size = 0 };
-        tool_rc rc = tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
-            new_auth, &out_private, &cp_hash);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
+static tool_rc change_authorization(ESYS_CONTEXT *ectx) {
 
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-        }
-        return rc;
+    /*
+     * 1. TPM2_CC_<command> OR Retrieve cpHash
+     */
+
+    tool_rc rc = tool_rc_success;
+
+    /* invoke the proper changauth command based on object type */
+    UINT8 tag = (ctx.object.obj.handle & TPM2_HR_RANGE_MASK) >> TPM2_HR_SHIFT;
+    switch (tag) {
+    case TPM2_HT_TRANSIENT:
+    case TPM2_HT_PERSISTENT:
+        rc = object_change_auth(ectx);
+        break;
+    case TPM2_HT_NV_INDEX:
+        rc = nv_change_auth(ectx);
+        break;
+    case TPM2_HT_PERMANENT:
+        rc = hierarchy_change_auth(ectx);
+        break;
+    default:
+        LOG_ERR("Unsupported object type, got: 0x%x", tag);
+        rc = tool_rc_general_error;
     }
 
-    tool_rc rc = tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
-            new_auth, &out_private, NULL);
+    return rc;
+}
+
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    if (!ctx.is_command_dispatch) {
+        return tool_rc_success;
+    }
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    if (ctx.is_command_dispatch && ctx.out_private) {
+        is_file_op_success = files_save_private(ctx.out_private,
+            ctx.object.out_path);
+        free(ctx.out_private);
+
+        if (!is_file_op_success) {
+            LOG_ERR("Failed to save the sensitive key portion");
+        }
+    }
+
+    return is_file_op_success ? tool_rc_success : tool_rc_general_error;
+}
+
+static inline bool object_needs_parent(tpm2_loaded_object *obj) {
+
+    TPM2_HC h = obj->handle & TPM2_HR_RANGE_MASK;
+    return (h == TPM2_HR_TRANSIENT) || (h == TPM2_HR_PERSISTENT);
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_new,
+        &ctx.object.new, true);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    bool res = files_save_private(out_private, ctx.object.out_path);
-    free(out_private);
+    ctx.new_auth = tpm2_session_get_auth_value(ctx.object.new);
 
-    return res ? tool_rc_success : tool_rc_general_error;
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+
+     /* Note: Old-auth value is ignored when calculating cpHash */
+
+    /* Object #1 */
+    rc = tpm2_util_object_load_auth(ectx, ctx.object.ctx,
+        ctx.object.auth_current, &ctx.object.obj, false, TPM2_HANDLE_ALL_W_NV);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    if (ctx.object.obj.tr_handle == ESYS_TR_RH_NULL) {
+        LOG_ERR("Cannot change the null hierarchy authorization");
+        return tool_rc_general_error;
+    }
+    /* transient objects or persistent objects need parents */
+    bool load_parent = object_needs_parent(&ctx.object.obj);
+    if (load_parent && !ctx.parent.ctx) {
+        LOG_ERR("Expected parent object information via -C");
+        return tool_rc_option_error;
+    }
+
+    /* Object #2 */
+    if (load_parent) {
+        rc = tpm2_util_object_load(ectx, ctx.parent.ctx, &ctx.parent.obj,
+            TPM2_HANDLE_ALL_W_NV);
+
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+    }
+
+    /* 
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations dependent on loaded objects
+     */
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /* 4.a Determine pHash length and alg */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    /* 4.b Determine if TPM2_CC_<command> is to be dispatched */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+
+    return tool_rc_success;
+}
+
+static tool_rc check_options(void) {
+
+    /* load the object to call changeauth on */
+    if (!ctx.object.ctx) {
+        LOG_ERR("Expected object information via -c");
+        return tool_rc_option_error;
+    }
+
+    return tool_rc_success;
+}
+
+static bool on_arg(int argc, char *argv[]) {
+
+    if (argc != 1) {
+        LOG_ERR("Expected 1 new password argument, got: %d", argc);
+        return false;
+    }
+
+    ctx.object.auth_new = argv[0];
+
+    return true;
 }
 
 static bool on_option(char key, char *value) {
@@ -136,18 +260,6 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-static bool on_arg(int argc, char *argv[]) {
-
-    if (argc != 1) {
-        LOG_ERR("Expected 1 new password argument, got: %d", argc);
-        return false;
-    }
-
-    ctx.object.auth_new = argv[0];
-
-    return true;
-}
-
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     struct option topts[] = {
@@ -163,101 +275,74 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static inline bool object_needs_parent(tpm2_loaded_object *obj) {
-
-    TPM2_HC h = obj->handle & TPM2_HR_RANGE_MASK;
-    return (h == TPM2_HR_TRANSIENT) || (h == TPM2_HR_PERSISTENT);
-}
-
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    /* load the object to call changeauth on */
-    if (!ctx.object.ctx) {
-        LOG_ERR("Expected object information via -c");
-        return tool_rc_option_error;
-    }
-
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.object.ctx,
-            ctx.object.auth_current, &ctx.object.obj, false,
-            TPM2_HANDLE_ALL_W_NV);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    if (ctx.object.obj.tr_handle == ESYS_TR_RH_NULL) {
-        LOG_ERR("Cannot change the null hierarchy authorization");
-        return tool_rc_general_error;
-    }
-
-    /* transient objects or persistent objects need parents */
-    bool load_parent = object_needs_parent(&ctx.object.obj);
-    if (load_parent) {
-
-        if (!ctx.parent.ctx) {
-            LOG_ERR("Expected parent object information via -C");
-            return tool_rc_option_error;
-        }
-
-        rc = tpm2_util_object_load(ectx, ctx.parent.ctx, &ctx.parent.obj,
-                TPM2_HANDLE_ALL_W_NV);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-    }
-
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_new, &ctx.object.new,
-            true);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(ctx.object.new);
-
-    /* invoke the proper changauth command based on object type */
-    UINT8 tag = (ctx.object.obj.handle & TPM2_HR_RANGE_MASK) >> TPM2_HR_SHIFT;
-    switch (tag) {
-    case TPM2_HT_TRANSIENT:
-    case TPM2_HT_PERSISTENT:
-        rc = object_change_auth(ectx, new_auth);
-        break;
-    case TPM2_HT_NV_INDEX:
-        rc = nv_change_auth(ectx, new_auth);
-        break;
-    case TPM2_HT_PERMANENT:
-        rc = hierarchy_change_auth(ectx, new_auth);
-        break;
-    default:
-        LOG_ERR("Unsupported object type, got: 0x%x", tag);
-        rc = tool_rc_general_error;
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = change_authorization(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    return rc;
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
 
+    /*
+     * 1. Free objects
+     */
+
+    /*
+     * 2. Close authorization sessions
+     */
     tool_rc rc = tool_rc_success;
-
-    tool_rc tmp = tpm2_session_close(&ctx.object.new);
-    if (tmp != tool_rc_success) {
-        rc = tmp;
+    tool_rc tmp_rc = tpm2_session_close(&ctx.object.new);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
     }
 
-    tmp = tpm2_session_close(&ctx.object.obj.session);
-    if (tmp != tool_rc_success) {
-        rc = tmp;
+    tmp_rc = tpm2_session_close(&ctx.object.obj.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
     }
 
-    tmp = tpm2_session_close(&ctx.parent.obj.session);
-    if (tmp != tool_rc_success) {
-        rc = tmp;
+    tmp_rc = tpm2_session_close(&ctx.parent.obj.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
     }
+
+    /*
+     * 3. Close auxiliary sessions
+     */
 
     return rc;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("changeauth", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("changeauth", tpm2_tool_onstart, tpm2_tool_onrun,
+tpm2_tool_onstop, NULL)
