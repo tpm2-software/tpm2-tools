@@ -12,6 +12,9 @@
 
 typedef struct tpm_certify_ctx tpm_certify_ctx;
 struct tpm_certify_ctx {
+    /*
+     * Inputs
+     */
     struct {
         const char *ctx_path;
         const char *auth_str;
@@ -24,27 +27,87 @@ struct tpm_certify_ctx {
         tpm2_loaded_object object;
     } signing_key;
 
+    TPMI_ALG_HASH halg;
+    tpm2_convert_sig_fmt sig_fmt;
+    TPMT_SIG_SCHEME scheme;
+
+    /*
+     * Outputs
+    */
     struct {
         char *attest;
         char *sig;
     } file_path;
+    TPM2B_ATTEST *certify_info;
+    TPMT_SIGNATURE *signature;
 
-    struct {
-        UINT16 g :1;
-        UINT16 o :1;
-        UINT16 s :1;
-        UINT16 f :1;
-    } flags;
-
-    TPMI_ALG_HASH halg;
-    tpm2_convert_sig_fmt sig_fmt;
-
+    /*
+     * Parameter hashes
+     */
     char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    TPM2B_DIGEST *cphash;
+    bool is_command_dispatch;
 };
 
 static tpm_certify_ctx ctx = {
-    .sig_fmt = signature_format_tss,
+    .sig_fmt = signature_format_tss
 };
+
+static tool_rc certify(ESYS_CONTEXT *ectx) {
+
+    TPM2B_DATA qualifying_data = {
+        .size = 4,
+        .buffer = { 0x00, 0xff, 0x55,0xaa },
+    };
+
+    /*
+     * 1. TPM2_CC_<command> OR Retrieve cpHash
+     */
+
+    return tpm2_certify(ectx, &ctx.certified_key.object,
+        &ctx.signing_key.object, &qualifying_data, &ctx.scheme,
+        &ctx.certify_info, &ctx.signature, ctx.cphash);
+}
+
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    if (!ctx.is_command_dispatch) {
+        return tool_rc_success;
+    }
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    /* serialization is safe here, since it's just a byte array */
+    is_file_op_success = files_save_bytes_to_file(ctx.file_path.attest,
+        ctx.certify_info->attestationData, ctx.certify_info->size);
+    if (!is_file_op_success) {
+         goto out;
+     }
+
+    is_file_op_success = tpm2_convert_sig_save(ctx.signature, ctx.sig_fmt,
+        ctx.file_path.sig);
+
+out:
+    free(ctx.certify_info);
+    free(ctx.signature);
+
+    return is_file_op_success ? tool_rc_success : tool_rc_general_error;
+}
 
 static tool_rc get_key_type(ESYS_CONTEXT *ectx, ESYS_TR object_handle,
         TPMI_ALG_PUBLIC *type) {
@@ -93,68 +156,79 @@ static tool_rc set_scheme(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
     return tool_rc_success;
 }
 
-static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
-    TPM2B_DATA qualifying_data = {
-        .size = 4,
-        .buffer = { 0x00, 0xff, 0x55,0xaa }
-    };
+    /*
+     * 1. Object and auth initializations
+     */
 
-    tool_rc rc = tool_rc_general_error;
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
 
-    TPMT_SIG_SCHEME scheme;
-    tool_rc tmp_rc = set_scheme(ectx, ctx.signing_key.object.tr_handle,
-            ctx.halg, &scheme);
-    if (tmp_rc != tool_rc_success) {
-        LOG_ERR("No suitable signing scheme!");
-        return tmp_rc;
-    }
-
-    TPM2B_ATTEST *certify_info;
-    TPMT_SIGNATURE *signature;
-
-    if (ctx.cp_hash_path) {
-        TPM2B_DIGEST cp_hash = { .size = 0 };
-        tool_rc rc = tpm2_certify(ectx, &ctx.certified_key.object,
-        &ctx.signing_key.object, &qualifying_data, &scheme, &certify_info,
-        &signature, &cp_hash);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-        }
-
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+    /* Object #1 */
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.certified_key.ctx_path,
+        ctx.certified_key.auth_str, &ctx.certified_key.object, false,
+        TPM2_HANDLE_ALL_W_NV);
+    if (rc != tool_rc_success) {
         return rc;
     }
 
-    tmp_rc = tpm2_certify(ectx, &ctx.certified_key.object,
-            &ctx.signing_key.object, &qualifying_data, &scheme, &certify_info,
-            &signature, NULL);
-    if (tmp_rc != tool_rc_success) {
-        return tmp_rc;
-    }
-    /* serialization is safe here, since it's just a byte array */
-    bool result = files_save_bytes_to_file(ctx.file_path.attest,
-            certify_info->attestationData, certify_info->size);
-    if (!result) {
-        goto out;
+    /* Object #2 */
+    rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
+        ctx.signing_key.auth_str, &ctx.signing_key.object, false,
+        TPM2_HANDLE_ALL_W_NV);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    result = tpm2_convert_sig_save(signature, ctx.sig_fmt, ctx.file_path.sig);
-    if (!result) {
-        goto out;
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+    rc = set_scheme(ectx, ctx.signing_key.object.tr_handle, ctx.halg,
+        &ctx.scheme);
+    if (rc != tool_rc_success) {
+        LOG_ERR("No suitable signing scheme!");
+        return rc;
     }
 
-    rc = tool_rc_success;
+    /*
+     * 4. Configuration for calculating the pHash
+     */
 
-out:
-    free(certify_info);
-    free(signature);
+    /*
+     * 4.a Determine pHash length and alg
+     */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     return rc;
+}
+
+static tool_rc check_options(void) {
+
+    if ((!ctx.certified_key.ctx_path) && (!ctx.signing_key.ctx_path)) {
+        LOG_ERR("Must specify the object to be certified and the signing key.");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.cp_hash_path && (ctx.file_path.attest || ctx.file_path.sig)) {
+        LOG_ERR("Cannot specify output options when calculating cpHash");
+        return tool_rc_option_error;
+    }
+
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -178,23 +252,18 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Could not format algorithm to number, got: \"%s\"", value);
             return false;
         }
-        ctx.flags.g = 1;
         break;
     case 'o':
         ctx.file_path.attest = value;
-        ctx.flags.o = 1;
         break;
     case 's':
         ctx.file_path.sig = value;
-        ctx.flags.s = 1;
         break;
     case 0:
         ctx.cp_hash_path = value;
         break;
     case 'f':
-        ctx.flags.f = 1;
         ctx.sig_fmt = tpm2_convert_sig_fmt_from_optarg(value);
-
         if (ctx.sig_fmt == signature_format_err) {
             return false;
         }
@@ -224,41 +293,51 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+
     UNUSED(flags);
 
-    if ((!ctx.certified_key.ctx_path) && (!ctx.signing_key.ctx_path)
-            && (ctx.flags.g) && (ctx.flags.o) && (ctx.flags.s)) {
-        return tool_rc_option_error;
-    }
-
-    if (ctx.cp_hash_path && (ctx.file_path.attest || ctx.file_path.sig)) {
-        LOG_ERR("Cannot specify output options when calculating cpHash");
-        return tool_rc_option_error;
-    }
-
-    /* Load input files */
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.certified_key.ctx_path,
-            ctx.certified_key.auth_str, &ctx.certified_key.object, false,
-            TPM2_HANDLE_ALL_W_NV);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
-            ctx.signing_key.auth_str, &ctx.signing_key.object, false,
-            TPM2_HANDLE_ALL_W_NV);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    return certify_and_save_data(ectx);
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = certify(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
 
-    tool_rc rc = tool_rc_success;
+    /*
+     * 1. Free objects
+     */
 
+    /*
+     * 2. Close authorization sessions
+     */
+    tool_rc rc = tool_rc_success;
     tool_rc tmp_rc = tpm2_session_close(&ctx.signing_key.object.session);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
@@ -269,8 +348,13 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
         rc = tmp_rc;
     }
 
+    /*
+     * 3. Close auxiliary sessions
+     */
+
     return rc;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("certify", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("certify", tpm2_tool_onstart, tpm2_tool_onrun,
+tpm2_tool_onstop, NULL)
