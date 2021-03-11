@@ -6,6 +6,7 @@ extraction:
       - libcurl4-openssl-dev
       - libjson-c-dev
       - libssl-dev
+      - acl
     after_prepare:
     - cd "$LGTM_WORKSPACE"
     - mkdir installdir
