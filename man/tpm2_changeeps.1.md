@@ -17,8 +17,15 @@ endorsement hierarchy are lost. This command requires platform auth.
 
 # OPTIONS
 
-  * **-p**, **\--auth** specifies the _AUTH_ for the platform.
-  hierarchy.
+  * **-p**, **\--auth**=_AUTH_
+
+    Specifies the _AUTH_ for the platform. hierarchy.
+
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
 
 ## References
 

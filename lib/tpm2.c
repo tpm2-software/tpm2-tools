@@ -3750,13 +3750,49 @@ tpm2_quote_skip_esapi_call:
 }
 
 tool_rc tpm2_changeeps(ESYS_CONTEXT *ectx,
-    tpm2_session *platform_hierarchy_session) {
+    tpm2_session *platform_hierarchy_session, TPM2B_DIGEST *cp_hash) {
 
     ESYS_TR platform_hierarchy_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_PLATFORM,
         platform_hierarchy_session, &platform_hierarchy_session_handle);
     if (rc != tool_rc_success) {
         return rc;
+    }
+
+if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = NULL;
+        rc = tpm2_getsapicontext(ectx, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_ChangeEPS_Prepare(sys_context, TPM2_RH_PLATFORM);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_ObjectChangeAuth_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(ectx, ESYS_TR_RH_PLATFORM ,&name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_changeeps_free_name1;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(
+            tpm2_session_get_authhash(platform_hierarchy_session));
+        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
+            tpm2_session_get_authhash(platform_hierarchy_session), cp_hash);
+
+tpm2_changeeps_free_name1:
+        Esys_Free(name1);
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        goto tpm2_changeeps_skip_esapi_call;
     }
 
     TSS2_RC rval = Esys_ChangeEPS(ectx, ESYS_TR_RH_PLATFORM,
@@ -3766,7 +3802,8 @@ tool_rc tpm2_changeeps(ESYS_CONTEXT *ectx,
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_changeeps_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_changepps(ESYS_CONTEXT *ectx,
