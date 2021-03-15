@@ -3816,7 +3816,8 @@ tpm2_changeeps_skip_esapi_call:
 
 tool_rc tpm2_changepps(ESYS_CONTEXT *ectx,
     tpm2_session *platform_hierarchy_session, TPM2B_DIGEST *cp_hash,
-    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+    ESYS_TR shandle2, ESYS_TR shandle3) {
 
     TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = (cp_hash->size || rp_hash->size) ?
@@ -3861,7 +3862,7 @@ tpm2_changepps_free_name1:
     }
 
     TSS2_RC rval = Esys_ChangePPS(ectx, ESYS_TR_RH_PLATFORM,
-        platform_hierarchy_session_handle, ESYS_TR_NONE, ESYS_TR_NONE);
+        platform_hierarchy_session_handle, shandle2, shandle3);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ChangePPS, rval);
         return tool_rc_from_tpm(rval);
