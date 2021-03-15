@@ -3815,16 +3815,11 @@ tpm2_changeeps_skip_esapi_call:
 }
 
 tool_rc tpm2_changepps(ESYS_CONTEXT *ectx,
-    tpm2_session *platform_hierarchy_session, TPM2B_DIGEST *cp_hash) {
+    tpm2_session *platform_hierarchy_session, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
-    ESYS_TR platform_hierarchy_session_handle = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_PLATFORM,
-        platform_hierarchy_session, &platform_hierarchy_session_handle);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    if (cp_hash) {
+    tool_rc rc = tool_rc_success;
+    if (cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
@@ -3847,10 +3842,8 @@ tool_rc tpm2_changepps(ESYS_CONTEXT *ectx,
             goto tpm2_changepps_free_name1;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(platform_hierarchy_session));
         rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
-            tpm2_session_get_authhash(platform_hierarchy_session), cp_hash);
+            parameter_hash_algorithm, cp_hash);
 
 tpm2_changepps_free_name1:
         Esys_Free(name1);
@@ -3858,6 +3851,13 @@ tpm2_changepps_free_name1:
          * Exit here without making the ESYS call since we just need the cpHash
          */
         goto tpm2_changepps_skip_esapi_call;
+    }
+
+    ESYS_TR platform_hierarchy_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_PLATFORM,
+        platform_hierarchy_session, &platform_hierarchy_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     TSS2_RC rval = Esys_ChangePPS(ectx, ESYS_TR_RH_PLATFORM,
