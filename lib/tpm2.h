@@ -358,7 +358,8 @@ tool_rc tpm2_quote(ESYS_CONTEXT *esys_context, tpm2_loaded_object *quote_obj,
 
 tool_rc tpm2_changeeps(ESYS_CONTEXT *ectx,
     tpm2_session *platform_hierarchy_session, TPM2B_DIGEST *cp_hash,
-    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+    ESYS_TR shandle2, ESYS_TR shandle3);
 
 tool_rc tpm2_changepps(ESYS_CONTEXT *ectx,
     tpm2_session *platform_hierarchy_session);
