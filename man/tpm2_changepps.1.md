@@ -31,6 +31,12 @@ platform hierarchy are lost whilst retaining the NV objects.
     File path to record the hash of the response parameters. This is commonly
     termed as rpHash.
 
+  * **-S**, **\--session**=_FILE_:
+
+    The session created using **tpm2_startauthsession**. This can be used to
+    specify an auxiliary session for auditing and or encryption/decryption of
+    the parameters.
+
 ## References
 
 [authorization formatting](common/authorizations.md) details the methods for
