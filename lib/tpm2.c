@@ -3751,20 +3751,20 @@ tpm2_quote_skip_esapi_call:
 
 tool_rc tpm2_changeeps(ESYS_CONTEXT *ectx,
     tpm2_session *platform_hierarchy_session, TPM2B_DIGEST *cp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
+    TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
-    if (cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+    if (cp_hash->size || rp_hash->size) {
         rc = tpm2_getsapicontext(ectx, &sys_context);
+
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
             return rc;
         }
+    }
 
+    if (cp_hash->size) {
         TSS2_RC rval = Tss2_Sys_ChangeEPS_Prepare(sys_context, TPM2_RH_PLATFORM);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_ObjectChangeAuth_Prepare, rval);
@@ -3785,7 +3785,9 @@ tpm2_changeeps_free_name1:
         /*
          * Exit here without making the ESYS call since we just need the cpHash
          */
-        goto tpm2_changeeps_skip_esapi_call;
+        if (!rp_hash->size || rc != tool_rc_success) {
+            goto tpm2_changeeps_skip_esapi_call;
+        }
     }
 
     ESYS_TR platform_hierarchy_session_handle = ESYS_TR_NONE;
@@ -3800,6 +3802,11 @@ tpm2_changeeps_free_name1:
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ChangeEPS, rval);
         return tool_rc_from_tpm(rval);
+    }
+
+    if (rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
     }
 
 tpm2_changeeps_skip_esapi_call:
