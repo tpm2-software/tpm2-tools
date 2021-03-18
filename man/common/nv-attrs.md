@@ -22,6 +22,9 @@ Additionally, the NT field, which denotes the type of the NV index, can also be 
 via friendly names:
   * ordinary - Ordinary contains data that is opaque to the TPM that can
       only be modified using TPM2\_NV\_Write.
+  * extend - Extend is used similarly to a PCR and can only be modified
+      with TPM2_NV_Extend. Its size is determined by the length of the hash
+      algorithm used.
   * counter - Counter contains an 8-octet value that is to be used as a
       counter and can only be modified with TPM2\_NV\_Increment
   * bits - Bit Field contains an 8-octet value to be used as a bit field
