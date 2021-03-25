@@ -1,10 +1,10 @@
+#include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <uchar.h>
-#include <regex.h>
 
 #include <tss2/tss2_tpm2_types.h>
 
@@ -404,18 +404,11 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 return true;
             }
 
-            regex_t regex;
-            int r;
+            /* Test for regex "^Boot[0-9a-fA-F]\\{4\\}$" */
+            if (strlen(ret) == 8 && strncmp(ret, "Boot", 4) == 0 &&
+                isxdigit((int)ret[4]) && isxdigit((int)ret[5]) &&
+                isxdigit((int)ret[6]) && isxdigit((int)ret[7])) {
 
-            r = regcomp(&regex, "^Boot[0-9a-fA-F]\\{4\\}$", 0);
-            if (r != 0) {
-                free(ret);
-                LOG_ERR("regcomp() returned %d\n", r);
-                return false;
-            }
-
-            r = regexec(&regex, ret, 0, NULL, 0);
-            if (r == 0) {
                 free(ret);
                 tpm2_tool_output("    VariableData:\n"
                                  "      Enabled: ");
