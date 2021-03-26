@@ -32,7 +32,7 @@
  */
 TSS2_RC tpm2_kdfe(
         TPMI_ALG_HASH hash_alg, TPM2B_ECC_PARAMETER *Z,
-        unsigned char *label, int label_length,
+        const unsigned char *label, int label_length,
         TPM2B_ECC_PARAMETER *party_u_info, TPM2B_ECC_PARAMETER *party_v_info,
         UINT16 size_in_bits, TPM2B_MAX_BUFFER  *result_key );
 
@@ -55,7 +55,7 @@ TSS2_RC tpm2_kdfe(
  *  True on success, false otherwise.
  */
 bool ecdh_derive_seed_and_encrypted_seed(
-        TPM2B_PUBLIC *parent_pub, unsigned char *label, int label_len,
+        TPM2B_PUBLIC *parent_pub, const unsigned char *label, int label_len,
         TPM2B_DIGEST *seed, TPM2B_ENCRYPTED_SECRET *out_sym_seed);
 
 
