@@ -102,4 +102,14 @@ void tpm2_identity_util_calculate_outer_integrity(TPMI_ALG_HASH parent_name_alg,
         TPM2B_MAX_BUFFER *encrypted_duplicate_sensitive,
         TPM2B_DIGEST *outer_hmac);
 
+/**
+ * Computes the name of a TPM key.
+ *
+ * @param public
+ *  Public key structure
+ * @param pubname
+ *  The name structure to populate.
+ */
+bool tpm2_identity_create_name(TPM2B_PUBLIC *public, TPM2B_NAME *pubname);
+
 #endif /* LIB_TPM2_IDENTITY_UTIL_H_ */

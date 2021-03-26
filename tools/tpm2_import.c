@@ -74,46 +74,6 @@ static tool_rc readpublic(ESYS_CONTEXT *ectx, ESYS_TR handle,
     return tpm2_readpublic(ectx, handle, public, NULL, NULL);
 }
 
-static bool create_name(TPM2B_PUBLIC *public, TPM2B_NAME *pubname) {
-
-    /*
-     * A TPM2B_NAME is the name of the algorithm, followed by the hash.
-     * Calculate the name by:
-     * 1. Marshaling the name algorithm
-     * 2. Marshaling the TPMT_PUBLIC past the name algorithm from step 1.
-     * 3. Hash the TPMT_PUBLIC portion in marshaled data.
-     */
-
-    TPMI_ALG_HASH name_alg = public->publicArea.nameAlg;
-
-    // Step 1 - set beginning of name to hash alg
-    size_t hash_offset = 0;
-    Tss2_MU_UINT16_Marshal(name_alg, pubname->name, pubname->size,
-            &hash_offset);
-
-    // Step 2 - marshal TPMTP
-    TPMT_PUBLIC marshaled_tpmt;
-    size_t tpmt_marshalled_size = 0;
-    Tss2_MU_TPMT_PUBLIC_Marshal(&public->publicArea,
-            (uint8_t *) &marshaled_tpmt, sizeof(public->publicArea),
-            &tpmt_marshalled_size);
-
-    // Step 3 - Hash the data into name just past the alg type.
-    digester d = tpm2_openssl_halg_to_digester(name_alg);
-    if (!d) {
-        return false;
-    }
-
-    d((const unsigned char *) &marshaled_tpmt, tpmt_marshalled_size,
-            pubname->name + 2);
-
-    //Set the name size, UINT16 followed by HASH
-    UINT16 hash_size = tpm2_alg_util_get_hash_size(name_alg);
-    pubname->size = hash_size + 2;
-
-    return true;
-}
-
 static void create_import_key_private_data(TPM2B_PRIVATE *private,
         TPMI_ALG_HASH parent_name_alg,
         TPM2B_MAX_BUFFER *encrypted_duplicate_sensitive,
@@ -155,7 +115,7 @@ static tool_rc key_import(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *parent_pub,
      * Calculate the object name.
      */
     TPM2B_NAME pubname = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-    bool res = create_name(pubkey, &pubname);
+    bool res = tpm2_identity_create_name(pubkey, &pubname);
     if (!res) {
         return false;
     }
