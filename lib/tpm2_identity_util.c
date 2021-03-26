@@ -99,7 +99,7 @@ static TPM2_KEY_BITS get_pub_asym_key_bits(TPM2B_PUBLIC *public) {
 }
 
 static bool share_secret_with_tpm2_rsa_public_key(TPM2B_DIGEST *protection_seed,
-        TPM2B_PUBLIC *parent_pub, unsigned char *label, int label_len,
+        TPM2B_PUBLIC *parent_pub, const unsigned char *label, int label_len,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed) {
     bool rval = false;
     RSA *rsa = NULL;
@@ -218,7 +218,7 @@ bool tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
 
 bool tpm2_identity_util_share_secret_with_public_key(
         TPM2B_DIGEST *protection_seed, TPM2B_PUBLIC *parent_pub,
-        unsigned char *label, int label_len,
+        const unsigned char *label, int label_len,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed) {
     bool result = false;
     TPMI_ALG_PUBLIC alg = parent_pub->publicArea.type;
