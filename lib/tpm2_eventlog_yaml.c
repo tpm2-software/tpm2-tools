@@ -16,6 +16,13 @@
 #include "tpm2_tool.h"
 #include "tpm2_tool_output.h"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#ifdef HAVE_EFIVAR_EFIVAR_H
+#include <efivar/efivar.h>
+#endif
+
 char const *eventtype_to_string (UINT32 event_type) {
 
     switch (event_type) {
@@ -214,6 +221,41 @@ static bool yaml_uefi_post_code(const TCG_EVENT2* const event) {
     }
     return true;
 }
+/*
+ * Parses Device Path field using the efivar library if present, otherwise,
+ * print the field in raw byte format
+ */
+#ifdef HAVE_EFIVAR_EFIVAR_H
+bool yaml_devicepath(BYTE* dp, UINT64 dp_len) {
+    int ret;
+    ret = efidp_format_device_path(NULL, 0, (const_efidp)dp, dp_len);
+    if (ret < 0) {
+        LOG_ERR("failed to allocate memory: %s\n", strerror(errno));
+        return false;
+    }
+
+    int text_path_len;
+    char *text_path;
+    text_path_len = ret + 1;
+    text_path = (char*)malloc(text_path_len);
+    if (!text_path) {
+        LOG_ERR("failed to allocate memory: %s\n", strerror(errno));
+        return false;
+    }
+  
+    ret = efidp_format_device_path(text_path,
+            text_path_len, (const_efidp)dp, dp_len);
+    if (ret < 0) {
+        free(text_path);
+        LOG_ERR("cannot parse device path\n");
+        return false;
+    }
+
+    tpm2_tool_output("    DevicePath: \"%s\"\n", text_path);
+    free(text_path);
+    return true; 
+}
+#endif
 /*
  * TCG PC Client FPF section 9.2.6
  * The tpm2_eventlog module validates the event structure but nothing within
@@ -442,9 +484,18 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                     return false;
                 }
 
+#ifdef HAVE_EFIVAR_EFIVAR_H
+                if (!yaml_devicepath(devpath, devpath_len)) {
+                    /* fallback to printing the raw bytes if devicepath cannot be parsed */
+                    bytes_to_str(devpath, data->VariableDataLength -
+                        sizeof(EFI_LOAD_OPTION) - sizeof(UINT16) * i, buf, devpath_len);
+                    tpm2_tool_output("    DevicePath: \"%s\"\n", buf);
+                }
+#else
                 bytes_to_str(devpath, data->VariableDataLength -
                     sizeof(EFI_LOAD_OPTION) - sizeof(UINT16) * i, buf, devpath_len);
                 tpm2_tool_output("      DevicePath: \"%s\"\n", buf);
+#endif
                 free(buf);
                 return true;
             }
@@ -516,8 +567,16 @@ bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
                      data->ImageLocationInMemory, data->ImageLengthInMemory,
                      data->ImageLinkTimeAddress, data->LengthOfDevicePath);
 
+#ifdef HAVE_EFIVAR_EFIVAR_H
+    if (!yaml_devicepath(data->DevicePath, data->LengthOfDevicePath)) {
+        /* fallback to printing the raw bytes if devicepath cannot be parsed */
+        bytes_to_str(data->DevicePath, size - sizeof(*data), buf, devpath_len);
+        tpm2_tool_output("    DevicePath: \"%s\"\n", buf);
+    }
+#else
     bytes_to_str(data->DevicePath, size - sizeof(*data), buf, devpath_len);
     tpm2_tool_output("    DevicePath: \"%s\"\n", buf);
+#endif
 
     free(buf);
     return true;

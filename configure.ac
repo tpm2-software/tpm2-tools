@@ -62,6 +62,10 @@ PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.0.2g])
 PKG_CHECK_MODULES([CURL], [libcurl])
 PKG_CHECK_MODULES([UUID], [uuid])
 
+# pretty print of devicepath if efivar library is present
+PKG_CHECK_MODULES([EFIVAR], [efivar],,[true])
+AC_CHECK_HEADERS([efivar/efivar.h])
+
 # backwards compat with older pkg-config
 # - pull in AC_DEFUN from pkg.m4
 m4_ifndef([PKG_CHECK_VAR], [
