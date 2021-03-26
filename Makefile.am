@@ -25,7 +25,7 @@ AM_LDFLAGS   := $(EXTRA_LDFLAGS) $(CODE_COVERAGE_LIBS)
 
 LDADD = \
     $(LIB_COMMON) $(TSS2_ESYS_LIBS) $(TSS2_MU_LIBS) $(CRYPTO_LIBS) $(TSS2_TCTILDR_LIBS) \
-    $(TSS2_RC_LIBS) $(TSS2_SYS_LIBS) $(UUID_LIBS)
+    $(TSS2_RC_LIBS) $(TSS2_SYS_LIBS) $(UUID_LIBS) $(EFIVAR_LIBS)
 
 AM_DISTCHECK_CONFIGURE_FLAGS = --with-bashcompdir='$$(datarootdir)/bash-completion/completions'
 
