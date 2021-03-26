@@ -11,7 +11,11 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_auth_util.h"
+#include "tpm2_attr_util.h"
+#include "tpm2_identity_util.h"
 #include "tpm2_openssl.h"
+#include "tpm2_errata.h"
 #include "tpm2_systemdeps.h"
 
 /* compatibility function for OpenSSL versions < 1.1.0 */
@@ -1270,4 +1274,135 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
     fclose(f);
 
     return rc;
+}
+
+bool tpm2_openssl_import_keys(
+    TPM2B_PUBLIC *parent_pub,
+    TPM2B_SENSITIVE *private,
+    TPM2B_PUBLIC *public,
+    TPM2B_ENCRYPTED_SECRET *encrypted_seed,
+    const char *input_key_file,
+    TPMI_ALG_PUBLIC key_type,
+    const char *auth_key_file,
+    const char *policy_file,
+    const char *key_auth_str,
+    char *attrs_str,
+    const char *name_alg_str
+)
+{
+    bool result;
+
+    TPMA_OBJECT attrs = TPMA_OBJECT_DECRYPT | TPMA_OBJECT_SIGN_ENCRYPT;
+
+    if (policy_file) {
+        public->publicArea.authPolicy.size = sizeof(public->publicArea.authPolicy.buffer);
+        result = files_load_bytes_from_path(policy_file,
+            public->publicArea.authPolicy.buffer,
+                &public->publicArea.authPolicy.size);
+        if (!result) {
+            return false;
+        }
+    } else {
+        attrs |= TPMA_OBJECT_USERWITHAUTH;
+    }
+
+    if (key_auth_str) {
+        tpm2_session *tmp;
+        tool_rc tmp_rc = tpm2_auth_util_from_optarg(NULL, key_auth_str, &tmp, true);
+        if (tmp_rc != tool_rc_success) {
+            LOG_ERR("Invalid key authorization");
+            return false;
+        }
+
+        const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
+        private->sensitiveArea.authValue = *auth;
+
+        tpm2_session_close(&tmp);
+    }
+
+    /*
+     * Set the object attributes if specified, overwriting the defaults, but hooking the errata
+     * fixups.
+     */
+    if (attrs_str) {
+        TPMA_OBJECT *obj_attrs = &public->publicArea.objectAttributes;
+        result = tpm2_attr_util_obj_from_optarg(attrs_str, obj_attrs);
+        if (!result) {
+            LOG_ERR("Invalid object attribute, got\"%s\"", attrs_str);
+            return false;
+        }
+
+        tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
+                &public->publicArea.objectAttributes);
+    } else {
+        public->publicArea.objectAttributes = attrs;
+    }
+
+    if (name_alg_str) {
+        TPMI_ALG_HASH alg = tpm2_alg_util_from_optarg(name_alg_str,
+                tpm2_alg_util_flags_hash);
+        if (alg == TPM2_ALG_ERROR) {
+            LOG_ERR("Invalid name hashing algorithm, got\"%s\"", name_alg_str);
+            return tool_rc_general_error;
+        }
+        public->publicArea.nameAlg = alg;
+    } else {
+        /*
+         * use the parent name algorithm if not specified
+         */
+        public->publicArea.nameAlg = parent_pub->publicArea.nameAlg;
+    }
+
+    /*
+     * The TPM Requires that the name algorithm for the child be less than the name
+     * algorithm of the parent when the parent's scheme is NULL.
+     *
+     * This check can be seen in the simulator at:
+     *   - File: CryptUtil.c
+     *   - Func: CryptSecretDecrypt()
+     *   - Line: 2019
+     *   - Decription: Limits the size of the hash algorithm to less then the parent's name-alg when scheme is NULL.
+     */
+    UINT16 hash_size = tpm2_alg_util_get_hash_size(public->publicArea.nameAlg);
+    UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(
+            parent_pub->publicArea.nameAlg);
+    if (hash_size > parent_hash_size) {
+        LOG_WARN("Hash selected is larger then parent hash size, coercing to "
+                 "parent hash algorithm: %s",
+                tpm2_alg_util_algtostr(parent_pub->publicArea.nameAlg,
+                        tpm2_alg_util_flags_hash));
+        public->publicArea.nameAlg = parent_pub->publicArea.nameAlg;
+    }
+
+    /*
+     * Generate and encrypt seed, if requested
+     */
+    if (encrypted_seed)
+    {
+        TPM2B_DIGEST *seed = &private->sensitiveArea.seedValue;
+        static const unsigned char label[] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', '\0' };
+        result = tpm2_identity_util_share_secret_with_public_key(seed, parent_pub,
+            label, sizeof(label), encrypted_seed);
+        if (!result) {
+            LOG_ERR("Failed Seed Encryption\n");
+            return false;
+        }
+    }
+
+    /*
+     * Populate all the private and public data fields we can based on the key type and the PEM files read in.
+     */
+    tpm2_openssl_load_rc status = tpm2_openssl_load_private(input_key_file,
+            auth_key_file, key_type, public, private);
+    if (status == lprc_error) {
+        return false;
+    }
+
+    if (!tpm2_openssl_did_load_public(status)) {
+        LOG_ERR("Did not find public key information in file: \"%s\"",
+                input_key_file);
+        return false;
+    }
+
+    return true;
 }
