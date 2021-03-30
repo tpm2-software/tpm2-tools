@@ -14,6 +14,7 @@
 #include "tpm2_tool.h"
 
 typedef struct tpm_nvdefine_ctx tpm_nvdefine_ctx;
+#define MAX_SESSIONS 3
 #define MAX_AUX_SESSIONS 2
 struct tpm_nvdefine_ctx {
     /*
@@ -44,10 +45,10 @@ struct tpm_nvdefine_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 
     /*
      * Aux sessions
@@ -67,12 +68,14 @@ static tpm_nvdefine_ctx ctx = {
     .public_info = TPM2B_EMPTY_INIT,
     .aux_session_handle[0] = ESYS_TR_NONE,
     .aux_session_handle[1] = ESYS_TR_NONE,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tpm2_nv_definespace(ectx, &ctx.auth_hierarchy.object,
-        &ctx.nv_auth, &ctx.public_info, ctx.cphash, ctx.aux_session_handle[0],
+        &ctx.nv_auth, &ctx.public_info, &ctx.cp_hash,
+        ctx.parameter_hash_algorithm, ctx.aux_session_handle[0],
         ctx.aux_session_handle[1]);
     if (rc != tool_rc_success) {
         if (ctx.is_command_dispatch) {
@@ -378,7 +381,16 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
 
     /* 4.a Determine pHash length and alg */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.auth_hierarchy.object.session,
+        ctx.aux_session[0],
+        ctx.aux_session[1]
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /* 4.b Determine if TPM2_CC_<command> is to be dispatched */
     ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
