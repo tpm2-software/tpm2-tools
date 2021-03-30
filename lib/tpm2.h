@@ -299,9 +299,10 @@ tool_rc tpm2_import(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
         TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_nv_definespace(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy_obj, const TPM2B_AUTH *auth,
-        const TPM2B_NV_PUBLIC *public_info, TPM2B_DIGEST *cp_hash,
-        ESYS_TR shandle2, ESYS_TR shandle3);
+    tpm2_loaded_object *auth_hierarchy_obj, const TPM2B_AUTH *auth,
+    const TPM2B_NV_PUBLIC *public_info, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3);
 
 tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
