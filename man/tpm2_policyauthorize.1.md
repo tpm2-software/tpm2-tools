@@ -83,29 +83,29 @@ openssl rsa -in signing_key_private.pem -out signing_key_public.pem -pubout
 tpm2_loadexternal -G rsa -C o -u signing_key_public.pem -c signing_key.ctx -n signing_key.name
 ```
 
+## Create the authorize policy digest
+```bash
+tpm2_startauthsession -S session.ctx
+
+tpm2_policyauthorize -S session.ctx -L authorized.policy -n signing_key.name
+
+tpm2_flushcontext session.ctx
+```
+
 ## Create a policy to be authorized like a PCR policy
 ```bash
 tpm2_pcrread -opcr0.sha256 sha256:0
 
 tpm2_startauthsession -S session.ctx
 
-tpm2_policypcr -S session.ctx -l sha256:0 -f pcr0.sha256 -L pcr.policy
+tpm2_policypcr -S session.ctx -l sha256:0 -f pcr0.sha256 -L pcr.policy_desired
 
 tpm2_flushcontext session.ctx
 ```
 
 ## Sign the policy
 ```bash
-openssl dgst -sha256 -sign signing_key_private.pem -out pcr.signature pcr.policy
-```
-
-## Authorize the policy in the policy digest
-```bash
-tpm2_startauthsession -S session.ctx
-
-tpm2_policyauthorize -S session.ctx -L authorized.policy -i pcr.policy -n signing_key.name
-
-tpm2_flushcontext session.ctx
+openssl dgst -sha256 -sign signing_key_private.pem -out pcr.signature pcr.policy_desired
 ```
 
 ## Create a TPM object like a sealing object with the authorized policy based authentication
@@ -115,15 +115,15 @@ tpm2_createprimary -C o -g sha256 -G rsa -c prim.ctx
 tpm2_create -g sha256 -u sealing_pubkey.pub -r sealing_prikey.pub -i- -C prim.ctx -L authorized.policy <<< "secret to seal"
 ```
 
-## Satisfy policy and unseal the secret
+## Verify the desired policy digest comes from the signing authority, read the actual value of PCR and check that read policy and desired policy are equal. 
 ```bash
-tpm2_verifysignature -c signing_key.ctx -g sha256 -m pcr.policy -s pcr.signature -t verification.tkt -f rsassa
+tpm2_verifysignature -c signing_key.ctx -g sha256 -m  pcr.policy_desired -s pcr.signature -t verification.tkt -f rsassa
 
 tpm2_startauthsession \--policy-session -S session.ctx
 
-tpm2_policypcr -S session.ctx -l sha256:0 -L pcr.policy
+tpm2_policypcr -S session.ctx -l sha256:0 -L pcr.policy_read
 
-tpm2_policyauthorize -S session.ctx -L authorized.policy -i pcr.policy -n signing_key.name -t verification.tkt
+tpm2_policyauthorize -S session.ctx -L authorized.policy -i pcr.policy_desired -n signing_key.name -t verification.tkt
 
 tpm2_load -C prim.ctx -u sealing_pubkey.pub -r sealing_prikey.pub -c sealing_key.ctx
 
