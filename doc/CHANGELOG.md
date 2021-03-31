@@ -2,6 +2,10 @@
 
 ### next
 
+  * tpm2_nvdefine:
+      - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
+        of the response parameters. This is commonly termed as rpHash.
+
   * tpm2_changepps:
       - Added option **\--cphash**=_FILE_ to specify ile path to record the hash
         of the command parameters. This is commonly termed as cpHash.

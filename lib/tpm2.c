@@ -2561,10 +2561,20 @@ tpm2_import_skip_esapi_call:
 tool_rc tpm2_nv_definespace(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, const TPM2B_AUTH *auth,
     const TPM2B_NV_PUBLIC *public_info, TPM2B_DIGEST *cp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
-    ESYS_TR shandle3) {
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+    ESYS_TR shandle2, ESYS_TR shandle3) {
 
+    TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
+    if (cp_hash->size || rp_hash->size) {
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+    }
+
     if (cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
@@ -2593,12 +2603,14 @@ tool_rc tpm2_nv_definespace(ESYS_CONTEXT *esys_context,
         rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
             parameter_hash_algorithm, cp_hash);
 
+tpm2_nvdefinespace_free_name1:
+        Esys_Free(name1);
         /*
          * Exit here without making the ESYS call since we just need the cpHash
          */
-tpm2_nvdefinespace_free_name1:
-        Esys_Free(name1);
-        goto tpm2_nvdefinespace_skip_esapi_call;
+        if (!rp_hash->size) {
+            goto tpm2_nvdefinespace_skip_esapi_call;
+        }
     }
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
@@ -2618,6 +2630,11 @@ tpm2_nvdefinespace_free_name1:
                 public_info->nvPublic.nvIndex);
         LOG_PERR(Esys_NV_DefineSpace, rval);
         return tool_rc_from_tpm(rval);
+    }
+
+    if (rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
     }
 
 tpm2_nvdefinespace_skip_esapi_call:
