@@ -5,7 +5,8 @@ source helpers.sh
 cleanup() {
     rm -f primary.ctx new_parent.prv new_parent.pub new_parent.ctx policy.dat \
     session.dat key.prv key.pub key.ctx duppriv.bin dupseed.dat key2.prv \
-    key2.pub key2.ctx sym_key_in.bin
+    key2.pub key2.ctx sym_key_in.bin \
+    primary.pub rsa-priv.pem rsa.pub rsa.priv rsa.dpriv rsa.seed rsa-pub.pem rsa.sig
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
@@ -99,6 +100,41 @@ start_duplication_session
 tpm2 duplicate -Q -C new_parent.ctx -c key2.ctx -G aes -o sym_key_out.bin \
 -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 end_duplication_session
+
+## External RSA key, wrapped for the primary key
+tpm2 readpublic -c primary.ctx -o primary.pub
+openssl genrsa -out rsa-priv.pem
+openssl rsa -in rsa-priv.pem -pubout > rsa-pub.pem
+tpm2 duplicate \
+	-U primary.pub \
+	-G rsa \
+	-k rsa-priv.pem \
+	-u rsa.pub \
+	-r rsa.dpriv \
+	-s rsa.seed
+tpm2 import \
+	-C primary.ctx \
+	-G rsa \
+	-i rsa.dpriv \
+	-s rsa.seed \
+	-u rsa.pub \
+	-r rsa.priv
+
+# validate that TPM signatures with this imported key are acceptable to OpenSSL
+tpm2 load \
+	-C primary.ctx \
+	-c rsa.ctx \
+	-u rsa.pub \
+	-r rsa.priv
+echo foo | tpm2 sign \
+	-c rsa.ctx \
+	-o rsa.sig \
+	-f plain
+echo foo | openssl dgst \
+	-sha256 \
+	-verify rsa-pub.pem \
+	-signature rsa.sig
+
 
 trap - ERR
 
