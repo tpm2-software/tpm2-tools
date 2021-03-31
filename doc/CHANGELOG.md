@@ -2,6 +2,11 @@
 
 ### next
 
+  * tpm2_nvextend:
+      - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
+        of the response parameters. This is commonly termed as rpHash.
+
+
   * tpm2_nvdefine:
       - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
         of the response parameters. This is commonly termed as rpHash.
