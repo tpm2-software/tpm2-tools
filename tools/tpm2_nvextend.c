@@ -10,6 +10,7 @@
 
 
 typedef struct tpm_nvextend_ctx tpm_nvextend_ctx;
+#define MAX_SESSIONS 3
 #define MAX_AUX_SESSIONS 2
 struct tpm_nvextend_ctx {
     /*
@@ -32,10 +33,10 @@ struct tpm_nvextend_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 
     /*
      * Aux sessions
@@ -50,6 +51,7 @@ static tpm_nvextend_ctx ctx = {
     .data.size = sizeof(ctx.data.buffer),
     .aux_session_handle[0] = ESYS_TR_NONE,
     .aux_session_handle[1] = ESYS_TR_NONE,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static tool_rc nvextend(ESYS_CONTEXT *ectx) {
@@ -58,8 +60,8 @@ static tool_rc nvextend(ESYS_CONTEXT *ectx) {
      * 1. TPM2_CC_<command> OR Retrieve cpHash
      */
     return tpm2_nvextend(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-        &ctx.data, ctx.cphash, ctx.aux_session_handle[0],
-        ctx.aux_session_handle[1]);
+        &ctx.data, &ctx.cp_hash, ctx.parameter_hash_algorithm,
+        ctx.aux_session_handle[0], ctx.aux_session_handle[1]);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -125,18 +127,26 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
     ctx.input_path = strcmp(ctx.input_path, "-") ? ctx.input_path : NULL;
 
-    /*
-     * 4. Configuration for calculating the pHash
-     */
-
-    /* 4.a Determine pHash length and alg */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
-
     bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
             ctx.input_path, &ctx.data.size, ctx.data.buffer);
     if (!result) {
         return tool_rc_general_error;
     }
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /* 4.a Determine pHash length and alg */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.auth_hierarchy.object.session,
+        ctx.aux_session[0],
+        ctx.aux_session[1]
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /* 4.b Determine if TPM2_CC_<command> is to be dispatched */
     ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
