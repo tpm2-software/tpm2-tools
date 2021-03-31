@@ -3032,9 +3032,10 @@ tpm2_nvsetbits_skip_esapi_call:
 }
 
 tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
-        TPM2B_MAX_NV_BUFFER *data, TPM2B_DIGEST *cp_hash, ESYS_TR shandle2,
-        ESYS_TR shandle3) {
+    tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
+    TPM2B_MAX_NV_BUFFER *data, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -3044,16 +3045,8 @@ tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
         return tool_rc_from_tpm(rval);
     }
 
-    ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
-            auth_hierarchy_obj->tr_handle, auth_hierarchy_obj->session,
-            &auth_hierarchy_obj_session_handle);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
-
-    if (cp_hash) {
+    tool_rc rc = tool_rc_success;
+    if (cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
@@ -3084,10 +3077,8 @@ tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
             goto tpm2_nvextend_free_name1_name2;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(auth_hierarchy_obj->session));
         rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
-            tpm2_session_get_authhash(auth_hierarchy_obj->session), cp_hash);
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
@@ -3097,6 +3088,15 @@ tpm2_nvextend_free_name1_name2:
 tpm2_nvextend_free_name1:
         Esys_Free(name1);
         goto tpm2_nvextend_skip_esapi_call;
+    }
+
+    ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(esys_context,
+            auth_hierarchy_obj->tr_handle, auth_hierarchy_obj->session,
+            &auth_hierarchy_obj_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
     }
 
     rval = Esys_NV_Extend(esys_context, auth_hierarchy_obj->tr_handle,
