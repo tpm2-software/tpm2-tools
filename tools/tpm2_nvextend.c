@@ -10,12 +10,11 @@
 
 
 typedef struct tpm_nvextend_ctx tpm_nvextend_ctx;
-/*
- * Since the first session is the authorization session for NVIndex, it is
- * provided by the auth interface.
- */
 #define MAX_AUX_SESSIONS 2
 struct tpm_nvextend_ctx {
+    /*
+     * Inputs
+     */
     struct {
         const char *ctx_path;
         const char *auth_str;
@@ -24,24 +23,135 @@ struct tpm_nvextend_ctx {
 
     const char *input_path;
     TPM2_HANDLE nv_index;
+    TPM2B_MAX_NV_BUFFER data;
 
+    /*
+     * Outputs
+     */
+
+    /*
+     * Parameter hashes
+     */
     char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 
+    /*
+     * Aux sessions
+     */
     uint8_t aux_session_cnt;
     tpm2_session *aux_session[MAX_AUX_SESSIONS];
     const char *aux_session_path[MAX_AUX_SESSIONS];
+    ESYS_TR aux_session_handle[MAX_AUX_SESSIONS];
 };
 
-static tpm_nvextend_ctx ctx;
+static tpm_nvextend_ctx ctx = {
+    .data.size = sizeof(ctx.data.buffer),
+    .aux_session_handle[0] = ESYS_TR_NONE,
+    .aux_session_handle[1] = ESYS_TR_NONE,
+};
 
-static bool on_arg(int argc, char **argv) {
-    /* If the user doesn't specify an authorization hierarchy use the index
-     * passed to -x/--index for the authorization index.
+static tool_rc nvextend(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. TPM2_CC_<command> OR Retrieve cpHash
      */
-    if (!ctx.auth_hierarchy.ctx_path) {
-        ctx.auth_hierarchy.ctx_path = argv[0];
+    return tpm2_nvextend(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
+        &ctx.data, ctx.cphash, ctx.aux_session_handle[0],
+        ctx.aux_session_handle[1]);
+}
+
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
     }
-    return on_arg_nv_index(argc, argv, &ctx.nv_index);
+
+    if (!ctx.is_command_dispatch) {
+        return tool_rc_success;
+    }
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+
+    return is_file_op_success ? tool_rc_success : tool_rc_general_error;
+}
+
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid handle authorization");
+        return rc;
+    }
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+    rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, ctx.aux_session_handle, ctx.aux_session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 3. Command specific initializations dependent on loaded objects
+     */
+    ctx.input_path = strcmp(ctx.input_path, "-") ? ctx.input_path : NULL;
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /* 4.a Determine pHash length and alg */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+            ctx.input_path, &ctx.data.size, ctx.data.buffer);
+    if (!result) {
+        return tool_rc_general_error;
+    }
+
+    /* 4.b Determine if TPM2_CC_<command> is to be dispatched */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+
+    return tool_rc_success;
+}
+
+static tool_rc check_options(void) {
+
+    if (!ctx.input_path) {
+        LOG_ERR("Must specify source of data to write to NV index");
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -73,6 +183,17 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_arg(int argc, char **argv) {
+    /*
+     * If the user doesn't specify an authorization hierarchy use the index.
+     */
+    if (!ctx.auth_hierarchy.ctx_path) {
+        ctx.auth_hierarchy.ctx_path = argv[0];
+    }
+
+    return on_arg_nv_index(argc, argv, &ctx.nv_index);
+}
+
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
@@ -93,71 +214,70 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    ctx.input_path = strcmp(ctx.input_path, "-") ? ctx.input_path : NULL;
-
-    TPM2B_MAX_NV_BUFFER data = { .size = sizeof(data.buffer) };
-
-    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
-            ctx.input_path, &data.size, data.buffer);
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid handle authorization");
-        return rc;
-    }
-
-    if (!ctx.cp_hash_path) {
-        ESYS_TR aux_session_handle[MAX_AUX_SESSIONS] = {ESYS_TR_NONE, ESYS_TR_NONE};
-        tool_rc tmp_rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
-            ctx.aux_session_path, aux_session_handle, ctx.aux_session);
-        if (tmp_rc != tool_rc_success) {
-            return tmp_rc;
-        }
-        return tpm2_nvextend(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-            &data, NULL, aux_session_handle[0], aux_session_handle[1]);
-    }
-
-    TPM2B_DIGEST cp_hash = { .size = 0 };
-    rc = tpm2_nvextend(ectx, &ctx.auth_hierarchy.object, ctx.nv_index, &data,
-        &cp_hash, ESYS_TR_NONE, ESYS_TR_NONE);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-    if (!result) {
-        rc = tool_rc_general_error;
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    return rc;
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = nvextend(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
     UNUSED(ectx);
+    /*
+     * 1. Free objects
+     */
 
+    /*
+     * 2. Close authorization sessions
+     */
     tool_rc rc = tool_rc_success;
-    if (!ctx.cp_hash_path) {
-        rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
-    }
-
-    uint8_t session_idx = 0;
     tool_rc tmp_rc = tool_rc_success;
-    for(session_idx = 0; session_idx < ctx.aux_session_cnt; session_idx++) {
-        if (ctx.aux_session_path[session_idx]) {
-            tmp_rc = tpm2_session_close(&ctx.aux_session[session_idx]);
+    if (!ctx.cp_hash_path) {
+        tmp_rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
         }
     }
 
-    return rc != tool_rc_success ? rc :
-           tmp_rc != tool_rc_success ? tmp_rc :
-           tool_rc_success;
+    /*
+     * 3. Close auxiliary sessions
+     */
+    uint8_t i = 0;
+    for(i = 0; i < ctx.aux_session_cnt; i++) {
+        if (ctx.aux_session_path[i]) {
+            tmp_rc = tpm2_session_close(&ctx.aux_session[i]);
+        }
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
+        }
+    }
+
+    return rc;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("nvextend", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("nvextend", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, NULL)
