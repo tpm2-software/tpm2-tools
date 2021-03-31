@@ -41,10 +41,25 @@ These options control the key importation process:
 
     The parent key object.
 
+  * **-U**, **\--parent-public**=_FILE_:
+
+    Specifies the file path to the public key of the parent object on the
+    destination TPM.  This should be a `TPM2B_PUBLIC` formatted file.
+
+  * **-k**, **\--private-key**=_FILE_:
+
+    Specifies the file path to the external private key be encrypted for
+    the remote TPM.  This should be a PEM format private key.
+
   * **-r**, **\--private**=_FILE_:
 
     Specifies the file path to save the private portion of the duplicated object.
     [protection details](common/protection-details.md)
+
+  * **-u**, **\--public**=_FILE_:
+
+    Specifies the file path to save the public portion of the duplicated object,
+    if an external key is being duplicated.
 
   * **-s**, **\--encrypted-seed**=_FILE_:
 
@@ -247,6 +262,38 @@ tpm2_rsadecrypt -p foo -c dup.ctx -o data.ptext data.encrypted
 
 # cat data.ptext 
 meet me at..
+```
+
+## Exporting an OpenSSL RSA key for a remote TPM
+
+To securely send an OpenSSL generated RSA key to a remote TPM such that
+only that remote TPM will be able to load it, and without exposing the
+private key to the host operating system on the remote machine:
+
+* On the destination TPM-B, create a primary context and read its public key,
+then send `primary.pub` to the source machine:
+
+```bash
+tpm2_createprimary -c primary.ctx
+tpm2_readpublic -c primary.ctx -o primary.pub
+```
+
+* On the source machine create the RSA private key and wrap it for the destination
+TPM's public key.  Similar to `tpm2_makecredential`, this step should not require
+a TPM.
+
+```bash
+openssl genrsa -out rsa.pem
+tpm2_duplicate -U primary.pub -G rsa -k rsa.pem -u rsa.pub -r rsa.dpriv -s rsa.seed
+```
+
+* Send the `rsa.pub`, `rsa.dpriv` and `rsa.seed` to the destination TPM-B
+and import the files, which will decrypt them using the `primary.ctx` to
+produce `rsa.priv`, which can then be loaded and used as a TPM key:
+
+```bash
+tpm2_import -C primary.ctx -G rsa -i rsa.dpriv -s rsa.seed -u rsa.pub -r rsa.priv
+tpm2_load -C primary.ctx -c rsa.ctx -u rsa.pub -r rsa.priv
 ```
 
 
