@@ -2,6 +2,9 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
@@ -9,6 +12,8 @@
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
+#include "tpm2_openssl.h"
+#include "tpm2_identity_util.h"
 
 typedef struct tpm_duplicate_ctx tpm_duplicate_ctx;
 struct tpm_duplicate_ctx {
@@ -23,8 +28,11 @@ struct tpm_duplicate_ctx {
         tpm2_loaded_object object;
     } new_parent_key;
 
-    char *duplicate_key_public_file;
-    char *duplicate_key_private_file;
+    const char *duplicate_key_public_file;
+    const char *duplicate_key_private_file;
+
+    const char *private_key_file;
+    const char *parent_public_key_file;
 
     TPMI_ALG_PUBLIC key_type;
     char *sym_key_in;
@@ -35,11 +43,14 @@ struct tpm_duplicate_ctx {
     struct {
         UINT16 c :1;
         UINT16 C :1;
-        UINT16 g :1;
+        UINT16 G :1;
         UINT16 i :1;
         UINT16 o :1;
         UINT16 r :1;
         UINT16 s :1;
+        UINT16 U :1;
+        UINT16 k :1;
+        UINT16 u :1;
     } flags;
 
     char *cp_hash_path;
@@ -82,9 +93,10 @@ static bool on_option(char key, char *value) {
         break;
     case 'G':
         ctx.key_type = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_asymmetric |
                 tpm2_alg_util_flags_symmetric | tpm2_alg_util_flags_misc);
         if (ctx.key_type != TPM2_ALG_ERROR) {
-            ctx.flags.g = 1;
+            ctx.flags.G = 1;
         }
         break;
     case 'i':
@@ -107,9 +119,21 @@ static bool on_option(char key, char *value) {
         ctx.duplicate_key_private_file = value;
         ctx.flags.r = 1;
         break;
+    case 'u':
+        ctx.duplicate_key_public_file = value;
+        ctx.flags.u = 1;
+        break;
     case 's':
         ctx.enc_seed_out = value;
         ctx.flags.s = 1;
+        break;
+    case 'U':
+        ctx.parent_public_key_file = value;
+        ctx.flags.U = 1;
+        break;
+    case 'k':
+        ctx.private_key_file = value;
+        ctx.flags.k = 1;
         break;
     case 0:
         ctx.cp_hash_path = value;
@@ -128,15 +152,18 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth",              required_argument, NULL, 'p'},
       { "wrapper-algorithm", required_argument, NULL, 'G'},
       { "private",           required_argument, NULL, 'r'},
+      { "public",            required_argument, NULL, 'u'},
+      { "private-key",       required_argument, NULL, 'k'},
       { "encryptionkey-in",  required_argument, NULL, 'i'},
       { "encryptionkey-out", required_argument, NULL, 'o'},
       { "encrypted-seed",    required_argument, NULL, 's'},
       { "parent-context",    required_argument, NULL, 'C'},
+      { "parent-public",     required_argument, NULL, 'U'},
       { "key-context",       required_argument, NULL, 'c'},
       { "cphash",            required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("p:G:i:C:o:s:r:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:G:i:C:o:s:r:c:U:k:u:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
@@ -152,54 +179,61 @@ static bool check_options(void) {
     bool result = true;
 
     /* Check for NULL alg & (keyin | keyout) */
-    if (ctx.flags.g == 0) {
+    if (ctx.flags.G == 0) {
         LOG_ERR("Expected key type to be specified via \"-G\","
                 " missing option.");
         result = false;
     }
 
-    if (ctx.key_type != TPM2_ALG_NULL) {
+    if (ctx.key_type != TPM2_ALG_NULL && !ctx.flags.U) {
         if ((ctx.flags.i == 0) && (ctx.flags.o == 0)) {
-            LOG_ERR("Expected in or out encryption key file \"-k/K\","
+            LOG_ERR("Expected in or out encryption key file \"-i/o\","
                     " missing option.");
             result = false;
         }
         if (ctx.flags.i && ctx.flags.o) {
-            LOG_ERR("Expected either in or out encryption key file \"-k/K\","
+            LOG_ERR("Expected either in or out encryption key file \"-i/o\","
                     " conflicting options.");
             result = false;
         }
     } else {
         if (ctx.flags.i || ctx.flags.o) {
-            LOG_ERR("Expected neither in nor out encryption key file \"-k/K\","
+            LOG_ERR("Expected neither in nor out encryption key file \"-i/o\","
                     " conflicting options.");
             result = false;
         }
     }
 
-    if (ctx.flags.C == 0) {
-        LOG_ERR("Expected new parent object to be specified via \"-C\","
-                " missing option.");
+    if (ctx.flags.U != ctx.flags.k)
+    {
+        LOG_ERR("Conflicting options: remote public key and local private key must both be specified");
         result = false;
-    }
+    } else
+    if (!ctx.flags.U) {
+	if (ctx.flags.C == 0) {
+	    LOG_ERR("Expected new parent object to be specified via \"-C\","
+		    " missing option.");
+	    result = false;
+	}
 
-    if (ctx.flags.c == 0) {
-        LOG_ERR("Expected object to be specified via \"-c\","
-                " missing option.");
-        result = false;
-    }
+	if (ctx.flags.c == 0) {
+	    LOG_ERR("Expected object to be specified via \"-c\","
+		    " missing option.");
+	    result = false;
+	}
 
-    if (ctx.flags.s == 0) {
-        LOG_ERR(
-                "Expected encrypted seed out filename to be specified via \"-S\","
-                        " missing option.");
-        result = false;
-    }
+	if (ctx.flags.s == 0) {
+	    LOG_ERR(
+		    "Expected encrypted seed out filename to be specified via \"-S\","
+			    " missing option.");
+	    result = false;
+	}
 
-    if (ctx.flags.r == 0) {
-        LOG_ERR("Expected private key out filename to be specified via \"-r\","
-                " missing option.");
-        result = false;
+	if (ctx.flags.r == 0) {
+	    LOG_ERR("Expected private key out filename to be specified via \"-r\","
+		    " missing option.");
+	    result = false;
+	}
     }
 
     return result;
@@ -224,6 +258,139 @@ static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
     return result;
 }
 
+
+static tool_rc tpm2_create_duplicate(
+    TPM2B_PUBLIC *parent_pub,
+    TPM2B_SENSITIVE *privkey,
+    TPM2B_PUBLIC *public,
+    TPM2B_ENCRYPTED_SECRET *encrypted_seed)
+{
+    bool result;
+    tool_rc rc = tool_rc_success;
+
+    /*
+     * Calculate the object name.
+     */
+    TPM2B_NAME pubname = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+    result = tpm2_identity_create_name(public, &pubname);
+    if (!result) {
+        return false;
+    }
+
+
+    TPM2B_DIGEST * seed = &privkey->sensitiveArea.seedValue;
+    TPM2B_MAX_BUFFER hmac_key;
+    TPM2B_MAX_BUFFER enc_key;
+    tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
+            parent_pub, &pubname, seed, &hmac_key, &enc_key);
+
+    /*
+     * Marshall the private key into a buffer
+     */
+    TPM2B_MAX_BUFFER marshalled_sensitive = TPM2B_EMPTY_INIT;
+    size_t marshalled_sensitive_size = 0;
+    Tss2_MU_TPMT_SENSITIVE_Marshal(&privkey->sensitiveArea,
+            marshalled_sensitive.buffer + sizeof(marshalled_sensitive.size),
+            TPM2_MAX_DIGEST_BUFFER, &marshalled_sensitive_size);
+    size_t marshalled_sensitive_size_info = 0;
+    Tss2_MU_UINT16_Marshal(marshalled_sensitive_size,
+            marshalled_sensitive.buffer, sizeof(marshalled_sensitive.size),
+            &marshalled_sensitive_size_info);
+
+    marshalled_sensitive.size = marshalled_sensitive_size
+	+ marshalled_sensitive_size_info;
+
+    /*
+     * Compute the outer HMAC over the marshalled sensitive area
+     * and encrypt it with the seed value.
+     */
+    TPM2B_DIGEST outer_hmac = TPM2B_EMPTY_INIT;
+    TPM2B_MAX_BUFFER encrypted_duplicate_sensitive = TPM2B_EMPTY_INIT;
+    tpm2_identity_util_calculate_outer_integrity(parent_pub->publicArea.nameAlg,
+            &pubname, &marshalled_sensitive, &hmac_key, &enc_key,
+            &parent_pub->publicArea.parameters.rsaDetail.symmetric,
+            &encrypted_duplicate_sensitive, &outer_hmac);
+
+    /*
+     * Build the private data structure for writing out
+     */
+    TPM2B_PRIVATE private = TPM2B_EMPTY_INIT;
+    UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(parent_pub->publicArea.nameAlg);
+    private.size = sizeof(parent_hash_size) + parent_hash_size
+	+ encrypted_duplicate_sensitive.size;
+
+    size_t hmac_size_offset = 0;
+    Tss2_MU_UINT16_Marshal(parent_hash_size, private.buffer, sizeof(parent_hash_size),
+            &hmac_size_offset);
+    memcpy(private.buffer + hmac_size_offset, outer_hmac.buffer,
+            parent_hash_size);
+    memcpy(private.buffer + hmac_size_offset + parent_hash_size,
+            encrypted_duplicate_sensitive.buffer,
+            encrypted_duplicate_sensitive.size);
+
+    /*
+     * Write out the generated files
+     */
+    result = files_save_encrypted_seed(encrypted_seed, ctx.enc_seed_out);
+    if (!result) {
+        LOG_ERR("Failed to save encryption seed into file \"%s\"",
+                ctx.enc_seed_out);
+        rc = tool_rc_general_error;
+        goto out;
+    }
+
+    result = files_save_private(&private, ctx.duplicate_key_private_file);
+    if (!result) {
+        LOG_ERR("Failed to save private key into file \"%s\"",
+                ctx.duplicate_key_private_file);
+        rc = tool_rc_general_error;
+        goto out;
+    }
+
+    result = files_save_public(public, ctx.duplicate_key_public_file);
+    if (!result) {
+        LOG_ERR("Failed to save public key into file \"%s\"",
+                ctx.duplicate_key_public_file);
+        rc = tool_rc_general_error;
+        goto out;
+    }
+
+out:
+    return rc;
+}
+
+static tool_rc openssl_duplicate(void)
+{
+    bool result;
+
+    TPM2B_PUBLIC parent_public = TPM2B_EMPTY_INIT;
+    TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
+    TPM2B_SENSITIVE private = TPM2B_EMPTY_INIT;
+    TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
+
+    result = files_load_public(ctx.parent_public_key_file, &parent_public);
+    if (!result)
+        return tool_rc_general_error;
+
+    result = tpm2_openssl_import_keys(
+        &parent_public,
+        &private,
+        &public,
+        &encrypted_seed,
+        ctx.private_key_file,
+        ctx.key_type,
+        NULL, // auth_key_file
+        NULL, // policy_file
+        NULL, // key_auth_str,
+        NULL, // attrs_str
+        NULL // name_alg_str
+    );
+    if (!result)
+        return tool_rc_general_error;
+
+    return tpm2_create_duplicate(&parent_public, &private, &public, &encrypted_seed);
+}
+
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
@@ -237,6 +404,10 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     bool result = check_options();
     if (!result) {
         return tool_rc_option_error;
+    }
+
+    if (ctx.flags.U) {
+        return openssl_duplicate();
     }
 
     rc = tpm2_util_object_load(ectx, ctx.new_parent_key.ctx_path,
