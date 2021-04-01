@@ -267,6 +267,7 @@ static tool_rc tpm2_create_duplicate(
 {
     bool result;
     tool_rc rc = tool_rc_success;
+    TSS2_RC rval;
 
     /*
      * Calculate the object name.
@@ -289,13 +290,22 @@ static tool_rc tpm2_create_duplicate(
      */
     TPM2B_MAX_BUFFER marshalled_sensitive = TPM2B_EMPTY_INIT;
     size_t marshalled_sensitive_size = 0;
-    Tss2_MU_TPMT_SENSITIVE_Marshal(&privkey->sensitiveArea,
+    rval = Tss2_MU_TPMT_SENSITIVE_Marshal(&privkey->sensitiveArea,
             marshalled_sensitive.buffer + sizeof(marshalled_sensitive.size),
             TPM2_MAX_DIGEST_BUFFER, &marshalled_sensitive_size);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Error serializing sensitive area");
+        return false;
+    }
+
     size_t marshalled_sensitive_size_info = 0;
-    Tss2_MU_UINT16_Marshal(marshalled_sensitive_size,
+    rval = Tss2_MU_UINT16_Marshal(marshalled_sensitive_size,
             marshalled_sensitive.buffer, sizeof(marshalled_sensitive.size),
             &marshalled_sensitive_size_info);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Error serializing sensitive area size");
+        return false;
+    }
 
     marshalled_sensitive.size = marshalled_sensitive_size
 	+ marshalled_sensitive_size_info;
@@ -320,8 +330,13 @@ static tool_rc tpm2_create_duplicate(
 	+ encrypted_duplicate_sensitive.size;
 
     size_t hmac_size_offset = 0;
-    Tss2_MU_UINT16_Marshal(parent_hash_size, private.buffer, sizeof(parent_hash_size),
-            &hmac_size_offset);
+    rval = Tss2_MU_UINT16_Marshal(parent_hash_size, private.buffer,
+            sizeof(parent_hash_size), &hmac_size_offset);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Error serializing hmac size");
+        return false;
+    }
+
     memcpy(private.buffer + hmac_size_offset, outer_hmac.buffer,
             parent_hash_size);
     memcpy(private.buffer + hmac_size_offset + parent_hash_size,

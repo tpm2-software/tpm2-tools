@@ -74,7 +74,7 @@ static tool_rc readpublic(ESYS_CONTEXT *ectx, ESYS_TR handle,
     return tpm2_readpublic(ectx, handle, public, NULL, NULL);
 }
 
-static void create_import_key_private_data(TPM2B_PRIVATE *private,
+static bool create_import_key_private_data(TPM2B_PRIVATE *private,
         TPMI_ALG_HASH parent_name_alg,
         TPM2B_MAX_BUFFER *encrypted_duplicate_sensitive,
         TPM2B_DIGEST *outer_hmac) {
@@ -82,16 +82,25 @@ static void create_import_key_private_data(TPM2B_PRIVATE *private,
     //UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
     UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(parent_name_alg);
 
-private->size = sizeof(uint16_t) + parent_hash_size
+    private->size = sizeof(parent_hash_size) + parent_hash_size
             + encrypted_duplicate_sensitive->size;
+
     size_t hmac_size_offset = 0;
-    Tss2_MU_UINT16_Marshal(parent_hash_size, private->buffer, sizeof(uint16_t),
-            &hmac_size_offset);
+    TSS2_RC rval = Tss2_MU_UINT16_Marshal(parent_hash_size, private->buffer,
+            sizeof(parent_hash_size), &hmac_size_offset);
+    if (rval != TPM2_RC_SUCCESS)
+    {
+        LOG_ERR("Error serializing parent hash size");
+        return false;
+    }
+
     memcpy(private->buffer + hmac_size_offset, outer_hmac->buffer,
             parent_hash_size);
     memcpy(private->buffer + hmac_size_offset + parent_hash_size,
             encrypted_duplicate_sensitive->buffer,
             encrypted_duplicate_sensitive->size);
+
+    return true;
 }
 
 static tool_rc key_import(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *parent_pub,
@@ -139,8 +148,11 @@ static tool_rc key_import(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *parent_pub,
             &encrypted_duplicate_sensitive, &outer_hmac);
 
     TPM2B_PRIVATE private = TPM2B_EMPTY_INIT;
-    create_import_key_private_data(&private, parent_pub->publicArea.nameAlg,
+    res = create_import_key_private_data(&private, parent_pub->publicArea.nameAlg,
             &encrypted_duplicate_sensitive, &outer_hmac);
+    if (!res) {
+        return false;
+    }
 
     TPMT_SYM_DEF_OBJECT *sym_alg =
             &parent_pub->publicArea.parameters.rsaDetail.symmetric;
