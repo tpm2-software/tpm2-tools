@@ -8,6 +8,7 @@
 #include "tpm2_tool.h"
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
+#define MAX_SESSIONS 3
 #define MAX_AUX_SESSIONS 2
 struct tpm_unseal_ctx {
     /*
@@ -28,10 +29,10 @@ struct tpm_unseal_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 
     /*
      * Aux sessions
@@ -45,6 +46,7 @@ struct tpm_unseal_ctx {
 static tpm_unseal_ctx ctx = {
     .aux_session_handle[0] = ESYS_TR_NONE,
     .aux_session_handle[1] = ESYS_TR_NONE,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 tool_rc unseal(ESYS_CONTEXT *ectx) {
@@ -53,7 +55,8 @@ tool_rc unseal(ESYS_CONTEXT *ectx) {
      * 1. TPM2_CC_<command> OR Retrieve cpHash
      */
     return tpm2_unseal(ectx, &ctx.sealkey.object, &ctx.output_data,
-        ctx.cphash, ctx.aux_session_handle[0], ctx.aux_session_handle[1]);
+        &ctx.cp_hash, ctx.parameter_hash_algorithm, ctx.aux_session_handle[0],
+        ctx.aux_session_handle[1]);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -134,7 +137,16 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
 
     /* 4.a Determine pHash length and alg */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.sealkey.object.session,
+        ctx.aux_session[0],
+        ctx.aux_session[1]
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /* 4.b Determine if TPM2_CC_<command> is to be dispatched */
     ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
