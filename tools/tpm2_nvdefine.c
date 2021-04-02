@@ -558,12 +558,9 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
      * 2. Close authorization sessions
      */
     tool_rc rc = tool_rc_success;
-    tool_rc tmp_rc = tool_rc_success;
-    if (!ctx.cp_hash_path) {
-        tmp_rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
-        if (tmp_rc != tool_rc_success) {
-            rc = tmp_rc;
-        }
+    tool_rc tmp_rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
     }
 
     /*
