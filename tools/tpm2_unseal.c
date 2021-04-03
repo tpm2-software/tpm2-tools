@@ -31,6 +31,8 @@ struct tpm_unseal_ctx {
      */
     const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
+    const char *rp_hash_path;
+    TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
     TPMI_ALG_HASH parameter_hash_algorithm;
 
@@ -55,8 +57,8 @@ tool_rc unseal(ESYS_CONTEXT *ectx) {
      * 1. TPM2_CC_<command> OR Retrieve cpHash
      */
     return tpm2_unseal(ectx, &ctx.sealkey.object, &ctx.output_data,
-        &ctx.cp_hash, ctx.parameter_hash_algorithm, ctx.aux_session_handle[0],
-        ctx.aux_session_handle[1]);
+        &ctx.cp_hash, &ctx.rp_hash, ctx.parameter_hash_algorithm,
+        ctx.aux_session_handle[0], ctx.aux_session_handle[1]);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -84,7 +86,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
      */
     if (ctx.output_file_path) {
         is_file_op_success = files_save_bytes_to_file(ctx.output_file_path,
-                (UINT8 *)ctx.output_data->buffer, ctx.output_data->size);
+                ctx.output_data->buffer, ctx.output_data->size);
         if (!is_file_op_success) {
             return tool_rc_general_error;
         }
@@ -92,7 +94,14 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
 
     if (!ctx.output_file_path) {
         is_file_op_success = files_write_bytes(stdout,
-            (UINT8 *)ctx.output_data->buffer, ctx.output_data->size);
+            ctx.output_data->buffer, ctx.output_data->size);
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    if (ctx.rp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.rp_hash, ctx.rp_hash_path);
     }
 
     return is_file_op_success ? tool_rc_success : tool_rc_general_error;
@@ -144,12 +153,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    const char **rphash_path = ctx.rp_hash_path ? &ctx.rp_hash_path : 0;
 
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
-        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+        cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
 
-    /* 4.b Determine if TPM2_CC_<command> is to be dispatched */
-    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * !rphash && !cphash [Y]
+     * !rphash && cphash  [N]
+     * rphash && !cphash  [Y]
+     * rphash && cphash   [Y]
+     */
+    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
+        false : true;
 
     return rc;
 }
@@ -180,7 +197,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.cp_hash_path = value;
         break;
-        /* no default */
+    case 1:
+        ctx.rp_hash_path = value;
+        break;
     case 'S':
         ctx.aux_session_path[ctx.aux_session_cnt] = value;
         if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
@@ -201,6 +220,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "output",           required_argument, NULL, 'o' },
       { "object-context",   required_argument, NULL, 'c' },
       { "cphash",           required_argument, NULL,  0  },
+      { "rphash",           required_argument, NULL,  1  },
       { "session",          required_argument, NULL, 'S' },
     };
 
