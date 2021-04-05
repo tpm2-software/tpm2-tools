@@ -2,6 +2,8 @@
 
 ### next
 
+  * tpm2_eventlog: Support eventlogs > 64KB
+
   * tpm2_unseal:
       - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
         of the response parameters. This is commonly termed as rpHash.

@@ -72,32 +72,36 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
+    /* Get file size */
     unsigned long size = 0;
     bool ret = files_get_file_size_path(filename, &size);
-    if (!ret) {
+    if (!ret || !size) {
         return tool_rc_general_error;
     }
 
-    if (size > UINT16_MAX) {
-        LOG_WARN("event log exceeds %" PRIu16 " and will be truncated",
-                 UINT16_MAX);
-    }
-
-    UINT16 size_tmp = UINT16_MAX;
-    UINT8 *eventlog = calloc(1, size_tmp);
+    /* Allocate buffer to read file data */
+    UINT8 *eventlog = calloc(1, size);
     if (eventlog == NULL){
         LOG_ERR("failed to allocate %lu bytes: %s", size, strerror(errno));
         return tool_rc_general_error;
     }
 
+    /* Load buffer with file data */
     tool_rc rc = tool_rc_success;
-    ret = files_load_bytes_from_path(filename, eventlog, &size_tmp);
+    FILE *fileptr = fopen(filename, "rb");
+    if (!fileptr) {
+        rc = tool_rc_general_error;
+        goto out;
+    }
+
+    ret = files_read_bytes(fileptr, eventlog, size);
     if (!ret) {
         rc = tool_rc_general_error;
         goto out;
     }
 
-    ret = yaml_eventlog(eventlog, size_tmp, eventlog_version);
+    /* Parse eventlog data */
+    ret = yaml_eventlog(eventlog, size, eventlog_version);
     if (!ret) {
         LOG_ERR("failed to parse tpm2 eventlog");
         rc = tool_rc_general_error;
