@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "files.h"
 #include "log.h"
@@ -21,6 +22,9 @@ struct dictionarylockout_ctx {
     UINT32 lockout_recovery_time;
     bool clear_lockout;
     bool setup_parameters;
+    bool is_setup_max_tries;
+    bool is_setup_recovery_time;
+    bool is_setup_lockoutrecovery_time;
     char *cp_hash_path;
 };
 
@@ -53,6 +57,8 @@ static bool on_option(char key, char *value) {
         if (ctx.max_tries == 0) {
             return false;
         }
+
+        ctx.is_setup_max_tries = true;
         break;
     case 't':
         result = tpm2_util_string_to_uint32(value, &ctx.recovery_time);
@@ -61,6 +67,8 @@ static bool on_option(char key, char *value) {
                     value);
             return false;
         }
+
+        ctx.is_setup_recovery_time = true;
         break;
     case 'l':
         result = tpm2_util_string_to_uint32(value, &ctx.lockout_recovery_time);
@@ -69,6 +77,7 @@ static bool on_option(char key, char *value) {
                 "\"%s\"", value);
             return false;
         }
+        ctx.is_setup_lockoutrecovery_time = true;
         break;
     case 0:
         ctx.cp_hash_path = value;
@@ -112,6 +121,49 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid authorization");
         return rc;
+    }
+
+    /*
+     * If calculating cpHash without executing the command, skip reading
+     * existing dictionary lockout parameters.
+     */
+    if (ctx.setup_parameters && !ctx.cp_hash_path) {
+        TPMS_CAPABILITY_DATA *capabilities = NULL;
+        rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_VAR,
+            TPM2_MAX_TPM_PROPERTIES, NULL, &capabilities);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Couldn't read the currently setup parameters.");
+            return rc;
+        }
+
+        TPMS_TAGGED_PROPERTY *properties = capabilities->data.tpmProperties.tpmProperty;
+        size_t count = capabilities->data.tpmProperties.count;
+
+        if (!count) {
+            LOG_ERR("Couldn't read the currently setup parameters.");
+            free(capabilities);
+            return tool_rc_general_error;
+        }
+
+        size_t i;
+        for (i = 0; i < count; i++) {
+            if (!ctx.is_setup_max_tries &&
+                properties[i].property == TPM2_PT_MAX_AUTH_FAIL) {
+                ctx.max_tries = properties[i].value;
+                continue;
+            }
+            if (!ctx.is_setup_recovery_time &&
+                properties[i].property == TPM2_PT_LOCKOUT_INTERVAL) {
+                ctx.recovery_time = properties[i].value;
+                continue;
+            }
+            if (!ctx.is_setup_lockoutrecovery_time &&
+                properties[i].property == TPM2_PT_LOCKOUT_RECOVERY) {
+                ctx.lockout_recovery_time = properties[i].value;
+                continue;
+            }
+        }
+        free(capabilities);
     }
 
     TPM2B_DIGEST cp_hash = { .size = 0 };
