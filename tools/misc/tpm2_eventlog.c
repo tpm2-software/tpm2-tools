@@ -95,6 +95,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     ret = files_read_bytes(fileptr, eventlog, size);
+    fclose(fileptr);
     if (!ret) {
         rc = tool_rc_general_error;
         goto out;
