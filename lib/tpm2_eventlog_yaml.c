@@ -226,7 +226,7 @@ static bool yaml_uefi_post_code(const TCG_EVENT2* const event) {
  * print the field in raw byte format
  */
 #ifdef HAVE_EFIVAR_EFIVAR_H
-char* yaml_devicepath(BYTE* dp, UINT64 dp_len) {
+char *yaml_devicepath(BYTE* dp, UINT64 dp_len) {
     int ret;
     ret = efidp_format_device_path(NULL, 0, (const_efidp)dp, dp_len);
     if (ret < 0) {
