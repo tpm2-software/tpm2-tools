@@ -1,6 +1,7 @@
 ## Changelog
 
 ### next
+  * tpm2_getpolicydigest: Add tool to retrieve policy digest from session data.
 
   * tpm2_eventlog: Support eventlogs > 64KB
 
