@@ -16,24 +16,21 @@ start_up
 cleanup "no-shut-down"
 
 # Start a session and test if session attributes can be modified
-tpm2 startauthsession -S session.ctx --policy-session
+tpm2 startauthsession -S session.ctx
 
 ## Check default session attribute has continuesession set
-DEFAULT_SESSION_ATTRIBUTE=01
-tpm2 sessionconfig session.ctx | grep sessionAttributes | awk {'print $2'} |\
-grep $DEFAULT_SESSION_ATTRIBUTE
+DEFAULT_SESSION_ATTRIBUTE=continuesession
+tpm2 sessionconfig session.ctx | grep $DEFAULT_SESSION_ATTRIBUTE
 
 # Check if session can be marked for encryption
-SESSION_ENCRYPT_SET=41
+SESSION_ENCRYPT_SET=encrypt
 tpm2 sessionconfig session.ctx --enable-encrypt
-tpm2 sessionconfig session.ctx | grep sessionAttributes | awk {'print $2'} |\
-grep $SESSION_ENCRYPT_SET
+tpm2 sessionconfig session.ctx | grep $SESSION_ENCRYPT_SET
 
 # Check if session can be marked for decryption
-SESSION_DECRYPT_SET=61
+SESSION_DECRYPT_SET=decrypt
 tpm2 sessionconfig session.ctx --enable-decrypt
-tpm2 sessionconfig session.ctx | grep sessionAttributes | awk {'print $2'} |\
-grep $SESSION_DECRYPT_SET
+tpm2 sessionconfig session.ctx | grep $SESSION_DECRYPT_SET
 
 tpm2 flushcontext session.ctx
 

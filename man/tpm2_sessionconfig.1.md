@@ -12,9 +12,7 @@ from a session file.
 # DESCRIPTION
 
 **tpm2_sessionconfig**(1) - Configure session attributes and print session info
-from a session file. The session file used in the tpm2-tools has useful info
-about the session in addition to the encrypted-session-blob created by the TPM.
-This meta-information is added by esys library and the tpm2_session lib.
+from a session file.
 
 The tool operates in one of two modes:
 1. Configure/ modify the session attributes.
