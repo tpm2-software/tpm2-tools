@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,6 +45,12 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
             ctx.bmask);
     }
 
+    TPM2_HANDLE tpm_handle;
+    TSS2_RC rv = Esys_TR_GetTpmHandle(esys_context, sessionhandle, &tpm_handle);
+    if (rv != TSS2_RC_SUCCESS) {
+        return tool_rc_general_error;
+    }
+
     /*
      * Describe session attributes
      */
@@ -53,6 +60,8 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
     if (rc != tool_rc_success) {
         return rc;
     }
+
+    tpm2_tool_output("Session-Handle: 0x%.8"PRIx32"\n", tpm_handle);
 
     bool is_attr_set = false;
     tpm2_tool_output("Session-Attributes: ");
