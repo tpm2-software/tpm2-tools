@@ -3,7 +3,8 @@
 
 set -eo pipefail
 
-echo "PROJECT=$PROJECT"
+export COV_PROJECT="01org/tpm2.0-tools"
+echo "COV_PROJECT=$COV_PROJECT"
 
 if [ -z "$COVERITY_SCAN_TOKEN" ]; then
   echo "coverity.run invoked without COVERITY_SCAN_TOKEN set...exiting!"
@@ -33,13 +34,13 @@ echo "Running coverity build"
 # We cannot package these in the docker image, as we would be distributing their software
 # for folks not coupled to our COVERITY_SCAN_TOKEN.
 if [ ! -f "$(pwd)/cov-analysis/bin/cov-build" ]; then
-  curl --data-urlencode "project=$PROJECT" \
+  curl --data-urlencode "project=$COV_PROJECT" \
        --data-urlencode "token=$COVERITY_SCAN_TOKEN" \
        "https://scan.coverity.com/download/linux64" -o coverity_tool.tgz
 
   stat coverity_tool.tgz
 
-  curl --data-urlencode "project=$PROJECT" \
+  curl --data-urlencode "project=$COV_PROJECT" \
        --data-urlencode "token=$COVERITY_SCAN_TOKEN" \
        --data-urlencode "md5=1" \
        "https://scan.coverity.com/download/linux64" -o coverity_tool.md5
@@ -74,16 +75,16 @@ AUTHOR_EMAIL="$(git log -1 $HEAD --pretty="%aE")"
 VERSION="$(git rev-parse HEAD)"
 echo "Name: $AUTHOR" >> README
 echo "Email: $AUTHOR_EMAIL" >> README
-echo "Project: tpm2-pkcs11" >> README
+echo "Project: tpm2-tools" >> README
 echo "Build-Version: $VERSION" >> README
 echo "Description: $REPO_SLUG $REPO_BRANCH" >> README
-echo "Submitted-by: tpm2-pkcs11 CI" >> README
+echo "Submitted-by: tpm2-tools CI" >> README
 echo "---README---"
 cat README
 echo "---EOF---"
 
-rm -f tpm2-pkcs11-scan.tgz
-tar -czf tpm2-pkcs11-scan.tgz README cov-int
+rm -f tpm2-tools-scan.tgz
+tar -czf tpm2-tools-scan.tgz README cov-int
 
 rm -rf README cov-int
 
@@ -94,11 +95,11 @@ scan_file=$(stat --printf='%n' tpm2-*-scan.tgz)
 echo "Submitting data to Coverity"
 curl --form token="$COVERITY_SCAN_TOKEN" \
   --form email="$COVERITY_SUBMISSION_EMAIL" \
-  --form project="$PROJECT" \
+  --form project="$COV_PROJECT" \
   --form file=@"$scan_file" \
   --form version="$VERSION" \
   --form description="$REPO_SLUG $REPO_BRANCH" \
-  "https://scan.coverity.com/builds?project=$PROJECT"
+  "https://scan.coverity.com/builds?project=01org%2Ftpm2.0-tools"
 
 rm -rf tpm2-*-scan.tgz
 
