@@ -55,14 +55,14 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
     }
 
     bool is_attr_set = false;
-    tpm2_tool_output("\nSession-Attributes: ");
+    tpm2_tool_output("Session-Attributes: ");
     PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_CONTINUESESSION, "continuesession");
     PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_AUDITEXCLUSIVE, "auditexclusive");
     PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_AUDITRESET, "auditreset");
     PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_DECRYPT, "decrypt");
     PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_ENCRYPT, "encrypt");
     PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_AUDIT, "audit");
-    tpm2_tool_output("\n\n");
+    tpm2_tool_output("\n");
 
     return tool_rc_success;
 }
