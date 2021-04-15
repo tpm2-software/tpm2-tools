@@ -273,7 +273,7 @@ static bool parse_selection_data_from_file(FILE *pcr_input,
         return false;
     }
 
-    UINT32 j;
+    size_t j;
     for (j = 0; j < le64toh(pcrs->count); j++) {
         if (fread(&pcrs->pcr_values[j], sizeof(TPML_DIGEST), 1, pcr_input)
                 != 1) {
