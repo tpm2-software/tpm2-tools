@@ -1018,18 +1018,20 @@ bool tpm2_safe_read_from_stdin(int length, char *data) {
     return true;
 }
 
-bool tpm2_pem_encoded_key_to_fingerprint(const char* pem_encoded_key,
-    char* fingerprint) {
-    char str[1024] = "";
-    char base64[1024] = "";
-    char *token;
-    int rc;
+bool tpm2_pem_encoded_key_to_fingerprint(const char *pem_encoded_key,
+    char *fingerprint) {
 
+    bool is_pemkey_len_valid = strlen(pem_encoded_key) > 1024 ? false : true;
+    if (!is_pemkey_len_valid) {
+        return false;
+    }
+
+    char str[1024] = "";
     strcpy(str, pem_encoded_key);
 
-    token = strtok(str, "\n");
-
     /* walk through other tokens */
+    char base64[1024] = "";
+    char *token = strtok(str, "\n");
     while ( token != NULL ) {
         if (!strstr(token, "-----")) {
             strcat(base64, token);
@@ -1039,8 +1041,7 @@ bool tpm2_pem_encoded_key_to_fingerprint(const char* pem_encoded_key,
 
     BYTE buffer[1024];
     size_t buffer_length = 0;
-
-    rc = tpm2_base64_decode(base64, buffer, &buffer_length);
+    int rc = tpm2_base64_decode(base64, buffer, &buffer_length);
     if(!rc){
         LOG_ERR("%s", "tpm2_base64_decode");
         return false;
