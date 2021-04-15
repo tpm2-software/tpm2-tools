@@ -535,7 +535,11 @@ bool specid_event(TCG_EVENT const *event, size_t size,
 
 bool parse_eventlog(tpm2_eventlog_context *ctx, BYTE const *eventlog, size_t size) {
 
-    if(!eventlog || (size < sizeof(TCG_EVENT))) {
+    if(!eventlog) {
+        return false;
+    }
+
+    if(size < sizeof(TCG_EVENT)) {
         return false;
     }
 
