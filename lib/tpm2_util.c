@@ -1034,6 +1034,11 @@ bool tpm2_pem_encoded_key_to_fingerprint(const char *pem_encoded_key,
     char *token = strtok(str, "\n");
     while ( token != NULL ) {
         if (!strstr(token, "-----")) {
+            bool is_base64_overrun = (strlen(base64) + strlen(token)) > 1024 ?
+                true : false;
+            if (is_base64_overrun) {
+                return false;
+            }
             strcat(base64, token);
         }
         token = strtok(NULL, "\n");
