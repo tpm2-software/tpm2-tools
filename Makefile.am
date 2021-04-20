@@ -350,7 +350,7 @@ EXTRA_DIST = \
     doc/INSTALL.md \
     doc/LICENSE \
     doc/MAINTAINERS.md \
-    README.md \
+    doc/README.md \
     doc/RELEASE.md \
     man \
     scripts \
