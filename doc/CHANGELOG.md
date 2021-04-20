@@ -1,6 +1,6 @@
 ## Changelog
 
-### next
+### 5.1-rc0 2021-04-20
 
   * Build
       - Dependency-update: Minimum tpm2-tss version dependency bumped to 3.0.3
