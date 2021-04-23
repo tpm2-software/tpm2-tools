@@ -672,6 +672,23 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
     return true;
 }
 
+/* TCG PC Client PFP section 9.2.6 */
+bool yaml_no_action(EV_NO_ACTION_STRUCT *data, size_t size, uint32_t eventlog_version) {
+    if (eventlog_version == 2) {
+        if (size > sizeof(STARTUP_LOCALITY_SIGNATURE) &&
+            memcmp(data->Signature, STARTUP_LOCALITY_SIGNATURE, sizeof(STARTUP_LOCALITY_SIGNATURE)) == 0) {
+            tpm2_tool_output("  Event:\n"
+                             "    StartupLocality: %u\n",
+                             data->Cases.StartupLocality);
+            return true;
+        }
+    }
+    char hexstr[EVENT_BUF_MAX] = { 0, };
+    bytes_to_str((UINT8*)data, size, hexstr, sizeof(hexstr));
+    tpm2_tool_output("  Event: \"%s\"\n", hexstr);
+    return true;
+}
+
 bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, uint32_t eventlog_version) {
 
     char hexstr[EVENT_BUF_MAX] = { 0, };
@@ -705,6 +722,8 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, uint32_t eventlog_ver
     case EV_EFI_GPT_EVENT:
         return yaml_gpt((UEFI_GPT_DATA*)event->Event,
                         event->EventSize, eventlog_version);
+    case EV_NO_ACTION:
+        return yaml_no_action((EV_NO_ACTION_STRUCT*)event->Event, event->EventSize, eventlog_version);
     default:
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
         tpm2_tool_output("  Event: \"%s\"\n", hexstr);
