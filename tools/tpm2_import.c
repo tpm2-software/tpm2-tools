@@ -290,6 +290,12 @@ static tool_rc check_options(void) {
             ctx.key_type = TPM2_ALG_AES;
         }
 
+        if (ctx.key_auth_str) {
+            LOG_ERR("Cannot specify key password when importing a TPM key.\n"
+                "use tpm2_changeauth after import");
+            rc = tool_rc_option_error;
+        }
+
     } else { /* Openssl specific option(s) */
 
         if (!ctx.key_type) {
