@@ -1,12 +1,22 @@
 ## Changelog
 
-### 4.X - next
+### 4.3.1-rc0 2021-05-03
 
-  * tss2_quote: Tool now correctly supports to quote against a list of passed PCR registers
+  * tpm2_dictionarylockout: Fix issue where setting value reset others
 
-  * Fix fapi-branch-select integration test to correctly use the PolicyRef parameter (triggered by recent bug-fix in tpm2-tss)
+  * tpm2_create.c: Fix an issue where userwithauth attr cleared if policy
+    specified
+
+  * tss2_quote: Tool now correctly supports to quote against a list of passed
+    PCR registers
+
+  * Fix fapi-branch-select integration test to correctly use the PolicyRef
+    parameter (triggered by recent bug-fix in tpm2-tss)
 
   * Fix an outdated parameter in the fapi-provision integration test
+
+  * tpm2_getekcertificate: Fix tool failing to return error/non-zero
+    for HTTP 404
 
 ### 4.3.0 - 2020-08-24
 
