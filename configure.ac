@@ -174,7 +174,7 @@ AS_IF([test "x$enable_unit" != xno], [
     AS_IF([test $BASH_SHELL = no],
           [AC_MSG_ERROR([Required executable bash not found, system tests require a bash shell!])])
 
-    AM_PATH_PYTHON([2.7],
+    AM_PATH_PYTHON([],
         [],
         [AC_MSG_ERROR([Required executable python not found, some system tests will fail!])]
     )
