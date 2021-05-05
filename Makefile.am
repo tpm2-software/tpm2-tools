@@ -369,6 +369,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_clear.1 \
     man/man1/tpm2_clearcontrol.1 \
 	man/man1/tpm2_clockrateadjust.1 \
+    man/man1/tpm2_contextload.1 \
     man/man1/tpm2_create.1 \
     man/man1/tpm2_createak.1 \
     man/man1/tpm2_createek.1 \

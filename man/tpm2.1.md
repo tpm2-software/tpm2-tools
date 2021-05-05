@@ -57,6 +57,8 @@ List of possible tool names. NOTE: Specify only one of these. Look at examples.
 
 **clockrateadjust**
 
+**contextload**
+
 **create**
 
 **createak**
