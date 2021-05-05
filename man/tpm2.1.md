@@ -187,6 +187,8 @@ List of possible tool names. NOTE: Specify only one of these. Look at examples.
 
 **selftest**
 
+**sessionconfig**
+
 **setclock**
 
 **shutdown**
