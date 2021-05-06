@@ -188,9 +188,14 @@ tpm2_create -C primary.ctx -i seal.dat -u obj.pub -r obj.priv
 ## Create an EC Key Object and Load it to the TPM
 
 Normally, when creating an object, only the public and private portions of the
-object are returned and the caller needs to use tpm2_load(1) to load those
+object are returned and the caller needs to use tpm2\_load(1) to load those
 public and private portions to the TPM before being able to use the object.
-However, this can be accomplished within this command as well.
+However, this can be accomplished within this command as well, when supported
+by the TPM. You can verify your TPM supports this feature by checking
+that tpm2\_getcap(1) commands returns TPM2\_CC\_CreateLoaded in the command set.
+If your TPM does not support TPM2\_CC\_CreateLoaded an unsuported command code
+error will be returned. If it's not supported one must use tpm2\_load(1). See
+that manpage for details on its usage.
 
 ```bash
 tpm2_create -C primary.ctx -G ecc -u obj.pub -r obj.priv -c ecc.ctx
