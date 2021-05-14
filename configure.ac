@@ -259,7 +259,7 @@ AS_IF([test x"$enable_hardening" != x"no"], [
 
   add_hardened_c_flag([-Wall])
   add_hardened_c_flag([-Wextra])
-  add_hardened_c_flag([-Werror])
+  AS_IF([test "x$ax_is_release" = "xno"], [add_hardened_c_flag([-Werror])])
 
   add_hardened_c_flag([-Wformat])
   add_hardened_c_flag([-Wformat-security])
