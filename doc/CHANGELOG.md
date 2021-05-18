@@ -1,6 +1,6 @@
 ## Changelog
 
-### 4.3.1-rc0 2021-05-03
+### 4.3.1 2021-05-18
 
   * tpm2_dictionarylockout: Fix issue where setting value reset others
 
