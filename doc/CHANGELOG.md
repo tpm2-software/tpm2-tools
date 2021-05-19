@@ -1,5 +1,11 @@
 ## Changelog
 
+### 5.1-rc1 2021-05-19
+
+* scripts/utils: Add a utility to read the cert chain of embedded CA
+* .ci/download-deps.sh: Bump tpm2-tss version to 3.1.0
+* build: only use -Werror for non-release builds
+
 ### 5.1-rc0 2021-04-20
 
   * Build
