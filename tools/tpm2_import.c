@@ -151,7 +151,7 @@ static tool_rc key_import(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *parent_pub,
     res = create_import_key_private_data(&private, parent_pub->publicArea.nameAlg,
             &encrypted_duplicate_sensitive, &outer_hmac);
     if (!res) {
-        return false;
+        return tool_rc_general_error;
     }
 
     TPMT_SYM_DEF_OBJECT *sym_alg =
