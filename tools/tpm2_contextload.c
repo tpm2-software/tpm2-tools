@@ -53,7 +53,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-   bool retval = is_input_option_args_valid();
+    bool retval = is_input_option_args_valid();
     if (!retval) {
         return tool_rc_option_error;
     }

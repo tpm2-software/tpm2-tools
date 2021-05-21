@@ -42,9 +42,9 @@ the various known TCTI modules.
 
 ```bash
 
-tpm2 startauthsession -S session.ctx --policy-session
+tpm2_startauthsession -S session.ctx --policy-session
 
-tpm2 contextload -T "device:/dev/tpm0" session.ctx
+tpm2_contextload -T "device:/dev/tpm0" session.ctx
 
 ```
 
