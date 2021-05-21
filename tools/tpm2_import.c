@@ -147,7 +147,17 @@ static tool_rc key_import(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *parent_pub,
     TPM2B_DATA enc_sensitive_key = {
         .size = parent_pub->publicArea.parameters.rsaDetail.symmetric.keyBits.sym / 8
     };
-    memset(enc_sensitive_key.buffer, 0xFF, enc_sensitive_key.size);
+
+    if(enc_sensitive_key.size < 16) {
+        LOG_ERR("Calculated wrapping keysize is less than 16 bytes, got: %u", enc_sensitive_key.size);
+        return tool_rc_general_error;
+    }
+
+    int ossl_rc = RAND_bytes(enc_sensitive_key.buffer, enc_sensitive_key.size);
+    if (ossl_rc != 1) {
+        LOG_ERR("RAND_bytes failed: %s", ERR_error_string(ERR_get_error(), NULL));
+        return tool_rc_general_error;
+    }
 
     /*
      * Calculate the object name.
