@@ -1,5 +1,10 @@
 ## Changelog
 
+### next
+
+  * tpm2_nvsetbits:
+      - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
+        of the response parameters. This is commonly termed as rpHash.
 ### 5.1 2021-05-24
 
   * Build
