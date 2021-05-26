@@ -2945,7 +2945,8 @@ tool_rc tpm2_tr_from_tpm_public(ESYS_CONTEXT *esys_context, TPM2_HANDLE handle, 
 tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
     UINT64 bits, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -3012,8 +3013,8 @@ tpm2_nvsetbits_free_name1:
     }
 
     rval = Esys_NV_SetBits(esys_context, auth_hierarchy_obj->tr_handle,
-            esys_tr_nv_handle, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
-            ESYS_TR_NONE, bits);
+            esys_tr_nv_handle, auth_hierarchy_obj_session_handle, shandle2,
+            shandle3, bits);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_SetBits, rval);
         return tool_rc_from_tpm(rval);
