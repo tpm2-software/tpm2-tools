@@ -1137,7 +1137,7 @@ static TPMI_ALG_HASH calc_phash_alg_from_phash_path(const char **phash_path) {
 static TPMI_ALG_HASH tpm2_util_calc_phash_algorithm_from_session_types(
     ESYS_CONTEXT *ectx, tpm2_session **sessions) {
 
-    TPMI_ALG_HASH rethash = TPM2_ALG_SHA256;
+    TPMI_ALG_HASH rethash = TPM2_ALG_ERROR;
 
     size_t session_idx = 0;
     for (session_idx = 0; session_idx < MAX_SESSION_CNT; session_idx++) {
@@ -1145,6 +1145,17 @@ static TPMI_ALG_HASH tpm2_util_calc_phash_algorithm_from_session_types(
             continue;
         }
 
+        /*
+         * Ignore password sessions
+         */
+        ESYS_TR session_handle = tpm2_session_get_handle(sessions[session_idx]);
+        if(session_handle == ESYS_TR_PASSWORD) {
+            continue;
+        }
+
+        /*
+         * Ignore trial sessions
+         */
         TPM2_SE session_type = tpm2_session_get_type(sessions[session_idx]);
         if (session_type != TPM2_SE_HMAC && session_type != TPM2_SE_POLICY) {
             continue;
@@ -1156,8 +1167,6 @@ static TPMI_ALG_HASH tpm2_util_calc_phash_algorithm_from_session_types(
          */
         if (session_type == TPM2_SE_HMAC) {
             TPMA_SESSION attrs = 0;
-            ESYS_TR session_handle = tpm2_session_get_handle(
-                sessions[session_idx]);
             tool_rc tmp_rc = tpm2_sess_get_attributes(ectx, session_handle,
                 &attrs);
             UNUSED(tmp_rc);
@@ -1169,7 +1178,7 @@ static TPMI_ALG_HASH tpm2_util_calc_phash_algorithm_from_session_types(
         }
 
         /*
-         * If no other sessions remain, simply use this sessions halg.
+         * If no other sessions remain, simply use (policy)sessions halg.
          */
         rethash = tpm2_session_get_authhash(sessions[session_idx]);
     }
@@ -1197,10 +1206,7 @@ TPMI_ALG_HASH tpm2_util_calculate_phash_algorithm(ESYS_CONTEXT *ectx,
     const char **cphash_path, TPM2B_DIGEST *cp_hash, const char **rphash_path,
     TPM2B_DIGEST *rp_hash, tpm2_session **sessions) {
 
-    if (!cphash_path && !rphash_path) {
-        return TPM2_ALG_ERROR;
-    }
-
+    /* <halg> specified in pHash path */
     TPMI_ALG_HASH cphash_alg = cphash_path ? calc_phash_alg_from_phash_path(
         cphash_path) : TPM2_ALG_ERROR;
 
@@ -1215,26 +1221,30 @@ TPMI_ALG_HASH tpm2_util_calculate_phash_algorithm(ESYS_CONTEXT *ectx,
     TPMI_ALG_HASH phash_alg = cphash_alg != TPM2_ALG_ERROR ? cphash_alg :
         (rphash_alg != TPM2_ALG_ERROR ? rphash_alg : TPM2_ALG_ERROR);
 
-    /*
-     * pHash was enforced with <halg>:phash_path
-     */
     if (phash_alg != TPM2_ALG_ERROR) {
         goto out;
     }
 
-    phash_alg = tpm2_util_calc_phash_algorithm_from_session_types(ectx,
-        sessions);
+    /* <halg> determined from the sessions */
+    if (sessions) {
+        phash_alg = tpm2_util_calc_phash_algorithm_from_session_types(ectx,
+            sessions);
+    }
 
 out:
+    /* <halg> defaults to TPM2_ALG_SHA256 if cannot find from path or sessions */
+    if (phash_alg == TPM2_ALG_ERROR) {
+        phash_alg = TPM2_ALG_SHA256;
+    }
+
     /*
-     * Calculate size here because with pHash_path information there is no
-     * confusion on whether or not to set cp or rp sizes or both.
+     * Side-effect: Set the size of the cp_hash and/or rp_hash
      */
-    if (cphash_path) {
+    if (cphash_path && cp_hash) {
         cp_hash->size = tpm2_alg_util_get_hash_size(phash_alg);
     }
 
-    if (rphash_path) {
+    if (rphash_path && rp_hash) {
         rp_hash->size = tpm2_alg_util_get_hash_size(phash_alg);
     }
 
