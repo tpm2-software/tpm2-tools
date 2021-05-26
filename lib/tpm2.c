@@ -2576,16 +2576,6 @@ tool_rc tpm2_nv_definespace(ESYS_CONTEXT *esys_context,
     }
 
     if (cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
-        rc = tpm2_getsapicontext(esys_context, &sys_context);
-        if(rc != tool_rc_success) {
-            LOG_ERR("Failed to acquire SAPI context.");
-            return rc;
-        }
-
         TSS2_RC rval = Tss2_Sys_NV_DefineSpace_Prepare(sys_context,
             auth_hierarchy_obj->handle, auth, public_info);
         if (rval != TPM2_RC_SUCCESS) {
@@ -3057,16 +3047,6 @@ tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
     }
 
     if (cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
-        rc = tpm2_getsapicontext(esys_context, &sys_context);
-        if(rc != tool_rc_success) {
-            LOG_ERR("Failed to acquire SAPI context.");
-            return rc;
-        }
-
         rval = Tss2_Sys_NV_Extend_Prepare(sys_context,
             auth_hierarchy_obj->handle, nv_index, data);
         if (rval != TPM2_RC_SUCCESS) {
@@ -3927,16 +3907,6 @@ tool_rc tpm2_unseal(ESYS_CONTEXT *esys_context, tpm2_loaded_object *sealkey_obj,
     }
 
     if (cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
-        rc = tpm2_getsapicontext(esys_context, &sys_context);
-        if(rc != tool_rc_success) {
-            LOG_ERR("Failed to acquire SAPI context.");
-            return rc;
-        }
-
         TSS2_RC rval = Tss2_Sys_Unseal_Prepare(sys_context,
             sealkey_obj->handle);
         if (rval != TPM2_RC_SUCCESS) {
