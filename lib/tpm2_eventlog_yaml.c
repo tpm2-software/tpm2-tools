@@ -144,22 +144,22 @@ bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size) {
 
     return true;
 }
-char *yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data) {
+static char *yaml_utf16_to_str(UTF16_CHAR *data, size_t len) {
 
     int ret = 0;
     mbstate_t st;
 
     memset(&st, '\0', sizeof(st));
 
-    char *mbstr = calloc(data->UnicodeNameLength + 1, MB_CUR_MAX);
+    char *mbstr = calloc(len + 1, MB_CUR_MAX);
     char *tmp = mbstr;
     if (mbstr == NULL) {
         LOG_ERR("failed to allocate data: %s\n", strerror(errno));
         return NULL;
     }
 
-    for(size_t i = 0; i < data->UnicodeNameLength; ++i, tmp += ret) {
-        ret = c16rtomb(tmp, data->UnicodeName[i], &st);
+    for(size_t i = 0; i < len; ++i, tmp += ret) {
+        ret = c16rtomb(tmp, data[i].c, &st);
         if (ret < 0) {
             LOG_ERR("c16rtomb failed: %s", strerror(errno));
             free(mbstr);
@@ -293,7 +293,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
         return false;
     }
 
-    char *ret = yaml_uefi_var_unicodename(data);
+    char *ret = yaml_utf16_to_str(data->UnicodeName, data->UnicodeNameLength);
     if (!ret) {
         return false;
     }
@@ -655,16 +655,18 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
             guid_unparse_lower(partition->PartitionTypeGUID, guid);
             tpm2_tool_output("    - PartitionTypeGUID: %s\n", guid);
             guid_unparse_lower(partition->UniquePartitionGUID, guid);
+            char* part_name = yaml_utf16_to_str(partition->PartitionName, 36);
             tpm2_tool_output("      UniquePartitionGUID: %s\n"
                              "      StartingLBA: 0x%" PRIx64 "\n"
                              "      EndingLBA: 0x%" PRIx64 "\n"
                              "      Attributes: 0x%" PRIx64 "\n"
-                             "      PartitionName: \"%.*s\"\n",
+                             "      PartitionName: \"%s\"\n",
                              guid,
                              partition->StartingLBA,
                              partition->EndingLBA,
                              partition->Attributes,
-                             72, partition->PartitionName);
+                             part_name);
+            free(part_name);
             size -= sizeof(*partition);
         }
 
