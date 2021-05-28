@@ -20,6 +20,7 @@ struct tpm_duplicate_ctx {
     struct {
         const char *ctx_path;
         const char *auth_str;
+        const char *policy_str;
         tpm2_loaded_object object;
     } duplicable_key;
 
@@ -91,6 +92,9 @@ static bool on_option(char key, char *value) {
     case 'p':
         ctx.duplicable_key.auth_str = value;
         break;
+    case 'L':
+        ctx.duplicable_key.policy_str = value;
+        break;
     case 'G':
         ctx.key_type = tpm2_alg_util_from_optarg(value,
                 tpm2_alg_util_flags_asymmetric |
@@ -150,6 +154,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
       { "auth",              required_argument, NULL, 'p'},
+      { "policy",            required_argument, NULL, 'L'},
       { "wrapper-algorithm", required_argument, NULL, 'G'},
       { "private",           required_argument, NULL, 'r'},
       { "public",            required_argument, NULL, 'u'},
@@ -163,8 +168,8 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "cphash",            required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("p:G:i:C:o:s:r:c:U:k:u:", ARRAY_LEN(topts), topts,
-            on_option, NULL, 0);
+    *opts = tpm2_options_new("p:L:G:i:C:o:s:r:c:U:k:u:", ARRAY_LEN(topts), topts,
+            on_option, NULL, TPM2_OPTIONS_OPTIONAL_SAPI);
 
     return *opts != NULL;
 }
@@ -395,8 +400,8 @@ static tool_rc openssl_duplicate(void)
         ctx.private_key_file,
         ctx.key_type,
         NULL, // auth_key_file
-        NULL, // policy_file
-        NULL, // key_auth_str,
+        ctx.duplicable_key.policy_str,
+        ctx.duplicable_key.auth_str,
         NULL, // attrs_str
         NULL // name_alg_str
     );
