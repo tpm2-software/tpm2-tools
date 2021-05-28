@@ -23,6 +23,13 @@
 #include <efivar/efivar.h>
 #endif
 
+static void guid_unparse_lower(EFI_GUID guid, char guid_buf[37]) {
+    snprintf(guid_buf, 37, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+            guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1],
+            guid.Data4[2], guid.Data4[3], guid.Data4[4],
+            guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+}
+
 char const *eventtype_to_string (UINT32 event_type) {
 
     switch (event_type) {
@@ -270,7 +277,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
         return false;
     }
 
-    uuid_unparse_lower(data->VariableName, uuidstr);
+    guid_unparse_lower(data->VariableName, uuidstr);
 
     tpm2_tool_output("  Event:\n"
                      "    VariableName: %s\n"
@@ -329,7 +336,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                         break;
                     }
 
-                    uuid_unparse_lower(slist->SignatureType, uuidstr);
+                    guid_unparse_lower(slist->SignatureType, uuidstr);
                     tpm2_tool_output("    - SignatureType: %s\n"
                                      "      SignatureListSize: %" PRIu32 "\n"
                                      "      SignatureHeaderSize: %" PRIu32 "\n"
@@ -367,7 +374,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                         }
                         bytes_to_str(s->SignatureData, slist->SignatureSize-16,
                             sdata, BYTES_TO_HEX_STRING_SIZE(slist->SignatureSize-16));
-                        uuid_unparse_lower(s->SignatureOwner, uuidstr);
+                        guid_unparse_lower(s->SignatureOwner, uuidstr);
                         tpm2_tool_output("      - SignatureOwner: %s\n"
                                          "        SignatureData: %s\n",
                                          uuidstr, sdata);
@@ -419,7 +426,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
             }
             bytes_to_str(s->SignatureData, data->VariableDataLength - 16,
                 sdata, BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - 16));
-            uuid_unparse_lower(s->SignatureOwner, uuidstr);
+            guid_unparse_lower(s->SignatureOwner, uuidstr);
             tpm2_tool_output("    - SignatureOwner: %s\n"
                              "      SignatureData: %s\n",
                              uuidstr, sdata);
@@ -600,7 +607,7 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
         UEFI_PARTITION_TABLE_HEADER *header = &data->UEFIPartitionHeader;
         char guid[37] = { 0 };
 
-        uuid_unparse_lower(header->DiskGUID, guid);
+        guid_unparse_lower(header->DiskGUID, guid);
 
         tpm2_tool_output("  Event:\n"
                          "    Header:\n"
@@ -644,9 +651,9 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
                 return false;
             }
 
-            uuid_unparse_lower(partition->PartitionTypeGUID, guid);
+            guid_unparse_lower(partition->PartitionTypeGUID, guid);
             tpm2_tool_output("    - PartitionTypeGUID: %s\n", guid);
-            uuid_unparse_lower(partition->UniquePartitionGUID, guid);
+            guid_unparse_lower(partition->UniquePartitionGUID, guid);
             tpm2_tool_output("      UniquePartitionGUID: %s\n"
                              "      StartingLBA: 0x%" PRIx64 "\n"
                              "      EndingLBA: 0x%" PRIx64 "\n"
