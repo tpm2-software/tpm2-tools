@@ -48,6 +48,18 @@
 #define PACKED __attribute__((__packed__))
 #endif
 
+/* GUIDs used by UEFI/GPT are stored in a mixed-endian layout, where the first
+ * three fields are serialized as little-endian and the final two fields are
+ * serialized as big-endian. This differs from uuid_t which is entirely a
+ * big-endian layout (just an array of 16 bytes).
+ */
+typedef struct {
+  UINT32 Data1;
+  UINT16 Data2;
+  UINT16 Data3;
+  UINT8 Data4[8];
+} PACKED EFI_GUID;
+
 typedef struct {
   UINT16 AlgorithmId;
   UINT8 Digest[];
@@ -67,7 +79,7 @@ typedef struct {
 } PACKED TCG_EVENT_HEADER2;
 
 typedef struct {
-  uuid_t VariableName;
+  EFI_GUID VariableName;
   UINT64 UnicodeNameLength;
   UINT64 VariableDataLength;
   char16_t UnicodeName[];
@@ -134,7 +146,7 @@ typedef struct {
     UINT64 AlternateLBA;
     UINT64 FirstUsableLBA;
     UINT64 LastUsableLBA;
-    BYTE DiskGUID[16];
+    EFI_GUID DiskGUID;
     UINT64 PartitionEntryLBA;
     UINT32 NumberOfPartitionEntries;
     UINT32 SizeOfPartitionEntry;
@@ -142,8 +154,8 @@ typedef struct {
 } PACKED UEFI_PARTITION_TABLE_HEADER;
 
 typedef struct {
-    BYTE PartitionTypeGUID[16];
-    BYTE UniquePartitionGUID[16];
+    EFI_GUID PartitionTypeGUID;
+    EFI_GUID UniquePartitionGUID;
     UINT64 StartingLBA;
     UINT64 EndingLBA;
     UINT64 Attributes;
@@ -162,7 +174,7 @@ typedef struct {
  * structs are described in more details in UEFI Spec Section 32.4.1
  */
 typedef struct {
-    BYTE SignatureType[16];
+    EFI_GUID SignatureType;
     UINT32 SignatureListSize;
     UINT32 SignatureHeaderSize;
     UINT32 SignatureSize;
@@ -171,7 +183,7 @@ typedef struct {
 } PACKED EFI_SIGNATURE_LIST;
 
 typedef struct {
-    BYTE SignatureOwner[16];
+    EFI_GUID SignatureOwner;
     BYTE SignatureData[];
 } PACKED EFI_SIGNATURE_DATA;
 
