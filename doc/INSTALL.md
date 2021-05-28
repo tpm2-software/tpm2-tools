@@ -21,7 +21,6 @@ To build and install the tpm2-tools software the following software is required:
   * ESAPI - TPM2.0 TSS ESAPI library (tss2-esys) and header files
   * OpenSSL libcrypto library and header files
   * Curl library and header files
-  * Universally Unique ID library (UUID)
 
 #### Optional Dependencies:
   * To build the man pages you need [pandoc](https://github.com/jgm/pandoc)
@@ -59,7 +58,7 @@ The packages in the below command can be ascertained via the package manager.
 
 ```
 sudo apt-get install autoconf automake libtool pkg-config gcc \
-    libssl-dev libcurl4-gnutls-dev uuid-dev python-yaml
+    libssl-dev libcurl4-gnutls-dev python-yaml
 ```
 **Notes**:
 
