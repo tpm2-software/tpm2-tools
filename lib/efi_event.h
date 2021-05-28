@@ -77,11 +77,16 @@ typedef struct {
  /* TCG_EVENT2 comes next */
 } PACKED TCG_EVENT_HEADER2;
 
+/* Helper structure for dealing with unaligned char16_t */
+typedef struct {
+    char16_t c;
+} PACKED UTF16_CHAR;
+
 typedef struct {
   EFI_GUID VariableName;
   UINT64 UnicodeNameLength;
   UINT64 VariableDataLength;
-  char16_t UnicodeName[];
+  UTF16_CHAR UnicodeName[];
   /* INT8 VariableData[] comes next */
 } PACKED UEFI_VARIABLE_DATA;
 
@@ -158,7 +163,7 @@ typedef struct {
     UINT64 StartingLBA;
     UINT64 EndingLBA;
     UINT64 Attributes;
-    BYTE PartitionName[72];
+    UTF16_CHAR PartitionName[36];
 } PACKED UEFI_PARTITION_ENTRY;
 
 typedef struct {
