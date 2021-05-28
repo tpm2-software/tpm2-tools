@@ -655,7 +655,8 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
             guid_unparse_lower(partition->PartitionTypeGUID, guid);
             tpm2_tool_output("    - PartitionTypeGUID: %s\n", guid);
             guid_unparse_lower(partition->UniquePartitionGUID, guid);
-            char* part_name = yaml_utf16_to_str(partition->PartitionName, 36);
+            size_t len = sizeof(partition->PartitionName) / sizeof(UTF16_CHAR);
+            char *part_name = yaml_utf16_to_str(partition->PartitionName, len);
             tpm2_tool_output("      UniquePartitionGUID: %s\n"
                              "      StartingLBA: 0x%" PRIx64 "\n"
                              "      EndingLBA: 0x%" PRIx64 "\n"
