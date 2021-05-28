@@ -23,3 +23,4 @@ test-driver
 # dist tarball
 *.gz
 src_vars.mk
+test/
