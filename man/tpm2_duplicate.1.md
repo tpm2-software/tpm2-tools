@@ -69,6 +69,10 @@ These options control the key importation process:
 
     The authorization value for the key, optional.
 
+  * **-L**, **\--policy**=_FILE_:
+
+    The input policy file, optional.
+
   * **-c**, **\--key-context**=_OBJECT_:
 
     The object to be duplicated.

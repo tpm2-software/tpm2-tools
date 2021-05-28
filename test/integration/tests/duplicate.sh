@@ -5,7 +5,7 @@ source helpers.sh
 cleanup() {
     rm -f primary.ctx new_parent.prv new_parent.pub new_parent.ctx policy.dat \
     session.dat key.prv key.pub key.ctx duppriv.bin dupseed.dat key2.prv \
-    key2.pub key2.ctx sym_key_in.bin \
+    key2.pub key2.ctx sym_key_in.bin cleartext.txt secret.bin decrypted.txt \
     primary.pub rsa-priv.pem rsa.pub rsa.priv rsa.dpriv rsa.seed rsa-pub.pem rsa.sig
 
     if [ "$1" != "no-shut-down" ]; then
@@ -106,6 +106,7 @@ tpm2 readpublic -c primary.ctx -o primary.pub
 openssl genrsa -out rsa-priv.pem
 openssl rsa -in rsa-priv.pem -pubout > rsa-pub.pem
 tpm2 duplicate \
+	--tcti none \
 	-U primary.pub \
 	-G rsa \
 	-k rsa-priv.pem \
@@ -135,8 +136,71 @@ echo foo | openssl dgst \
 	-verify rsa-pub.pem \
 	-signature rsa.sig
 
+## External RSA key, with a password authorization policy
+echo magicwords > cleartext.txt
+openssl rsautl \
+	-encrypt \
+	-pubin \
+	-inkey rsa-pub.pem \
+	-in cleartext.txt \
+	-out secret.bin
+
+tpm2 startauthsession -S session.dat
+tpm2 policypassword -S session.dat -L policy.dat
+
+tpm2 duplicate \
+	--tcti none \
+	-U primary.pub \
+	-G rsa \
+	-k rsa-priv.pem \
+	-u rsa.pub \
+	-r rsa.dpriv \
+	-s rsa.seed \
+	-L policy.dat \
+	-p secretpassword
+
+tpm2 import \
+	-C primary.ctx \
+	-G rsa \
+	-i rsa.dpriv \
+	-s rsa.seed \
+	-u rsa.pub \
+	-r rsa.priv
+
+# validate that TPM can decrypt messages with this imported key
+
+tpm2 load \
+	-C primary.ctx \
+	-c rsa.ctx \
+	-u rsa.pub \
+	-r rsa.priv \
+
+tpm2 startauthsession -S session.dat --policy-session
+tpm2 policypassword -S session.dat -L policy.dat
+
+cat secret.bin | tpm2 rsadecrypt \
+	-c rsa.ctx \
+	-p session:session.dat+secretpassword \
+	> decrypted.txt
+cmp cleartext.txt decrypted.txt
 
 trap - ERR
+
+## Attempt to decrypt without the password or policy
+
+cat secret.bin | tpm2 rsadecrypt \
+	-c rsa.ctx \
+	-p session:session.dat
+if [ $? -eq 0 ]; then
+  echo "Expected \"tpm2 rsadecrypt\" to fail without password."
+  exit 1
+fi
+cat secret.bin | tpm2 rsadecrypt \
+	-c rsa.ctx
+if [ $? -eq 0 ]; then
+  echo "Expected \"tpm2 rsadecrypt\" to fail without policy."
+  exit 1
+fi
 
 ## Null parent - should fail (TPM_RC_HIERARCHY)
 start_duplication_session
