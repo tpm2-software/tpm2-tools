@@ -645,8 +645,8 @@ bool yaml_gpt(UEFI_GPT_DATA *data, size_t size, uint32_t eventlog_version) {
         size -= (sizeof(data->UEFIPartitionHeader) + sizeof(data->NumberOfPartitions));
 
         UINT64 i;
-        UEFI_PARTITION_ENTRY *partition = data->Partitions;
         for (i = 0; i < data->NumberOfPartitions; i++) {
+            UEFI_PARTITION_ENTRY *partition = &data->Partitions[i];
             if (size < sizeof(*partition)) {
                 LOG_ERR("Cannot parse GPT partition entry: insufficient data (%zu)\n", size);
                 return false;
