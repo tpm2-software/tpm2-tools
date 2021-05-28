@@ -2,7 +2,6 @@
 #ifndef TCG_EFI_EVENT_H
 #define TCG_EFI_EVENT_H 1
 
-#include <uuid/uuid.h>
 #include <uchar.h>
 #include <tss2/tss2_tpm2_types.h>
 
