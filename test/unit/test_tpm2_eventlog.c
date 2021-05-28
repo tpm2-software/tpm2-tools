@@ -365,9 +365,9 @@ static void test_parse_event2body_uefivar_badlength(void **state){
 
     (void)state;
 
-    char buf[sizeof(TCG_EVENT2) + sizeof(UEFI_VARIABLE_DATA) + sizeof(char16_t)] = { 0, };
+    char buf[sizeof(TCG_EVENT2) + sizeof(UEFI_VARIABLE_DATA) + sizeof(UTF16_CHAR)] = { 0, };
     TCG_EVENT2 *event = (TCG_EVENT2*)buf;
-    event->EventSize = sizeof(UEFI_VARIABLE_DATA) + sizeof(char16_t) - 1;
+    event->EventSize = sizeof(UEFI_VARIABLE_DATA) + sizeof(UTF16_CHAR) - 1;
     UEFI_VARIABLE_DATA *data = (UEFI_VARIABLE_DATA*)event->Event;
     data->UnicodeNameLength = 1;
 

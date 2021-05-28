@@ -119,7 +119,7 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
             }
 
             if (event->EventSize < sizeof(*data) + data->UnicodeNameLength *
-                sizeof(char16_t) + data->VariableDataLength)
+                sizeof(UTF16_CHAR) + data->VariableDataLength)
             {
                 LOG_ERR("size is insufficient for UEFI variable data");
                 return false;
