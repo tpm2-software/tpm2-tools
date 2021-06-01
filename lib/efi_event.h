@@ -189,7 +189,7 @@ typedef struct {
 
 /*
  * EV_NO_ACTION_STRUCT is the structure of an EV_NO_ACTION event.
- * Described in TCG PCClient FPF section 9.4.5.
+ * Described in TCG PCClient PFP section 9.4.5.
  * The Signature identifies which arm of the union applies.
  */
 typedef struct {
