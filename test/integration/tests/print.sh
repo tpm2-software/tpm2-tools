@@ -41,6 +41,9 @@ yaml_verify $print_file
 tpm2 print -t TPMT_PUBLIC tpmt_public.ak > $print_file
 yaml_verify $print_file
 
+tpm2 print -t TPMT_PUBLIC -f pem tpmt_public.ak > $print_file
+openssl rsa -noout -text -inform PEM -in $print_file -pubin
+
 # Take PCR quote
 tpm2 quote -Q -c $ak_ctx -l "sha256:0,2,4,9,10,11,12,17" -q "0f8beb45ac" \
 -m $quote_file

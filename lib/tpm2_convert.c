@@ -270,9 +270,9 @@ static bool tpm2_convert_pubkey_bio(TPMT_PUBLIC *public,
 static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public,
         tpm2_convert_pubkey_fmt format, const char *path) {
 
-    BIO *bio = BIO_new_file(path, "wb");
+    BIO *bio = path ? BIO_new_file(path, "wb") : BIO_new_fp(stdout, BIO_NOCLOSE);
     if (!bio) {
-        LOG_ERR("Failed to open public key output file '%s': %s", path,
+        LOG_ERR("Failed to open public key output file '%s': %s", path ? path : "<stdin>",
                 ERR_error_string(ERR_get_error(), NULL));
         return false;
     }
