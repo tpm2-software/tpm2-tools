@@ -115,4 +115,8 @@ tpm2 create -C prim.ctx -u key.pub -r key.priv -p apple \
 tpm2 flushcontext audit_session.ctx
 tpm2 flushcontext enc_session.ctx
 
+# Test public key output
+tpm2_create -C primary.ctx -u obj.pub -r obj.priv -f pem -o obj.pem
+openssl rsa -noout -text -inform PEM -in obj.pem -pubin
+
 exit 0
