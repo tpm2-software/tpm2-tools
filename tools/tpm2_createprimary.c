@@ -8,6 +8,7 @@
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
 
@@ -41,6 +42,10 @@ struct tpm_createprimary_ctx {
     char *policy;
 
     char *cp_hash_path;
+
+    char *output_path;
+    bool format_set;
+    tpm2_convert_pubkey_fmt format;
 };
 
 static tpm_createprimary_ctx ctx = {
@@ -51,6 +56,7 @@ static tpm_createprimary_ctx ctx = {
             .hierarchy = TPM2_RH_OWNER
         },
     },
+    .format = pubkey_format_tss,
 };
 
 static bool on_option(char key, char *value) {
@@ -115,6 +121,16 @@ static bool on_option(char key, char *value) {
     case 2:
         ctx.cp_hash_path = value;
         break;
+    case 'f':
+        ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
+        if (ctx.format == pubkey_format_err) {
+            return false;
+        }
+        ctx.format_set = true;
+        break;
+    case 'o':
+        ctx.output_path = value;
+        break;
         /* no default */
     }
 
@@ -140,9 +156,11 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "outside-info",   required_argument, NULL, 'q' },
         { "pcr-list",       required_argument, NULL, 'l' },
         { "cphash",         required_argument, NULL,  2  },
+        { "format",         required_argument, NULL, 'f' },
+        { "output",         required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:l:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:l:o:f:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
@@ -153,6 +171,11 @@ static tool_rc validate_input_options(void) {
     if (ctx.cp_hash_path && (ctx.creation_data_file || ctx.creation_hash_file ||
     ctx.creation_ticket_file || ctx.context_file)) {
         LOG_ERR("Cannot generate outputs when calculating cpHash");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.format_set && !ctx.output_path) {
+        LOG_ERR("Cannot specify --format/-f without specifying --output/-o");
         return tool_rc_option_error;
     }
 
@@ -286,6 +309,14 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     if (!result) {
         LOG_ERR("Failed saving creation hash.");
         return tool_rc_general_error;
+    }
+
+    if (ctx.output_path) {
+        result = tpm2_convert_pubkey_save(ctx.objdata.out.public, ctx.format, ctx.output_path);
+        if (!result) {
+            LOG_ERR("Failed saving public key.");
+            return tool_rc_general_error;
+        }
     }
 
     return tool_rc_success;
