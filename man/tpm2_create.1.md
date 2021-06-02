@@ -136,6 +136,14 @@ These options for creating the TPM entity:
     be specified. For example, you can have one session for auditing and another
     for encryption/decryption of the parameters.
 
+[pubkey options](common/pubkey.md)
+
+    Public key format.
+
+  * **-o**, **\--output**=_FILE_:
+
+    The output file path, recording the public portion of the object.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
@@ -199,6 +207,16 @@ that manpage for details on its usage.
 
 ```bash
 tpm2_create -C primary.ctx -G ecc -u obj.pub -r obj.priv -c ecc.ctx
+```
+
+## Create an Object and get the public key as a PEM file
+
+This will create an object using all the default values but also output the
+public key as a PEM file compatible with tools like OpenSSL and whatever supports
+PEM files.
+
+```bash
+tpm2_create -C primary.ctx -u obj.pub -r obj.priv -f pem -o obj.pem
 ```
 
 [returns](common/returns.md)

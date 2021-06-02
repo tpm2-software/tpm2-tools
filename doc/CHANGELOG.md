@@ -9,6 +9,8 @@
         session for auditing and or encryption/decryption of the parameters.
   * tpm2_createprimary: Support outputing public key at creation time in various
     public key formats.
+  * tpm2_create: Support outputing public key at creation time in various
+    public key formats.
 
 ### 5.1 2021-05-24
 

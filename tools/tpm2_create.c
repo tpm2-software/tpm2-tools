@@ -7,6 +7,7 @@
 #include "log.h"
 #include "pcr.h"
 #include "tpm2.h"
+#include "tpm2_convert.h"
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
@@ -77,6 +78,13 @@ struct tpm_create_ctx {
     tpm2_session *aux_session[MAX_AUX_SESSIONS];
     const char *aux_session_path[MAX_AUX_SESSIONS];
     ESYS_TR aux_session_handle[MAX_AUX_SESSIONS];
+
+    /*
+     * Formated public key output
+     */
+    char *output_path;
+    bool format_set;
+    tpm2_convert_pubkey_fmt format;
 };
 
 #define DEFAULT_KEY_ALG "rsa2048"
@@ -91,6 +99,7 @@ static tpm_create_ctx ctx = {
         .is_command_dispatch = true,
         .object.outside_info.size = 0,
         .parameter_hash_algorithm = TPM2_ALG_ERROR,
+        .format = pubkey_format_tss,
 };
 
 static bool load_outside_info(TPM2B_DATA *outside_info) {
@@ -246,6 +255,14 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
         if (!is_file_op_success) {
             LOG_ERR("Failed saving creation hash.");
             rc = tool_rc_general_error;
+        }
+    }
+
+    if (ctx.output_path) {
+        bool result = tpm2_convert_pubkey_save(ctx.object.out_public, ctx.format, ctx.output_path);
+        if (!result) {
+            LOG_ERR("Failed saving public key.");
+            return tool_rc_general_error;
         }
     }
 
@@ -423,6 +440,11 @@ static tool_rc check_options(void) {
         return tool_rc_option_error;
     }
 
+    if (ctx.format_set && !ctx.output_path) {
+        LOG_ERR("Cannot specify --format/-f without specifying --output/-o");
+        return tool_rc_option_error;
+    }
+
     return tool_rc_success;
 }
 
@@ -515,6 +537,17 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'f':
+        ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
+        if (ctx.format == pubkey_format_err) {
+            return false;
+        }
+        ctx.format_set = true;
+        break;
+    case 'o':
+        ctx.output_path = value;
+        break;
+        /* no default */
     };
 
     return true;
@@ -543,9 +576,11 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "cphash",         required_argument, NULL,  2  },
       { "rphash",         required_argument, NULL,  3  },
       { "session",        required_argument, NULL, 'S' },
+      { "format",         required_argument, NULL, 'f' },
+      { "output",         required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:l:S:",
+    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:l:S:o:f:",
     ARRAY_LEN(topts), topts, on_option, NULL, 0);
 
     return *opts != NULL;
