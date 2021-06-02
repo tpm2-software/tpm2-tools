@@ -17,7 +17,28 @@ use a policy file for authorization or policy events.
 
 This will not work with resource managers (RMs) outside of [tpm2-abrmd](https://
 github.com/tpm2-software/tpm2-abrmd), as most RMs will flush session handles
-when a client disconnects from the IPC channel.
+when a client disconnects from the IPC channel. However, when using a RM without
+the session gapping feature, one can use the command TCTI to keep the connection
+open.
+
+The first step is to create a socket listener that uses tpm2\_send:
+```bash
+mknod "$HOME/backpipe" p
+while [ 1 ]; do tpm2_send 0<"$HOME/backpipe" | nc -lU "$HOME/sock" 1>"$HOME/backpipe"; done;
+```
+
+The next step is to use the command TCTI and netcat (nc) to send data to the socket.
+```bash
+tpm2_startauthsession --tcti="cmd:nc -q 0 -U $HOME/sock" <options>
+```
+
+When finishing ensure to kill the listener. For commands executed with the command tcti against
+the listener, one will need to manage transient handles. The simplest way is to add a flush
+after each command: `tpm2_flushcontext --tcti="cmd:nc -q 0 -U $HOME/sock" -t`
+
+Note: This example uses UNIX sockets, since the socket is controlled with Linux
+access controls. Using a port is not recommended as it's either open to any user
+on the system (localhost) or bound to a network card and exposed to the network.
 
 This will work with direct TPM access, but note that internally this calls a
 *ContextSave* and a *ContextLoad* on the session handle, thus the session
