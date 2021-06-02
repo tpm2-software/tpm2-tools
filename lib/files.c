@@ -199,7 +199,7 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
 
     bool result = files_write_bytes(fp, buf, size);
     if (!result) {
-        LOG_ERR("Could not write data to file \"%s\"", path);
+        LOG_ERR("Could not write data to file \"%s\"", path ? path : "<stdout>");
     }
 
     if (fp != stdout) {

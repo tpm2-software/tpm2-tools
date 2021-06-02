@@ -25,6 +25,11 @@ path argument. Reads from stdin if unspecified.
       * **TPMT_PUBLIC**
   * **ARGUMENT** the command line argument specifies the path of the TPM data.
 
+[pubkey options](common/pubkey.md)
+
+    Public key format. This only works if option `--type/-t` is set to
+    TPM2B_PUBLIC or TPMT_PUBLIC.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
@@ -76,6 +81,13 @@ tpm2_print -t TPM2B_PUBLIC key.pub
 tpm2_readpublic -c key.ctx -f tpmt -o key.tpmt
 tpm2_print -t TPMT_PUBLIC key.tpmt
 ```
+
+### Print a TPM2B_PUBLIC file and convert to PEM format
+
+```bash
+tpm2 print -t TPM2B_PUBLIC -f pem key.pub
+```
+
 
 [returns](common/returns.md)
 

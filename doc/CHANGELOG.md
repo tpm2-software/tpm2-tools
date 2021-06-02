@@ -11,6 +11,9 @@
     public key formats.
   * tpm2_create: Support outputing public key at creation time in various
     public key formats.
+  * tpm2_print: Support outputing public key in various public key formats over
+    the default YAML output. Supports taking `-u` output from `tpm2_create` and
+    converting it to a PEM or DER file format.
 
 ### 5.1 2021-05-24
 

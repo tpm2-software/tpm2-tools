@@ -8,10 +8,13 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef bool (*print_fn)(FILE *f);
+
+#define FLAG_FMT (1 << 0)
 
 typedef struct tpm2_print_ctx tpm2_print_ctx;
 struct tpm2_print_ctx {
@@ -19,9 +22,13 @@ struct tpm2_print_ctx {
         const char *path;
         print_fn handler;
     } file;
+    bool format_set;
+    tpm2_convert_pubkey_fmt format;
 };
 
-static tpm2_print_ctx ctx;
+static tpm2_print_ctx ctx = {
+        .format = pubkey_format_tss
+};
 
 static void print_clock_info(TPMS_CLOCK_INFO *clock_info, size_t indent_count) {
 
@@ -256,6 +263,13 @@ static bool print_TPMT_PUBLIC(FILE *fstream) {
         return res;
     }
 
+    if (ctx.format_set) {
+        TPM2B_PUBLIC tpm2b_public = {
+                .publicArea = public
+        };
+        return tpm2_convert_pubkey_save(&tpm2b_public, ctx.format, NULL);
+    }
+
     tpm2_util_tpmt_public_to_yaml(&public, NULL);
 
     return true;
@@ -269,29 +283,42 @@ static bool print_TPM2B_PUBLIC(FILE *fstream) {
         return res;
     }
 
+    if (ctx.format_set) {
+        return tpm2_convert_pubkey_save(&public, ctx.format, NULL);
+    }
+
     tpm2_util_public_to_yaml(&public, NULL);
 
     return true;
 }
 
-#define ADD_HANDLER(type) { .name = #type, .fn = print_##type }
+#define ADD_HANDLER(type) { .name = #type, .flags = 0, .fn = print_##type }
+#define ADD_HANDLER_FMT(type) { .name = #type, .flags = FLAG_FMT, .fn = print_##type }
+
 
 static bool handle_type(const char *name) {
 
     static const struct {
         const char *name;
+        unsigned flags;
         print_fn fn;
     } handlers[] = {
         ADD_HANDLER(TPMS_ATTEST),
         ADD_HANDLER(TPMS_CONTEXT),
-        ADD_HANDLER(TPM2B_PUBLIC),
-        ADD_HANDLER(TPMT_PUBLIC)
+        ADD_HANDLER_FMT(TPM2B_PUBLIC),
+        ADD_HANDLER_FMT(TPMT_PUBLIC)
     };
 
     size_t i;
     for (i=0; i < ARRAY_LEN(handlers); i++) {
 
         if (!strcmp(name, handlers[i].name)) {
+
+            if (ctx.format_set && !(handlers[i].flags & FLAG_FMT)) {
+                LOG_ERR("Cannot specify --format/-f with handler for type \"%s\"", name);
+                return false;
+            }
+
             ctx.file.handler = handlers[i].fn;
             return true;
         }
@@ -308,6 +335,13 @@ static bool on_option(char key, char *value) {
         return handle_type(value);
     case 'i':
         ctx.file.path = value;
+        break;
+    case 'f':
+        ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
+        if (ctx.format == pubkey_format_err) {
+            return false;
+        }
+        ctx.format_set = true;
         break;
     default:
         LOG_ERR("Invalid option %c", key);
@@ -331,10 +365,11 @@ static bool on_arg(int argc, char *argv[]) {
 
 static bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
-        { "type",  required_argument, NULL, 't' },
+        { "type",   required_argument, NULL, 't' },
+        { "format", required_argument, NULL, 'f' },
     };
 
-    *opts = tpm2_options_new("t:", ARRAY_LEN(topts), topts, on_option, on_arg,
+    *opts = tpm2_options_new("t:f:", ARRAY_LEN(topts), topts, on_option, on_arg,
             TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
