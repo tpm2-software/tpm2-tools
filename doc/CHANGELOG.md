@@ -1,5 +1,13 @@
 ## Changelog
 
+### 4.3.2-rc0 2021-06-02
+
+  * tpm2_import: fix fixed AES key CVE-2021-3565
+      - tpm2_import used a fixed AES key for the inner wrapper, which means that
+        a MITM attack would be able to unwrap the imported key. To fix this,
+        ensure the key size is 16 bytes or bigger and use OpenSSL to generate a
+        secure random AES key.
+
 ### 4.3.1 2021-05-18
 
   * tpm2_dictionarylockout: Fix issue where setting value reset others
