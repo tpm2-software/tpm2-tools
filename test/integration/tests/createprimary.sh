@@ -110,4 +110,8 @@ tpm2 createprimary -Q
 AFTER=$(tpm2 getcap handles-loaded-session; tpm2 getcap handles-saved-session)
 test "${BEFORE}" = "${AFTER}"
 
+# Test pem key
+tpm2 createprimary -f pem -o public.pem
+openssl rsa -noout -text -inform PEM -in public.pem -pubin
+
 exit 0

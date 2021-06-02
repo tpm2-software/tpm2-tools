@@ -7,6 +7,8 @@
         of the response parameters. This is commonly termed as rpHash.
       - Added option **-S**, **\--session** to specify to specify an auxiliary
         session for auditing and or encryption/decryption of the parameters.
+  * tpm2_createprimary: Support outputing public key at creation time in various
+    public key formats.
 
 ### 5.1 2021-05-24
 

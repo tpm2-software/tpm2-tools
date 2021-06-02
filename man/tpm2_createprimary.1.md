@@ -122,6 +122,15 @@ future interactions with the created primary.
     termed as cpHash. NOTE: When this option is selected, The tool will not
     actually execute the command, it simply returns a cpHash.
 
+[pubkey options](common/pubkey.md)
+
+    Public key format.
+
+  * **-o**, **\--output**=_FILE_:
+
+    The output file path, recording the public portion of the object.
+
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
@@ -160,6 +169,10 @@ Where unique.dat contains the binary-formatted data: 0x00 0x01 (0x00 * 256)
 tpm2_createprimary -C o -G rsa2048:aes128cfb -g sha256 -c prim.ctx \
 -a 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|\
 noda' -u unique.dat
+
+## Create a primary object and output the public key in pem format
+```bash
+tpm2_createprimary -c primary.ctx --format=pem --output=public.pem
 ```
 
 [returns](common/returns.md)
