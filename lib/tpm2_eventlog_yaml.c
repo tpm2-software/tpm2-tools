@@ -24,6 +24,7 @@
 #endif
 
 static void guid_unparse_lower(EFI_GUID guid, char guid_buf[37]) {
+
     snprintf(guid_buf, 37, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
             guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1],
             guid.Data4[2], guid.Data4[3], guid.Data4[4],
