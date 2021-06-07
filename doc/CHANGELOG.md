@@ -14,6 +14,8 @@
   * tpm2_print: Support outputing public key in various public key formats over
     the default YAML output. Supports taking `-u` output from `tpm2_create` and
     converting it to a PEM or DER file format.
+  * tools: Enhance error message on invalid passwords when sessions cannot
+    be used.
 
 ### 5.1 2021-05-24
 
