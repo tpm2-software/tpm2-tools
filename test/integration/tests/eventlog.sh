@@ -38,4 +38,8 @@ expect_pass tpm2 eventlog ${srcdir}/test/integration/fixtures/event-uefi-sha1-lo
 expect_pass tpm2 eventlog ${srcdir}/test/integration/fixtures/event-bootorder.bin
 expect_pass tpm2 eventlog ${srcdir}/test/integration/fixtures/event-postcode.bin
 
+# Make sure that --eventlog-version=2 works on complete TPM2 logs
+expect_pass tpm2 eventlog --eventlog-version=2 ${srcdir}/test/integration/fixtures/event-arch-linux.bin
+expect_pass tpm2 eventlog --eventlog-version=2 ${srcdir}/test/integration/fixtures/event-gce-ubuntu-2104-log.bin
+
 exit $?
