@@ -94,7 +94,7 @@ minilanguage is as follows:
 
 The PCR spec is documented in in the section "PCR bank specifiers".
 
-The `raw-pcr-file` is an **optional** the output of the raw PCR contents as returned by *tpm2_pcrread(1)*.
+The `raw-pcr-file` is an **optional** argument that contains the output of the raw PCR contents as returned by *tpm2_pcrread(1)*.
 
 [PCR bank specifiers](pcr.md)
 
