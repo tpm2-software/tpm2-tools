@@ -348,7 +348,7 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     if (is_session) {
 
         if (is_restricted) {
-            LOG_ERR("cannot specify password");
+            LOG_ERR("Cannot specify password type \"session:\"");
             return tool_rc_general_error;
         }
 
@@ -364,6 +364,10 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     /* starts with pcr: */
     bool is_pcr = !strncmp(password, PCR_PREFIX, PCR_PREFIX_LEN);
     if (is_pcr) {
+        if (is_restricted) {
+            LOG_ERR("Cannot specify password type \"pcr:\"");
+            return tool_rc_general_error;
+        }
         return handle_pcr(ectx, password, session);
     }
 
