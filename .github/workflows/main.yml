@@ -35,7 +35,8 @@ jobs:
         env:
           DOCKER_IMAGE: ${{ matrix.docker_image }}
           CC: ${{ matrix.compiler }}
-          TPM2_TSS_VERSION: ${{ matrix.tss_version }}
+          TPM2_TSS_VERSION: master
+          GIT_FULL_CLONE: true
         run: ./.ci/travis.run
       - name: failure
         if: ${{ failure() }}
