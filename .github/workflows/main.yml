@@ -25,17 +25,15 @@ jobs:
     if: "!contains(github.ref, 'coverity_scan')"
     strategy:
       matrix:
-        tss_version: [master]
-        docker_image: [ubuntu-18.04]
         compiler: [gcc, clang]
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
       - name: Launch Container
         env:
-          DOCKER_IMAGE: ${{ matrix.docker_image }}
+          DOCKER_IMAGE: ubuntu-18.04
           CC: ${{ matrix.compiler }}
-          TPM2_TSS_VERSION: ${{ matrix.tss_version }}
+          TPM2_TSS_VERSION: master
         run: ./.ci/travis.run
       - name: failure
         if: ${{ failure() }}
