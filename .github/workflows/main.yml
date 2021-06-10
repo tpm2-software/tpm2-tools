@@ -34,6 +34,7 @@ jobs:
           DOCKER_IMAGE: ubuntu-18.04
           CC: ${{ matrix.compiler }}
           TPM2_TSS_VERSION: master
+          GIT_FULL_CLONE: true
         run: ./.ci/travis.run
       - name: failure
         if: ${{ failure() }}
