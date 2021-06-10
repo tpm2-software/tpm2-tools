@@ -26,7 +26,13 @@ function get_deps() {
 	pushd "$1"
 	echo "pwd clone tss: `pwd`"
 	if [ ! -d tpm2-tss ]; then
-		git clone --depth=1 \
+		if [ -z "$GIT_FULL_CLONE" ]; then
+			echo "Doing shallow clone of tss"
+			git_extra_flags="--depth=1"
+		else
+			echo "Doing deep clone of tss"
+		fi
+		git clone $git_extra_flags \
 		--branch "$TSS_VERSION" https://github.com/tpm2-software/tpm2-tss.git
 		pushd tpm2-tss
 		echo "pwd build tss: `pwd`"
