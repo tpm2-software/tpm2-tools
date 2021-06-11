@@ -424,11 +424,14 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
         goto nv_read_out;
     }
 
+    TPM2B_DIGEST cp_hash = {
+        .size = 0,
+    };
     rc = nv_index == RSA_EK_CERT_NV_INDEX ?
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.rsa_cert_buffer,
-         &ctx.rsa_cert_buffer_size, 0) :
+         &ctx.rsa_cert_buffer_size, &cp_hash, TPM2_ALG_SHA256) :
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.ecc_cert_buffer,
-         &ctx.ecc_cert_buffer_size, 0);
+         &ctx.ecc_cert_buffer_size, &cp_hash, TPM2_ALG_SHA256);
 
 nv_read_out:
     tmp_rc = tpm2_session_close(&object.session);

@@ -7,6 +7,7 @@
 #include "tpm2_nv_util.h"
 #include "tpm2_options.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_nvread_ctx tpm_nvread_ctx;
 struct tpm_nvread_ctx {
     /*
@@ -32,19 +33,21 @@ struct tpm_nvread_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
-static tpm_nvread_ctx ctx;
+static tpm_nvread_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
+};
 
 static tool_rc nv_read(ESYS_CONTEXT *ectx) {
 
     return tpm2_util_nv_read(ectx, ctx.nv_index, ctx.size_to_read,
         ctx.offset, &ctx.auth_hierarchy.object, &ctx.data_buffer,
-        &ctx.bytes_written, ctx.cphash);
+        &ctx.bytes_written, &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -128,7 +131,16 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.auth_hierarchy.object.session,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
