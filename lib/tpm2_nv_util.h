@@ -107,9 +107,10 @@ static inline tool_rc tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
  *  tool_rc indicating status.
  */
 static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
-        TPMI_RH_NV_INDEX nv_index, UINT16 size, UINT16 offset,
-        tpm2_loaded_object * auth_hierarchy_obj, UINT8 **data_buffer,
-        UINT16 *bytes_written, TPM2B_DIGEST *cp_hash) {
+    TPMI_RH_NV_INDEX nv_index, UINT16 size, UINT16 offset,
+    tpm2_loaded_object * auth_hierarchy_obj, UINT8 **data_buffer,
+    UINT16 *bytes_written, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     *data_buffer = NULL;
 
@@ -142,7 +143,7 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
         goto out;
     }
 
-    if (cp_hash) {
+    if (cp_hash->size) {
         goto tpm2_util_nv_read_collect_cp_hash;
     }
 
@@ -159,10 +160,10 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
     }
 
 tpm2_util_nv_read_collect_cp_hash:
-    if (cp_hash) {
+    if (cp_hash->size) {
         TPM2B_MAX_NV_BUFFER *nv_data;
         rc = tpm2_nv_read(ectx, auth_hierarchy_obj, nv_index, size, offset,
-            &nv_data, cp_hash);
+            &nv_data, cp_hash, parameter_hash_algorithm);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed cpHash for NVRAM read at index 0x%X", nv_index);
         }
@@ -185,7 +186,7 @@ tpm2_util_nv_read_collect_cp_hash:
         TPM2B_MAX_NV_BUFFER *nv_data;
 
         rc = tpm2_nv_read(ectx, auth_hierarchy_obj, nv_index, bytes_to_read,
-            offset, &nv_data, cp_hash);
+            offset, &nv_data, cp_hash, parameter_hash_algorithm);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to read NVRAM area at index 0x%X", nv_index);
             goto out;
