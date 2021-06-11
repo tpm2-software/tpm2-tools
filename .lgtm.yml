@@ -7,12 +7,12 @@ extraction:
       - libjson-c-dev
       - libssl-dev
       - acl
+      - git
     after_prepare:
     - cd "$LGTM_WORKSPACE"
     - mkdir installdir
-    - wget https://github.com/tpm2-software/tpm2-tss/archive/master.tar.gz
-    - tar xf master.tar.gz
-    - cd tpm2-tss-master
+    - git clone https://github.com/tpm2-software/tpm2-tss.git
+    - cd tpm2-tss
     - ./bootstrap
     - ./configure --prefix="$LGTM_WORKSPACE/installdir/usr" --disable-doxygen-doc
     - make install
