@@ -135,10 +135,10 @@ typedef struct {
 } PACKED UEFI_IMAGE_LOAD_EVENT;
 
 /* 
-   These structs represent a GUID Partition Table, and are defined in the TGC PC
-   Client Platform Firmware Profile Specification Revision 1.04 Section 9.4.
-   The struct members are defined in the UEFI Specification Version 2.8
-   Section 5.3
+   These structs represent a GUID Partition Table. UEFI_GPT_DATA is defined in
+   the TGC PC Client Platform Firmware Profile Specification Version 1.05,
+   Revision 23, Table 10. UEFI_PARTITION_TABLE_HEADER and UEFI_PARTITION_ENTRY
+   are defined in the UEFI Specification Version 2.9, Section 5.3.
  */
 typedef struct {
     UINT64 Signature;
@@ -163,6 +163,7 @@ typedef struct {
     UINT64 StartingLBA;
     UINT64 EndingLBA;
     UINT64 Attributes;
+    /* To make the entire struct 128 bytes, PartitionName is 36 characters. */
     UTF16_CHAR PartitionName[36];
 } PACKED UEFI_PARTITION_ENTRY;
 
