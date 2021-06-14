@@ -25,6 +25,25 @@ enum tpm2_convert_sig_fmt {
     signature_format_err
 };
 
+typedef enum tpm2_convert_pcrs_output_fmt tpm2_convert_pcrs_output_fmt;
+enum tpm2_convert_pcrs_output_fmt {
+    pcrs_output_format_values,
+    pcrs_output_format_serialized,
+    pcrs_output_format_err
+};
+
+/**
+ * Parses the given command line PCRS file output format option string and
+ * returns the corresponding pcrs_output_fmt enum value.
+ *
+ * LOG_ERR is used to communicate errors.
+ *
+ * @return
+ *   On error pcrs_output_format_err is returned.
+ */
+tpm2_convert_pcrs_output_fmt tpm2_convert_pcrs_output_fmt_from_optarg(
+    const char *label);
+
 /**
  * Parses the given command line public key format option string and returns
  * the corresponding pubkey_format enum value.

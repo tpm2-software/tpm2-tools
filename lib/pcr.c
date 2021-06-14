@@ -237,30 +237,119 @@ bool pcr_print_pcr_struct_le(TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
     return result;
 }
 
-bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
+bool pcr_fwrite_serialized(const TPML_PCR_SELECTION *pcr_select,
+    const tpm2_pcrs *ppcrs, FILE *output_file) {
 
-    UINT32 vi = 0, di = 0, i;
-    bool result = true;
+    TPML_PCR_SELECTION pcr_selection = *pcr_select;
+    for (UINT32 i = 0; i < pcr_selection.count; i++) {
+        TPMS_PCR_SELECTION *p = &pcr_selection.pcrSelections[i];
+        p->hash = htole16(p->hash);
+    }
+    pcr_selection.count = htole32(pcr_selection.count);
 
-    tpm2_tool_output("pcrs:\n");
+    // Export TPML_PCR_SELECTION structure to pcr outfile
+    size_t fwrite_len = fwrite(&pcr_selection, sizeof(TPML_PCR_SELECTION),
+        1, output_file);
+    if (fwrite_len != 1) {
+        LOG_ERR("write to output file failed: %s", strerror(errno));
+        return false;
+    }
 
+    // Export PCR digests to pcr outfile
+    UINT32 count = htole32(ppcrs->count);
+    fwrite_len = fwrite(&count, sizeof(UINT32), 1, output_file);
+    if (fwrite_len != 1) {
+        LOG_ERR("write to output file failed: %s", strerror(errno));
+        return false;
+    }
+
+    tpm2_pcrs pcrs = *ppcrs;
+    for (size_t j = 0; j < pcrs.count; j++) {
+        TPML_DIGEST *pcr_value = &pcrs.pcr_values[j];
+
+        for (size_t k = 0; k < pcr_value->count; k++) {
+            TPM2B_DIGEST *p = &pcr_value->digests[k];
+            p->size = htole16(p->size);
+        }
+        pcr_value->count = htole32(pcr_value->count);
+        fwrite_len = fwrite(pcr_value, sizeof(TPML_DIGEST), 1, output_file);
+        if (fwrite_len != 1) {
+            LOG_ERR("write to output file failed: %s", strerror(errno));
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool pcr_fwrite_values(const TPML_PCR_SELECTION *pcr_select,
+    const tpm2_pcrs *pcrs, FILE *output_file) {
+
+    size_t vi = 0;  /* value index */
+    UINT32 di = 0;  /* digest index */
     // Loop through all PCR/hash banks
-    for (i = 0; i < pcr_select->count; i++) {
-        const char *alg_name = tpm2_alg_util_algtostr(
-                pcr_select->pcrSelections[i].hash, tpm2_alg_util_flags_hash);
+    for (UINT32 i = 0; i < pcr_select->count; i++) {
+        const TPMS_PCR_SELECTION *pcr_selection = &pcr_select->pcrSelections[i];
+        // Loop through all PCRs in this bank
+        for (unsigned int pcr_id = 0; pcr_id < pcr_selection->sizeofSelect * 8u;
+            pcr_id++) {
+
+            bool is_pcr_select_bit_set = tpm2_util_is_pcr_select_bit_set(
+                pcr_selection, pcr_id);
+            if (! is_pcr_select_bit_set) {
+                // skip non-selected banks
+                continue;
+            }
+            const TPML_DIGEST *pcr_value = &pcrs->pcr_values[vi];
+            if (vi >= pcrs->count || di >= pcr_value->count) {
+                LOG_ERR("Something wrong, trying to print but nothing more");
+                return false;
+            }
+
+            // Print out current PCR digest value
+            const TPM2B_DIGEST *digest = &pcr_value->digests[di];
+            size_t fwrite_len = fwrite(digest->buffer, digest->size, 1,
+                output_file);
+            if (fwrite_len != 1) {
+                LOG_ERR("write to output file failed: %s", strerror(errno));
+                return false;
+            }
+
+            if (++di >= pcr_value->count) {
+                di = 0;
+                ++vi;
+            }
+        } /* end looping through all PCRs in a bank */
+    }  /* end looping through all PCR banks */
+
+    return true;
+}
+
+bool pcr_print_values(const TPML_PCR_SELECTION *pcr_select,
+    const tpm2_pcrs *pcrs) {
+
+    size_t vi = 0;  /* value index */
+    UINT32 di = 0;  /* digest index */
+    // Loop through all PCR/hash banks
+    for (UINT32 i = 0; i < pcr_select->count; i++) {
+        const TPMS_PCR_SELECTION *pcr_selection = &pcr_select->pcrSelections[i];
+        const char *alg_name = tpm2_alg_util_algtostr(pcr_selection->hash,
+            tpm2_alg_util_flags_hash);
 
         tpm2_tool_output("  %s:\n", alg_name);
 
         // Loop through all PCRs in this bank
-        unsigned int pcr_id;
-        for (pcr_id = 0; pcr_id < pcr_select->pcrSelections[i].sizeofSelect * 8u;
-                pcr_id++) {
-            if (!tpm2_util_is_pcr_select_bit_set(&pcr_select->pcrSelections[i],
-                    pcr_id)) {
+        for (unsigned int pcr_id = 0; pcr_id < pcr_selection->sizeofSelect * 8u;
+            pcr_id++) {
+
+            bool is_pcr_select_bit_set = tpm2_util_is_pcr_select_bit_set(
+                pcr_selection, pcr_id);
+            if (! is_pcr_select_bit_set) {
                 // skip non-selected banks
                 continue;
             }
-            if (vi >= pcrs->count || di >= pcrs->pcr_values[vi].count) {
+            const TPML_DIGEST *pcr_value = &pcrs->pcr_values[vi];
+            if (vi >= pcrs->count || di >= pcr_value->count) {
                 LOG_ERR("Something wrong, trying to print but nothing more");
                 return false;
             }
@@ -269,25 +358,25 @@ bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
             tpm2_tool_output("    %-2d: 0x", pcr_id);
 
             // Print out current PCR digest value
-            TPM2B_DIGEST *b = &pcrs->pcr_values[vi].digests[di];
-            int k;
-            for (k = 0; k < b->size; k++) {
-                tpm2_tool_output("%02X", b->buffer[k]);
+            const TPM2B_DIGEST *digest = &pcr_value->digests[di];
+            for (int k = 0; k < digest->size; k++) {
+                tpm2_tool_output("%02X", digest->buffer[k]);
             }
             tpm2_tool_output("\n");
 
-            if (++di < pcrs->pcr_values[vi].count) {
-                continue;
+            if (++di >= pcr_value->count) {
+                di = 0;
+                ++vi;
             }
+        } /* end looping through all PCRs in a bank */
+    }  /* end looping through all PCR banks */
 
-            di = 0;
-            if (++vi < pcrs->count) {
-                continue;
-            }
-        }
-    }
+    return true;
+}
 
-    return result;
+bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
+    tpm2_tool_output("pcrs:\n");
+    return pcr_print_values(pcr_select, pcrs);
 }
 
 bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections) {

@@ -33,6 +33,7 @@ struct tpm_quote_ctx {
     TPML_PCR_SELECTION pcr_selections;
     TPMS_CAPABILITY_DATA cap_data;
     tpm2_pcrs pcrs;
+    tpm2_convert_pcrs_output_fmt pcrs_format;
 
     char *cp_hash_path;
 };
@@ -40,55 +41,8 @@ struct tpm_quote_ctx {
 static tpm_quote_ctx ctx = {
     .sig_hash_algorithm = TPM2_ALG_NULL,
     .qualification_data = TPM2B_EMPTY_INIT,
+    .pcrs_format = pcrs_output_format_serialized,
 };
-
-
-// write all PCR banks according to g_pcrSelection & g_pcrs->
-static bool write_pcr_values() {
-    UINT32 count;
-
-    // PCR output to file wasn't requested
-    if (ctx.pcr_output == NULL) {
-        return true;
-    }
-
-    // Make sure the file content is written in little endian format
-    ctx.pcr_selections.count = htole32(ctx.pcr_selections.count);
-    UINT32 i;
-    for (i = 0; i < le32toh(ctx.pcr_selections.count); i++)
-        ctx.pcr_selections.pcrSelections[i].hash = htole16(ctx.pcr_selections.pcrSelections[i].hash);
-
-    // Export TPML_PCR_SELECTION structure to pcr outfile
-    if (fwrite(&ctx.pcr_selections, sizeof(TPML_PCR_SELECTION), 1,
-            ctx.pcr_output) != 1) {
-        LOG_ERR("write to output file failed: %s", strerror(errno));
-        return false;
-    }
-
-    count = htole32(ctx.pcrs.count);
-    // Export PCR digests to pcr outfile
-    if (fwrite(&count, sizeof(UINT32), 1, ctx.pcr_output) != 1) {
-        LOG_ERR("write to output file failed: %s", strerror(errno));
-        return false;
-    }
-
-    UINT32 j;
-    for (j = 0; j < ctx.pcrs.count; j++) {
-        ctx.pcrs.pcr_values[j].count = htole32(ctx.pcrs.pcr_values[j].count);
-
-        UINT32 k;
-        for(k = 0; k < le32toh(ctx.pcrs.pcr_values[j].count); k++)
-            ctx.pcrs.pcr_values[j].digests[k].size = htole16(ctx.pcrs.pcr_values[j].digests[k].size);
-
-        if (fwrite(&ctx.pcrs.pcr_values[j], sizeof(TPML_DIGEST), 1,
-                ctx.pcr_output) != 1) {
-            LOG_ERR("write to output file failed: %s", strerror(errno));
-            return false;
-        }
-    }
-
-    return true;
-}
 
 static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
 
@@ -103,7 +57,15 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
                 (UINT8*) quoted->attestationData, quoted->size);
     }
 
-    res &= write_pcr_values();
+    if (ctx.pcr_output) {
+        if (ctx.pcrs_format == pcrs_output_format_serialized) {
+            res &= pcr_fwrite_serialized(&ctx.pcr_selections, &ctx.pcrs,
+                                         ctx.pcr_output);
+        } else if (ctx.pcrs_format == pcrs_output_format_values) {
+            res &= pcr_fwrite_values(&ctx.pcr_selections, &ctx.pcrs,
+                                     ctx.pcr_output);
+        }
+    }
 
     return res;
 }
@@ -242,6 +204,12 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.pcr_path = value;
         break;
+    case 'F':
+        ctx.pcrs_format = tpm2_convert_pcrs_output_fmt_from_optarg(value);
+        if (ctx.pcrs_format == pcrs_output_format_err) {
+            return false;
+        }
+        break;
     case 'f':
         ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
@@ -277,12 +245,13 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "signature",      required_argument, NULL, 's' },
         { "message",        required_argument, NULL, 'm' },
         { "pcr",            required_argument, NULL, 'o' },
+        { "pcrs_format",    required_argument, NULL, 'F' },
         { "format",         required_argument, NULL, 'f' },
         { "hash-algorithm", required_argument, NULL, 'g' },
         { "cphash",         required_argument, NULL,  0  }
     };
 
-    *opts = tpm2_options_new("c:p:l:q:s:m:o:f:g:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:p:l:q:s:m:o:F:f:g:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

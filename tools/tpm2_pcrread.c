@@ -7,75 +7,23 @@
 #include "log.h"
 #include "pcr.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_tool.h"
 
 typedef struct listpcr_context listpcr_context;
 struct listpcr_context {
     char *output_file_path;
     FILE *output_file;
+    tpm2_convert_pcrs_output_fmt format;
     tpm2_algorithm algs;
     tpm2_pcrs pcrs;
     TPML_PCR_SELECTION pcr_selections;
     TPMI_ALG_HASH selected_algorithm;
 };
 
-static listpcr_context ctx;
-
-// show all PCR banks according to g_pcrSelection & g_pcrs->
-static bool print_pcr_values(void) {
-
-    UINT32 vi = 0, di = 0, i;
-
-    for (i = 0; i < ctx.pcr_selections.count; i++) {
-        const char *alg_name = tpm2_alg_util_algtostr(
-                ctx.pcr_selections.pcrSelections[i].hash,
-                tpm2_alg_util_flags_hash);
-
-        tpm2_tool_output("%s:\n", alg_name);
-
-        unsigned int pcr_id;
-        for (pcr_id = 0;
-                pcr_id < ctx.pcr_selections.pcrSelections[i].sizeofSelect * 8u;
-                pcr_id++) {
-            if (!tpm2_util_is_pcr_select_bit_set(
-                    &ctx.pcr_selections.pcrSelections[i], pcr_id)) {
-                continue;
-            }
-            if (vi >= ctx.pcrs.count || di >= ctx.pcrs.pcr_values[vi].count) {
-                LOG_ERR("Something wrong, trying to print but nothing more");
-                return false;
-            }
-
-            tpm2_tool_output("  %-2d: 0x", pcr_id);
-
-            int k;
-            for (k = 0; k < ctx.pcrs.pcr_values[vi].digests[di].size; k++) {
-                tpm2_tool_output("%02X",
-                        ctx.pcrs.pcr_values[vi].digests[di].buffer[k]);
-            }
-            tpm2_tool_output("\n");
-
-            if (ctx.output_file != NULL
-                    && fwrite(ctx.pcrs.pcr_values[vi].digests[di].buffer,
-                            ctx.pcrs.pcr_values[vi].digests[di].size,
-                            required_argument, ctx.output_file) != 1) {
-                LOG_ERR("write to output file failed: %s", strerror(errno));
-                return false;
-            }
-
-            if (++di < ctx.pcrs.pcr_values[vi].count) {
-                continue;
-            }
-
-            di = 0;
-            if (++vi < ctx.pcrs.count) {
-                continue;
-            }
-        }
-    }
-
-    return true;
-}
+static listpcr_context ctx = {
+    .format = pcrs_output_format_values
+};
 
 static tool_rc show_pcr_list_selected_values(ESYS_CONTEXT *esys_context,
         TPMS_CAPABILITY_DATA *capdata,
@@ -91,7 +39,18 @@ static tool_rc show_pcr_list_selected_values(ESYS_CONTEXT *esys_context,
         return rc;
     }
 
-    return print_pcr_values() ? tool_rc_success : tool_rc_general_error;
+    bool success = pcr_print_values(&ctx.pcr_selections, &ctx.pcrs);
+    if (success && ctx.output_file) {
+        if (ctx.format == pcrs_output_format_values) {
+            success = pcr_fwrite_values(&ctx.pcr_selections, &ctx.pcrs,
+                                        ctx.output_file);
+        } else if (ctx.format == pcrs_output_format_serialized) {
+            success = pcr_fwrite_serialized(&ctx.pcr_selections, &ctx.pcrs,
+                                            ctx.output_file);
+        }
+    }
+
+    return success ? tool_rc_success : tool_rc_general_error;
 }
 
 static tool_rc show_pcr_alg_or_all_values(ESYS_CONTEXT *esys_context,
@@ -111,6 +70,12 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'o':
         ctx.output_file_path = value;
+        break;
+    case 'F':
+        ctx.format = tpm2_convert_pcrs_output_fmt_from_optarg(value);
+        if (ctx.format == pcrs_output_format_err) {
+            return false;
+        }
         break;
         /* no default */
     }
@@ -142,9 +107,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
          { "output",         required_argument, NULL, 'o' },
+         { "pcrs_format",    required_argument, NULL, 'F' },
      };
 
-    *opts = tpm2_options_new("o:", ARRAY_LEN(topts), topts, on_option, on_arg,
+    *opts = tpm2_options_new("o:F:", ARRAY_LEN(topts), topts, on_option, on_arg,
             0);
 
     return *opts != NULL;

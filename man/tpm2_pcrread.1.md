@@ -42,6 +42,8 @@ sha256 :
 
     The output file to write the PCR values in binary format, optional.
 
+[PCR output file format specifiers](common/pcrs_format.md)
+    Default is 'values'.
 
 [common options](common/options.md)
 
