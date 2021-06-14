@@ -130,7 +130,7 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
     UINT8* nonce = NULL;
 
     // Read EK template
-    UINT16 template_size;
+    UINT16 template_size = 0;
     TPM2B_DIGEST cp_hash = {
         .size = 0,
     };
