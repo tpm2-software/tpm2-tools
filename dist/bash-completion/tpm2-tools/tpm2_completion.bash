@@ -3018,6 +3018,8 @@ _tpm2_pcrread()
 
         local format_methods=(tss plain)
 
+        local pcr_format_methods=(values serialized)
+
         local signing_scheme=(rsassa rsapss ecdsa ecdaa sm2 ecshnorr hmac)
 
         local key_object=(rsa ecc aes camellia hmac xor keyedhash)
@@ -3043,10 +3045,14 @@ _tpm2_pcrread()
             -o | --output)
                 _filedir
                 return;;
+            -F | --pcrs_format)
+                COMPREPLY=($(compgen -W "${pcr_format_methods[*]}" -- "$cur"))
+                return;;
         esac
 
         COMPREPLY=($(compgen -W "-h --help -v --version -V --verbose -Q --quiet \
         -Z --enable-erata -T --tcti \
+        -F --pcrs_format \
         -o --output " \
         -- "$cur"))
     } &&
@@ -4099,6 +4105,8 @@ _tpm2_quote()
 
         local format_methods=(tss plain)
 
+        local pcr_format_methods=(values serialized)
+
         local signing_scheme=(rsassa rsapss ecdsa ecdaa sm2 ecshnorr hmac)
 
         local key_object=(rsa ecc aes camellia hmac xor keyedhash)
@@ -4130,6 +4138,9 @@ _tpm2_quote()
             -l | --pcr-list)
                 _filedir
                 return;;
+            -F | --pcrs_format)
+                COMPREPLY=($(compgen -W "${pcr_format_methods[*]}" -- "$cur"))
+                return;;
             -m | --message)
                 _filedir
                 return;;
@@ -4151,7 +4162,7 @@ _tpm2_quote()
         esac
 
         COMPREPLY=($(compgen -W "-h --help -v --version -V --verbose -Q --quiet \
-        -Z --enable-erata -T --tcti \
+        -Z --enable-erata -T --tcti -F --pcrs_format \
         -c -p -l -m -s -f -o -q -g --key-context --auth --pcr-list --message --signature --format --pcr --qualification --hash-algorithm --cphash " \
         -- "$cur"))
     } &&

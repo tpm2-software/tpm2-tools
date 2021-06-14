@@ -3,6 +3,8 @@
 #ifndef SRC_PCR_H_
 #define SRC_PCR_H_
 
+#include <errno.h>
+#include <stdio.h>
 #include <stdbool.h>
 
 #include <tss2/tss2_esys.h>
@@ -56,6 +58,37 @@ bool pcr_print_pcr_struct_le(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs);
 bool pcr_get_id(const char *arg, UINT32 *pcr_id);
 
 bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections);
+
+/**
+ * Prints the selected PCR values.
+ *
+ * @param pcr_select the selected pcrs to be printed
+ * @param pcrs the pcrs digests
+ * @return true on success; false otherwise
+ */
+bool pcr_print_values(const TPML_PCR_SELECTION *pcr_select,
+    const tpm2_pcrs *pcrs);
+
+/**
+ * Writes the selected PCR values to a file.
+ *
+ * @param pcr_select the selected pcrs to be written
+ * @param pcrs the pcrs digests
+ * @param output_file file to output the pcr values
+ * @return true on success; false otherwise
+ */
+bool pcr_fwrite_values(const TPML_PCR_SELECTION *pcr_select,
+    const tpm2_pcrs *pcrs, FILE *output_file);
+/**
+ * Writes the selected PCR values to a file in serialized format.
+ *
+ * @param pcr_select the selected pcrs to be written
+ * @param pcrs the pcrs digests
+ * @param output_file file to output the pcr values in serialized format
+ * @return true on success; false otherwise
+ */
+bool pcr_fwrite_serialized(const TPML_PCR_SELECTION *pcr_select,
+    const tpm2_pcrs *pcrs, FILE *output_file);
 
 bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcr_selections);
 

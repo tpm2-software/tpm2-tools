@@ -20,6 +20,20 @@
 static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public,
         tpm2_convert_pubkey_fmt format, const char *path);
 
+tpm2_convert_pcrs_output_fmt tpm2_convert_pcrs_output_fmt_from_optarg(
+    const char *label) {
+
+    if (strcasecmp(label, "values") == 0) {
+        return pcrs_output_format_values;
+    } else if (strcasecmp(label, "serialized") == 0) {
+        return pcrs_output_format_serialized;
+    }
+
+    LOG_ERR("Invalid pcrs output format '%s' specified", label);
+
+    return pcrs_output_format_err;
+}
+
 tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt_from_optarg(const char *label) {
     if (strcasecmp(label, "der") == 0) {
         return pubkey_format_der;

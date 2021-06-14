@@ -511,6 +511,7 @@ MARKDOWN_COMMON_DEPS = \
 	man/common/obj-attrs.md \
 	man/common/object-alg.md \
 	man/common/options.md \
+	man/common/pcrs_format.md \
 	man/common/policy-limitations.md \
 	man/common/pubkey.md \
 	man/common/returns.md \
@@ -545,6 +546,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[nv attributes\]/d' \
 	    -e '/\[pcr bank specifiers\]/r $(top_srcdir)/man/common/pcr.md' \
 	    -e '/\[pcr bank specifiers\]/d' \
+	    -e '/\[PCR output file format specifiers\]/r $(top_srcdir)/man/common/pcrs_format.md' \
+	    -e '/\[PCR output file format specifiers\]/d' \
 	    -e '/\[pubkey options\]/r $(top_srcdir)/man/common/pubkey.md' \
 	    -e '/\[pubkey options\]/d' \
 	    -e '/\[signature format specifiers\]/r $(top_srcdir)/man/common/signature.md' \
