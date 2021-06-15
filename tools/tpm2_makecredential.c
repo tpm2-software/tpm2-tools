@@ -361,6 +361,16 @@ static tool_rc process_input(void) {
         return tool_rc_general_error;
     }
 
+    /*
+     * If input was read from stdin, check if a larger data set was specified
+     * and error out.
+     */
+    if (ctx.credential.size > TPM2_SHA512_DIGEST_SIZE) {
+        LOG_ERR("Size is larger than buffer, got %d expected less than or equal"
+        "to %d", ctx.credential.size, TPM2_SHA512_DIGEST_SIZE);
+        return tool_rc_general_error;
+    }
+
     return tool_rc_success;
 }
 
