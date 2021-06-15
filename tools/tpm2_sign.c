@@ -158,11 +158,13 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
         if (input != stdin) {
             fclose(input);
         }
+
         if (rc != tool_rc_success) {
             LOG_ERR("Could not hash input");
+        } else {
+            ctx.validation = *temp_validation_ticket;
         }
 
-        ctx.validation = *temp_validation_ticket;
         free(temp_validation_ticket);
 
         /*
