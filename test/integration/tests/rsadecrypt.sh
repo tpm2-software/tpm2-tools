@@ -89,4 +89,12 @@ tpm2 rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data \
 tpm2 rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o \
 $file_rsa_de_output_data -s oaep $file_rsa_en_output_data
 
+# Test RSA enc/ dec with OAEP-SHA1 mode
+tpm2 rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data \
+-s oaep-sha1 < $file_input_data
+
+tpm2 rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o \
+$file_rsa_de_output_data -s oaep-sha1 $file_rsa_en_output_data
+
+
 exit 0

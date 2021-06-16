@@ -19,6 +19,7 @@ struct tpm_rsaencrypt_ctx {
     char *output_path;
     char *input_path;
     TPMT_RSA_DECRYPT scheme;
+    const char *scheme_str;
     TPM2B_DATA label;
 };
 
@@ -63,14 +64,7 @@ static bool on_option(char key, char *value) {
         ctx.output_path = value;
         break;
     case 's':
-        ctx.scheme.scheme = tpm2_alg_util_from_optarg(value,
-                tpm2_alg_util_flags_rsa_scheme);
-        if (ctx.scheme.scheme == TPM2_ALG_ERROR) {
-            LOG_ERR("Invalid scheme.");
-            return false;
-        }
-        ctx.scheme.details.oaep.hashAlg = ctx.scheme.scheme == TPM2_ALG_OAEP ?
-            TPM2_ALG_SHA256 : 0;
+        ctx.scheme_str = value;
         break;
     case 'l':
         return tpm2_util_get_label(value, &ctx.label);
@@ -119,8 +113,43 @@ static tool_rc init(ESYS_CONTEXT *context) {
         return tool_rc_general_error;
     }
 
-    return tpm2_util_object_load(context, ctx.context_arg, &ctx.key_context,
-            TPM2_HANDLE_ALL_W_NV);
+    /*
+     * Load the decryption key
+     */
+    tool_rc rc = tpm2_util_object_load(context, ctx.context_arg, &ctx.key_context,
+        TPM2_HANDLES_FLAGS_TRANSIENT|TPM2_HANDLES_FLAGS_PERSISTENT);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TPM2B_PUBLIC *key_public_info = 0;
+    rc = tpm2_readpublic(context, ctx.key_context.tr_handle, &key_public_info,
+        NULL, NULL);
+    if (rc != tool_rc_success) {
+        goto out;
+    }
+
+    if (key_public_info->publicArea.type != TPM2_ALG_RSA) {
+            LOG_ERR("Unsupported key type for RSA decryption.");
+            rc = tool_rc_general_error;
+            goto out;
+    }
+
+    /*
+     * Get scheme information
+     */
+    if (ctx.scheme_str) {
+        rc = tpm2_alg_util_handle_rsa_ext_alg(ctx.scheme_str, key_public_info);
+        ctx.scheme.scheme =
+            key_public_info->publicArea.parameters.rsaDetail.scheme.scheme;
+        ctx.scheme.details.anySig.hashAlg =
+            key_public_info->publicArea.parameters.rsaDetail.scheme.details.anySig.hashAlg;
+    }
+
+out:
+    Esys_Free(key_public_info);
+
+    return rc;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {

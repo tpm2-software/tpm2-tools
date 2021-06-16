@@ -163,6 +163,18 @@ tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
 bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public);
 
 /**
+ * Retrieves the scheme information for an RSA key to be used in
+ * TPM2_CC_RSA_Encrypt or TPM2_CC_RSA_Decrypt
+ * @param alg_spec
+ *  Friendly specification of the RSA scheme (oaep-sha1)
+ * @param public
+ *  Public structure which will contain relevant information about
+ *  specified algorithm
+ */
+tool_rc tpm2_alg_util_handle_rsa_ext_alg(const char *alg_spec,
+    TPM2B_PUBLIC *public);
+
+/**
  *
  * @param alg_details
  * @param name_halg

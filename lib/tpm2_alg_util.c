@@ -595,6 +595,32 @@ bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public) {
     return false;
 }
 
+tool_rc tpm2_alg_util_handle_rsa_ext_alg(const char *alg_spec,
+    TPM2B_PUBLIC *public) {
+
+    #define RSA_KEYBITS_STRLEN 6
+    char *ext_alg_str = calloc(1, strlen(alg_spec) + strlen("rsa") +
+        RSA_KEYBITS_STRLEN);
+
+    strcat(ext_alg_str, "rsa");
+    switch(public->publicArea.parameters.rsaDetail.keyBits) {
+        case 1024: strcat(ext_alg_str, "1024:");
+                   break;
+        case 2048: strcat(ext_alg_str, "2048:");
+                   break;
+        case 3072: strcat(ext_alg_str, "3072:");
+                   break;
+        case 4096: strcat(ext_alg_str, "4096:");
+                   break;
+    };
+    strcat(ext_alg_str, alg_spec);
+
+    bool result = tpm2_alg_util_handle_ext_alg(ext_alg_str, public);
+    free(ext_alg_str);
+
+    return result ? tool_rc_success : tool_rc_general_error;
+}
+
 static alg_iter_res find_match(TPM2_ALG_ID id, const char *name,
         tpm2_alg_util_flags flags, void *userdata) {
 
