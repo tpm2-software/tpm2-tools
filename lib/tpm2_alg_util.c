@@ -194,9 +194,7 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
     bool do_scheme_hash_alg = false;
 
     if (public->publicArea.type == TPM2_ALG_ECC) {
-        if (!strncmp(scheme, "oaep", 4)) {
-            do_scheme_halg(scheme, 4, TPM2_ALG_OAEP);
-        } else if (!strncmp(scheme, "ecdsa", 5)) {
+        if (!strncmp(scheme, "ecdsa", 5)) {
             do_scheme_halg(scheme, 5, TPM2_ALG_ECDSA);
         } else if (!strncmp(scheme, "ecdh", 4)) {
             do_scheme_halg(scheme, 4, TPM2_ALG_ECDH);
@@ -237,6 +235,8 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
             do_scheme_halg(scheme, 6, TPM2_ALG_RSAPSS);
         } else if (!strncmp("rsassa", scheme, 6)) {
             do_scheme_halg(scheme, 6, TPM2_ALG_RSASSA);
+        } else if (!strncmp(scheme, "oaep", 4)) {
+            do_scheme_halg(scheme, 4, TPM2_ALG_OAEP);
         }
     }
 
