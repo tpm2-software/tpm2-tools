@@ -14,11 +14,6 @@
 #include "tpm2_hierarchy.h"
 #include "tpm2_util.h"
 
-/*
- * The default buffer size when one cannot be determined via get capability.
- */
-#define NV_DEFAULT_BUFFER_SIZE 512
-
 /**
  * Reads the public portion of a Non-Volatile (nv) index.
  * @param context
@@ -75,7 +70,7 @@ static inline tool_rc tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
         *size = cap_data->data.tpmProperties.tpmProperty[0].value;
     } else {
         /* TPM2_PT_NV_BUFFER_MAX is not part of the module spec <= 0.98*/
-        *size = NV_DEFAULT_BUFFER_SIZE;
+        *size = TPM2_MAX_NV_BUFFER_SIZE;
     }
 
     free(cap_data);
@@ -153,10 +148,8 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
         goto out;
     }
 
-    if (max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
+    if (!max_data_size || max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
         max_data_size = TPM2_MAX_NV_BUFFER_SIZE;
-    } else if (max_data_size == 0) {
-        max_data_size = NV_DEFAULT_BUFFER_SIZE;
     }
 
 tpm2_util_nv_read_collect_cp_hash:
