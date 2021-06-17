@@ -376,7 +376,7 @@ static tool_rc init(void) {
     TPM2B_ATTEST *msg = NULL;
     TPML_PCR_SELECTION pcr_select;
     tpm2_pcrs *pcrs;
-    tpm2_pcrs temp_pcrs;
+    tpm2_pcrs temp_pcrs = {};
     tool_rc return_value = tool_rc_general_error;
 
     msg = message_from_file(ctx.msg_file_path);
