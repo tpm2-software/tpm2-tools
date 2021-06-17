@@ -95,10 +95,8 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    if (max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
+    if (!max_data_size || max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
         max_data_size = TPM2_MAX_NV_BUFFER_SIZE;
-    } else if (max_data_size == 0) {
-        max_data_size = NV_DEFAULT_BUFFER_SIZE;
     }
 
     while (ctx.data_size > 0) {
