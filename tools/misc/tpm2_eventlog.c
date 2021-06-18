@@ -12,6 +12,8 @@
 #include "tpm2_eventlog_yaml.h"
 #include "tpm2_tool.h"
 
+#define CHUNK_SIZE 16384
+
 static char *filename = NULL;
 
 /* Set the default YAML version */
@@ -72,37 +74,37 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    /* Get file size */
-    unsigned long size = 0;
-    bool ret = files_get_file_size_path(filename, &size);
-    if (!ret || !size) {
-        return tool_rc_general_error;
-    }
-
-    /* Allocate buffer to read file data */
-    UINT8 *eventlog = calloc(1, size);
-    if (eventlog == NULL){
-        LOG_ERR("failed to allocate %lu bytes: %s", size, strerror(errno));
-        return tool_rc_general_error;
-    }
-
-    /* Load buffer with file data */
+    /* Read the file in chunks.  Usually the file will reside in
+       securityfs, and those files do not have a public file size */
     tool_rc rc = tool_rc_success;
     FILE *fileptr = fopen(filename, "rb");
     if (!fileptr) {
-        rc = tool_rc_general_error;
-        goto out;
+        return tool_rc_general_error;
     }
 
-    ret = files_read_bytes(fileptr, eventlog, size);
-    fclose(fileptr);
-    if (!ret) {
-        rc = tool_rc_general_error;
-        goto out;
+    /* Reserve the buffer for the first chunk */
+    UINT8 *eventlog = calloc(1, CHUNK_SIZE);
+    if (eventlog == NULL){
+        LOG_ERR("failed to allocate %d bytes: %s", CHUNK_SIZE, strerror(errno));
+        return tool_rc_general_error;
     }
+
+    unsigned long size = 0;
+    bool is_file_read = false;
+    do {
+        is_file_read = files_read_bytes_chunk(fileptr, eventlog, CHUNK_SIZE, &size);
+        UINT8 *eventlog_tmp = realloc(eventlog, size + CHUNK_SIZE);
+        if (!eventlog_tmp){
+            LOG_ERR("failed to allocate %lu bytes: %s", size + CHUNK_SIZE, strerror(errno));
+            rc = tool_rc_general_error;
+            goto out;
+        }
+        eventlog = eventlog_tmp;
+    } while (is_file_read);
+    fclose(fileptr);
 
     /* Parse eventlog data */
-    ret = yaml_eventlog(eventlog, size, eventlog_version);
+    bool ret = yaml_eventlog(eventlog, size, eventlog_version);
     if (!ret) {
         LOG_ERR("failed to parse tpm2 eventlog");
         rc = tool_rc_general_error;
