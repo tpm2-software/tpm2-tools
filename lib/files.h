@@ -572,6 +572,21 @@ bool files_read_64(FILE *out, UINT64 *data);
 bool files_read_bytes(FILE *out, UINT8 data[], size_t size);
 
 /**
+ * Reads len bytes from a file and set the read length.
+ * @param out
+ *  The file to read from.
+ * @param data
+ *  The buffer to read into, only valid on a True return.
+ * @param size
+ *  The number of bytes to read.
+ * @param read_size
+ *  Total number of bytes read.
+ * @return
+ *  True on success, False otherwise.
+ */
+bool files_read_bytes_chunk(FILE *out, UINT8 data[], size_t size, size_t *read_size);
+
+/**
  * Converts a TPM2B_ATTEST to a TPMS_ATTEST using libmu.
  * @param quoted
  *  The attestation quote structure.

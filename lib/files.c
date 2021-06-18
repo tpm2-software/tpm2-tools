@@ -564,6 +564,15 @@ bool files_read_bytes(FILE *out, UINT8 bytes[], size_t len) {
     return (readx(out, bytes, len) == len);
 }
 
+bool files_read_bytes_chunk(FILE *out, UINT8 bytes[], size_t len, size_t *read_len) {
+
+    BAIL_ON_NULL("FILE", out);
+    BAIL_ON_NULL("bytes", bytes);
+    size_t chunk_len = readx(out, bytes, len);
+    *read_len += chunk_len;
+    return (chunk_len == len);
+}
+
 bool files_write_bytes(FILE *out, uint8_t bytes[], size_t len) {
 
     BAIL_ON_NULL("FILE", out);
