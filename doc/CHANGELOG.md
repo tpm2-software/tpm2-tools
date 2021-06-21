@@ -1,6 +1,6 @@
 ## Changelog
 
-### 5.1.1-rc0 2021-05-28
+### 5.1.1 2021-06-21
 
   * tpm2_import: fix fixed AES key CVE-2021-3565
       - tpm2_import used a fixed AES key for the inner wrapper, which means that
