@@ -17,6 +17,14 @@
   * tools: Enhance error message on invalid passwords when sessions cannot
     be used.
 
+### 5.1.1 2021-06-21
+
+  * tpm2_import: fix fixed AES key CVE-2021-3565
+      - tpm2_import used a fixed AES key for the inner wrapper, which means that
+        a MITM attack would be able to unwrap the imported key. To fix this,
+        ensure the key size is 16 bytes or bigger and use OpenSSL to generate a
+        secure random AES key.
+
 ### 5.1 2021-05-24
 
   * Build
