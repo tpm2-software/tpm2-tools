@@ -265,59 +265,59 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             .authValue = { .size = 0 }
         },
     };
-    /*
-     * when nameAlg is not TPM2_ALG_NULL, seed value is needed to pass
-     * consistency checks by TPM
-     */
-    TPM2B_DIGEST *seed = &priv.sensitiveArea.seedValue;
-    seed->size = tpm2_alg_util_get_hash_size(pub.publicArea.nameAlg);
-    if (seed->size != 0) {
-        RAND_bytes(seed->buffer, seed->size);
-    }
 
-    tpm2_session *tmp;
-    tool_rc tmp_rc = tpm2_auth_util_from_optarg(NULL, ctx.auth, &tmp, true);
-    if (tmp_rc != tool_rc_success) {
-        LOG_ERR("Invalid key authorization");
-        return tmp_rc;
-    }
-
-    const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
-    priv.sensitiveArea.authValue = *auth;
-
-    tpm2_session_close(&tmp);
-
-    tpm2_openssl_load_rc load_status = lprc_error;
     if (ctx.private_key_path) {
-        load_status = tpm2_openssl_load_private(ctx.private_key_path,
-                ctx.passin, alg, &pub, &priv);
+        /*
+         * when nameAlg is not TPM2_ALG_NULL, seed value is needed to pass
+         * consistency checks by TPM
+         */
+        TPM2B_DIGEST *seed = &priv.sensitiveArea.seedValue;
+        seed->size = tpm2_alg_util_get_hash_size(pub.publicArea.nameAlg);
+        if (seed->size != 0) {
+            RAND_bytes(seed->buffer, seed->size);
+        }
+
+        tpm2_session *tmp;
+        tool_rc rc = tpm2_auth_util_from_optarg(NULL, ctx.auth, &tmp, true);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Invalid key authorization");
+            return rc;
+        }
+
+        const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
+        priv.sensitiveArea.authValue = *auth;
+
+        tpm2_session_close(&tmp);
+
+        tpm2_openssl_load_rc load_status = tpm2_openssl_load_private(
+            ctx.private_key_path, ctx.passin, alg, &pub, &priv);
         if (load_status == lprc_error) {
             return tool_rc_general_error;
         }
-    }
 
-    /*
-     * If we cannot load the public from the private and a path
-     * is not specified for public, this is an error.
-     *
-     * If we loaded the public from the private and a public was
-     * specified, this is warning. re-init public and load the
-     * specified one.
-     */
-    if (!tpm2_openssl_did_load_public(load_status) && !ctx.public_key_path) {
-        LOG_ERR("Only loaded a private key, expected public key in either"
-                " private PEM or -r option");
-        return tool_rc_general_error;
+        /*
+         * If we cannot load the public from the private and a path
+         * is not specified for public, this is an error.
+         *
+         * If we loaded the public from the private and a public was
+         * specified, this is warning. re-init public and load the
+         * specified one.
+         */
+        if (!tpm2_openssl_did_load_public(load_status) && !ctx.public_key_path) {
+            LOG_ERR("Only loaded a private key, expected public key in either"
+                    " private PEM or -r option");
+            return tool_rc_general_error;
 
-    } else if (tpm2_openssl_did_load_public(load_status)
-            && ctx.public_key_path) {
-        LOG_WARN("Loaded a public key from the private portion"
-                " and a public portion was specified via -u. Defaulting"
-                " to specified public");
+        } else if (tpm2_openssl_did_load_public(load_status)
+                && ctx.public_key_path) {
+            LOG_WARN("Loaded a public key from the private portion"
+                    " and a public portion was specified via -u. Defaulting"
+                    " to specified public");
 
-        memset(&pub.publicArea.parameters, 0,
-                sizeof(pub.publicArea.parameters));
-        pub.publicArea.type = TPM2_ALG_NULL;
+            memset(&pub.publicArea.parameters, 0,
+                    sizeof(pub.publicArea.parameters));
+            pub.publicArea.type = TPM2_ALG_NULL;
+        }
     }
 
     if (ctx.public_key_path) {
@@ -338,21 +338,18 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    tool_rc rc = tool_rc_general_error;
     TPM2B_NAME *name = NULL;
-    tmp_rc = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
+    tool_rc rc = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
             &name);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
+    if (rc != tool_rc_success) {
         goto out;
     }
 
     assert(name);
 
-    tmp_rc = files_save_tpm_context_to_path(ectx, ctx.handle,
+    rc = files_save_tpm_context_to_path(ectx, ctx.handle,
             ctx.context_file_path);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
+    if (rc != tool_rc_success) {
         goto out;
     }
 
@@ -364,11 +361,10 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         bool result = files_save_bytes_to_file(ctx.name_path, name->name,
                 name->size);
         if (!result) {
+            rc = tool_rc_general_error;
             goto out;
         }
     }
-
-    rc = tool_rc_success;
 
 out:
     free(name);
