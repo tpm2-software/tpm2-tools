@@ -164,17 +164,6 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    TPMI_ALG_PUBLIC alg = TPM2_ALG_NULL;
-
-    if (ctx.key_type) {
-        alg = tpm2_alg_util_from_optarg(ctx.key_type,
-                tpm2_alg_util_flags_asymmetric | tpm2_alg_util_flags_symmetric);
-        if (alg == TPM2_ALG_ERROR) {
-            LOG_ERR("Unsupported key type, got: \"%s\"", ctx.key_type);
-            return tool_rc_general_error;
-        }
-    }
-
     /*
      * Modifying this init to anything NOT 0 requires
      * the memset/reinit on the case of specified -u
@@ -186,6 +175,25 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             .authPolicy = { .size = 0 },
         },
     };
+
+
+    TPMI_ALG_PUBLIC alg = TPM2_ALG_NULL;
+    bool is_ext_param_specified = false;
+    if (ctx.key_type) {
+        alg = tpm2_alg_util_from_optarg(ctx.key_type,
+                tpm2_alg_util_flags_asymmetric | tpm2_alg_util_flags_symmetric);
+
+        if (alg == TPM2_ALG_ERROR) {
+            bool result = tpm2_alg_util_handle_ext_alg(ctx.key_type, &pub);
+            if (!result) {
+                LOG_ERR("Unsupported key type, got: \"%s\"", ctx.key_type);
+                return tool_rc_general_error;
+            } else {
+                alg = pub.publicArea.type;
+                is_ext_param_specified = true;
+            }
+        }
+    }
 
     /*
      * set up the public attributes with a default.
@@ -315,6 +323,17 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (ctx.public_key_path) {
         bool result = tpm2_openssl_load_public(ctx.public_key_path, alg, &pub);
         if (!result) {
+            return tool_rc_general_error;
+        }
+    }
+    /*
+     * Extended algorithm settings are repeated here since
+     * tpm2_openssl_load_public overwrites it.
+     */
+    if (is_ext_param_specified) {
+        bool result = tpm2_alg_util_handle_ext_alg(ctx.key_type, &pub);
+        if (!result) {
+            LOG_ERR("Unsupported key type, got: \"%s\"", ctx.key_type);
             return tool_rc_general_error;
         }
     }
