@@ -40,42 +40,90 @@ static inline tool_rc tpm2_util_nv_read_public(ESYS_CONTEXT *context,
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
     }
-
     return rc;
 }
 
 /**
- * Retrieves the maximum transmission size for an NV buffer by
- * querying the capabilities for TPM2_PT_NV_BUFFER_MAX.
- * @param context
+ * Retrieves max NV buffer size based on the NV operation and accounting for the
+ * buffers reported by the capability structures.
+ * 1. If getcap fails, return TPM2_MAX_NV_BUFFER_SIZE constant
+ * 2. If getcap passes AND op is NVDEFINE return TPM2_PT_NV_INDEX_MAX cap data
+ * 3. if getcap passes AND op is !NVDEFINE return TPM2_PT_NV_BUFFER cap data
+ *
+ * @param esys_context
  *  The Enhanced System API (ESAPI) context
- * @param size
- *  The size of the buffer.
+ * @param is_nvdefine_op
+ *  Truth value to check if the NV operation is for defining NV index.
  * @return
- *  tool_rc Indicating status.
+ *  The maximum allowed NV size based on the NV operation and capability info.
  */
-static inline tool_rc tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
-        UINT32 *size) {
+static inline uint16_t tpm2_nv_util_max_allowed_nv_size(
+    ESYS_CONTEXT *esys_context, bool is_nvdefine_op) {
 
-    /* Get the maximum read block size */
-    TPMS_CAPABILITY_DATA *cap_data;
-    TPMI_YES_NO more_data;
-    tool_rc rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES,
-            TPM2_PT_NV_BUFFER_MAX, 1, &more_data, &cap_data);
+    /*
+     * 1. Default size if getcap fails to report
+     */
+    uint16_t max_nv_size = TPM2_MAX_NV_BUFFER_SIZE;
+
+    TPMS_CAPABILITY_DATA *cap_data = 0;
+    UINT32 property = is_nvdefine_op ? TPM2_PT_FIXED : TPM2_PT_NV_BUFFER_MAX;
+    UINT32 property_count = is_nvdefine_op ? TPM2_MAX_TPM_PROPERTIES : 1;
+    tool_rc rc = tpm2_getcap(esys_context, TPM2_CAP_TPM_PROPERTIES, property,
+        property_count, 0, &cap_data);
+    bool is_getcap_op_fail = false;
     if (rc != tool_rc_success) {
-        return rc;
+        is_getcap_op_fail = true;
+        goto out;
     }
 
-    if ( cap_data->data.tpmProperties.tpmProperty[0].property == TPM2_PT_NV_BUFFER_MAX ) {
-        *size = cap_data->data.tpmProperties.tpmProperty[0].value;
-    } else {
-        /* TPM2_PT_NV_BUFFER_MAX is not part of the module spec <= 0.98*/
-        *size = TPM2_MAX_NV_BUFFER_SIZE;
+    /*
+     * 2. Non-NVDEFINE ops
+     */
+    if (!is_nvdefine_op) {
+        if(cap_data->data.tpmProperties.tpmProperty[0].property ==
+        TPM2_PT_NV_BUFFER_MAX ) {
+            max_nv_size = cap_data->data.tpmProperties.tpmProperty[0].value;
+        } else {
+            /*
+             * If TPM doesn't report TPM2_PT_NV_BUFFER_MAX in getcap,
+             * set the default sz.
+             */
+            is_getcap_op_fail = true;
+        }
+        goto out;
     }
 
+    /*
+     * 3. NVDEFINE op
+     */
+    TPMS_TAGGED_PROPERTY *properties = cap_data->data.tpmProperties.tpmProperty;
+    UINT32 count = cap_data->data.tpmProperties.count;
+    if (!count) {
+        is_getcap_op_fail = true;
+        goto out;
+    }
+
+    /*
+     * If TPM doesn't report TPM2_PT_NV_INDEX_MAX in getcap, set the default sz.
+     */
+    is_getcap_op_fail = true;
+    UINT32 i;
+    for (i = 0; i < count; i++) {
+        if (properties[i].property == TPM2_PT_NV_INDEX_MAX) {
+            max_nv_size = properties[i].value;
+            is_getcap_op_fail = false;
+            break;
+        }
+    }
+
+out:
     free(cap_data);
 
-    return rc;
+    if (is_getcap_op_fail) {
+        LOG_WARN("Cannot determine size from TPM properties."
+                 "Setting max NV index size value to TPM2_MAX_NV_BUFFER_SIZE");
+    }
+    return max_nv_size;
 }
 
 /**
@@ -142,15 +190,7 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
         goto tpm2_util_nv_read_collect_cp_hash;
     }
 
-    UINT32 max_data_size;
-    rc = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
-    if (rc != tool_rc_success) {
-        goto out;
-    }
-
-    if (!max_data_size || max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
-        max_data_size = TPM2_MAX_NV_BUFFER_SIZE;
-    }
+    uint16_t max_data_size = tpm2_nv_util_max_allowed_nv_size(ectx, false);
 
 tpm2_util_nv_read_collect_cp_hash:
     if (cp_hash->size) {
