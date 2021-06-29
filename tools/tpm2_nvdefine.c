@@ -147,45 +147,6 @@ static void handle_default_attributes(void) {
     }
 }
 
-static void get_max_nv_index_size(ESYS_CONTEXT *ectx, UINT16 *size) {
-
-    /* get the max NV index for the TPM */
-    *size = 0;
-    TPMS_CAPABILITY_DATA *capabilities = NULL;
-    tool_rc rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED,
-            TPM2_MAX_TPM_PROPERTIES, NULL, &capabilities);
-    if (rc != tool_rc_success) {
-        goto out_tpm_cap_warn;
-    }
-
-    TPMS_TAGGED_PROPERTY *properties = capabilities->data.tpmProperties.tpmProperty;
-    UINT32 count = capabilities->data.tpmProperties.count;
-    if (!count) {
-        goto out_tpm_cap_warn;
-    }
-
-    UINT32 i;
-    for (i = 0; i < count; i++) {
-        if (properties[i].property == TPM2_PT_NV_INDEX_MAX) {
-            *size = properties[i].value;
-            break;
-        }
-    }
-    if (*size) {
-        goto out;
-    }
-
-out_tpm_cap_warn:
-    LOG_WARN("Cannot determine size from TPM properties."
-             "Setting max NV index size value to TPM2_MAX_NV_BUFFER_SIZE");
-    *size = TPM2_MAX_NV_BUFFER_SIZE;
-
-out:
-    free(capabilities);
-
-    return;
-}
-
 static tool_rc handle_no_index_specified(ESYS_CONTEXT *ectx, TPM2_NV_INDEX *chosen) {
 
     /* get the max NV index for the TPM */
@@ -275,7 +236,7 @@ static tool_rc validate_size(ESYS_CONTEXT *ectx) {
     switch ((ctx.nv_attribute & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT) {
         case TPM2_NT_ORDINARY:
             if (!ctx.size_set) {
-                get_max_nv_index_size(ectx, &ctx.size);
+                ctx.size = tpm2_nv_util_max_allowed_nv_size(ectx, true);
             }
             break;
         case TPM2_NT_COUNTER:

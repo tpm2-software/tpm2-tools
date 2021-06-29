@@ -89,16 +89,7 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    UINT32 max_data_size;
-    tool_rc rc = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    if (!max_data_size || max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
-        max_data_size = TPM2_MAX_NV_BUFFER_SIZE;
-    }
-
+    uint16_t max_data_size = tpm2_nv_util_max_allowed_nv_size(ectx, false);
     while (ctx.data_size > 0) {
 
         nv_write_data.size =
@@ -109,7 +100,7 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
         memcpy(nv_write_data.buffer, &ctx.nv_buffer[data_offset],
                 nv_write_data.size);
 
-        rc = tpm2_nvwrite(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
+        tool_rc rc = tpm2_nvwrite(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
                 &nv_write_data, ctx.offset + data_offset, NULL);
         if (rc != tool_rc_success) {
             return rc;
