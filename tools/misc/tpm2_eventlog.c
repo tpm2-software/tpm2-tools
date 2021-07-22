@@ -89,13 +89,13 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    unsigned long size = 0;
+    size_t size = 0;
     bool is_file_read = false;
     do {
         is_file_read = files_read_bytes_chunk(fileptr, eventlog, CHUNK_SIZE, &size);
         UINT8 *eventlog_tmp = realloc(eventlog, size + CHUNK_SIZE);
         if (!eventlog_tmp){
-            LOG_ERR("failed to allocate %lu bytes: %s", size + CHUNK_SIZE, strerror(errno));
+            LOG_ERR("failed to allocate %zu bytes: %s", size + CHUNK_SIZE, strerror(errno));
             rc = tool_rc_general_error;
             goto out;
         }
