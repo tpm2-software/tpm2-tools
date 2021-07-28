@@ -91,51 +91,33 @@ define_ek_cert_nv_index() {
 }
 
 ## ECC only INTC certificate from NV index
-tpm2 getekcertificate -u test_ecc_ek.pub -x -X -o ecc_ek_cert.bin --raw
+openssl x509 -in ecc_ek_cert.bin -out ecc_ek_cert.der -outform DER
 
-define_ek_cert_nv_index ecc_ek_cert.bin $ECC_EK_CERT_NV_INDEX
+define_ek_cert_nv_index ecc_ek_cert.der $ECC_EK_CERT_NV_INDEX
 
-tpm2 getekcertificate -o nv_ecc_ek_cert.pem
+tpm2 getekcertificate -o nv_ecc_ek_cert.der
 
-sed 's/-/+/g;s/_/\//g;s/%3D/=/g;s/^{.*certificate":"//g;s/"}$//g;' \
-ecc_ek_cert.bin | base64 --decode > ecc_test.der
-
-openssl x509 -inform PEM -outform DER  -in nv_ecc_ek_cert.pem \
--out nv_ecc_ek_cert.der
-
-diff nv_ecc_ek_cert.der ecc_test.der
+diff nv_ecc_ek_cert.der ecc_ek_cert.der
 
 ## RSA only INTC certificate from NV index
 tpm2 nvundefine -C p $ECC_EK_CERT_NV_INDEX
 
-tpm2 getekcertificate -u test_rsa_ek.pub -x -X -o rsa_ek_cert.bin --raw
+openssl x509 -in rsa_ek_cert.bin -out rsa_ek_cert.der -outform DER
 
-define_ek_cert_nv_index rsa_ek_cert.bin $RSA_EK_CERT_NV_INDEX
+define_ek_cert_nv_index rsa_ek_cert.der $RSA_EK_CERT_NV_INDEX
 
-tpm2 getekcertificate -o nv_rsa_ek_cert.pem
+tpm2 getekcertificate -o nv_rsa_ek_cert.der
 
-sed 's/-/+/g;s/_/\//g;s/%3D/=/g;s/^{.*certificate":"//g;s/"}$//g;' \
-rsa_ek_cert.bin | base64 --decode > rsa_test.der
+diff nv_rsa_ek_cert.der rsa_ek_cert.der
 
-openssl x509 -inform PEM -outform DER  -in nv_rsa_ek_cert.pem \
--out nv_rsa_ek_cert.der
-
-diff nv_rsa_ek_cert.der rsa_test.der
+rm nv_rsa_ek_cert.der nv_ecc_ek_cert.der -f
 
 ## RSA & ECC INTC certificates from NV index
+define_ek_cert_nv_index ecc_ek_cert.der $ECC_EK_CERT_NV_INDEX
 
-define_ek_cert_nv_index ecc_ek_cert.bin $ECC_EK_CERT_NV_INDEX
+tpm2 getekcertificate -o nv_rsa_ek_cert.der -o nv_ecc_ek_cert.der
 
-tpm2 getekcertificate -o nv_rsa_ek_cert.pem -o nv_ecc_ek_cert.pem
-
-openssl x509 -inform PEM -outform DER  -in nv_ecc_ek_cert.pem \
--out nv_ecc_ek_cert.der
-
-openssl x509 -inform PEM -outform DER  -in nv_rsa_ek_cert.pem \
--out nv_rsa_ek_cert.der
-
-diff nv_ecc_ek_cert.der ecc_test.der
-
-diff nv_rsa_ek_cert.der rsa_test.der
+diff nv_rsa_ek_cert.der rsa_ek_cert.der
+diff nv_ecc_ek_cert.der ecc_ek_cert.der
 
 exit 0

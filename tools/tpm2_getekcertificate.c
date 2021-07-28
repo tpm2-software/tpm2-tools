@@ -612,6 +612,13 @@ static tool_rc process_output(void) {
     }
 
     /*
+     * Intel EK certificates on the NV-index are already in standard DER format.
+     */
+    if (ctx.is_intc_cert && ctx.is_cert_on_nv) {
+        ctx.is_cert_raw = true;
+    }
+
+    /*
      *  Convert Intel EK certificates as received in the URL safe variant of
      *  Base 64: https://tools.ietf.org/html/rfc4648#section-5 to PEM
      */
