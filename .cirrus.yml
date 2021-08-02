@@ -12,7 +12,7 @@ task:
   install_script:
     - pkg update -f
     - pkg upgrade -y
-    - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive e2fsprogs-libuuid py37-yaml expect
+    - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive e2fsprogs-libuuid py38-yaml expect
     - pkg install -y automake glib dbus dbus-glib cmocka wget git openssl json-c vim
     - wget --quiet --show-progress --progress=dot:giga "https://downloads.sourceforge.net/project/ibmswtpm2/$ibmtpm_name.tar.gz"
     - shasum -a256 $ibmtpm_name.tar.gz | grep ^dd3a4c3f7724243bc9ebcd5c39bbf87b82c696d1c1241cb8e5883534f6e2e327
