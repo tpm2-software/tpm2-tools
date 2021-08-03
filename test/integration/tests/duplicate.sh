@@ -138,7 +138,7 @@ echo foo | openssl dgst \
 
 ## External RSA key, with a password authorization policy
 echo magicwords > cleartext.txt
-openssl rsautl \
+openssl pkeyutl \
 	-encrypt \
 	-pubin \
 	-inkey rsa-pub.pem \
