@@ -84,7 +84,7 @@ run_rsa_test() {
     openssl rsa -in private.pem -out public.pem -outform PEM -pubout
 
     echo "hello world" > plain.txt
-    openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt \
+    openssl pkeyutl -encrypt -inkey public.pem -pubin -in plain.txt \
     -out plain.rsa.enc
 
     tpm2 loadexternal -G rsa -C n -p foo -r private.pem -c key.ctx
@@ -98,7 +98,7 @@ run_rsa_test() {
 
     tpm2 rsaencrypt -c key.ctx plain.txt -o plain.rsa.enc
 
-    openssl rsautl -decrypt -inkey private.pem -in plain.rsa.enc \
+    openssl pkeyutl -decrypt -inkey private.pem -in plain.rsa.enc \
     -out plain.rsa.dec
 
     diff plain.txt plain.rsa.dec

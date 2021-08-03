@@ -71,7 +71,7 @@ run_rsa_import_test() {
     -n import_rsa_key.name -c import_rsa_key.ctx
 
     openssl rsa -in private.pem -out public.pem -outform PEM -pubout
-    openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt \
+    openssl pkeyutl -encrypt -inkey public.pem -pubin -in plain.txt \
     -out plain.rsa.enc
 
     tpm2 rsadecrypt -c import_rsa_key.ctx -o plain.rsa.dec plain.rsa.enc
