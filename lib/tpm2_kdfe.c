@@ -42,13 +42,22 @@ TSS2_RC tpm2_kdfe(
     tpm2_util_concat_buffer(&hash_input, (TPM2B *) party_u);
     tpm2_util_concat_buffer(&hash_input, (TPM2B *) party_v);
 
-    digester d = tpm2_openssl_halg_to_digester(hash_alg);
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(hash_alg);
+    if (!md) {
+        LOG_ERR("Algorithm not supported: %x", hash_alg);
+        return TPM2_RC_HASH;
+    }
 
     for (done = 0, counter = 1; done < bytes; done += hash_size, counter++) {
         counter_be = tpm2_util_hton_32(counter);
         memcpy(hash_input.buffer, &counter_be, 4);
 
-        d(hash_input.buffer, hash_input.size, result_key->buffer + done);
+        int rc = EVP_Digest(hash_input.buffer, hash_input.size,
+                            result_key->buffer + done, NULL, md, NULL);
+        if (!rc) {
+            LOG_ERR("Hash calculation failed");
+            return TPM2_RC_MEMORY;
+        }
     }
     // truncate the result to the desired size
     result_key->size = bytes;

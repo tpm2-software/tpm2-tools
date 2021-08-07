@@ -28,23 +28,6 @@
         EC_POINT_get_affine_coordinates_GFp(group, tpm_pub_key, bn_x, bn_y, dmy)
 #endif /* OPENSSL_VERSION_NUMBER >= 0x10101000L */
 
-/**
- * Function prototype for a hashing routine.
- *
- * This is a wrapper around OSSL SHA256|384 and etc digesters.
- *
- * @param d
- *  The data to digest.
- * @param n
- *  The length of the data to digest.
- * @param md
- *  The output message digest.
- * @return
- * A pointer to the digest or NULL on error.
- */
-typedef unsigned char *(*digester)(const unsigned char *d, size_t n,
-        unsigned char *md);
-
 static inline const char *tpm2_openssl_get_err(void) {
     return ERR_error_string(ERR_get_error(), NULL);
 }
@@ -146,17 +129,6 @@ bool tpm2_openssl_hash_pcr_banks_le(TPMI_ALG_HASH hashAlg,
  */
 bool tpm2_openssl_pcr_extend(TPMI_ALG_HASH halg, BYTE *pcr,
         const BYTE *data, UINT16 length);
-
-/**
- * Returns a function pointer capable of performing the
- * given digest from a TPMI_HASH_ALG.
- *
- * @param halg
- *  The hashing algorithm to use.
- * @return
- *  NULL on failure or a valid digester on success.
- */
-digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg);
 
 typedef enum tpm2_openssl_load_rc tpm2_openssl_load_rc;
 enum tpm2_openssl_load_rc {

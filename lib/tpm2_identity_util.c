@@ -409,11 +409,20 @@ bool tpm2_identity_util_calculate_inner_integrity(TPMI_ALG_HASH name_alg,
         return false;
     }
 
-    digester d = tpm2_openssl_halg_to_digester(name_alg);
-    d(buffer_marshalled_sensitiveArea,
-            marshalled_sensitive_size_info + marshalled_sensitive_size
-                    + pubname->size,
-            marshalled_sensitive_and_name_digest + digest_size_info);
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(name_alg);
+    if (!md) {
+        LOG_ERR("Algorithm not supported: %x", name_alg);
+        return false;
+    }
+    int rc = EVP_Digest(buffer_marshalled_sensitiveArea,
+                        marshalled_sensitive_size_info + marshalled_sensitive_size
+                            + pubname->size,
+                        marshalled_sensitive_and_name_digest + digest_size_info,
+                        NULL, md, NULL);
+    if (!rc) {
+        LOG_ERR("Hash calculation failed");
+        return false;
+    }
 
     //Inner integrity
     encrypted_inner_integrity->size = marshalled_sensitive_size_info
@@ -481,16 +490,21 @@ bool tpm2_identity_create_name(TPM2B_PUBLIC *public, TPM2B_NAME *pubname) {
     }
 
     // Step 3 - Hash the data into name just past the alg type.
-    digester d = tpm2_openssl_halg_to_digester(name_alg);
-    if (!d) {
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(name_alg);
+    if (!md) {
+        LOG_ERR("Algorithm not supported: %x", name_alg);
         return false;
     }
 
-    d((const unsigned char *) &marshaled_tpmt, tpmt_marshalled_size,
-            pubname->name + hash_offset);
+    unsigned int hash_size;
+    int rc = EVP_Digest(&marshaled_tpmt, tpmt_marshalled_size,
+                        pubname->name + hash_offset, &hash_size, md, NULL);
+    if (!rc) {
+        LOG_ERR("Hash calculation failed");
+        return false;
+    }
 
     //Set the name size, UINT16 followed by HASH
-    UINT16 hash_size = tpm2_alg_util_get_hash_size(name_alg);
     pubname->size = hash_size + hash_offset;
 
     return true;
