@@ -16,6 +16,8 @@
     converting it to a PEM or DER file format.
   * tools: Enhance error message on invalid passwords when sessions cannot
     be used.
+  * openssl:
+      - Dropped support for OpenSSL < 1.1.0
 
 ### 5.1.1 2021-06-21
 

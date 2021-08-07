@@ -23,13 +23,6 @@ the next release.
 - [3.0.X](https://github.com/tpm2-software/tpm2-tools/tree/3.0.X): EOL after
 3.2.1 release.
 
-## OpenSSL
-
-tpm2-tools relies heavily on OpenSSL. OpenSSL will be EOL'ing 1.0.2 at the end
-of 2019, see: https://www.openssl.org/blog/blog/2018/05/18/new-lts/. When this
-occurs, we will remove OSSL 1.0.2 support from the tpm2-tools repository as
-supporting an EOL crypto library is not a good idea.
-
 # Release Information
 
 Releases shall be tagged following semantic version guidelines found at:

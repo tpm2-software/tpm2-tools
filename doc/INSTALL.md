@@ -19,7 +19,7 @@ To build and install the tpm2-tools software the following software is required:
   * C compiler
   * C Library Development Libraries and Header Files (for pthreads headers)
   * ESAPI - TPM2.0 TSS ESAPI library (tss2-esys) and header files
-  * OpenSSL libcrypto library and header files
+  * OpenSSL libcrypto library and header files (version >= 1.1.0)
   * Curl library and header files
 
 #### Optional Dependencies:
