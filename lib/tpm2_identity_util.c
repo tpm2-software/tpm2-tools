@@ -289,7 +289,10 @@ static bool aes_encrypt_buffers(TPMT_SYM_DEF_OBJECT *sym,
         return false;
     }
 
-    EVP_CIPHER_CTX *ctx = tpm2_openssl_cipher_new();
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        return false;
+    }
 
     int rc = EVP_EncryptInit_ex(ctx, cipher, NULL, encryption_key, iv);
     if (!rc) {
@@ -336,7 +339,7 @@ static bool aes_encrypt_buffers(TPMT_SYM_DEF_OBJECT *sym,
     result = true;
 
 out:
-    tpm2_openssl_cipher_free(ctx);
+    EVP_CIPHER_CTX_free(ctx);
 
     return result;
 }

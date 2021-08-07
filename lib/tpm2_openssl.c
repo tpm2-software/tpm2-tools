@@ -372,32 +372,6 @@ out:
     return result;
 }
 
-HMAC_CTX *tpm2_openssl_hmac_new() {
-    HMAC_CTX *ctx;
-    ctx = HMAC_CTX_new();
-    if (!ctx)
-        return NULL;
-
-    return ctx;
-}
-
-void tpm2_openssl_hmac_free(HMAC_CTX *ctx) {
-    HMAC_CTX_free(ctx);
-}
-
-EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void) {
-    EVP_CIPHER_CTX *ctx;
-    ctx = EVP_CIPHER_CTX_new();
-    if (!ctx)
-        return NULL;
-
-    return ctx;
-}
-
-void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx) {
-    EVP_CIPHER_CTX_free(ctx);
-}
-
 digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
 
     switch (halg) {
