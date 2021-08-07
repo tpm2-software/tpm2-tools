@@ -372,23 +372,6 @@ out:
     return result;
 }
 
-digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
-
-    switch (halg) {
-    case TPM2_ALG_SHA1:
-        return SHA1;
-    case TPM2_ALG_SHA256:
-        return SHA256;
-    case TPM2_ALG_SHA384:
-        return SHA384;
-    case TPM2_ALG_SHA512:
-        return SHA512;
-        /* no default */
-    }
-
-    return NULL;
-}
-
 /*
  * Per man openssl(1), handle the following --passin formats:
  *     pass:password
