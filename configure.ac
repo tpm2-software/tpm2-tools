@@ -58,7 +58,7 @@ PKG_CHECK_MODULES([TSS2_TCTILDR], [tss2-tctildr])
 PKG_CHECK_MODULES([TSS2_MU], [tss2-mu])
 PKG_CHECK_MODULES([TSS2_RC], [tss2-rc])
 PKG_CHECK_MODULES([TSS2_SYS], [tss2-sys])
-PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.0.2g])
+PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.1.0])
 PKG_CHECK_MODULES([CURL], [libcurl])
 
 # pretty print of devicepath if efivar library is present

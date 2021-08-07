@@ -13,10 +13,6 @@
 
 #include "pcr.h"
 
-#if (OPENSSL_VERSION_NUMBER < 0x1010000fL && !defined(LIBRESSL_VERSION_NUMBER)) || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L) /* OpenSSL 1.1.0 */
-#define LIB_TPM2_OPENSSL_OPENSSL_PRE11
-#endif
-
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 #define EC_POINT_set_affine_coordinates_tss(group, tpm_pub_key, bn_x, bn_y, dmy) \
         EC_POINT_set_affine_coordinates(group, tpm_pub_key, bn_x, bn_y, dmy)
@@ -31,14 +27,6 @@
 #define EC_POINT_get_affine_coordinates_tss(group, tpm_pub_key, bn_x, bn_y, dmy) \
         EC_POINT_get_affine_coordinates_GFp(group, tpm_pub_key, bn_x, bn_y, dmy)
 #endif /* OPENSSL_VERSION_NUMBER >= 0x10101000L */
-
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
-void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
-int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
-EVP_ENCODE_CTX *EVP_ENCODE_CTX_new(void);
-void EVP_ENCODE_CTX_free(EVP_ENCODE_CTX *ctx);
-#endif
 
 /**
  * Function prototype for a hashing routine.
