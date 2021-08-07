@@ -260,8 +260,8 @@ static tool_rc generate_partial_X509() {
         goto out_err;
     }
 
-    X509_gmtime_adj(X509_get_notBefore(cert), 0); // add valid not before
-    X509_gmtime_adj(X509_get_notAfter(cert), valid_days * 86400); // add valid not after
+    X509_gmtime_adj(X509_getm_notBefore(cert), 0); // add valid not before
+    X509_gmtime_adj(X509_getm_notAfter(cert), valid_days * 86400); // add valid not after
 
     X509_NAME *subject = X509_get_subject_name(cert);
     if (!subject) {
