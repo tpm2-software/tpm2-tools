@@ -231,14 +231,6 @@ int main(int argc, char **argv) {
     }
 
     /*
-     * Load the openssl error strings and algorithms
-     * so library routines work as expected.
-     */
-    OpenSSL_add_all_algorithms();
-    OpenSSL_add_all_ciphers();
-    ERR_load_crypto_strings();
-
-    /*
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */

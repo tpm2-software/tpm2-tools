@@ -277,7 +277,6 @@ static bool tpm2_convert_pubkey_bio(TPMT_PUBLIC *public,
                 "Unsupported key type for requested output format. Only RSA is supported.");
     }
 
-    ERR_free_strings();
     return result;
 }
 
