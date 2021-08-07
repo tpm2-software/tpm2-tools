@@ -68,20 +68,6 @@ int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm);
 const EVP_MD *tpm2_openssl_halg_from_tpmhalg(TPMI_ALG_HASH algorithm);
 
 /**
- * Start an openssl hmac session.
- * @return
- *  A valid session pointer or NULL on error.
- */
-HMAC_CTX *tpm2_openssl_hmac_new();
-
-/**
- * Free an hmac context created via tpm2_openssl_hmac_new().
- * @param ctx
- *  The context to release resources of.
- */
-void tpm2_openssl_hmac_free(HMAC_CTX *ctx);
-
-/**
  * Hash a byte buffer.
  * @param halg
  *  The hashing algorithm to use.
@@ -160,23 +146,6 @@ bool tpm2_openssl_hash_pcr_banks_le(TPMI_ALG_HASH hashAlg,
  */
 bool tpm2_openssl_pcr_extend(TPMI_ALG_HASH halg, BYTE *pcr,
         const BYTE *data, UINT16 length);
-
-/**
- * Obtains an OpenSSL EVP_CIPHER_CTX dealing with version
- * API changes in OSSL.
- *
- * @return
- *  An Initialized OpenSSL EVP_CIPHER_CTX.
- */
-EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void);
-
-/**
- * Free's an EVP_CIPHER_CTX obtained via tpm2_openssl_cipher_new()
- * dealing with OSSL API version changes.
- * @param ctx
- *  The EVP_CIPHER_CTX to free.
- */
-void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx);
 
 /**
  * Returns a function pointer capable of performing the

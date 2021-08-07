@@ -40,7 +40,7 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
         return TPM2_RC_HASH;
     }
 
-    HMAC_CTX *ctx = tpm2_openssl_hmac_new();
+    HMAC_CTX *ctx = HMAC_CTX_new();
     if (!ctx) {
         LOG_ERR("HMAC context allocation failed");
         return TPM2_RC_MEMORY;
@@ -100,7 +100,7 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
     result_key->size = bytes;
 
 err:
-    tpm2_openssl_hmac_free(ctx);
+    HMAC_CTX_free(ctx);
 
     return rval;
 }
