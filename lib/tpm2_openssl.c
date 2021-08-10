@@ -59,7 +59,7 @@ int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm) {
     /* no return, not possible */
 }
 
-const EVP_MD *tpm2_openssl_halg_from_tpmhalg(TPMI_ALG_HASH algorithm) {
+const EVP_MD *tpm2_openssl_md_from_tpmhalg(TPMI_ALG_HASH algorithm) {
 
     switch (algorithm) {
     case TPM2_ALG_SHA1:
@@ -81,7 +81,7 @@ bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg, BYTE *buffer,
 
     bool result = false;
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(halg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(halg);
     if (!md) {
         return false;
     }
@@ -125,7 +125,7 @@ bool tpm2_openssl_pcr_extend(TPMI_ALG_HASH halg, BYTE *pcr,
 
     bool result = false;
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(halg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(halg);
     if (!md) {
         return false;
     }
@@ -174,7 +174,7 @@ bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg, TPML_DIGEST *digests,
 
     bool result = false;
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(halg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(halg);
     if (!md) {
         return false;
     }
@@ -226,7 +226,7 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hash_alg,
     UINT32 vi = 0, di = 0, i;
     bool result = false;
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(hash_alg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(hash_alg);
     if (!md) {
         return false;
     }
@@ -303,7 +303,7 @@ bool tpm2_openssl_hash_pcr_banks_le(TPMI_ALG_HASH hash_alg,
     UINT32 vi = 0, di = 0, i;
     bool result = false;
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(hash_alg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(hash_alg);
     if (!md) {
         return false;
     }

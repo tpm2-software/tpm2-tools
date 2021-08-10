@@ -74,7 +74,7 @@ static bool verify(void) {
     /* get the digest alg */
     /* TODO SPlit loading on plain vs tss format to detect the hash alg */
     /* If its a plain sig we need -g */
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(ctx.halg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(ctx.halg);
     // TODO error handling
 
     int rc = EVP_PKEY_verify_init(pkey_ctx);

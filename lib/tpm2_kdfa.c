@@ -34,7 +34,7 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
 
     i = 1;
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(hash_alg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(hash_alg);
     if (!md) {
         LOG_ERR("Algorithm not supported for hmac: %x", hash_alg);
         return TPM2_RC_HASH;

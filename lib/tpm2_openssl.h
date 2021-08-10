@@ -48,7 +48,7 @@ int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm);
  * @return
  *  A pointer to a message digester or NULL on failure.
  */
-const EVP_MD *tpm2_openssl_halg_from_tpmhalg(TPMI_ALG_HASH algorithm);
+const EVP_MD *tpm2_openssl_md_from_tpmhalg(TPMI_ALG_HASH algorithm);
 
 /**
  * Hash a byte buffer.
