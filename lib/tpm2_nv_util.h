@@ -144,7 +144,7 @@ out:
  *  tpm2 session.
  * @param data_buffer
  *  (callee-allocated) Buffer containing data at nv_index
- * @param bytes_written
+ * @param bytes_read
  *  The number of bytes written to data_buffer
  * @return
  *  tool_rc indicating status.
@@ -152,90 +152,114 @@ out:
 static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
     TPMI_RH_NV_INDEX nv_index, UINT16 size, UINT16 offset,
     tpm2_loaded_object * auth_hierarchy_obj, UINT8 **data_buffer,
-    UINT16 *bytes_written, TPM2B_DIGEST *cp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    UINT16 *bytes_read, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm, TPM2B_NAME *precalc_nvname) {
 
-    *data_buffer = NULL;
-
-    TPM2B_NV_PUBLIC *nv_public = NULL;
-    tool_rc rc = tpm2_util_nv_read_public(ectx, nv_index, &nv_public);
-    if (rc != tool_rc_success) {
-        goto out;
+    /*
+     * NVRead is not dispatched when:
+     * cpHash size is non-zero and rpHash size is zero.
+     */
+    bool is_nvread_dispatched = cp_hash->size ? false : true;
+    UINT16 max_data_size = 0;
+    if (!is_nvread_dispatched) {
+        *data_buffer = 0;
+        max_data_size = size;
     }
 
-    UINT16 data_size = nv_public->nvPublic.dataSize;
-    free(nv_public);
+    /*
+     * Perform additional checks on the NV index size when actually dispatching
+     * NVRead command.
+     */
+    tool_rc rc = tool_rc_success;
+    if (is_nvread_dispatched) {
 
-    /* if size is 0, assume the whole object */
-    if (size == 0) {
-        size = data_size;
-    }
+        max_data_size= tpm2_nv_util_max_allowed_nv_size(ectx, false);
 
-    if (offset > data_size) {
-        LOG_ERR("Requested offset to read from is greater than size. offset=%u"
-                ", size=%u", offset, data_size);
-        rc = tool_rc_general_error;
-        goto out;
-    }
-
-    if (offset + size > data_size) {
-        LOG_ERR("Requested to read more bytes than available from offset,"
-                " offset=%u, request-read-size=%u actual-data-size=%u", offset,
-                size, data_size);
-        rc = tool_rc_general_error;
-        goto out;
-    }
-
-    if (cp_hash->size) {
-        goto tpm2_util_nv_read_collect_cp_hash;
-    }
-
-    uint16_t max_data_size = tpm2_nv_util_max_allowed_nv_size(ectx, false);
-
-tpm2_util_nv_read_collect_cp_hash:
-    if (cp_hash->size) {
-        TPM2B_MAX_NV_BUFFER *nv_data;
-        rc = tpm2_nv_read(ectx, auth_hierarchy_obj, nv_index, size, offset,
-            &nv_data, cp_hash, parameter_hash_algorithm);
+        TPM2B_NV_PUBLIC *nv_public = NULL;
+        rc = tpm2_util_nv_read_public(ectx, nv_index, &nv_public);
         if (rc != tool_rc_success) {
-            LOG_ERR("Failed cpHash for NVRAM read at index 0x%X", nv_index);
-        }
-        goto out;
-    }
-
-    *data_buffer = malloc(data_size);
-    if (!*data_buffer) {
-        LOG_ERR("oom");
-        rc = tool_rc_general_error;
-        goto out;
-    }
-
-    UINT16 data_offset = 0;
-
-    while (size > 0) {
-
-        UINT16 bytes_to_read = size > max_data_size ? max_data_size : size;
-
-        TPM2B_MAX_NV_BUFFER *nv_data;
-
-        rc = tpm2_nv_read(ectx, auth_hierarchy_obj, nv_index, bytes_to_read,
-            offset, &nv_data, cp_hash, parameter_hash_algorithm);
-        if (rc != tool_rc_success) {
-            LOG_ERR("Failed to read NVRAM area at index 0x%X", nv_index);
             goto out;
         }
 
-        size -= nv_data->size;
-        offset += nv_data->size;
+        UINT16 data_size = nv_public->nvPublic.dataSize;
+        free(nv_public);
 
-        memcpy(*data_buffer + data_offset, nv_data->buffer, nv_data->size);
-        data_offset += nv_data->size;
+        /* if size is 0, assume the whole object */
+        if (size == 0) {
+            size = data_size;
+        }
 
-        free(nv_data);
+        if (offset > data_size) {
+            LOG_ERR("Requested offset to read from is greater than size. offset=%u"
+                    ", size=%u", offset, data_size);
+            rc = tool_rc_general_error;
+            goto out;
+        }
+
+        if (offset + size > data_size) {
+            LOG_ERR("Requested to read more bytes than available from offset,"
+                    " offset=%u, request-read-size=%u actual-data-size=%u", offset,
+                    size, data_size);
+            rc = tool_rc_general_error;
+            goto out;
+        }
+
+        *data_buffer = malloc(data_size);
+        if (!*data_buffer) {
+            LOG_ERR("oom");
+            rc = tool_rc_general_error;
+            goto out;
+        }
     }
 
-    if (bytes_written) {
-        *bytes_written = data_offset;
+    bool is_nv_index_data_larger_than_max_read = (size > max_data_size);
+    /*
+     * The cpHash will also be calculated when rpHash is not zero and command is
+     * actually dispatched. So we want to make sure that if size is not
+     * specified, the NV read operation defaulting to read the entire NV index,
+     * must not cause cpHash buffer to be overwritten. This is becuase in such a
+     * case the NV read is broken into two seperate calls due to the buffer size
+     * being larger than the maximum NV read access size.
+     */
+    if (cp_hash->size && is_nv_index_data_larger_than_max_read) {
+        LOG_ERR("Cannot continue to avoid overwriting cpHash data in file. "
+        "Make seperate tpm2_nvread calls with proper offsets specified to "
+        "specify all NV index data to be read");
+
+        rc =-tool_rc_option_error;
+        goto out;
+    }
+
+    UINT16 data_buffer_offset = 0;
+    while (size > 0) {
+        UINT16 bytes_to_read = size > max_data_size ? max_data_size : size;
+        TPM2B_MAX_NV_BUFFER *nv_data;
+        rc = tpm2_nv_read(ectx, auth_hierarchy_obj, nv_index, precalc_nvname,
+            bytes_to_read, offset, &nv_data, cp_hash, parameter_hash_algorithm);
+        if (rc != tool_rc_success) {
+            if (rc != tool_rc_option_error) {
+                LOG_ERR("Failed to read NVRAM area at index 0x%X", nv_index);
+            }
+            goto out;
+        }
+
+        if (is_nvread_dispatched) {
+            size -= nv_data->size;
+            offset += nv_data->size;
+            memcpy(*data_buffer + data_buffer_offset, nv_data->buffer, nv_data->size);
+            data_buffer_offset += nv_data->size;
+            free(nv_data);
+        } else {
+            /*
+             * When calculating cpHash the full size is already considered and
+             * so there is no need to adjust it.
+             */
+            size = 0;
+        }
+    }
+
+    if (is_nvread_dispatched && bytes_read) {
+        *bytes_read = data_buffer_offset;
     }
 
 out:

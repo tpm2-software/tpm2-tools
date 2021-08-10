@@ -20,6 +20,7 @@ struct tpm_nvread_ctx {
     } auth_hierarchy;
 
     TPM2_HANDLE nv_index;
+    TPM2B_NAME precalc_nvname;
     UINT32 size_to_read;
     UINT32 offset;
 
@@ -36,6 +37,7 @@ struct tpm_nvread_ctx {
     const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    bool is_tcti_none;
     TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
@@ -47,7 +49,8 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx) {
 
     return tpm2_util_nv_read(ectx, ctx.nv_index, ctx.size_to_read,
         ctx.offset, &ctx.auth_hierarchy.object, &ctx.data_buffer,
-        &ctx.bytes_written, &ctx.cp_hash, ctx.parameter_hash_algorithm);
+        &ctx.bytes_written, &ctx.cp_hash, ctx.parameter_hash_algorithm,
+        &ctx.precalc_nvname);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -108,11 +111,23 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
 
     /* Object #1 */
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+    /*
+     * When tcti is none AND only calculating cpHash only load the object
+     * strings to calculate the names.
+     */
+    tool_rc rc = (!ctx.is_tcti_none) ?
+
+        tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
             ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P) :
+
+        tpm2_util_handle_from_optarg(ctx.auth_hierarchy.ctx_path,
+            &ctx.auth_hierarchy.object.handle,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P) ?
+        tool_rc_success : tool_rc_option_error;
+
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid handle authorization");
+        LOG_ERR("Invalid handle authorization.");
         return rc;
     }
 
@@ -142,18 +157,73 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
         cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
-    /*
-     * 4.b Determine if TPM2_CC_<command> is to be dispatched
-     */
-    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
-
     return rc;
 }
 
-static tool_rc check_options(void) {
+static tool_rc check_options(tpm2_option_flags flags) {
+
+    ctx.is_tcti_none = flags.tcti_none ? true : false;
+    if (ctx.is_tcti_none && !ctx.cp_hash_path) {
+        LOG_ERR("If tcti is none, then cpHash path must be specified");
+        return tool_rc_option_error;
+    }
+
+    /*
+     * Peculiar to this and some other tools, the object (nvindex) name must
+     * be specified when only calculating the cpHash.
+     *
+     * This breaks the compatibility with the 4.X tools where in a real tcti
+     * is invoked to get a sapi handle to retrieve the params. Also this would
+     * imply that a real NV index ought to be defined even in the case of simply
+     * calculating the cpHash.
+     *
+     * To solve this conundrum, we can only mandate the requirement for the NV
+     * index name in case tcti is specified as none. If tcti is not specified as
+     * none we fall back to the old behavior of reading from a define NV index
+     * 
+     * Also, tcti is setup to a fake_tcti when tcti is specified "none" as the
+     * tool option affords TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI.
+     * 
+     * If NVindex name is not specified and tcti is not none, it is expected
+     * that the NV index is actually define. This behavior complies with the
+     * backwards compatibility with 4.X
+     */
+    bool is_nv_name_specified = ctx.precalc_nvname.size;
+    if (ctx.is_tcti_none && !is_nv_name_specified) {
+        LOG_ERR("Must specify the NVIndex name.");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.is_tcti_none && is_nv_name_specified) {
+        LOG_ERR("Do not specify NVIndex name, it is directly read from NV");
+        return tool_rc_option_error;
+    }
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = (ctx.is_tcti_none || ctx.cp_hash_path) ?
+        false : true;
 
     if (!ctx.size_to_read) {
-        LOG_WARN("Reading full size of the NV index");
+        if(ctx.is_command_dispatch) {
+            LOG_WARN("Reading full size of the NV index");
+        } else {
+            LOG_ERR("Must specify the size to read.");
+            return tool_rc_option_error;
+        }
+    }
+
+    #define TYPICAL_NVACCESS_MAX 1024
+    #define TYPICAL_NVINDEX_MAX 2048
+    if (!ctx.is_command_dispatch) {
+        if (ctx.size_to_read > TYPICAL_NVACCESS_MAX) {
+            LOG_WARN("Calculating cpHash with NV access size larger than typical.");
+        }
+
+        if ((ctx.size_to_read + ctx.offset) > TYPICAL_NVINDEX_MAX) {
+            LOG_WARN("Calculating cpHash with NV index size larger than typical");
+        }
     }
 
     return tool_rc_success;
@@ -192,6 +262,15 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'n':
+        ctx.precalc_nvname.size = BUFFER_SIZE(TPM2B_NAME, name);
+        int q = tpm2_util_hex_to_byte_structure(value, &ctx.precalc_nvname.size,
+        ctx.precalc_nvname.name);
+        if (q) {
+            LOG_ERR("FAILED: %d", q);
+            return false;
+        }
+        break;
     case 0:
         result = tpm2_util_string_to_uint32(value, &ctx.offset);
         if (!result) {
@@ -215,11 +294,12 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "size",      required_argument, NULL, 's' },
         { "offset",    required_argument, NULL,  0  },
         { "cphash",    required_argument, NULL,  1  },
+        { "name",      required_argument, NULL, 'n' },
         { "auth",      required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("C:s:o:P:", ARRAY_LEN(topts), topts, on_option,
-            on_arg, 0);
+    *opts = tpm2_options_new("C:s:o:P:n:", ARRAY_LEN(topts), topts, on_option,
+            on_arg, TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
 
     return *opts != NULL;
 }
@@ -229,7 +309,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 1. Process options
      */
-    tool_rc rc = check_options();
+    tool_rc rc = check_options(flags);
     if (rc != tool_rc_success) {
         return rc;
     }

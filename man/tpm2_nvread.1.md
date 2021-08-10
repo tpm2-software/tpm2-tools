@@ -52,6 +52,11 @@ index can be specified as raw handle or an offset value to the nv handle range
     termed as cpHash. NOTE: When this option is selected, The tool will not
     actually execute the command, it simply returns a cpHash.
 
+  * **-n**, **\--name**=_FILE_:
+
+    The name of the NV index that must be provided when only calculating the
+    cpHash without actually dispatching the command to the TPM.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 
