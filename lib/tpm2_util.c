@@ -577,7 +577,7 @@ bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg,
     memcpy(buf.buffer, seed->buffer, seed->size);
     memcpy(&buf.buffer[seed->size], key->buffer, key->size);
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(name_alg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(name_alg);
     if (!md) {
         LOG_ERR("Algorithm not supported: %x", name_alg);
         return false;
@@ -949,7 +949,7 @@ bool tpm2_calq_qname(TPM2B_NAME *pqname,
     // QNB ≔ HB (QNA || NAMEB)
     bool result = false;
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(halg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(halg);
 
     EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
     if (!mdctx) {

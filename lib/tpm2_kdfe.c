@@ -42,7 +42,7 @@ TSS2_RC tpm2_kdfe(
     tpm2_util_concat_buffer(&hash_input, (TPM2B *) party_u);
     tpm2_util_concat_buffer(&hash_input, (TPM2B *) party_v);
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(hash_alg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(hash_alg);
     if (!md) {
         LOG_ERR("Algorithm not supported: %x", hash_alg);
         return TPM2_RC_HASH;

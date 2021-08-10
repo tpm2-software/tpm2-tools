@@ -134,7 +134,7 @@ static bool share_secret_with_tpm2_rsa_public_key(TPM2B_DIGEST *protection_seed,
     unsigned char encoded[TPM2_MAX_DIGEST_BUFFER];
     return_code = RSA_padding_add_PKCS1_OAEP_mgf1(encoded, mod_size,
             protection_seed->buffer, protection_seed->size, label, label_len,
-            tpm2_openssl_halg_from_tpmhalg(parent_name_alg), NULL);
+            tpm2_openssl_md_from_tpmhalg(parent_name_alg), NULL);
     if (return_code != 1) {
         LOG_ERR("Failed RSA_padding_add_PKCS1_OAEP_mgf1\n");
         goto error;
@@ -356,7 +356,7 @@ static void hmac_outer_integrity(TPMI_ALG_HASH parent_name_alg,
 
     UINT16 hash_size = tpm2_alg_util_get_hash_size(parent_name_alg);
 
-    HMAC(tpm2_openssl_halg_from_tpmhalg(parent_name_alg), hmac_key, hash_size,
+    HMAC(tpm2_openssl_md_from_tpmhalg(parent_name_alg), hmac_key, hash_size,
             to_hmac_buffer, buffer1_size + buffer2_size,
             outer_integrity_hmac->buffer, &size);
     outer_integrity_hmac->size = size;
@@ -409,7 +409,7 @@ bool tpm2_identity_util_calculate_inner_integrity(TPMI_ALG_HASH name_alg,
         return false;
     }
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(name_alg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(name_alg);
     if (!md) {
         LOG_ERR("Algorithm not supported: %x", name_alg);
         return false;
@@ -490,7 +490,7 @@ bool tpm2_identity_create_name(TPM2B_PUBLIC *public, TPM2B_NAME *pubname) {
     }
 
     // Step 3 - Hash the data into name just past the alg type.
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(name_alg);
+    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(name_alg);
     if (!md) {
         LOG_ERR("Algorithm not supported: %x", name_alg);
         return false;
