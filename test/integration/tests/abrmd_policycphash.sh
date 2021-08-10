@@ -124,24 +124,40 @@ tpm2 nvundefine 1
 
 # Test tpm2 nvread
 create_authorized_policy
-tpm2 nvdefine 1 -s 8 -a "ownerwrite|policyread" -L authorized.policy
-echo "foo" | tpm2 nvwrite 1 -i- -C o
-tpm2 nvread 1 -s 8 --cphash cp.hash
+tpm2 nvdefine 1 -a "ownerwrite|policyread" -L authorized.policy
+echo "some nv data" | tpm2 nvwrite 1 -i- -C o
+NV_INDEX_NAME=$(tpm2 nvreadpublic | grep name | awk {'print $2'})
+#
+# Suppose TPM2_NVDefine was not run and the name was entirely created external
+# to the TPM. Note: This support still needs to be added.
+#
+# To emulate the absence of NV index while calculating the cpHash of NVRead,
+# let's Undefine the NV index and define it later.
+#
+tpm2 nvundefine 1 -C o
+# (1) Calculate the cpHash
+tpm2 nvread 1 -s 4 --cphash cp.hash -n $NV_INDEX_NAME --tcti=none
+# (2) Calculate the policycphash
 generate_policycphash
 sign_and_verify_policycphash
+# (3) Define the NV index and write some NV index data
+tpm2 nvdefine 1 -a "ownerwrite|policyread" -L authorized.policy
+echo "some nv data" | tpm2 nvwrite 1 -i- -C o
+# (4)
 setup_authorized_policycphash
-tpm2 nvread 1 -s 8 -P "session:session.ctx" | xxd -p
+tpm2 nvread 1 -s 4 -P "session:session.ctx"
+tpm2 flushcontext session.ctx
 ## test the failing scenario
 setup_authorized_policycphash
 trap - ERR
-tpm2 nvread 1 -s 7 --offset 1 -P "session:session.ctx"
+tpm2 nvread 1 -s 8 --offset 1 -P "session:session.ctx"
 if [ $? == 0 ];then
   echo "ERROR: nvread must fail!"
   exit 1
 fi
 trap onerror ERR
 tpm2 flushcontext session.ctx
-tpm2 nvundefine 1
+tpm2 nvundefine 1 -C o
 
 # Test tpm2 nvreadlock
 create_authorized_policy
