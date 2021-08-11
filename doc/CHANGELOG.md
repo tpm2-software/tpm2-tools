@@ -1,9 +1,14 @@
 ## Changelog
 
 ### next
-
-  * tpm2_nvsetbits:
+  * tpm2_nvread:
       - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
+        of the response parameters. This is commonly termed as rpHash.
+      - Added option **\-n**, **\--name** to specify the name of the nvindex in
+        hex bytes. This is used when cpHash ought to be calculated without
+        dispatching the TPM2_NVRead command to the TPM.
+  * tpm2_nvsetbits:
+      - Added option **\--rphash**=_FILE_ to specify file path to record the hash
         of the response parameters. This is commonly termed as rpHash.
       - Added option **-S**, **\--session** to specify to specify an auxiliary
         session for auditing and or encryption/decryption of the parameters.
