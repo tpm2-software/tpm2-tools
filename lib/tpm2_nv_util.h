@@ -153,7 +153,8 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
     TPMI_RH_NV_INDEX nv_index, UINT16 size, UINT16 offset,
     tpm2_loaded_object * auth_hierarchy_obj, UINT8 **data_buffer,
     UINT16 *bytes_read, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm, TPM2B_NAME *precalc_nvname) {
+    TPMI_ALG_HASH parameter_hash_algorithm, TPM2B_NAME *precalc_nvname,
+    ESYS_TR shandle2, ESYS_TR shandle3) {
 
     /*
      * NVRead is not dispatched when:
@@ -237,7 +238,7 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
         TPM2B_MAX_NV_BUFFER *nv_data;
         rc = tpm2_nv_read(ectx, auth_hierarchy_obj, nv_index, precalc_nvname,
             bytes_to_read, offset, &nv_data, cp_hash, rp_hash,
-            parameter_hash_algorithm);
+            parameter_hash_algorithm, shandle2, shandle3);
         if (rc != tool_rc_success) {
             if (rc != tool_rc_option_error) {
                 LOG_ERR("Failed to read NVRAM area at index 0x%X", nv_index);
