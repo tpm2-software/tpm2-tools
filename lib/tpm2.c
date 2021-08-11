@@ -130,7 +130,8 @@ tool_rc tpm2_nv_read(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
     TPM2B_NAME *precalc_nvname, UINT16 size, UINT16 offset,
     TPM2B_MAX_NV_BUFFER **data, TPM2B_DIGEST *cp_hash,  TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3) {
 
     /*
      * If command is to be dispatched the NV index must exist.
@@ -230,8 +231,8 @@ tpm2_nvread_free_name1:
     }
 
     rval = Esys_NV_Read(esys_context, auth_hierarchy_obj->tr_handle,
-        esys_tr_nv_handle, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
-        ESYS_TR_NONE, size, offset, data);
+        esys_tr_nv_handle, auth_hierarchy_obj_session_handle, shandle2,
+        shandle3, size, offset, data);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_Read, rval);
         return tool_rc_from_tpm(rval);
