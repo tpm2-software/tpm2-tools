@@ -36,6 +36,8 @@ struct tpm_nvread_ctx {
      */
     const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
+    const char *rp_hash_path;
+    TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
     bool is_tcti_none;
     TPMI_ALG_HASH parameter_hash_algorithm;
@@ -49,8 +51,8 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx) {
 
     return tpm2_util_nv_read(ectx, ctx.nv_index, ctx.size_to_read,
         ctx.offset, &ctx.auth_hierarchy.object, &ctx.data_buffer,
-        &ctx.bytes_written, &ctx.cp_hash, ctx.parameter_hash_algorithm,
-        &ctx.precalc_nvname);
+        &ctx.bytes_written, &ctx.cp_hash, &ctx.rp_hash,
+        ctx.parameter_hash_algorithm, &ctx.precalc_nvname);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -90,6 +92,11 @@ static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             rc = tool_rc_general_error;
             goto out;
         }
+    }
+
+    if (ctx.rp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.rp_hash, ctx.rp_hash_path);
+        rc = is_file_op_success ? tool_rc_success : tool_rc_general_error;
     }
 
 out:
@@ -153,9 +160,10 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    const char **rphash_path = ctx.rp_hash_path ? &ctx.rp_hash_path : 0;
 
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
-        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+        cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
 
     return rc;
 }
@@ -201,9 +209,14 @@ static tool_rc check_options(tpm2_option_flags flags) {
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * is_tcti_none       [N]
+     * !rphash && !cphash [Y]
+     * !rphash && cphash  [N]
+     * rphash && !cphash  [Y]
+     * rphash && cphash   [Y]
      */
-    ctx.is_command_dispatch = (ctx.is_tcti_none || ctx.cp_hash_path) ?
-        false : true;
+    ctx.is_command_dispatch = (ctx.is_tcti_none ||
+        (ctx.cp_hash_path && !ctx.rp_hash_path)) ? false : true;
 
     if (!ctx.size_to_read) {
         if(ctx.is_command_dispatch) {
@@ -281,6 +294,9 @@ static bool on_option(char key, char *value) {
     case 1:
         ctx.cp_hash_path = value;
         break;
+    case 2:
+        ctx.rp_hash_path = value;
+        break;
         /* no default */
     }
     return true;
@@ -294,6 +310,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "size",      required_argument, NULL, 's' },
         { "offset",    required_argument, NULL,  0  },
         { "cphash",    required_argument, NULL,  1  },
+        { "rphash",    required_argument, NULL,  2  },
         { "name",      required_argument, NULL, 'n' },
         { "auth",      required_argument, NULL, 'P' },
     };

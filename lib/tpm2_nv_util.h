@@ -152,14 +152,14 @@ out:
 static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
     TPMI_RH_NV_INDEX nv_index, UINT16 size, UINT16 offset,
     tpm2_loaded_object * auth_hierarchy_obj, UINT8 **data_buffer,
-    UINT16 *bytes_read, TPM2B_DIGEST *cp_hash,
+    UINT16 *bytes_read, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
     TPMI_ALG_HASH parameter_hash_algorithm, TPM2B_NAME *precalc_nvname) {
 
     /*
      * NVRead is not dispatched when:
      * cpHash size is non-zero and rpHash size is zero.
      */
-    bool is_nvread_dispatched = cp_hash->size ? false : true;
+    bool is_nvread_dispatched = (cp_hash->size && !rp_hash->size)? false : true;
     UINT16 max_data_size = 0;
     if (!is_nvread_dispatched) {
         *data_buffer = 0;
@@ -221,8 +221,9 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
      * case the NV read is broken into two seperate calls due to the buffer size
      * being larger than the maximum NV read access size.
      */
-    if (cp_hash->size && is_nv_index_data_larger_than_max_read) {
-        LOG_ERR("Cannot continue to avoid overwriting cpHash data in file. "
+    if ((cp_hash->size || rp_hash->size) &&
+    is_nv_index_data_larger_than_max_read) {
+        LOG_ERR("Cannot continue to avoid overwriting cpHash/rphash data in file. "
         "Make seperate tpm2_nvread calls with proper offsets specified to "
         "specify all NV index data to be read");
 
@@ -235,7 +236,8 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
         UINT16 bytes_to_read = size > max_data_size ? max_data_size : size;
         TPM2B_MAX_NV_BUFFER *nv_data;
         rc = tpm2_nv_read(ectx, auth_hierarchy_obj, nv_index, precalc_nvname,
-            bytes_to_read, offset, &nv_data, cp_hash, parameter_hash_algorithm);
+            bytes_to_read, offset, &nv_data, cp_hash, rp_hash,
+            parameter_hash_algorithm);
         if (rc != tool_rc_success) {
             if (rc != tool_rc_option_error) {
                 LOG_ERR("Failed to read NVRAM area at index 0x%X", nv_index);

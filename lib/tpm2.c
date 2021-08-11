@@ -129,7 +129,7 @@ tool_rc tpm2_getcap(ESYS_CONTEXT *esys_context, TPM2_CAP capability,
 tool_rc tpm2_nv_read(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
     TPM2B_NAME *precalc_nvname, UINT16 size, UINT16 offset,
-    TPM2B_MAX_NV_BUFFER **data, TPM2B_DIGEST *cp_hash,
+    TPM2B_MAX_NV_BUFFER **data, TPM2B_DIGEST *cp_hash,  TPM2B_DIGEST *rp_hash,
     TPMI_ALG_HASH parameter_hash_algorithm) {
 
     /*
@@ -149,18 +149,17 @@ tool_rc tpm2_nv_read(ESYS_CONTEXT *esys_context,
         }
     }
 
+    TSS2_SYS_CONTEXT *sys_context = NULL;
     tool_rc rc = tool_rc_success;
-    if (cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+    if (cp_hash->size || rp_hash->size) {
         rc = tpm2_getsapicontext(esys_context, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
             return rc;
         }
+    }
 
+    if (cp_hash->size) {
         rval = Tss2_Sys_NV_Read_Prepare(sys_context, auth_hierarchy_obj->handle,
             nv_index, size, offset);
         if (rval != TPM2_RC_SUCCESS) {
@@ -203,9 +202,7 @@ tool_rc tpm2_nv_read(ESYS_CONTEXT *esys_context,
 
         rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
             parameter_hash_algorithm, cp_hash);
-        /*
-         * Exit here without making the ESYS call since we just need the cpHash
-         */
+
 tpm2_nvread_free_name1_name2:
         if (!(is_name_specified)) {
             Esys_Free(name2);
@@ -214,7 +211,13 @@ tpm2_nvread_free_name1:
         if (!is_name_specified) {
             Esys_Free(name1);
         }
-        goto tpm2_nvread_skip_esapi_call;
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        if (!rp_hash->size) {
+            goto tpm2_nvread_skip_esapi_call;
+        }
     }
 
     ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
@@ -232,6 +235,11 @@ tpm2_nvread_free_name1:
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_Read, rval);
         return tool_rc_from_tpm(rval);
+    }
+
+    if (rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
     }
 
 tpm2_nvread_skip_esapi_call:
