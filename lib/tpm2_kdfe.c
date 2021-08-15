@@ -5,12 +5,16 @@
 #include <string.h>
 
 #include <openssl/bn.h>
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #include <openssl/ecdh.h>
-
+#else
+#include <openssl/core_names.h>
+#endif
 #include <tss2/tss2_tpm2_types.h>
 #include <tss2/tss2_mu.h>
 
 #include "log.h"
+#include "tpm2_convert.h"
 #include "tpm2_openssl.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_util.h"
@@ -65,72 +69,18 @@ TSS2_RC tpm2_kdfe(
     return rval;
 }
 
-static EC_POINT * tpm2_get_EC_public_key(TPM2B_PUBLIC *public) {
-    EC_POINT *q = NULL;
-    BIGNUM *bn_qx, *bn_qy;
-    EC_KEY *key;
-    const EC_GROUP *group;
-    bool rval;
-    TPMS_ECC_PARMS *tpm_ecc   = &public->publicArea.parameters.eccDetail;
-    TPMS_ECC_POINT *tpm_point = &public->publicArea.unique.ecc;
-
-    int nid = tpm2_ossl_curve_to_nid(tpm_ecc->curveID);
-    if (nid < 0) {
-        return NULL;
-    }
-
-    key = EC_KEY_new_by_curve_name(nid);
-    if (!key) {
-        LOG_ERR("Failed to create EC key from nid");
-        return NULL;
-    }
-
-    bn_qx = BN_bin2bn(tpm_point->x.buffer, tpm_point->x.size, NULL);
-    bn_qy = BN_bin2bn(tpm_point->y.buffer, tpm_point->y.size, NULL);
-    if ((bn_qx == NULL) || (bn_qy == NULL)) {
-        LOG_ERR("Could not convert EC public key to BN");
-        goto out;
-    }
-    group = EC_KEY_get0_group(key);
-    if (!group) {
-        LOG_ERR("EC key missing group");
-        goto out;
-    }
-    q = EC_POINT_new(group);
-    if (q == NULL) {
-        LOG_ERR("Could not allocate EC_POINT");
-        goto out;
-    }
-
-    rval = EC_POINT_set_affine_coordinates_tss(group, q, bn_qx, bn_qy, NULL);
-    if (rval == false) {
-        LOG_ERR("Could not set affine_coordinates");
-        EC_POINT_free(q);
-        q = NULL;
-    }
-
-out:
-    if (bn_qx) {
-        BN_free(bn_qx);
-    }
-    if (bn_qy) {
-        BN_free(bn_qy);
-    }
-    if (key) {
-        EC_KEY_free(key);
-    }
-
-    return q;
-}
-
-
-static bool get_public_key_from_ec_key(EC_KEY *key, TPMS_ECC_POINT *point) {
-    BIGNUM *x = BN_new();
-    BIGNUM *y = BN_new();
-    const EC_POINT *pubkey = EC_KEY_get0_public_key(key);
+static bool get_public_key_from_ec_key(EVP_PKEY *pkey, TPMS_ECC_POINT *point) {
+    BIGNUM *x = NULL;
+    BIGNUM *y = NULL;
     unsigned int nbx, nby;
     bool result = false;
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    EC_KEY *key = EVP_PKEY_get0_EC_KEY(pkey);
+    const EC_POINT *pubkey = EC_KEY_get0_public_key(key);
+
+    x = BN_new();
+    y = BN_new();
     if ((x == NULL) || (y == NULL) || (pubkey == NULL)) {
         LOG_ERR("Failed to allocate memory to store EC public key.");
         goto out;
@@ -138,6 +88,18 @@ static bool get_public_key_from_ec_key(EC_KEY *key, TPMS_ECC_POINT *point) {
 
     EC_POINT_get_affine_coordinates_tss(EC_KEY_get0_group(key),
             pubkey, x, y, NULL);
+#else
+    int rc = EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_EC_PUB_X, &x);
+    if (!rc) {
+        LOG_ERR("Failed to get EC public key X.");
+        goto out;
+    }
+    rc = EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_EC_PUB_Y, &y);
+    if (!rc) {
+        LOG_ERR("Failed to get EC public key Y.");
+        goto out;
+    }
+#endif
     nbx = BN_num_bytes(x);
     nby = BN_num_bytes(y);
     if ((nbx > sizeof(point->x.buffer))||
@@ -153,29 +115,41 @@ static bool get_public_key_from_ec_key(EC_KEY *key, TPMS_ECC_POINT *point) {
     result = true;
 
 out:
-    if (x) {
-        BN_free(x);
-    }
-    if (y) {
-        BN_free(y);
-    }
+    BN_free(x);
+    BN_free(y);
     return result;
 }
 
 
-static int get_ECDH_shared_secret(EC_KEY *key,
-        const EC_POINT *p_pub, TPM2B_ECC_PARAMETER *secret) {
+static int get_ECDH_shared_secret(EVP_PKEY *pkey,
+        EVP_PKEY *p_pub, TPM2B_ECC_PARAMETER *secret) {
 
-    int shared_secret_length;
+    EVP_PKEY_CTX *ctx;
+    int result = -1;
 
-    shared_secret_length = EC_GROUP_get_degree(EC_KEY_get0_group(key));
-    shared_secret_length = (shared_secret_length + 7) / 8;
-    if ((size_t) shared_secret_length > sizeof(secret->buffer)) {
+    ctx = EVP_PKEY_CTX_new(pkey, NULL);
+    if (!ctx)
         return -1;
-    }
-    secret->size = ECDH_compute_key(secret->buffer,
-            shared_secret_length, p_pub, key, NULL);
-    return secret->size;
+
+    int rc = EVP_PKEY_derive_init(ctx);
+    if (rc <= 0)
+        goto out;
+
+    rc = EVP_PKEY_derive_set_peer(ctx, p_pub);
+    if (rc <= 0)
+        goto out;
+
+    size_t shared_secret_length = sizeof(secret->buffer);
+    rc = EVP_PKEY_derive(ctx, secret->buffer, &shared_secret_length);
+    if (rc <= 0)
+        goto out;
+
+    secret->size = shared_secret_length;
+    result = secret->size;
+
+out:
+    EVP_PKEY_CTX_free(ctx);
+    return result;
 }
 
 
@@ -190,25 +164,42 @@ bool ecdh_derive_seed_and_encrypted_seed(
     TPMI_ALG_HASH parent_name_alg = parent_pub->publicArea.nameAlg;
     UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(parent_name_alg);
     bool result = false;
-    EC_KEY *key = NULL;
-    EC_POINT *qsv = NULL;
+    EVP_PKEY_CTX *ctx;
+    EVP_PKEY *pkey = NULL;
+    EVP_PKEY *qsv = NULL;
     TPMS_ECC_POINT qeu;
     bool qeu_is_valid;
     TPM2B_ECC_PARAMETER ecc_secret;
 
     // generate an ephemeral key
     int nid = tpm2_ossl_curve_to_nid(tpm_ecc->curveID);
-    if (nid >= 0) {
-        key = EC_KEY_new_by_curve_name(nid);
-    }
-    if (key == NULL) {
-        LOG_ERR("Failed to create EC key from curveID");
+
+    ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
+    if (!ctx) {
+        LOG_ERR("Failed to create key creation context");
         return false;
     }
-    EC_KEY_generate_key(key);
+
+    int rc = EVP_PKEY_keygen_init(ctx);
+    if (rc <= 0) {
+        LOG_ERR("Failed to initialize key creation");
+        goto out;
+    }
+
+    rc = EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctx, nid);
+    if (rc <= 0) {
+        LOG_ERR("Failed to set EC curve NID %i", nid);
+        goto out;
+    }
+
+    rc = EVP_PKEY_keygen(ctx, &pkey);
+    if (rc <= 0) {
+        LOG_ERR("Failed to generate the ephemeral EC key");
+        goto out;
+    }
 
     // get public key for the ephemeral key
-    qeu_is_valid = get_public_key_from_ec_key(key, &qeu);
+    qeu_is_valid = get_public_key_from_ec_key(pkey, &qeu);
     if (qeu_is_valid == false) {
         LOG_ERR("Could not get the ECC public key");
         goto out;
@@ -226,13 +217,17 @@ bool ecdh_derive_seed_and_encrypted_seed(
     out_sym_seed->size = offset;
 
     /* get parents public key */
-    qsv = tpm2_get_EC_public_key(parent_pub);
+    qsv = convert_pubkey_ECC(&parent_pub->publicArea);
     if (qsv == NULL) {
         LOG_ERR("Could not get parent's public key");
         goto out;
     }
 
-    get_ECDH_shared_secret(key, qsv, &ecc_secret);
+    rc = get_ECDH_shared_secret(pkey, qsv, &ecc_secret);
+    if (rc <= 0) {
+        LOG_ERR("Could not derive shared secret");
+        goto out;
+    }
 
     /* derive seed using KDFe */
     TPM2B_ECC_PARAMETER *party_u_info = &qeu.x;
@@ -244,11 +239,8 @@ bool ecdh_derive_seed_and_encrypted_seed(
     result = true;
 
 out:
-    if (qsv) {
-        EC_POINT_free(qsv);
-    }
-    if (key) {
-        EC_KEY_free(key);
-    }
+    EVP_PKEY_free(qsv);
+    EVP_PKEY_free(pkey);
+    EVP_PKEY_CTX_free(ctx);
     return result;
 }
