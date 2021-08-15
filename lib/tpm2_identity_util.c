@@ -10,79 +10,13 @@
 
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_identity_util.h"
 #include "tpm2_kdfa.h"
 #include "tpm2_kdfe.h"
 #include "tpm2_openssl.h"
 
 // Identity-related functionality that the TPM normally does, but using OpenSSL
-
-#if defined(LIBRESSL_VERSION_NUMBER)
-static int RSA_padding_add_PKCS1_OAEP_mgf1(unsigned char *to, int tlen,
-        const unsigned char *from, int flen, const unsigned char *param, int plen,
-        const EVP_MD *md, const EVP_MD *mgf1md) {
-
-    int ret = 0;
-    int i, emlen = tlen - 1;
-    unsigned char *db, *seed;
-    unsigned char *dbmask, seedmask[EVP_MAX_MD_SIZE];
-    int mdlen;
-
-    if (md == NULL)
-    md = EVP_sha1();
-    if (mgf1md == NULL)
-    mgf1md = md;
-
-    mdlen = EVP_MD_size(md);
-
-    if (flen > emlen - 2 * mdlen - 1) {
-        RSAerr(RSA_F_RSA_PADDING_ADD_PKCS1_OAEP,
-                RSA_R_DATA_TOO_LARGE_FOR_KEY_SIZE);
-        return 0;
-    }
-
-    if (emlen < 2 * mdlen + 1) {
-        RSAerr(RSA_F_RSA_PADDING_ADD_PKCS1_OAEP,
-                RSA_R_KEY_SIZE_TOO_SMALL);
-        return 0;
-    }
-
-    to[0] = 0;
-    seed = to + 1;
-    db = to + mdlen + 1;
-
-    if (!EVP_Digest((void *)param, plen, db, NULL, md, NULL))
-    return 0;
-    memset(db + mdlen, 0, emlen - flen - 2 * mdlen - 1);
-    db[emlen - flen - mdlen - 1] = 0x01;
-    memcpy(db + emlen - flen - mdlen, from, (unsigned int)flen);
-    if (RAND_bytes(seed, mdlen) <= 0)
-    return 0;
-
-    dbmask = OPENSSL_malloc(emlen - mdlen);
-    if (dbmask == NULL) {
-        RSAerr(RSA_F_RSA_PADDING_ADD_PKCS1_OAEP, ERR_R_MALLOC_FAILURE);
-        return 0;
-    }
-
-    if (PKCS1_MGF1(dbmask, emlen - mdlen, seed, mdlen, mgf1md) < 0)
-    goto err;
-    for (i = 0; i < emlen - mdlen; i++)
-    db[i] ^= dbmask[i];
-
-    if (PKCS1_MGF1(seedmask, mdlen, db, emlen - mdlen, mgf1md) < 0)
-    goto err;
-    for (i = 0; i < mdlen; i++)
-    seed[i] ^= seedmask[i];
-
-    ret = 1;
-
-err:
-    OPENSSL_free(dbmask);
-
-    return ret;
-}
-#endif
 
 static TPM2_KEY_BITS get_pub_asym_key_bits(TPM2B_PUBLIC *public) {
 
@@ -102,19 +36,13 @@ static bool share_secret_with_tpm2_rsa_public_key(TPM2B_DIGEST *protection_seed,
         TPM2B_PUBLIC *parent_pub, const unsigned char *label, int label_len,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed) {
     bool rval = false;
-    RSA *rsa = NULL;
+    EVP_PKEY_CTX *ctx = NULL;
 
-    // Public modulus (RSA-only!)
-    TPMI_RSA_KEY_BITS mod_size_bits =
-            parent_pub->publicArea.parameters.rsaDetail.keyBits;
-    UINT16 mod_size = mod_size_bits / 8;
-    TPM2B *pub_key_val = (TPM2B *) &parent_pub->publicArea.unique.rsa;
-    unsigned char *pub_modulus = malloc(mod_size);
-    if (pub_modulus == NULL) {
-        LOG_ERR("Failed to allocate memory to store public key's modulus.");
+    EVP_PKEY *pkey = convert_pubkey_RSA(&parent_pub->publicArea);
+    if (pkey == NULL) {
+        LOG_ERR("Failed to retrieve public key");
         return false;
     }
-    memcpy(pub_modulus, pub_key_val->buffer, mod_size);
 
     TPMI_ALG_HASH parent_name_alg = parent_pub->publicArea.nameAlg;
 
@@ -122,70 +50,66 @@ static bool share_secret_with_tpm2_rsa_public_key(TPM2B_DIGEST *protection_seed,
      * RSA Secret Sharing uses a randomly generated seed (Part 1, B.10.3).
      */
     protection_seed->size = tpm2_alg_util_get_hash_size(parent_name_alg);
-    int return_code = RAND_bytes(protection_seed->buffer, protection_seed->size);
-    if (return_code != 1) {
+    int rc = RAND_bytes(protection_seed->buffer, protection_seed->size);
+    if (rc != 1) {
         LOG_ERR("Failed to get random bytes");
         goto error;
     }
 
     /*
-     * This is the biggest buffer value, so it should always be sufficient.
+     * The seed value will be OAEP encrypted with a given L parameter.
      */
-    unsigned char encoded[TPM2_MAX_DIGEST_BUFFER];
-    return_code = RSA_padding_add_PKCS1_OAEP_mgf1(encoded, mod_size,
-            protection_seed->buffer, protection_seed->size, label, label_len,
-            tpm2_openssl_md_from_tpmhalg(parent_name_alg), NULL);
-    if (return_code != 1) {
-        LOG_ERR("Failed RSA_padding_add_PKCS1_OAEP_mgf1\n");
-        goto error;
-    }
-    BIGNUM* bne = BN_new();
-    if (!bne) {
-        LOG_ERR("BN_new for bne failed\n");
-        goto error;
-    }
-    return_code = BN_set_word(bne, RSA_F4);
-    if (return_code != 1) {
-        LOG_ERR("BN_set_word failed\n");
-        BN_free(bne);
-        goto error;
-    }
-    rsa = RSA_new();
-    if (!rsa) {
-        LOG_ERR("RSA_new failed\n");
-        BN_free(bne);
-        goto error;
-    }
-    return_code = RSA_generate_key_ex(rsa, mod_size_bits, bne, NULL);
-    BN_free(bne);
-    if (return_code != 1) {
-        LOG_ERR("RSA_generate_key_ex failed\n");
-        goto error;
-    }
-    BIGNUM *n = BN_bin2bn(pub_modulus, mod_size, NULL);
-    if (n == NULL) {
-        LOG_ERR("BN_bin2bn failed\n");
-        goto error;
-    }
-    if (!RSA_set0_key(rsa, n, NULL, NULL)) {
-        LOG_ERR("RSA_set0_key failed\n");
-        BN_free(n);
-        goto error;
-    }
-    // Encrypting
-    encrypted_protection_seed->size = mod_size;
-    return_code = RSA_public_encrypt(mod_size, encoded,
-            encrypted_protection_seed->secret, rsa, RSA_NO_PADDING);
-    if (return_code < 0) {
-        LOG_ERR("Failed RSA_public_encrypt\n");
+    ctx = EVP_PKEY_CTX_new(pkey, NULL);
+    if (!ctx) {
+        LOG_ERR("Failed EVP_PKEY_CTX_new");
         goto error;
     }
 
+    rc = EVP_PKEY_encrypt_init(ctx);
+    if (rc <= 0) {
+        LOG_ERR("Failed EVP_PKEY_encrypt_init");
+        goto error;
+    }
+
+    rc = EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
+    if (rc <= 0) {
+        LOG_ERR("Failed EVP_PKEY_CTX_set_rsa_padding");
+        goto error;
+    }
+
+    rc = EVP_PKEY_CTX_set_rsa_oaep_md(ctx,
+            tpm2_openssl_md_from_tpmhalg(parent_name_alg));
+    if (rc <= 0) {
+        LOG_ERR("Failed EVP_PKEY_CTX_set_rsa_oaep_md");
+        goto error;
+    }
+
+    // the library will take ownership of the label
+    char *newlabel = strdup((const char *)label);
+    if (newlabel == NULL) {
+        LOG_ERR("Failed to allocate label");
+        goto error;
+    }
+
+    rc = EVP_PKEY_CTX_set0_rsa_oaep_label(ctx, newlabel, label_len);
+    if (rc <= 0) {
+        LOG_ERR("Failed EVP_PKEY_CTX_set0_rsa_oaep_label");
+        free(newlabel);
+        goto error;
+    }
+
+    size_t outlen = sizeof(TPMU_ENCRYPTED_SECRET);
+    if (EVP_PKEY_encrypt(ctx, encrypted_protection_seed->secret, &outlen,
+            protection_seed->buffer, protection_seed->size) <= 0) {
+        LOG_ERR("Failed EVP_PKEY_encrypt\n");
+        goto error;
+    }
+    encrypted_protection_seed->size = outlen;
     rval = true;
 
 error:
-    free(pub_modulus);
-    RSA_free(rsa);
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(pkey);
     return rval;
 }
 
