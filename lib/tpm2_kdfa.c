@@ -2,6 +2,13 @@
 
 #include <string.h>
 
+#include <openssl/evp.h>
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#include <openssl/hmac.h>
+#else
+#include <openssl/core_names.h>
+#endif
+
 #include "log.h"
 #include "tpm2_kdfa.h"
 #include "tpm2_openssl.h"
@@ -40,13 +47,27 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
         return TPM2_RC_HASH;
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     HMAC_CTX *ctx = HMAC_CTX_new();
+#else
+    EVP_MAC *hmac = EVP_MAC_fetch(NULL, "HMAC", NULL);
+    EVP_MAC_CTX *ctx = EVP_MAC_CTX_new(hmac);
+#endif
     if (!ctx) {
         LOG_ERR("HMAC context allocation failed");
         return TPM2_RC_MEMORY;
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     int rc = HMAC_Init_ex(ctx, key->buffer, key->size, md, NULL);
+#else
+    OSSL_PARAM params[2];
+
+    params[0] = OSSL_PARAM_construct_utf8_string(OSSL_ALG_PARAM_DIGEST,
+                                                 (char *)EVP_MD_get0_name(md), 0);
+    params[1] = OSSL_PARAM_construct_end();
+    int rc = EVP_MAC_init(ctx, key->buffer, key->size, params);
+#endif
     if (!rc) {
         LOG_ERR("HMAC Init failed: %s", ERR_error_string(rc, NULL));
         rval = TPM2_RC_MEMORY;
@@ -71,7 +92,11 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
         int c;
         for (c = 0; c < j; c++) {
             TPM2B_DIGEST *digest = buffer_list[c];
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
             int rc = HMAC_Update(ctx, digest->buffer, digest->size);
+#else
+            int rc = EVP_MAC_update(ctx, digest->buffer, digest->size);
+#endif
             if (!rc) {
                 LOG_ERR("HMAC Update failed: %s", ERR_error_string(rc, NULL));
                 rval = TPM2_RC_MEMORY;
@@ -79,8 +104,13 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
             }
         }
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
         unsigned size = sizeof(tmpResult.buffer);
         int rc = HMAC_Final(ctx, tmpResult.buffer, &size);
+#else
+        size_t size;
+        int rc = EVP_MAC_final(ctx, tmpResult.buffer, &size, sizeof(tmpResult.buffer));
+#endif
         if (!rc) {
             LOG_ERR("HMAC Final failed: %s", ERR_error_string(rc, NULL));
             rval = TPM2_RC_MEMORY;
@@ -100,7 +130,12 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
     result_key->size = bytes;
 
 err:
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     HMAC_CTX_free(ctx);
+#else
+    EVP_MAC_CTX_free(ctx);
+    EVP_MAC_free(hmac);
+#endif
 
     return rval;
 }
