@@ -18,30 +18,6 @@
 #include "tpm2_errata.h"
 #include "tpm2_systemdeps.h"
 
-/* compatibility function for OpenSSL versions < 1.1.0 */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static int BN_bn2binpad(const BIGNUM *a, unsigned char *to, int tolen) {
-    int r;
-    int topad;
-    int islen;
-
-    islen = BN_num_bytes(a);
-
-    if (tolen < islen)
-        return -1;
-
-    topad = tolen - islen;
-
-    memset(to, 0x00, topad);
-    r = BN_bn2bin(a, to + topad);
-    if (r == 0) {
-        return -1;
-    }
-
-    return tolen;
-}
-#endif
-
 int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm) {
 
     switch (algorithm) {
