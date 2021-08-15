@@ -10,6 +10,13 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#include <openssl/rsa.h>
+#else
+#include <openssl/core_names.h>
+#include <openssl/params.h>
+#include <openssl/param_build.h>
+#endif
 
 #include "files.h"
 #include "log.h"
@@ -85,36 +92,49 @@ bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public,
     return false;
 }
 
-static bool convert_pubkey_RSA(TPMT_PUBLIC *public,
-        tpm2_convert_pubkey_fmt format, BIO *bio) {
+EVP_PKEY *convert_pubkey_RSA(TPMT_PUBLIC *public) {
 
-    bool ret = false;
-    RSA *ssl_rsa_key = NULL;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    RSA *rsa_key = NULL;
+#else
+    OSSL_PARAM_BLD *build = NULL;
+    OSSL_PARAM *params = NULL;
+    EVP_PKEY_CTX *ctx = NULL;
+#endif
     BIGNUM *e = NULL, *n = NULL;
+    EVP_PKEY *pkey = NULL;
 
     UINT32 exponent = (public->parameters).rsaDetail.exponent;
     if (exponent == 0) {
         exponent = 0x10001;
     }
 
-    // OpenSSL expects this in network byte order
-    exponent = tpm2_util_hton_32(exponent);
-    ssl_rsa_key = RSA_new();
-    if (!ssl_rsa_key) {
-        print_ssl_error("Failed to allocate OpenSSL RSA structure");
-        goto error;
-    }
-
-    e = BN_bin2bn((void*) &exponent, sizeof(exponent), NULL);
-    n = BN_bin2bn(public->unique.rsa.buffer, public->unique.rsa.size,
-    NULL);
-
-    if (!n || !e) {
+    n = BN_bin2bn(public->unique.rsa.buffer, public->unique.rsa.size, NULL);
+    if (!n) {
         print_ssl_error("Failed to convert data to SSL internal format");
         goto error;
     }
 
-    if (!RSA_set0_key(ssl_rsa_key, n, e, NULL)) {
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    rsa_key = RSA_new();
+    if (!rsa_key) {
+        print_ssl_error("Failed to allocate OpenSSL RSA structure");
+        goto error;
+    }
+
+    e = BN_new();
+    if (!e) {
+        print_ssl_error("Failed to convert data to SSL internal format");
+        goto error;
+    }
+    int rc = BN_set_word(e, exponent);
+    if (!rc) {
+        print_ssl_error("Failed to convert data to SSL internal format");
+        goto error;
+    }
+
+    rc = RSA_set0_key(rsa_key, n, e, NULL);
+    if (!rc) {
         print_ssl_error("Failed to set RSA modulus and exponent components");
         goto error;
     }
@@ -122,78 +142,96 @@ static bool convert_pubkey_RSA(TPMT_PUBLIC *public,
     /* modulus and exponent components are now owned by the RSA struct */
     n = e = NULL;
 
-    int ssl_res = 0;
-
-    switch (format) {
-    case pubkey_format_pem:
-        ssl_res = PEM_write_bio_RSA_PUBKEY(bio, ssl_rsa_key);
-        break;
-    case pubkey_format_der:
-        ssl_res = i2d_RSA_PUBKEY_bio(bio, ssl_rsa_key);
-        break;
-    default:
-        LOG_ERR("Invalid OpenSSL target format %d encountered", format);
+    pkey = EVP_PKEY_new();
+    if (!pkey) {
+        print_ssl_error("Failed to allocate OpenSSL EVP structure");
         goto error;
     }
 
-    if (ssl_res <= 0) {
-        print_ssl_error("OpenSSL public key conversion failed");
+    rc = EVP_PKEY_assign_RSA(pkey, rsa_key);
+    if (!rc) {
+        print_ssl_error("Failed to set OpenSSL EVP structure");
+        EVP_PKEY_free(pkey);
+        pkey = NULL;
+        goto error;
+    }
+    /* rsa key is now owner by the EVP_PKEY struct */
+    rsa_key = NULL;
+#else
+    build = OSSL_PARAM_BLD_new();
+    if (!build) {
+        print_ssl_error("Failed to allocate OpenSSL parameters");
         goto error;
     }
 
-    ret = true;
-
-    error: if (n) {
-        BN_free(n);
-    }
-    if (e) {
-        BN_free(e);
-    }
-    if (ssl_rsa_key) {
-        RSA_free(ssl_rsa_key);
+    int rc = OSSL_PARAM_BLD_push_BN(build, OSSL_PKEY_PARAM_RSA_N, n);
+    if (!rc) {
+        print_ssl_error("Failed to set RSA modulus");
+        goto error;
     }
 
-    return ret;
+    rc = OSSL_PARAM_BLD_push_uint32(build, OSSL_PKEY_PARAM_RSA_E, exponent);
+    if (!rc) {
+        print_ssl_error("Failed to set RSA exponent");
+        goto error;
+    }
+
+    params = OSSL_PARAM_BLD_to_param(build);
+    if (!params) {
+        print_ssl_error("Failed to build OpenSSL parameters");
+        goto error;
+    }
+
+    ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+    if (!ctx) {
+        print_ssl_error("Failed to allocate RSA key context");
+        goto error;
+    }
+
+    rc = EVP_PKEY_fromdata_init(ctx);
+    if (rc <= 0) {
+        print_ssl_error("Failed to initialize RSA key creation");
+        goto error;
+    }
+
+    rc = EVP_PKEY_fromdata(ctx, &pkey, EVP_PKEY_PUBLIC_KEY, params);
+    if (rc <= 0) {
+        print_ssl_error("Failed to create a RSA public key");
+        goto error;
+    }
+#endif
+error:
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    RSA_free(rsa_key);
+#else
+    EVP_PKEY_CTX_free(ctx);
+    OSSL_PARAM_free(params);
+    OSSL_PARAM_BLD_free(build);
+#endif
+    BN_free(n);
+    BN_free(e);
+    return pkey;
 }
 
-static bool convert_pubkey_ECC(TPMT_PUBLIC *public,
-        tpm2_convert_pubkey_fmt format, BIO *bio) {
+EVP_PKEY *convert_pubkey_ECC(TPMT_PUBLIC *public) {
 
     BIGNUM *x = NULL;
     BIGNUM *y = NULL;
-    EC_KEY *key = NULL;
     EC_POINT *point = NULL;
-    const EC_GROUP *group = NULL;
-
-    bool result = false;
+    EC_GROUP *group = NULL;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    EC_KEY *ec_key = NULL;
+#else
+    OSSL_PARAM_BLD *build = NULL;
+    OSSL_PARAM *params = NULL;
+    EVP_PKEY_CTX *ctx = NULL;
+    unsigned char *puboct = NULL;
+    size_t bsize;
+#endif
+    EVP_PKEY *pkey = NULL;
 
     TPMS_ECC_PARMS *tpm_ecc = &public->parameters.eccDetail;
     TPMS_ECC_POINT *tpm_point = &public->unique.ecc;
-
-    int nid = tpm2_ossl_curve_to_nid(tpm_ecc->curveID);
-    if (nid < 0) {
-        return false;
-    }
-
-    /*
-     * Create an empty EC key by the NID
-     */
-    key = EC_KEY_new_by_curve_name(nid);
-    if (!key) {
-        print_ssl_error("Failed to create EC key from nid");
-        return false;
-    }
-
-    group = EC_KEY_get0_group(key);
-    if (!group) {
-        print_ssl_error("EC key missing group");
-        goto out;
-    }
-
-    /*
-     * Create a new point in the group, which is the public key.
-     */
-    point = EC_POINT_new(group);
 
     /*
      * Set the affine coordinates for the point
@@ -210,74 +248,167 @@ static bool convert_pubkey_ECC(TPMT_PUBLIC *public,
         goto out;
     }
 
+    int nid = tpm2_ossl_curve_to_nid(tpm_ecc->curveID);
+    if (nid < 0) {
+        goto out;
+    }
+
+    /*
+     * Create a new point in the group, which is the public key.
+     */
+    group = EC_GROUP_new_by_curve_name(nid);
+    if (!group) {
+        print_ssl_error("EC key missing group");
+        goto out;
+    }
+
+    point = EC_POINT_new(group);
+
     int rc = EC_POINT_set_affine_coordinates_tss(group, point, x, y, NULL);
     if (!rc) {
         print_ssl_error("Could not set affine coordinates");
         goto out;
     }
 
-    rc = EC_KEY_set_public_key(key, point);
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    /*
+     * Create an empty EC key by the NID
+     */
+    ec_key = EC_KEY_new_by_curve_name(nid);
+    if (!ec_key) {
+        print_ssl_error("Failed to create EC key from nid");
+        return false;
+    }
+
+    rc = EC_KEY_set_public_key(ec_key, point);
     if (!rc) {
         print_ssl_error("Could not set point as public key portion");
         goto out;
     }
 
-    int ssl_res = 0;
-
-    switch (format) {
-    case pubkey_format_pem:
-        ssl_res = PEM_write_bio_EC_PUBKEY(bio, key);
-        break;
-    case pubkey_format_der:
-        ssl_res = i2d_EC_PUBKEY_bio(bio, key);
-        break;
-    default:
-        LOG_ERR("Invalid OpenSSL target format %d encountered", format);
+    if ((pkey = EVP_PKEY_new()) == NULL) {
+        print_ssl_error("Failed to allocate OpenSSL EVP structure");
         goto out;
     }
 
-    if (ssl_res <= 0) {
-        print_ssl_error("OpenSSL public key conversion failed");
+    rc = EVP_PKEY_assign_EC_KEY(pkey, ec_key);
+    if (!rc) {
+        print_ssl_error("Failed to set OpenSSL EVP structure");
+        EVP_PKEY_free(pkey);
+        pkey = NULL;
+        goto out;
+    }
+    /* rsa key is now owner by the EVP_PKEY struct */
+    ec_key = NULL;
+#else
+    build = OSSL_PARAM_BLD_new();
+    if (!build) {
+        print_ssl_error("Failed to allocate OpenSSL parameters");
         goto out;
     }
 
-    result = true;
+    rc = OSSL_PARAM_BLD_push_utf8_string(build, OSSL_PKEY_PARAM_GROUP_NAME,
+                                         (char *)OBJ_nid2sn(nid), 0);
+    if (!rc) {
+        print_ssl_error("Failed to set the EC group name");
+        goto out;
+    }
+
+    bsize = EC_POINT_point2buf(group, point,
+                               POINT_CONVERSION_COMPRESSED,
+                               &puboct, NULL);
+    if (bsize == 0) {
+        print_ssl_error("Failed compress the EC public key");
+        goto out;
+    }
+
+    rc = OSSL_PARAM_BLD_push_octet_string(build, OSSL_PKEY_PARAM_PUB_KEY,
+                                          puboct, bsize);
+    if (!rc) {
+        print_ssl_error("Failed set the EC public key");
+        goto out;
+    }
+
+    params = OSSL_PARAM_BLD_to_param(build);
+    if (!params) {
+        print_ssl_error("Failed to build OpenSSL parameters");
+        goto out;
+    }
+
+    ctx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
+    if (!ctx) {
+        print_ssl_error("Failed to allocate EC key context");
+        goto out;
+    }
+
+    rc = EVP_PKEY_fromdata_init(ctx);
+    if (rc <= 0) {
+        print_ssl_error("Failed to initialize EC key creation");
+        goto out;
+    }
+
+    rc = EVP_PKEY_fromdata(ctx, &pkey, EVP_PKEY_PUBLIC_KEY, params);
+    if (rc <= 0) {
+        print_ssl_error("Failed to create a EC public key");
+        goto out;
+    }
+#endif
 
 out:
-    if (x) {
-        BN_free(x);
-    }
-    if (y) {
-        BN_free(y);
-    }
-    if (point) {
-        EC_POINT_free(point);
-    }
-    if (key) {
-        EC_KEY_free(key);
-    }
-
-    return result;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    EC_KEY_free(ec_key);
+#else
+    EVP_PKEY_CTX_free(ctx);
+    OSSL_PARAM_free(params);
+    OSSL_PARAM_BLD_free(build);
+    OPENSSL_free(puboct);
+#endif
+    EC_POINT_free(point);
+    EC_GROUP_free(group);
+    BN_free(x);
+    BN_free(y);
+    return pkey;
 }
 
 static bool tpm2_convert_pubkey_bio(TPMT_PUBLIC *public,
         tpm2_convert_pubkey_fmt format, BIO *bio) {
 
-    bool result = false;
+    EVP_PKEY *pubkey = NULL;
+    int ssl_res = 0;
 
     switch (public->type) {
     case TPM2_ALG_RSA:
-        result = convert_pubkey_RSA(public, format, bio);
+        pubkey = convert_pubkey_RSA(public);
         break;
     case TPM2_ALG_ECC:
-        result = convert_pubkey_ECC(public, format, bio);
+        pubkey = convert_pubkey_ECC(public);
         break;
     default:
-        LOG_ERR(
-                "Unsupported key type for requested output format. Only RSA is supported.");
+        LOG_ERR("Unsupported key type for requested output format.");
     }
 
-    return result;
+    if (pubkey == NULL)
+        return false;
+
+    switch (format) {
+    case pubkey_format_pem:
+        ssl_res = PEM_write_bio_PUBKEY(bio, pubkey);
+        break;
+    case pubkey_format_der:
+        ssl_res = i2d_PUBKEY_bio(bio, pubkey);
+        break;
+    default:
+        LOG_ERR("Invalid OpenSSL target format %d encountered", format);
+    }
+
+    EVP_PKEY_free(pubkey);
+
+    if (ssl_res <= 0) {
+        print_ssl_error("OpenSSL public key conversion failed");
+        return false;
+    }
+
+    return true;
 }
 
 static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public,
