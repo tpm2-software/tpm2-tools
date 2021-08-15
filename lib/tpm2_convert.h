@@ -65,6 +65,26 @@ bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public,
         tpm2_convert_pubkey_fmt format, const char *path);
 
 /**
+ * Converts the given RSA public key structure into the EVP_PKEY.
+ *
+ * @param public
+ *  TPM2 public key structure structure.
+ * @return
+ *   OpenSSL key structure, or NULL on error.
+ */
+EVP_PKEY *convert_pubkey_RSA(TPMT_PUBLIC *public);
+
+/**
+ * Converts the given ECC public key structure into the EVP_PKEY.
+ *
+ * @param public
+ *  TPM2 public key structure structure.
+ * @return
+ *   OpenSSL key structure, or NULL on error.
+ */
+EVP_PKEY *convert_pubkey_ECC(TPMT_PUBLIC *public);
+
+/**
  * Parses the given command line signature format option string and returns
  * the corresponding signature_format enum value.
  *
