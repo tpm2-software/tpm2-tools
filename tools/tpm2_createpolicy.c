@@ -98,6 +98,7 @@ static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
 
 static bool on_option(char key, char *value) {
 
+    bool result = true;
     switch (key) {
     case 'L':
         pctx.common_policy_options.policy_file_flag = true;
@@ -116,8 +117,10 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'l':
-        if (!pcr_parse_selections(value,
-                &pctx.pcr_policy_options.pcr_selections)) {
+        result = pcr_parse_selections(value,
+            &pctx.pcr_policy_options.pcr_selections);
+        if (!result) {
+            LOG_ERR("Failed to parse PCR string %s", value);
             return false;
         }
         break;
