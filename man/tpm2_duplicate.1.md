@@ -164,7 +164,7 @@ tpm2_create -C primary.ctx -g sha256 -G rsa -p foo -r key.prv \
 tpm2_load -C primary.ctx -r key.prv -u key.pub -c key.ctx
 
 tpm2_readpublic -c key.ctx -o dup.pub
-````
+```
 
 Test sign and encryption locally (so we can compare later that the same key 
 was transferred).
