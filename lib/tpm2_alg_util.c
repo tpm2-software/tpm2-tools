@@ -100,7 +100,7 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
         { .name = "ecb", .id = TPM2_ALG_ECB, .flags = tpm2_alg_util_flags_mode },
 
         { .name = "symcipher", .id = TPM2_ALG_SYMCIPHER, .flags = tpm2_alg_util_flags_base },
-        { .name = "keyedhash", .id = TPM2_ALG_KEYEDHASH, .flags = tpm2_alg_util_flags_base },
+        { .name = "keyedhash", .id = TPM2_ALG_KEYEDHASH, .flags = tpm2_alg_util_flags_base | tpm2_alg_util_flags_keyedhash_base },
 
         // Misc
         { .name = "null", .id = TPM2_ALG_NULL, .flags = tpm2_alg_util_flags_misc | tpm2_alg_util_flags_rsa_scheme },

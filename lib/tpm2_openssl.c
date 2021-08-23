@@ -886,7 +886,7 @@ static bool load_public_AES_from_file(FILE *f, const char *path,
 #define KEYEDHASH_MAX_SIZE 128
 
 static bool load_public_KEYEDHASH_from_file(FILE *f, const char *path,
-        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv, bool is_hmac) {
 
     /*
      * Get the file size and validate that it is within the allowed size for keyed hash objects
@@ -903,7 +903,30 @@ static bool load_public_KEYEDHASH_from_file(FILE *f, const char *path,
 
     pub->publicArea.type = TPM2_ALG_KEYEDHASH;
     TPMT_KEYEDHASH_SCHEME *s = &pub->publicArea.parameters.keyedHashDetail.scheme;
-    s->scheme = TPM2_ALG_NULL;
+    if (is_hmac) {
+        s->scheme = TPM2_ALG_HMAC;
+
+        switch(priv->sensitiveArea.sensitive.bits.size) {
+        case 20:
+            s->details.hmac.hashAlg = TPM2_ALG_SHA1;
+            break;
+        case 32:
+            s->details.hmac.hashAlg = TPM2_ALG_SHA256;
+            break;
+        case 48:
+            s->details.hmac.hashAlg = TPM2_ALG_SHA384;
+            break;
+        case 64:
+            s->details.hmac.hashAlg = TPM2_ALG_SHA512;
+            break;
+        default:
+            LOG_ERR("Expected HMAC keys to be SHA1, SHA256, SHA384 or SHA512 sized, got: %u",
+                    priv->sensitiveArea.sensitive.bits.size);
+        }
+
+    } else {
+        s->scheme = TPM2_ALG_NULL;
+    }
 
     /*
      * Calculate the unique field, same as for AES keys
@@ -1161,7 +1184,7 @@ static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f,
 }
 
 static tpm2_openssl_load_rc load_private_KEYEDHASH_from_file(FILE *f,
-        const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+        const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv, bool is_hmac) {
 
     unsigned long file_size = 0;
     bool result = files_get_file_size(f, &file_size, path);
@@ -1185,7 +1208,7 @@ static tpm2_openssl_load_rc load_private_KEYEDHASH_from_file(FILE *f,
         return lprc_error;
     }
 
-    result = load_public_KEYEDHASH_from_file(f, path, pub, priv);
+    result = load_public_KEYEDHASH_from_file(f, path, pub, priv, is_hmac);
     if (!result) {
         return lprc_error;
     }
@@ -1234,11 +1257,14 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
         }
         break;
     case TPM2_ALG_HMAC:
+        /* falls-thru */
+    case TPM2_ALG_KEYEDHASH:
         if (pass) {
-            LOG_ERR("No password can be used for protecting HMAC key");
+            LOG_ERR("No password can be used for protecting %s key",
+                    TPM2_ALG_HMAC ? "HMAC" : "Keyed Hash");
             rc = lprc_error;
         } else {
-            rc = load_private_KEYEDHASH_from_file(f, path, pub, priv);
+            rc = load_private_KEYEDHASH_from_file(f, path, pub, priv, alg == TPM2_ALG_HMAC);
 	}
       break;
     case TPM2_ALG_ECC:
@@ -1271,7 +1297,8 @@ bool tpm2_openssl_import_keys(
 {
     bool result;
 
-    TPMA_OBJECT attrs = TPMA_OBJECT_DECRYPT | TPMA_OBJECT_SIGN_ENCRYPT;
+    TPMA_OBJECT attrs = key_type != TPM2_ALG_HMAC ?
+            TPMA_OBJECT_DECRYPT | TPMA_OBJECT_SIGN_ENCRYPT : TPMA_OBJECT_SIGN_ENCRYPT;
 
     if (policy_file) {
         public->publicArea.authPolicy.size = sizeof(public->publicArea.authPolicy.buffer);
