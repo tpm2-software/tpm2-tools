@@ -13,7 +13,7 @@ typedef enum tpm2_alg_util_flags tpm2_alg_util_flags;
 enum tpm2_alg_util_flags {
     tpm2_alg_util_flags_none       = 0,
     tpm2_alg_util_flags_hash       = 1 << 0,
-    tpm2_alg_util_flags_keyedhash  = 1 << 0,
+    tpm2_alg_util_flags_keyedhash  = 1 << 1,
     tpm2_alg_util_flags_symmetric  = 1 << 2,
     tpm2_alg_util_flags_asymmetric = 1 << 3,
     tpm2_alg_util_flags_kdf        = 1 << 4,
