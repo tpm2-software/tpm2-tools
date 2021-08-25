@@ -233,16 +233,36 @@ void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     }
 }
 
-tpm2_option_code tpm2_handle_options(int argc, char **argv,
-        tpm2_options *tool_opts, tpm2_option_flags *flags,
-        TSS2_TCTI_CONTEXT **tcti) {
+static TSS2_RC tcti_fake_receive (TSS2_TCTI_CONTEXT *tctiContext, size_t *response_size,
+    unsigned char *response_buffer, int32_t timeout) {
 
-    tpm2_option_code rc = tpm2_option_code_err;
-    TSS2_RC rc_tcti;
-    bool result = false;
-    bool show_help = false;
-    bool manpager = true;
-    bool explicit_manpager = false;
+    (void) tctiContext;
+	(void) response_size;
+	(void) response_buffer;
+	(void) timeout;
+
+    LOG_ERR("Fake tcti's receive invoked. You shouldn't be here!");
+	return TSS2_TCTI_RC_NOT_IMPLEMENTED;
+}
+
+static void tcti_fake_finalize (TSS2_TCTI_CONTEXT *tctiContext) {
+	(void) tctiContext;
+}
+
+static TSS2_RC tcti_fake_transmit (TSS2_TCTI_CONTEXT *tcti_ctx, size_t size,
+    const uint8_t *cmd_buf) {
+
+	(void) tcti_ctx;
+	(void) size;
+	(void) cmd_buf;
+
+    LOG_ERR("Fake tcti's transmit invoked. You shouldn't be here!");
+	return TSS2_TCTI_RC_NOT_IMPLEMENTED;
+}
+
+tpm2_option_code tpm2_handle_options(int argc, char **argv,
+    tpm2_options *tool_opts, tpm2_option_flags *flags,
+    TSS2_TCTI_CONTEXT **tcti) {
 
     /*
      * Handy way to *try* and find all used options:
@@ -257,7 +277,6 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
         { "enable-errata", no_argument,       NULL, 'Z' },
     };
 
-    const char *tcti_conf_option = NULL;
 
     /* handle any options */
     const char* common_short_opts = "T:h::vVQZ";
@@ -268,27 +287,35 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
     }
 
     /* Get the options from the tool */
+    bool show_help = false;
+    tpm2_option_code rc = tpm2_option_code_continue;
+    bool result = false;
     if (tool_opts) {
         result = tpm2_options_cat(&opts, tool_opts);
         if (!result) {
+            rc = tpm2_option_code_err;
             goto out;
         }
     }
 
-    optind = 1;
-
     /* Parse the options, calling the tool callback if unknown */
+    const char *tcti_conf_option = NULL;
+    optind = 1;
     int c;
+    bool manpager = true;
+    bool explicit_manpager = false;
     while ((c = getopt_long(argc, argv, opts->short_opts, opts->long_opts, NULL))
             != -1) {
         switch (c) {
         case 'T':
             if (opts->flags & TPM2_OPTIONS_NO_SAPI) {
                 LOG_ERR("%s: tool doesn't support the TCTI option", argv[0]);
+                rc = tpm2_option_code_err;
                 goto out;
             }
             /* only attempt to get options from tcti option string */
             tcti_conf_option = optarg;
+            flags->tcti_none = !strcmp(tcti_conf_option, "none");
             break;
         case 'h':
             show_help = true;
@@ -328,8 +355,8 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
                     }
                 }
             }
+            rc = tpm2_option_code_err;
             goto out;
-            break;
         case 'V':
             flags->verbose = 1;
             break;
@@ -345,15 +372,18 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
             flags->enable_errata = 1;
             break;
         case '?':
+            rc = tpm2_option_code_err;
             goto out;
         default:
             /* NULL on_opt handler and unknown option specified is an error */
             if (!tool_opts || !tool_opts->callbacks.on_opt) {
                 LOG_ERR("Unknown option found: %c", c);
+                rc = tpm2_option_code_err;
                 goto out;
             }
             result = tool_opts->callbacks.on_opt(c, optarg);
             if (!result) {
+                rc = tpm2_option_code_err;
                 goto out;
             }
         }
@@ -366,47 +396,112 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
     if (tool_argc && (!tool_opts || !tool_opts->callbacks.on_arg)) {
         LOG_ERR("Got arguments but the tool takes no arguments");
         show_help = true;
+        rc = tpm2_option_code_err;
         goto out;
     }
     /* have args and a handler to process */
     else if (tool_argc && tool_opts->callbacks.on_arg) {
         result = tool_opts->callbacks.on_arg(tool_argc, tool_args);
         if (!result) {
+            rc = tpm2_option_code_err;
             goto out;
         }
     }
 
     /* Only init a TCTI if the tool needs it and if the -h/--help option isn't present */
+    TSS2_RC rc_tcti;
     if (!show_help) {
 
-        /* tool doesn't request a sapi, don't initialize one */
-        if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
+        /*
+         * Cases to handle:
+         * SAPI [0] | NO_SAPI [1] | OPTIONAL_SAPI [2] | FAKE_TCTI [4]
+         */
 
-            if (tcti_conf_option == NULL)
-                tcti_conf_option = tpm2_util_getenv(TPM2TOOLS_ENV_TCTI);
-            else if (!strcmp(tcti_conf_option, "none")) {
-                if (!tool_opts
-                        || !(tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI)) {
-                    LOG_ERR("Requested no tcti, but tool requires TCTI.");
-                    goto out;
-                }
-                goto none;
-            }
-            rc_tcti = Tss2_TctiLdr_Initialize(tcti_conf_option, tcti);
-            if (rc_tcti != TSS2_RC_SUCCESS || !*tcti) {
-                LOG_ERR("Could not load tcti, got: \"%s\"", tcti_conf_option);
-                goto out;
-            }
-            /*
-             * no loader requested ie --tcti=none is an error if tool
-             * doesn't indicate an optional SAPI
-             */
-            if (!flags->enable_errata) {
-                flags->enable_errata = !!tpm2_util_getenv(
-                        TPM2TOOLS_ENV_ENABLE_ERRATA);
-            }
+        /*
+         * SAPI
+         */
+        bool is_sapi =
+            (!tool_opts || !tool_opts->flags);
+
+        /*
+         * NO_SAPI
+         */
+        bool is_no_sapi =
+            (tool_opts && tool_opts->flags & TPM2_OPTIONS_NO_SAPI);
+        /* tool doesn't use sapi, skip tcti checks and continue */
+        if (is_no_sapi) {
+            goto out;
+        }
+
+        /*
+         * OPTIONAL_SAPI
+         */
+        bool is_optional_sapi =
+            (tool_opts && tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI);
+
+        /*
+         * Actions when tcti is "none"
+         */
+        bool is_tcti_from_env =
+            (!is_no_sapi && tcti_conf_option == 0);
+        if (is_tcti_from_env) {
+            tcti_conf_option = tpm2_util_getenv(TPM2TOOLS_ENV_TCTI);
+        }
+
+        if (flags->tcti_none && is_sapi) {
+            LOG_ERR("Requested no tcti, but tool requires TCTI.");
+            rc = tpm2_option_code_err;
+            goto out;
+        }
+
+        /* tool doesn't request a sapi, don't initialize one */
+        if (flags->tcti_none && is_optional_sapi) {
+            LOG_WARN("Tool optionally uses SAPI. Continuing with tcti=none");
+            goto none;
+        }
+
+        if (flags->tcti_none && is_no_sapi) {
+            LOG_WARN("Tool does not use SAPI. Continuing with tcti=none");
+            goto none;
+        }
+
+        /*
+         * FAKE_TCTI
+         */
+        /* tool doesn't request a sapi but instead requires a fake tcti*/
+        #define TCTI_FAKE_MAGIC 0x09b366943a311b04ULL
+        static const TSS2_TCTI_CONTEXT_COMMON_V1 fake_tcti = {
+            .magic = TCTI_FAKE_MAGIC,
+            .version = 1,
+            .transmit = tcti_fake_transmit,
+            .receive = tcti_fake_receive,
+            .finalize = tcti_fake_finalize
+        };
+
+        bool is_optional_fake_tcti = (flags->tcti_none && tool_opts &&
+            tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
+        if (is_optional_fake_tcti) {
+            LOG_WARN("Tool optionally uses SAPI. Continuing with tcti=fake");
+            *tcti = (TSS2_TCTI_CONTEXT *)&fake_tcti;
+            goto none;
+        }
+
+        rc_tcti = Tss2_TctiLdr_Initialize(tcti_conf_option, tcti);
+        if (rc_tcti != TSS2_RC_SUCCESS || !*tcti) {
+            LOG_ERR("Could not load tcti, got: \"%s\"", tcti_conf_option);
+            rc = tpm2_option_code_err;
+            goto out;
+        }
+        /*
+         * no loader requested ie --tcti=none is an error if tool
+         * doesn't indicate an optional SAPI
+         */
+        if (!flags->enable_errata) {
+            flags->enable_errata = !!tpm2_util_getenv(
+                    TPM2TOOLS_ENV_ENABLE_ERRATA);
         }
     }
+
 none:
     rc = tpm2_option_code_continue;
 out:
