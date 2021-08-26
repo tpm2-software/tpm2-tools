@@ -1,6 +1,10 @@
 ## Changelog
 
 ### next
+  * tpm2_nvextend:
+      - Added option **\-n**, **\--name** to specify the name of the nvindex in
+        hex bytes. This is used when cpHash ought to be calculated without
+        dispatching the TPM2_NV_Extend command to the TPM.
   * tpm2_nvread:
       - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
         of the response parameters. This is commonly termed as rpHash.
