@@ -548,8 +548,8 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
     if (!result) {
         rc = tool_rc_general_error;
     }
-    return rc;
 
+    return rc;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
