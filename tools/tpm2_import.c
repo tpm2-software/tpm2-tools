@@ -528,7 +528,7 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
         assert(imported_private);
 
         result = files_save_private(imported_private, ctx.private_key_file);
-        free(imported_private);
+        Esys_Free(imported_private);
         if (!result) {
             LOG_ERR("Failed to save private key into file \"%s\"",
                     ctx.private_key_file);
