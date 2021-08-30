@@ -15,12 +15,14 @@
 #include "tpm2_openssl.h"
 #include "tpm2_identity_util.h"
 
+#define DEFAULT_DUPLICATE_ATTRS (TPMA_OBJECT_USERWITHAUTH|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN_ENCRYPT)
+
 typedef struct tpm_duplicate_ctx tpm_duplicate_ctx;
 struct tpm_duplicate_ctx {
     struct {
         const char *ctx_path;
         const char *auth_str;
-        const char *policy_str;
+        char *policy_str;
         tpm2_loaded_object object;
     } duplicable_key;
 
@@ -35,7 +37,7 @@ struct tpm_duplicate_ctx {
     const char *private_key_file;
     const char *parent_public_key_file;
 
-    TPMI_ALG_PUBLIC key_type;
+    char *key_type;
     char *sym_key_in;
     char *sym_key_out;
 
@@ -57,9 +59,7 @@ struct tpm_duplicate_ctx {
     char *cp_hash_path;
 };
 
-static tpm_duplicate_ctx ctx = {
-    .key_type = TPM2_ALG_ERROR,
-};
+static tpm_duplicate_ctx ctx;
 
 static tool_rc do_duplicate(ESYS_CONTEXT *ectx, TPM2B_DATA *in_key,
         TPMT_SYM_DEF_OBJECT *sym_alg, TPM2B_DATA **out_key,
@@ -96,12 +96,8 @@ static bool on_option(char key, char *value) {
         ctx.duplicable_key.policy_str = value;
         break;
     case 'G':
-        ctx.key_type = tpm2_alg_util_from_optarg(value,
-                tpm2_alg_util_flags_asymmetric |
-                tpm2_alg_util_flags_symmetric | tpm2_alg_util_flags_misc);
-        if (ctx.key_type != TPM2_ALG_ERROR) {
-            ctx.flags.G = 1;
-        }
+        ctx.key_type = value;
+        ctx.flags.G = 1;
         break;
     case 'i':
         ctx.sym_key_in = value;
@@ -190,7 +186,8 @@ static bool check_options(void) {
         result = false;
     }
 
-    if (ctx.key_type != TPM2_ALG_NULL && !ctx.flags.U) {
+    /* If -G is not "null" we need an encryption key */
+    if (strcmp(ctx.key_type, "null") && !ctx.flags.U) {
         if ((ctx.flags.i == 0) && (ctx.flags.o == 0)) {
             LOG_ERR("Expected in or out encryption key file \"-i/o\","
                     " missing option.");
@@ -244,25 +241,22 @@ static bool check_options(void) {
     return result;
 }
 
-static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
-    bool result = true;
-    switch (alg) {
-    case TPM2_ALG_AES:
+static bool set_key_algorithm(const char *algstr, TPMT_SYM_DEF_OBJECT * obj) {
+
+
+    if (!strcmp(algstr, "null")) {
+        obj->algorithm = TPM2_ALG_NULL;
+        return true;
+    } else if (!strcmp(algstr, "aes")) {
         obj->algorithm = TPM2_ALG_AES;
         obj->keyBits.aes = 128;
         obj->mode.aes = TPM2_ALG_CFB;
-        break;
-    case TPM2_ALG_NULL:
-        obj->algorithm = TPM2_ALG_NULL;
-        break;
-    default:
-        LOG_ERR("The algorithm type input(0x%x) is not supported!", alg);
-        result = false;
-        break;
+        return true;
     }
-    return result;
-}
 
+    LOG_ERR("The algorithm \"%s\" is not supported!", algstr);
+    return false;
+}
 
 static tool_rc tpm2_create_duplicate(
     TPM2B_PUBLIC *parent_pub,
@@ -379,31 +373,55 @@ out:
     return rc;
 }
 
-static tool_rc openssl_duplicate(void)
-{
-    bool result;
+static void setup_default_attrs(TPMA_OBJECT *attrs, bool has_policy, bool has_auth) {
+
+    /* Handle Default Setup */
+    *attrs = DEFAULT_DUPLICATE_ATTRS;
+
+    /*
+     * IMPORTANT: if the object we're creating has a policy and NO authvalue, turn off userwith auth
+     * so empty passwords don't work on the object.
+     */
+    if (has_policy && !has_auth) {
+        *attrs &= ~TPMA_OBJECT_USERWITHAUTH;
+    }
+}
+
+static tool_rc openssl_duplicate(void) {
 
     TPM2B_PUBLIC parent_public = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
     TPM2B_SENSITIVE private = TPM2B_EMPTY_INIT;
     TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
 
-    result = files_load_public(ctx.parent_public_key_file, &parent_public);
+    bool result = files_load_public(ctx.parent_public_key_file, &parent_public);
     if (!result)
         return tool_rc_general_error;
 
+    TPMA_OBJECT attrs = 0;
+    setup_default_attrs(&attrs, !!ctx.duplicable_key.policy_str, !!ctx.duplicable_key.auth_str);
+
+    TPM2B_PUBLIC template = { 0 };
+    tool_rc rc = tpm2_alg_util_public_init(
+            ctx.key_type,
+            NULL,          /* name-alg: does this matter? */
+            NULL,          /* DO attributes matter? */
+            ctx.duplicable_key.policy_str,
+            attrs,
+            &template);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
     result = tpm2_openssl_import_keys(
         &parent_public,
-        &private,
-        &public,
         &encrypted_seed,
-        ctx.private_key_file,
-        ctx.key_type,
-        NULL, // auth_key_file
-        ctx.duplicable_key.policy_str,
         ctx.duplicable_key.auth_str,
-        NULL, // attrs_str
-        NULL // name_alg_str
+        ctx.private_key_file,
+        NULL, // passin
+        &template,
+        &private,
+        &public
     );
     if (!result)
         return tool_rc_general_error;

@@ -153,21 +153,17 @@ static inline bool tpm2_openssl_did_load_public(
 }
 
 /**
- * Loads a private portion of a key, and possibly the public portion.
- * For asymmetric algorithms the public data is in  private PEM file.
- * For symmetric keys, the file type is raw. For asymmetric keys, the
- * file type is a PEM file.
- *
- * This ONLY supports AES, ECC and RSA.
- *
- * It populates the sensitive seed with a random value for symmetric keys.
+ * Loads a private portion of a key, and possibly the public portion, as for RSA the public data is in
+ * a private pem file.
  *
  * @param path
  *  The path to load from.
- * @param path
- *  The passphrase for the input file.
- * @param alg
- *  algorithm type to import.
+ * @param passin
+ *  If the path needs a password to decrypt like a password protected OpenSSL PEM file.
+ * @param object_auth
+ *  The auth value to set for the object, may be NULL.
+ * @param template
+ *  The public template to use to construct the TPM objects.
  * @param pub
  *  The public structure to populate. Note that nameAlg must be populated.
  * @param priv
@@ -177,9 +173,8 @@ static inline bool tpm2_openssl_did_load_public(
  *  A private object loading status
  */
 tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
-        const char *pass, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub,
+        const char *passin, const char *object_auth, TPM2B_PUBLIC *template, TPM2B_PUBLIC *pub,
         TPM2B_SENSITIVE *priv);
-
 
 /**
  * Load an OpenSSL private key and configure all of the flags based on
@@ -187,16 +182,13 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
  */
 bool tpm2_openssl_import_keys(
     TPM2B_PUBLIC *parent_pub,
-    TPM2B_SENSITIVE *private,
-    TPM2B_PUBLIC *public,
     TPM2B_ENCRYPTED_SECRET *encrypted_seed,
+    const char *object_auth_value,
     const char *input_key_file,
-    TPMI_ALG_PUBLIC key_type,
-    const char *auth_key_file,
-    const char *policy_file,
-    const char *key_auth_str,
-    char *attrs_str,
-    const char *name_alg_str
+    const char *passin,
+    TPM2B_PUBLIC *template,
+    TPM2B_SENSITIVE *private,
+    TPM2B_PUBLIC *public
 );
 
 /**

@@ -22,6 +22,9 @@
 #include "tpm2_errata.h"
 #include "tpm2_systemdeps.h"
 
+#define KEYEDHASH_MAX_SIZE 128
+#define HMAC_MAX_SIZE      64
+
 int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm) {
 
     switch (algorithm) {
@@ -883,39 +886,6 @@ static bool load_public_AES_from_file(FILE *f, const char *path,
     return tpm2_util_calc_unique(name_alg, key, seed, unique);
 }
 
-#define KEYEDHASH_MAX_SIZE 128
-
-static bool load_public_KEYEDHASH_from_file(FILE *f, const char *path,
-        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
-
-    /*
-     * Get the file size and validate that it is within the allowed size for keyed hash objects
-     */
-    unsigned long file_size = 0;
-    bool result = files_get_file_size(f, &file_size, path);
-    if (!result) {
-        return false;
-    }
-
-    if (file_size > KEYEDHASH_MAX_SIZE || file_size == 0) {
-        return false;
-    }
-
-    pub->publicArea.type = TPM2_ALG_KEYEDHASH;
-    TPMT_KEYEDHASH_SCHEME *s = &pub->publicArea.parameters.keyedHashDetail.scheme;
-    s->scheme = TPM2_ALG_NULL;
-
-    /*
-     * Calculate the unique field, same as for AES keys
-     */
-    TPM2B_DIGEST *unique = &pub->publicArea.unique.keyedHash;
-    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
-    TPM2B_PRIVATE_VENDOR_SPECIFIC *key = &priv->sensitiveArea.sensitive.any;
-    TPMI_ALG_HASH name_alg = pub->publicArea.nameAlg;
-
-    return tpm2_util_calc_unique(name_alg, key, seed, unique);
-}
-
 static bool load_private_RSA_from_key(EVP_PKEY *key, TPM2B_SENSITIVE *priv) {
 
     bool result = false;
@@ -989,8 +959,7 @@ bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg,
         break;
         /* Skip AES here, as we can only load this one from a private file */
     default:
-        /* default try TSS */
-        result = files_load_public(path, pub);
+        LOG_ERR("Unkown public format: 0x%x", alg);
     }
 
     fclose(f);
@@ -1169,13 +1138,17 @@ static tpm2_openssl_load_rc load_private_KEYEDHASH_from_file(FILE *f,
         return lprc_error;
     }
 
-    if (file_size > KEYEDHASH_MAX_SIZE || file_size == 0) {
-      LOG_ERR("Invalid keyedhash key size, got %lu bytes, expected 1 to 128 bytes",
-                file_size);
+    priv->sensitiveArea.sensitiveType = TPM2_ALG_KEYEDHASH;
+
+    size_t max_size = pub->publicArea.parameters.keyedHashDetail.scheme.scheme == TPM2_ALG_NULL ?
+            KEYEDHASH_MAX_SIZE : HMAC_MAX_SIZE;
+    if (file_size > max_size || file_size == 0) {
+      LOG_ERR("Invalid %s key size, got %lu bytes, expected 1 to 128 bytes",
+                tpm2_alg_util_algtostr(
+                    pub->publicArea.parameters.keyedHashDetail.scheme.scheme,
+                    tpm2_alg_util_flags_any), file_size);
       return lprc_error;
     }
-
-    priv->sensitiveArea.sensitiveType = TPM2_ALG_KEYEDHASH;
 
     TPM2B_SENSITIVE_DATA *b = &priv->sensitiveArea.sensitive.bits;
     b->size = file_size;
@@ -1185,7 +1158,16 @@ static tpm2_openssl_load_rc load_private_KEYEDHASH_from_file(FILE *f,
         return lprc_error;
     }
 
-    result = load_public_KEYEDHASH_from_file(f, path, pub, priv);
+    /*
+     * calculate the unique and we're done, this is the only thing left for public
+     * so no need for another function.
+     */
+    TPM2B_DIGEST *unique = &pub->publicArea.unique.keyedHash;
+    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
+    TPM2B_PRIVATE_VENDOR_SPECIFIC *key = &priv->sensitiveArea.sensitive.any;
+    TPMI_ALG_HASH name_alg = pub->publicArea.nameAlg;
+
+    result = tpm2_util_calc_unique(name_alg, key, seed, unique);
     if (!result) {
         return lprc_error;
     }
@@ -1193,25 +1175,10 @@ static tpm2_openssl_load_rc load_private_KEYEDHASH_from_file(FILE *f,
     return lprc_private | lprc_public;
 }
 
-/**
- * Loads a private portion of a key, and possibly the public portion, as for RSA the public data is in
- * a private pem file.
- *
- * @param path
- *  The path to load from.
- * @param alg
- *  algorithm type to import.
- * @param pub
- *  The public structure to populate. Note that nameAlg must be populated.
- * @param priv
- *  The sensitive structure to populate.
- *
- * @returns
- *  A private object loading status
- */
 tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
-        const char *pass, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub,
+        const char *passin, const char *object_auth, TPM2B_PUBLIC *template, TPM2B_PUBLIC *pub,
         TPM2B_SENSITIVE *priv) {
+
 
     FILE *f = fopen(path, "r");
     if (!f) {
@@ -1219,118 +1186,77 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
         return 0;
     }
 
+    *pub = *template;
+
     tpm2_openssl_load_rc rc = lprc_error;
 
-    switch (alg) {
+    switch (template->publicArea.type) {
     case TPM2_ALG_RSA:
-        rc = load_private_RSA_from_pem(f, path, pass, pub, priv);
+        rc = load_private_RSA_from_pem(f, path, passin, pub, priv);
         break;
-    case TPM2_ALG_AES:
-        if (pass) {
+    case TPM2_ALG_SYMCIPHER:
+        if (passin) {
             LOG_ERR("No password can be used for protecting AES key");
+            rc = lprc_error;
+        } else if (template->publicArea.parameters.asymDetail.symmetric.algorithm != TPM2_ALG_AES) {
+            LOG_ERR("Cannot handle non-aes symmetric objects, got: 0x%x",
+                    template->publicArea.parameters.asymDetail.symmetric.algorithm);
             rc = lprc_error;
         } else {
             rc = load_private_AES_from_file(f, path, pub, priv);
         }
         break;
     case TPM2_ALG_HMAC:
-        if (pass) {
-            LOG_ERR("No password can be used for protecting HMAC key");
+        /* falls-thru */
+    case TPM2_ALG_KEYEDHASH:
+        if (passin) {
+            LOG_ERR("No password can be used for protecting %s key",
+                    TPM2_ALG_HMAC ? "HMAC" : "Keyed Hash");
             rc = lprc_error;
         } else {
             rc = load_private_KEYEDHASH_from_file(f, path, pub, priv);
 	}
       break;
     case TPM2_ALG_ECC:
-        rc = load_private_ECC_from_pem(f, path, pass, pub, priv);
+        rc = load_private_ECC_from_pem(f, path, passin, pub, priv);
         break;
     default:
-        LOG_ERR("Cannot handle algorithm, got: %s", tpm2_alg_util_algtostr(alg,
+        LOG_ERR("Cannot handle algorithm, got: %s", tpm2_alg_util_algtostr(template->publicArea.type,
             tpm2_alg_util_flags_any));
         rc = lprc_error;
     }
 
     fclose(f);
 
-    return rc;
-}
-
-bool tpm2_openssl_import_keys(
-    TPM2B_PUBLIC *parent_pub,
-    TPM2B_SENSITIVE *private,
-    TPM2B_PUBLIC *public,
-    TPM2B_ENCRYPTED_SECRET *encrypted_seed,
-    const char *input_key_file,
-    TPMI_ALG_PUBLIC key_type,
-    const char *auth_key_file,
-    const char *policy_file,
-    const char *key_auth_str,
-    char *attrs_str,
-    const char *name_alg_str
-)
-{
-    bool result;
-
-    TPMA_OBJECT attrs = TPMA_OBJECT_DECRYPT | TPMA_OBJECT_SIGN_ENCRYPT;
-
-    if (policy_file) {
-        public->publicArea.authPolicy.size = sizeof(public->publicArea.authPolicy.buffer);
-        result = files_load_bytes_from_path(policy_file,
-            public->publicArea.authPolicy.buffer,
-                &public->publicArea.authPolicy.size);
-        if (!result) {
-            return false;
-        }
-    } else {
-        attrs |= TPMA_OBJECT_USERWITHAUTH;
-    }
-
-    if (key_auth_str) {
+    if (object_auth) {
         tpm2_session *tmp;
-        tool_rc tmp_rc = tpm2_auth_util_from_optarg(NULL, key_auth_str, &tmp, true);
+        tool_rc tmp_rc = tpm2_auth_util_from_optarg(NULL, object_auth, &tmp, true);
         if (tmp_rc != tool_rc_success) {
             LOG_ERR("Invalid key authorization");
             return false;
         }
 
         const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
-        private->sensitiveArea.authValue = *auth;
+        priv->sensitiveArea.authValue = *auth;
 
         tpm2_session_close(&tmp);
     }
 
-    /*
-     * Set the object attributes if specified, overwriting the defaults, but hooking the errata
-     * fixups.
-     */
-    if (attrs_str) {
-        TPMA_OBJECT *obj_attrs = &public->publicArea.objectAttributes;
-        result = tpm2_attr_util_obj_from_optarg(attrs_str, obj_attrs);
-        if (!result) {
-            LOG_ERR("Invalid object attribute, got\"%s\"", attrs_str);
-            return false;
-        }
+    return rc;
+}
 
-        tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
-                &public->publicArea.objectAttributes);
-    } else {
-        public->publicArea.objectAttributes = attrs;
-    }
+bool tpm2_openssl_import_keys(
+        TPM2B_PUBLIC *parent_pub,
+        TPM2B_ENCRYPTED_SECRET *encrypted_seed,
+        const char *object_auth_value,
+        const char *input_key_file,
+        const char *passin,
+        TPM2B_PUBLIC *template,
+        TPM2B_SENSITIVE *out_private,
+        TPM2B_PUBLIC *out_public
+    ) {
 
-    if (name_alg_str) {
-        TPMI_ALG_HASH alg = tpm2_alg_util_from_optarg(name_alg_str,
-                tpm2_alg_util_flags_hash);
-        if (alg == TPM2_ALG_ERROR) {
-            LOG_ERR("Invalid name hashing algorithm, got\"%s\"", name_alg_str);
-            return tool_rc_general_error;
-        }
-        public->publicArea.nameAlg = alg;
-    } else {
-        /*
-         * use the parent name algorithm if not specified
-         */
-        public->publicArea.nameAlg = parent_pub->publicArea.nameAlg;
-    }
+    bool result;
 
     /*
      * The TPM Requires that the name algorithm for the child be less than the name
@@ -1342,7 +1268,7 @@ bool tpm2_openssl_import_keys(
      *   - Line: 2019
      *   - Decription: Limits the size of the hash algorithm to less then the parent's name-alg when scheme is NULL.
      */
-    UINT16 hash_size = tpm2_alg_util_get_hash_size(public->publicArea.nameAlg);
+    UINT16 hash_size = tpm2_alg_util_get_hash_size(template->publicArea.nameAlg);
     UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(
             parent_pub->publicArea.nameAlg);
     if (hash_size > parent_hash_size) {
@@ -1350,7 +1276,7 @@ bool tpm2_openssl_import_keys(
                  "parent hash algorithm: %s",
                 tpm2_alg_util_algtostr(parent_pub->publicArea.nameAlg,
                         tpm2_alg_util_flags_hash));
-        public->publicArea.nameAlg = parent_pub->publicArea.nameAlg;
+        template->publicArea.nameAlg = parent_pub->publicArea.nameAlg;
     }
 
     /*
@@ -1358,7 +1284,7 @@ bool tpm2_openssl_import_keys(
      */
     if (encrypted_seed)
     {
-        TPM2B_DIGEST *seed = &private->sensitiveArea.seedValue;
+        TPM2B_DIGEST *seed = &out_private->sensitiveArea.seedValue;
         static const unsigned char label[] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', '\0' };
         result = tpm2_identity_util_share_secret_with_public_key(seed, parent_pub,
             label, sizeof(label), encrypted_seed);
@@ -1372,7 +1298,7 @@ bool tpm2_openssl_import_keys(
      * Populate all the private and public data fields we can based on the key type and the PEM files read in.
      */
     tpm2_openssl_load_rc status = tpm2_openssl_load_private(input_key_file,
-            auth_key_file, key_type, public, private);
+            passin, object_auth_value, template, out_public, out_private);
     if (status == lprc_error) {
         return false;
     }

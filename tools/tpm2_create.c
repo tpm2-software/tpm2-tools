@@ -12,6 +12,7 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_create_ctx tpm_create_ctx;
 #define MAX_AUX_SESSIONS 2
@@ -164,11 +165,6 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
     return tool_rc_success;
 }
-
-#define DEFAULT_ATTRS \
-     TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_FIXEDTPM \
-    |TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN \
-    |TPMA_OBJECT_USERWITHAUTH
 
 static void setup_attributes(TPMA_OBJECT *attrs) {
 
@@ -364,7 +360,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
 
     /* Setup attributes */
-    TPMA_OBJECT attrs = DEFAULT_ATTRS;
+    TPMA_OBJECT attrs = DEFAULT_CREATE_ATTRS;
     setup_attributes(&attrs);
 
     /* Initialize object */

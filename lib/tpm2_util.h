@@ -87,6 +87,11 @@ typedef struct {
     BYTE buffer[0];
 } TPM2B;
 
+#define DEFAULT_CREATE_ATTRS \
+     TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_FIXEDTPM \
+    |TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN \
+    |TPMA_OBJECT_USERWITHAUTH
+
 int tpm2_util_hex_to_byte_structure(const char *in_str, UINT16 *byte_length,
         BYTE *byte_buffer);
 

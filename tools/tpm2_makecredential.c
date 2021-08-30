@@ -325,8 +325,9 @@ static tool_rc process_input(void) {
     }
 
     if (ctx.public_key_path) {
-        bool result = tpm2_openssl_load_public(ctx.public_key_path, alg,
-            &ctx.public);
+        bool result = alg != TPM2_ALG_NULL ?
+            tpm2_openssl_load_public(ctx.public_key_path, alg,
+            &ctx.public) : files_load_public(ctx.public_key_path, &ctx.public);
         if (!result) {
             return tool_rc_general_error;
         }

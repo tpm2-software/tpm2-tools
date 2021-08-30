@@ -17,7 +17,7 @@
 #include "tpm2_tool.h"
 
 #define BASE_DEFAULT_ATTRS \
-    (TPMA_OBJECT_DECRYPT | TPMA_OBJECT_SIGN_ENCRYPT)
+    (TPMA_OBJECT_DECRYPT | TPMA_OBJECT_SIGN_ENCRYPT | TPMA_OBJECT_USERWITHAUTH)
 
 #define DEFAULT_NAME_ALG TPM2_ALG_SHA256
 
@@ -63,6 +63,16 @@ static tool_rc load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
     }
 
     return tpm2_tr_get_name(ectx, ctx.handle, name);
+}
+
+static void setup_default_attrs(TPMA_OBJECT *attrs, bool has_policy, bool has_auth) {
+
+    /* Handle Default Setup */
+    *attrs = BASE_DEFAULT_ATTRS;
+
+    if (has_policy && !has_auth) {
+        *attrs &= ~TPMA_OBJECT_USERWITHAUTH;
+    }
 }
 
 static bool on_option(char key, char *value) {
@@ -164,108 +174,91 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    /*
-     * Modifying this init to anything NOT 0 requires
-     * the memset/reinit on the case of specified -u
-     * and found public data in private.
-     */
-    TPM2B_PUBLIC pub = {
-        . size = 0,
-        .publicArea = {
-            .authPolicy = { .size = 0 },
-        },
-    };
-
-
-    TPMI_ALG_PUBLIC alg = TPM2_ALG_NULL;
-    bool is_ext_param_specified = false;
-    if (ctx.key_type) {
-        alg = tpm2_alg_util_from_optarg(ctx.key_type,
-                tpm2_alg_util_flags_asymmetric | tpm2_alg_util_flags_symmetric);
-
-        if (alg == TPM2_ALG_ERROR) {
-            bool result = tpm2_alg_util_handle_ext_alg(ctx.key_type, &pub);
-            if (!result) {
-                LOG_ERR("Unsupported key type, got: \"%s\"", ctx.key_type);
-                return tool_rc_general_error;
-            } else {
-                alg = pub.publicArea.type;
-                is_ext_param_specified = true;
-            }
-        }
-    }
-
-    /*
-     * set up the public attributes with a default.
-     * This can be cleared by load_public() if a TSS
-     * object is provided.
-     */
-    if (ctx.attrs) {
-        bool result = tpm2_attr_util_obj_from_optarg(ctx.attrs,
-                &pub.publicArea.objectAttributes);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-    } else {
-        /*
-         * Default to the BASE attributes, but add in USER_WITH_AUTH if -p is specified
-         * or NO -L. Where -L is a specified policy and -p is a specified password.
-         * Truth Table:
-         * -L -p | Result
-         * --------------
-         *  0  0 | 1 (set USER_WITH_AUTH)
-         *  0  1 | 0 (don't set USER_WITH_AUTH) <-- we want this case.
-         *  1  0 | 1
-         *  1  1 | 1
-         *
-         * This is an if/then truth table, we want to execute setting USER_WITH_AUTH on
-         * it's negation.
-         */
-        pub.publicArea.objectAttributes = BASE_DEFAULT_ATTRS;
-        if (!(ctx.policy && !ctx.auth)) {
-            pub.publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
-        }
-    }
-
-    /*
-     * Set the policy for public, again this can be overridden if the
-     * object is a TSS object
-     */
-    if (ctx.policy) {
-        pub.publicArea.authPolicy.size =
-                sizeof(pub.publicArea.authPolicy.buffer);
-        bool res = files_load_bytes_from_path(ctx.policy,
-                pub.publicArea.authPolicy.buffer,
-                &pub.publicArea.authPolicy.size);
-        if (!res) {
-            return tool_rc_general_error;
-        }
-    }
-
-    /*
-     * Set the name alg, again this gets wipped on a TSS object
-     */
-    pub.publicArea.nameAlg =
-        ctx.name_alg ?
-                    tpm2_alg_util_from_optarg(ctx.name_alg,
-                            tpm2_alg_util_flags_hash
-                                    | tpm2_alg_util_flags_misc) :
-                    DEFAULT_NAME_ALG;
-    if (pub.publicArea.nameAlg == TPM2_ALG_ERROR) {
-        LOG_ERR("Invalid name hashing algorithm, got: \"%s\"", ctx.name_alg);
-        return tool_rc_general_error;
+    TPMA_OBJECT def_attrs = 0;
+    if (!ctx.attrs) {
+        setup_default_attrs(&def_attrs, !!ctx.policy, !!ctx.auth);
     }
 
     /*
      * Set the AUTH value for sensitive portion
      */
-    TPM2B_SENSITIVE priv = {
-        .size = 0,
-        .sensitiveArea = {
-            .authValue = { .size = 0 }
-        },
-    };
+    TPM2B_SENSITIVE priv = { 0 };
 
+    /*
+     * Load the users specified public object if specified via -u
+     */
+    TPM2B_PUBLIC pub = { 0 };
+
+    /*
+     * Input values are public assumed to be in the TSS format unless:
+     * 1. A private (TPM2B_PRIVATE) key is specified. Since a TPM2B_PRIVATE is nonsense to load externally.
+     * 2. The key_type is specified indicated you want to load an external public raw key of some type
+     * 3. The third option is no public, which means the public could be coming from a private PEM file
+     *
+     */
+    if (!ctx.key_type && ctx.public_key_path) {
+        /* Load TSS */
+        bool result = files_load_public(ctx.public_key_path, &pub);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+
+        /* overwrite certain things here */
+        if (ctx.name_alg) {
+            pub.publicArea.nameAlg = tpm2_alg_util_from_optarg(ctx.name_alg, tpm2_alg_util_flags_hash);
+            if (pub.publicArea.nameAlg == TPM2_ALG_ERROR) {
+                LOG_ERR("Invalid name hashing algorithm, got\"%s\"", ctx.name_alg);
+                return tool_rc_unsupported;
+            }
+        }
+
+        if (ctx.attrs) {
+            bool res = tpm2_attr_util_obj_from_optarg(ctx.attrs,
+                    &pub.publicArea.objectAttributes);
+            if (!res) {
+                return tool_rc_unsupported;
+            }
+        }
+
+        if (ctx.policy) {
+            pub.publicArea.authPolicy.size =
+                    sizeof(pub.publicArea.authPolicy.buffer);
+            bool res = files_load_bytes_from_path(ctx.policy,
+                pub.publicArea.authPolicy.buffer,
+                    &pub.publicArea.authPolicy.size);
+            if (!res) {
+                return tool_rc_general_error;
+            }
+        }
+
+
+    } else if (ctx.public_key_path || ctx.key_type) {
+        /* Load RAW public */
+        TPM2B_PUBLIC template = { 0 };
+        tool_rc rc = tpm2_alg_util_public_init(ctx.key_type, ctx.name_alg,
+            ctx.attrs, ctx.policy, def_attrs, &template);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        pub = template;
+
+        if (ctx.public_key_path) {
+            /* Get the public from a RAW source, ie PEM */
+            bool result = tpm2_openssl_load_public(ctx.public_key_path, template.publicArea.type, &pub);
+            if (!result) {
+                return tool_rc_general_error;
+            }
+        }
+    } else {
+        LOG_ERR("Unkown internal state");
+        return tool_rc_general_error;
+    }
+
+    /*
+     * Okay, we have the public portion in some form, at a minimum a template and at a maximum a fully specified
+     * public, load the private portion.
+     */
     if (ctx.private_key_path) {
         /*
          * when nameAlg is not TPM2_ALG_NULL, seed value is needed to pass
@@ -277,20 +270,8 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             RAND_bytes(seed->buffer, seed->size);
         }
 
-        tpm2_session *tmp;
-        tool_rc rc = tpm2_auth_util_from_optarg(NULL, ctx.auth, &tmp, true);
-        if (rc != tool_rc_success) {
-            LOG_ERR("Invalid key authorization");
-            return rc;
-        }
-
-        const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
-        priv.sensitiveArea.authValue = *auth;
-
-        tpm2_session_close(&tmp);
-
         tpm2_openssl_load_rc load_status = tpm2_openssl_load_private(
-            ctx.private_key_path, ctx.passin, alg, &pub, &priv);
+            ctx.private_key_path, ctx.passin, ctx.auth, &pub, &pub, &priv);
         if (load_status == lprc_error) {
             return tool_rc_general_error;
         }
@@ -310,31 +291,18 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
         } else if (tpm2_openssl_did_load_public(load_status)
                 && ctx.public_key_path) {
+
+            /* Okay... we got two publics, use the user specified one and issue a warning */
             LOG_WARN("Loaded a public key from the private portion"
                     " and a public portion was specified via -u. Defaulting"
                     " to specified public");
 
-            memset(&pub.publicArea.parameters, 0,
-                    sizeof(pub.publicArea.parameters));
-            pub.publicArea.type = TPM2_ALG_NULL;
-        }
-    }
-
-    if (ctx.public_key_path) {
-        bool result = tpm2_openssl_load_public(ctx.public_key_path, alg, &pub);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-    }
-    /*
-     * Extended algorithm settings are repeated here since
-     * tpm2_openssl_load_public overwrites it.
-     */
-    if (is_ext_param_specified) {
-        bool result = tpm2_alg_util_handle_ext_alg(ctx.key_type, &pub);
-        if (!result) {
-            LOG_ERR("Unsupported key type, got: \"%s\"", ctx.key_type);
-            return tool_rc_general_error;
+            /*
+             * This effectively turns off cryptographic binding between
+             * public and private portions of the object. Since we got a public portion
+             * from the
+             */
+            pub.publicArea.nameAlg = TPM2_ALG_NULL;
         }
     }
 
