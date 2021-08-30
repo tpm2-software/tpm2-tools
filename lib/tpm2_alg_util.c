@@ -1008,6 +1008,7 @@ tool_rc tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attr
     TPM2B_PUBLIC tmp = *public;
     bool res = tpm2_alg_util_handle_ext_alg(alg_details, &tmp);
     if (!res) {
+        LOG_ERR("Could not handle algorithm: \"%s\"", alg_details);
         return tool_rc_unsupported;
     }
 
