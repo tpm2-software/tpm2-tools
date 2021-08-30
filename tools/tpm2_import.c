@@ -425,10 +425,10 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
     rc = tool_rc_success;
 
 keyout:
-    free(imported_private);
+    Esys_Free(imported_private);
 out:
     if (free_ppub) {
-        free(parent_pub);
+        Esys_Free(parent_pub);
     }
 
     return rc;
