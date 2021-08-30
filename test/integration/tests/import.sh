@@ -171,7 +171,7 @@ run_aes_policy_import_test() {
 run_keyedhash_seal_import_test() {
 
     dd if=/dev/urandom of=sealdata bs=128 count=1
-    tpm2 import -C "$1" -G hmac -i sealdata -a 'userwithauth' -u seal.pub -r seal.priv
+    tpm2 import -C "$1" -G keyedhash -i sealdata -u seal.pub -r seal.priv
     tpm2 load -C "$1" -u seal.pub -r seal.priv -c seal.ctx
     tpm2 unseal -c seal.ctx -o unsealdata
     cmp sealdata unsealdata
@@ -179,7 +179,7 @@ run_keyedhash_seal_import_test() {
 
 run_keyedhash_hmac_import_test() {
 
-    dd if=/dev/urandom of=hmackey bs=73 count=1
+    dd if=/dev/urandom of=hmackey bs=64 count=1
     hexkey=$(xxd -p -c 256 < hmackey)
     tpm2 import -C "$1" -G hmac -i hmackey -u hmac.pub -r hmac.priv
     tpm2 load -C "$1" -u hmac.pub -r hmac.priv -c hmac.ctx

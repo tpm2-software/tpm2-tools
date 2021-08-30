@@ -54,19 +54,16 @@ struct tpm_import_ctx {
     char *name_alg;
     char *attrs; /* The attributes to use */
     char *key_auth_str;
-    char *auth_key_file; /* an optional auth string for the input key file for OSSL */
+    char *passin; /* an optional auth string for the input key file for OSSL */
     char *input_seed_file;
     char *input_enc_key_file;
     char *policy;
     bool import_tpm; /* Any param that is exclusively used by import tpm object sets this flag */
-    TPMI_ALG_PUBLIC key_type;
+    char *object_alg;
     char *cp_hash_path;
 };
 
-static tpm_import_ctx ctx = {
-    .key_type = TPM2_ALG_ERROR,
-    .input_key_file = NULL,
-};
+static tpm_import_ctx ctx;
 
 static tool_rc readpublic(ESYS_CONTEXT *ectx, ESYS_TR handle,
         TPM2B_PUBLIC **public) {
@@ -136,19 +133,25 @@ static tool_rc key_import(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *parent_pub,
     TPM2B_NAME pubname = TPM2B_TYPE_INIT(TPM2B_NAME, name);
     bool res = tpm2_identity_create_name(pubkey, &pubname);
     if (!res) {
-        return false;
+        return tool_rc_general_error;
     }
 
     TPM2B_MAX_BUFFER hmac_key;
     TPM2B_MAX_BUFFER enc_key;
-    tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
+    res = tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
             parent_pub, &pubname, seed, &hmac_key, &enc_key);
+    if (!res) {
+        return tool_rc_general_error;
+    }
 
     TPM2B_MAX_BUFFER encrypted_inner_integrity = TPM2B_EMPTY_INIT;
-    tpm2_identity_util_calculate_inner_integrity(name_alg, privkey, &pubname,
+    res = tpm2_identity_util_calculate_inner_integrity(name_alg, privkey, &pubname,
             &enc_sensitive_key,
             &parent_pub->publicArea.parameters.rsaDetail.symmetric,
             &encrypted_inner_integrity);
+    if (!res) {
+        return tool_rc_general_error;
+    }
 
     TPM2B_DIGEST outer_hmac = TPM2B_EMPTY_INIT;
     TPM2B_MAX_BUFFER encrypted_duplicate_sensitive = TPM2B_EMPTY_INIT;
@@ -196,12 +199,7 @@ static bool on_option(char key, char *value) {
         ctx.key_auth_str = value;
         break;
     case 'G':
-        ctx.key_type = tpm2_alg_util_from_optarg(value,
-                tpm2_alg_util_flags_asymmetric | tpm2_alg_util_flags_symmetric | tpm2_alg_util_flags_keyedhash );
-        if (ctx.key_type == TPM2_ALG_ERROR) {
-            LOG_ERR("Unsupported key type");
-            return false;
-        }
+        ctx.object_alg = value;
         return true;
     case 'i':
         ctx.input_key_file = value;
@@ -236,7 +234,7 @@ static bool on_option(char key, char *value) {
         ctx.policy = value;
         break;
     case 0:
-        ctx.auth_key_file = value;
+        ctx.passin = value;
         break;
     case 1:
         ctx.cp_hash_path = value;
@@ -292,14 +290,6 @@ static tool_rc check_options(void) {
             rc = tool_rc_option_error;
         }
 
-        /* If a key file is specified we choose aes else null
-         for symmetricAlgdefinition */
-        if (!ctx.input_enc_key_file) {
-            ctx.key_type = TPM2_ALG_NULL;
-        } else {
-            ctx.key_type = TPM2_ALG_AES;
-        }
-
         if (ctx.key_auth_str) {
             LOG_ERR("Cannot specify key password when importing a TPM key.\n"
                 "use tpm2_changeauth after import");
@@ -308,8 +298,8 @@ static tool_rc check_options(void) {
 
     } else { /* Openssl specific option(s) */
 
-        if (!ctx.key_type) {
-            LOG_ERR("Expected key type to be specified via \"-G\","
+        if (!ctx.object_alg) {
+            LOG_ERR("Expected object type to be specified via \"-G\","
                     " missing option.");
             rc = tool_rc_option_error;
         }
@@ -348,6 +338,32 @@ static tool_rc check_options(void) {
     return rc;
 }
 
+static void setup_default_attrs(TPMA_OBJECT *attrs, bool has_policy, bool has_auth) {
+
+    /* Handle Default Setup */
+    *attrs = DEFAULT_CREATE_ATTRS;
+
+    /* imported objects arn't created inside of the TPM so this gets turned down */
+    *attrs &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
+    *attrs &= ~TPMA_OBJECT_FIXEDTPM;
+    *attrs &= ~TPMA_OBJECT_FIXEDPARENT;
+
+    /* The default for a keyedhash object with no scheme is just for sealing */
+    if (!strcmp("keyedhash", ctx.object_alg)) {
+        *attrs &= ~TPMA_OBJECT_SIGN_ENCRYPT;
+        *attrs &= ~TPMA_OBJECT_DECRYPT;
+    } else if (!strncmp("hmac", ctx.object_alg, 4)) {
+        *attrs &= ~TPMA_OBJECT_DECRYPT;
+    }
+
+    /*
+     * IMPORTANT: if the object we're creating has a policy and NO authvalue, turn off userwith auth
+     * so empty passwords don't work on the object.
+     */
+    if (has_policy && !has_auth) {
+        *attrs &= ~TPMA_OBJECT_USERWITHAUTH;
+    }
+}
 
 static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
 
@@ -380,21 +396,50 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
     TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
 
+    /*
+     * start with the tools default set and turn off the ones that don't make sense
+     * If the user specified their own values, tpm2_alg_util_public_init will use that,
+     * so this is just the default case.
+     * */
+    TPMA_OBJECT attrs = 0;
+    if (!ctx.attrs) {
+        setup_default_attrs(&attrs, !!ctx.policy, !!ctx.key_auth_str);
+    }
+
+    /*
+     * Backwards Compat: the tool sets name-alg by default to the parent name alg if not specified
+     * but the tpm2_alg_util_public_init defaults to sha256. Specify the alg if not specified.
+     */
+    if (!ctx.name_alg) {
+        ctx.name_alg = (char *)tpm2_alg_util_algtostr(parent_pub->publicArea.nameAlg,
+                tpm2_alg_util_flags_hash);
+        if (!ctx.name_alg) {
+            LOG_ERR("Invalid parent name algorithm, got 0x%x",
+                    parent_pub->publicArea.nameAlg);
+            goto out;
+        }
+    }
+
+    TPM2B_PUBLIC template = { 0 };
+    rc = tpm2_alg_util_public_init(ctx.object_alg, ctx.name_alg,
+        ctx.attrs, ctx.policy, attrs, &template);
+    if (rc != tool_rc_success) {
+        goto out;
+    }
+
     result = tpm2_openssl_import_keys(
         parent_pub,
-        &private,
-        &public,
         &encrypted_seed,
-        ctx.input_key_file,
-        ctx.key_type,
-        ctx.auth_key_file,
-        ctx.policy,
         ctx.key_auth_str,
-        ctx.attrs,
-        ctx.name_alg
+        ctx.input_key_file,
+        ctx.passin,
+        &template,
+        &private,
+        &public
     );
-    if (!result)
+    if (!result) {
         goto out;
+    }
 
     TPM2B_PRIVATE *imported_private = NULL;
     tmp_rc = key_import(ectx, parent_pub, &private, &public, &encrypted_seed,
@@ -434,44 +479,22 @@ out:
     return rc;
 }
 
-static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
-    bool result = true;
-    switch (alg) {
-    case TPM2_ALG_AES:
-        obj->algorithm = TPM2_ALG_AES;
-        obj->keyBits.aes = 128;
-        obj->mode.aes = TPM2_ALG_CFB;
-        break;
-    case TPM2_ALG_NULL:
-        obj->algorithm = TPM2_ALG_NULL;
-        break;
-    default:
-        LOG_ERR("The algorithm type input(0x%x) is not supported!", alg);
-        result = false;
-        break;
-    }
-    return result;
-}
-
 static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
+
+    tool_rc rc = tool_rc_general_error;
 
     TPM2B_DATA enc_key = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
     TPM2B_PRIVATE duplicate;
     TPM2B_ENCRYPTED_SECRET encrypted_seed;
     TPM2B_PRIVATE *imported_private = NULL;
-    TPMT_SYM_DEF_OBJECT sym_alg;
 
-    tool_rc rc;
-    bool result = set_key_algorithm(ctx.key_type, &sym_alg);
-    if (!result) {
-        return tool_rc_general_error;
-    }
+    TPMT_SYM_DEF_OBJECT sym_alg = { .algorithm = TPM2_ALG_NULL };
 
     /* Symmetric key */
     if (ctx.input_enc_key_file) {
         enc_key.size = 16;
-        result = files_load_bytes_from_path(ctx.input_enc_key_file,
+        bool result = files_load_bytes_from_path(ctx.input_enc_key_file,
                 enc_key.buffer, &enc_key.size);
         if (!result) {
             LOG_ERR("Failed to load symmetric encryption key\"%s\"",
@@ -483,10 +506,14 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
                     enc_key.size);
             return tool_rc_general_error;
         }
+
+        sym_alg.algorithm = TPM2_ALG_AES;
+        sym_alg.keyBits.aes = 128;
+        sym_alg.mode.aes = TPM2_ALG_CFB;
     }
 
     /* Private key */
-    result = files_load_private(ctx.input_key_file, &duplicate);
+    bool result = files_load_private(ctx.input_key_file, &duplicate);
     if (!result) {
         LOG_ERR("Failed to load duplicate \"%s\"", ctx.input_key_file);
         return tool_rc_general_error;
