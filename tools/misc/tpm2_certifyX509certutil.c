@@ -8,12 +8,54 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <openssl/asn1.h>
+#include <openssl/asn1t.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/bio.h>
 
 #include "log.h"
 #include "tpm2_tool.h"
+
+typedef struct {
+    ASN1_TIME *notBefore;
+    ASN1_TIME *notAfter;
+} TPM2_PARTIAL_CERT_VALIDITY;
+
+typedef struct {
+    X509_ALGOR *algorithm;
+    X509_NAME *issuer;
+    TPM2_PARTIAL_CERT_VALIDITY *validity;
+    X509_NAME *subject;
+    STACK_OF(X509_EXTENSION) *extensions;
+} TPM2_PARTIAL_CERT;
+
+ASN1_SEQUENCE(TPM2_PARTIAL_CERT_VALIDITY) = {
+    ASN1_SIMPLE(TPM2_PARTIAL_CERT_VALIDITY, notBefore, ASN1_TIME),
+    ASN1_SIMPLE(TPM2_PARTIAL_CERT_VALIDITY, notAfter, ASN1_TIME),
+} ASN1_SEQUENCE_END(TPM2_PARTIAL_CERT_VALIDITY)
+
+/* partialCertificate per Part 3, 18.8.1 */
+ASN1_SEQUENCE(TPM2_PARTIAL_CERT) = {
+    ASN1_OPT(TPM2_PARTIAL_CERT, algorithm, X509_ALGOR),
+    ASN1_SIMPLE(TPM2_PARTIAL_CERT, issuer, X509_NAME),
+    ASN1_SIMPLE(TPM2_PARTIAL_CERT, validity, TPM2_PARTIAL_CERT_VALIDITY),
+    ASN1_SIMPLE(TPM2_PARTIAL_CERT, subject, X509_NAME),
+    ASN1_EXP_SEQUENCE_OF(TPM2_PARTIAL_CERT, extensions, X509_EXTENSION, 3),
+} ASN1_SEQUENCE_END(TPM2_PARTIAL_CERT)
+
+IMPLEMENT_ASN1_FUNCTIONS(TPM2_PARTIAL_CERT)
+
+int i2d_TPM2_PARTIAL_CERT_bio(BIO *bp, const TPM2_PARTIAL_CERT *a)
+{
+    return ASN1_i2d_bio_of(TPM2_PARTIAL_CERT, i2d_TPM2_PARTIAL_CERT, bp, a);
+}
+
+int TPM2_add_ext(TPM2_PARTIAL_CERT *x, X509_EXTENSION *ex, int loc)
+{
+    return (X509v3_add_ext(&(x->extensions), ex, loc) != NULL);
+}
+
 
 struct tpm_gen_partial_cert {
     const char *out_path;
@@ -95,80 +137,6 @@ static struct name_fields names[] = {
       .def = "CA Unit" },
 };
 
-static tool_rc fixup_cert(const char *cert) {
-
-    int fd = open(cert, O_RDONLY);
-    if (fd < 0) {
-        LOG_ERR("open failed");
-        return tool_rc_general_error;
-    }
-
-    struct stat fs;
-    int ret = fstat(fd, &fs);
-    if (ret < 0) {
-        close(fd);
-        return tool_rc_general_error;
-    }
-
-    ssize_t size = fs.st_size;
-    if (size < 100 || size > 255) {
-        LOG_ERR("Wrong cert size %zd", size);
-        close(fd);
-        return tool_rc_general_error; /* there is something wrong with this cert */
-    }
-
-    char* buf = calloc(1, size);
-    if (!buf) {
-        LOG_ERR("Alloc failed");
-        close(fd);
-        return tool_rc_general_error;
-    }
-
-    tool_rc rc = tool_rc_success;
-    ret = read(fd, buf, size);
-    close(fd);
-    if (ret != size) {
-        LOG_ERR("read failed");
-        rc = tool_rc_general_error;
-        goto out;
-    }
-
-    fd = open(cert, O_WRONLY | O_TRUNC);
-    if (fd < 0) {
-        LOG_ERR("second open failed");
-        rc = tool_rc_general_error;
-        goto out;
-    }
-
-    /* We need to skip one wrapping sequence (8 bytes) and one
-     * sequence with one empty byte field at the end (5 bytes).
-     * Fix the size here */
-    buf[2] = size - 16;
-
-    /* Write the external sequence with the fixed size */
-    ret = write(fd, buf, 3);
-    if (ret != 3) {
-        LOG_ERR("write failed");
-        rc = tool_rc_general_error;
-        close(fd);
-        goto out;
-    }
-
-    /* skip the wrapping sequence the write the rest
-     * without the 5 bytes at the end */
-    ret = write(fd, buf + 11, size - 16);
-    close(fd);
-    if (ret != size - 16) {
-        LOG_ERR("second write failed");
-        rc = tool_rc_general_error;
-    }
-
-out:
-    free(buf);
-
-    return rc;
-}
-
 static int populate_fields(X509_NAME *name, const char *opt) {
 
     char *name_opt = strdup(opt);
@@ -228,19 +196,14 @@ static tool_rc generate_partial_X509() {
     }
 
     X509_EXTENSION *extv3 = NULL;
-    X509 *cert = X509_new();
+    TPM2_PARTIAL_CERT *cert = TPM2_PARTIAL_CERT_new();
     if (!cert) {
-        LOG_ERR("X509_new");
+        LOG_ERR("TPM2_PARTIAL_CERT_new");
         goto out_err;
     }
 
-    X509_NAME *issuer = X509_get_issuer_name(cert);
-    if (!issuer) {
-        LOG_ERR("X509_get_issuer_name");
-        goto out_err;
-    }
-
-    int fields_added = populate_fields(issuer, ctx.issuer);
+    /* populate issuer */
+    int fields_added = populate_fields(cert->issuer, ctx.issuer);
     if (fields_added <= 0) {
         LOG_ERR("Could not parse any issuer fields");
         goto out_err;
@@ -248,28 +211,18 @@ static tool_rc generate_partial_X509() {
         LOG_INFO("Added %d issuer fields", fields_added);
     }
 
-    int ret = X509_set_issuer_name(cert, issuer); // add issuer
-    if (ret != 1) {
-        LOG_ERR("X509_set_issuer_name");
-        goto out_err;
-    }
-
+    /* populate validity */
     unsigned int valid_days;
     if (!tpm2_util_string_to_uint32(ctx.valid_str, &valid_days)) {
         LOG_ERR("string_to_uint32");
         goto out_err;
     }
 
-    X509_gmtime_adj(X509_getm_notBefore(cert), 0); // add valid not before
-    X509_gmtime_adj(X509_getm_notAfter(cert), valid_days * 86400); // add valid not after
+    X509_gmtime_adj(cert->validity->notBefore, 0); // add valid not before
+    X509_gmtime_adj(cert->validity->notAfter, valid_days * 86400); // add valid not after
 
-    X509_NAME *subject = X509_get_subject_name(cert);
-    if (!subject) {
-        LOG_ERR("X509_get_subject_name");
-        goto out_err;
-    }
-
-    fields_added = populate_fields(subject, ctx.subject);
+    /* populate subject */
+    fields_added = populate_fields(cert->subject, ctx.subject);
     if (fields_added <= 0) {
         LOG_ERR("Could not parse any subject fields");
         goto out_err;
@@ -277,51 +230,37 @@ static tool_rc generate_partial_X509() {
         LOG_INFO("Added %d subject fields", fields_added);
     }
 
-    ret = X509_set_subject_name(cert, subject);  // add subject
-    if (ret != 1) {
-        LOG_ERR("X509_NAME_add_entry_by_txt");
-        goto out_err;
-    }
-
+    /* populate extensions */
     extv3 = X509V3_EXT_conf_nid(NULL, NULL, NID_key_usage,
-    "critical,digitalSignature,keyCertSign,cRLSign");
+                "critical,digitalSignature,keyCertSign,cRLSign");
     if (!extv3) {
         LOG_ERR("X509V3_EXT_conf_nid");
         goto out_err;
     }
 
-    ret = X509_add_ext(cert, extv3, -1); // add required v3 extention: key usage
+    int ret = TPM2_add_ext(cert, extv3, -1); // add required v3 extention: key usage
     if (ret != 1) {
         LOG_ERR("X509_add_ext");
         goto out_err;
     }
 
-    ret = i2d_X509_bio(cert_out, cert); // print cert in DER format
+    /* output */
+    ret = i2d_TPM2_PARTIAL_CERT_bio(cert_out, cert); // print cert in DER format
     if (ret != 1) {
         LOG_ERR("i2d_X509_bio");
         goto out_err;
     }
 
     X509_EXTENSION_free(extv3);
-    X509_free(cert);
+    TPM2_PARTIAL_CERT_free(cert);
     BIO_free_all(cert_out);
-
-    ret = fixup_cert(ctx.out_path);
-    if (ret) {
-        LOG_ERR("fixup_cert");
-        return tool_rc_general_error;
-    }
 
     return tool_rc_success;
 
 out_err:
     BIO_free_all(cert_out);
-    if (cert) {
-        X509_free(cert);
-    }
-    if (extv3) {
-        X509_EXTENSION_free(extv3);
-    }
+    X509_EXTENSION_free(extv3);
+    TPM2_PARTIAL_CERT_free(cert);
 
     return tool_rc_general_error;
 }
