@@ -18,6 +18,9 @@
         of the response parameters. This is commonly termed as rpHash.
       - Added option **-S**, **\--session** to specify to specify an auxiliary
         session for auditing and or encryption/decryption of the parameters.
+      - Added option **\-n**, **\--name** to specify the name of the nvindex in
+        hex bytes. This is used when cpHash ought to be calculated without
+        dispatching the TPM2_NV_SetBits command to the TPM.
   * tpm2_createprimary: Support outputing public key at creation time in various
     public key formats.
   * tpm2_create: Support outputing public key at creation time in various
