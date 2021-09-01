@@ -1,37 +1,127 @@
 ## Changelog
 
 ### next
-  * tpm2_nvextend:
-      - Added option **\-n**, **\--name** to specify the name of the nvindex in
-        hex bytes. This is used when cpHash ought to be calculated without
-        dispatching the TPM2_NV_Extend command to the TPM.
-  * tpm2_nvread:
-      - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
-        of the response parameters. This is commonly termed as rpHash.
-      - Added option **\-n**, **\--name** to specify the name of the nvindex in
-        hex bytes. This is used when cpHash ought to be calculated without
-        dispatching the TPM2_NVRead command to the TPM.
-      - Added option **-S**, **\--session** to specify to specify an auxiliary
-        session for auditing and or encryption/decryption of the parameters.
-  * tpm2_nvsetbits:
-      - Added option **\--rphash**=_FILE_ to specify file path to record the hash
-        of the response parameters. This is commonly termed as rpHash.
-      - Added option **-S**, **\--session** to specify to specify an auxiliary
-        session for auditing and or encryption/decryption of the parameters.
-      - Added option **\-n**, **\--name** to specify the name of the nvindex in
-        hex bytes. This is used when cpHash ought to be calculated without
-        dispatching the TPM2_NV_SetBits command to the TPM.
-  * tpm2_createprimary: Support outputing public key at creation time in various
-    public key formats.
-  * tpm2_create: Support outputing public key at creation time in various
-    public key formats.
-  * tpm2_print: Support outputing public key in various public key formats over
-    the default YAML output. Supports taking `-u` output from `tpm2_create` and
-    converting it to a PEM or DER file format.
-  * tools: Enhance error message on invalid passwords when sessions cannot
-    be used.
-  * openssl:
-      - Dropped support for OpenSSL < 1.1.0
+
+* tpm2_nvextend:
+
+  * Added option -n, --name to specify the name of the nvindex in hex bytes.
+    This is used when cpHash ought to be calculated without dispatching the
+    TPM2_NV_Extend command to the TPM.
+
+* tpm2_nvread:
+
+  * Added option **\--rphash**=_FILE_ to specify ile path to record the hash
+    of the response parameters. This is commonly termed as rpHash.
+  * Added option **\-n**, **\--name** to specify the name of the nvindex in
+    hex bytes. This is used when cpHash ought to be calculated without
+    dispatching the TPM2_NVRead command to the TPM.
+  * Added option **-S**, **\--session** to specify to specify an auxiliary
+    session for auditing and or encryption/decryption of the parameters.
+
+* tpm2_nvsetbits:
+
+  * Added option **\--rphash**=_FILE_ to specify file path to record the hash
+    of the response parameters. This is commonly termed as rpHash.
+  * Added option **-S**, **\--session** to specify to specify an auxiliary
+    session for auditing and or encryption/decryption of the parameters.
+  * Added option **\-n**, **\--name** to specify the name of the nvindex in
+    hex bytes. This is used when cpHash ought to be calculated without
+    dispatching the TPM2_NV_SetBits command to the TPM.
+
+* tpm2_createprimary:
+
+  * Support public-key output at creation time in various public-key formats.
+
+* tpm2_create:
+
+  * Support public-key output at creation time in various public-key formats.
+
+* tpm2_print:
+
+  * Support outputing public key in various public key formats over the default
+    YAML output. Supports taking `-u` output from `tpm2_create` and converting
+    it to a PEM or DER file format.
+
+* tpm2_import:
+
+  * Add support for importing keys with sealed-data-blobs.
+
+* tpm2_rsaencrypt, tpm2_rsadecrypt:
+
+  * Add support for specifying the hash algorithm with oaep.
+
+* tpm2_pcrread, tpm2_quote:
+
+  * Add option **-F**, **\--pcrs_format** to specify PCR format selection for
+    the binary blob in the PCR output file. 'values' will output a binary blob
+    of the PCR values. 'serialized' will output a binary blob of the PCR
+    values in the form of serialized data structure in little endian format.
+
+* tpm2_eventlog:
+
+  * Add support for decoding StartupLocality.
+  * Add support for printing the partition information.
+  * Add support for reading eventlogs longer than 64kb including from
+    /sys/kernel/security/tpm0/binary_bios-measurements.
+
+* tpm2_duplicate:
+
+  * Add option **-L**, **\--policy** to specify an authorization policy to be
+    associated with the duplicated object.
+  * Added support for external key duplication without needing the TCTI.
+
+* tools:
+
+  * Enhance error message on invalid passwords when sessions cannot be used.
+
+* lib/tpm2_options:
+
+  * Add option to specify fake tcti which is required in cases where sapi ctx
+    is required to be initialized for retrieving command parameters without
+    invoking the tcti to talk to the TPM.
+
+* openssl:
+
+  * Dropped support for OpenSSL < 1.1.0
+  * Add support for OpenSSL 3.0.0
+
+* Support added to make the repository documentation and man pages available
+  live on readthedocs.
+
+* Bug-fixes:
+
+  * tpm2_import: Don't allow setting passwords for imported object with -p
+    option as the tool doesn't modify the TPM2B_SENSITIVE structure. Added
+    appropriate logging to indicate using **tpm2_changeauth** after import.
+
+  * lib/tpm2_util.c: The function to calculate pHash algorithm returned error
+    when input session is a password session and the only session in the command.
+
+  * lib/tpm2_alg_util.c: Fix an error where oaep was parsed under ECC.
+
+  * tpm2_sign: Fix segfaults when tool does not find TPM resources (TPM or RM).
+
+  * tpm2_makecredential: Fix an issue where reading input from stdin could
+    result in unsupported data size larger than the largest digest size.
+
+  * tpm2_loadexternal: Fix an issue where restricted attribute could not be set.
+
+  * lib/tpm2_nv_util.h: The NV index size is dependent on different data sets
+    read from the GetCapability structures because there is a dependency on the
+    NV operation type: Define vs Read vs Write vs Extend. Fix a sane default in
+    the case where GetCapability fails or fails to report the specific property/
+    data set. This is especially true because some properties are TPM
+    implementation dependent.
+
+  * tpm2_createpolicy: Fix an issue where tool exited silently without reporting
+    an error if wrong pcr string is specified.
+
+  * lib/tpm2_alg_util: add error message on public init to prevent tools from
+    dying silently, add an error message.
+
+  * tpm2_import: fix an issue where an imported hmac object scheme was NULL.
+    While allowed, it was inconsistent with other tools like tpm2_create which
+    set the scheme as hmac->sha256 when generating a keyedhash object.
 
 ### 5.1.1 2021-06-21
 
