@@ -1,6 +1,6 @@
 ## Changelog
 
-### next
+### 5.2-rc0 2021-09-01
 
 * tpm2_nvextend:
 
