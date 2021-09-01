@@ -19,13 +19,13 @@ LIB_COMMON := lib/libcommon.a
 AM_CFLAGS := \
     $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(TSS2_ESYS_CFLAGS) $(TSS2_MU_CFLAGS) \
     $(CRYPTO_CFLAGS) $(CODE_COVERAGE_CFLAGS) $(TSS2_TCTILDR_CFLAGS) \
-    $(TSS2_RC_CFLAGS) $(TSS2_SYS_CFLAGS)
+    $(TSS2_RC_CFLAGS) $(TSS2_SYS_CFLAGS) $(TSS2_POLICY_CFLAGS)
 
 AM_LDFLAGS   := $(EXTRA_LDFLAGS) $(CODE_COVERAGE_LIBS)
 
 LDADD = \
     $(LIB_COMMON) $(TSS2_ESYS_LIBS) $(TSS2_MU_LIBS) $(CRYPTO_LIBS) $(TSS2_TCTILDR_LIBS) \
-    $(TSS2_RC_LIBS) $(TSS2_SYS_LIBS) $(EFIVAR_LIBS)
+    $(TSS2_RC_LIBS) $(TSS2_SYS_LIBS) $(EFIVAR_LIBS) $(TSS2_POLICY_LIBS)
 
 AM_DISTCHECK_CONFIGURE_FLAGS = --with-bashcompdir='$$(datarootdir)/bash-completion/completions'
 
@@ -105,6 +105,7 @@ tpm2_tools = \
     tools/misc/tpm2_checkquote.c \
     tools/misc/tpm2_encodeobject.c \
     tools/misc/tpm2_eventlog.c \
+    tools/misc/tpm2_policy.c \
     tools/misc/tpm2_print.c \
     tools/misc/tpm2_rc_decode.c \
     tools/tpm2_activatecredential.c \
