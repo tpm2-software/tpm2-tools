@@ -69,11 +69,23 @@ create_authorized_policy() {
 # Restrict the value that can be set through tpm2 nvsetbits.
 create_authorized_policy
 tpm2 nvdefine 1 -a "policywrite|authwrite|ownerread|nt=bits" -L authorized.policy
+NV_INDEX_NAME=$(tpm2 nvreadpublic | grep name | awk {'print $2'})
+#
+# Suppose TPM2_NVDefine was not run and the name was entirely created external
+# to the TPM. Note: This support still needs to be added.
+#
+# To emulate the absence of NV index while calculating the cpHash of NV_SetBits,
+# let's Undefine the NV index and define it later.
+#
+tpm2 nvundefine 1 -C o
+# (1) Calculate the cpHash
+tpm2 nvsetbits 1 -i 1 --cphash cp.hash -n $NV_INDEX_NAME --tcti=none
 ## Create policycphash
-tpm2 nvsetbits 1 -i 1 --cphash cp.hash
 generate_policycphash
 ## Sign and verify policycphash
 sign_and_verify_policycphash
+# (3) Define the NV index and write some NV index data
+tpm2 nvdefine 1 -a "policywrite|authwrite|ownerread|nt=bits" -L authorized.policy
 ## Satisfy policycphash and execute nvsetbits
 setup_authorized_policycphash
 tpm2 nvsetbits 1 -i 1 -P "session:session.ctx"
