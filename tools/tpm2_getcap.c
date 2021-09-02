@@ -235,7 +235,7 @@ static void tpm2_tool_output_tpma_modes(TPMA_MODES modes) {
  * Print string representation of the TPMA_PERMANENT attributes.
  */
 static void dump_permanent_attrs(TPMA_PERMANENT attrs) {
-    tpm2_tool_output("TPM2_PT_PERSISTENT:\n");
+    tpm2_tool_output("TPM2_PT_PERMANENT:\n");
     tpm2_tool_output("  ownerAuthSet:              %s\n",
             prop_str (attrs & TPMA_PERMANENT_OWNERAUTHSET));
     tpm2_tool_output("  endorsementAuthSet:        %s\n",
