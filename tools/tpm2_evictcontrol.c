@@ -106,20 +106,18 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     bool evicted = false;
 
     /* load up the object/handle to work on */
-    tool_rc tmp_rc = tpm2_util_object_load(ectx, ctx.to_persist_key.ctx_path,
-            &ctx.to_persist_key.object, TPM2_HANDLE_ALL_W_NV);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-        goto out;
+    rc = tpm2_util_object_load(ectx, ctx.to_persist_key.ctx_path,
+        &ctx.to_persist_key.object, TPM2_HANDLE_ALL_W_NV);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     /* load up the auth hierarchy */
-    tmp_rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+    rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
             ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
             TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-        goto out;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     if (ctx.to_persist_key.object.handle >> TPM2_HR_SHIFT
@@ -136,11 +134,10 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      */
     if (ctx.flags.c && !ctx.flags.p) {
         bool is_platform = ctx.auth_hierarchy.object.handle == TPM2_RH_PLATFORM;
-        tmp_rc = tpm2_capability_find_vacant_persistent_handle(ectx,
+        rc = tpm2_capability_find_vacant_persistent_handle(ectx,
                 is_platform, &ctx.persist_handle);
-        if (tmp_rc != tool_rc_success) {
-            rc = tmp_rc;
-            goto out;
+        if (rc != tool_rc_success) {
+            return rc;
         }
         /* we searched and found a persistent handle, so mark that peristent handle valid */
         ctx.flags.p = 1;
@@ -148,7 +145,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (ctx.flags.o && !ctx.flags.p) {
         LOG_ERR("Cannot specify -o without using a persistent handle");
-        goto out;
+        return tool_rc_option_error;
     }
 
     ESYS_TR out_tr;
@@ -175,7 +172,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = tpm2_evictcontrol(ectx, &ctx.auth_hierarchy.object,
             &ctx.to_persist_key.object, ctx.persist_handle, &out_tr, NULL);
     if (rc != tool_rc_success) {
-        goto out;
+        return rc;
     }
 
     /*
@@ -191,19 +188,16 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     evicted = out_tr == ESYS_TR_NONE;
     tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persist_handle);
     tpm2_tool_output("action: %s\n", evicted ? "evicted" : "persisted");
-
+    tool_rc tmp_rc = tool_rc_success;
     if (ctx.output_arg) {
-        rc = files_save_ESYS_TR(ectx, out_tr, ctx.output_arg);
-    } else {
-        rc = tool_rc_success;
+        tmp_rc = files_save_ESYS_TR(ectx, out_tr, ctx.output_arg);
     }
 
-out:
     if (!evicted) {
         rc = tpm2_close(ectx, &out_tr);
     }
 
-    return rc;
+    return (tmp_rc == tool_rc_success) ? rc : tmp_rc;
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
