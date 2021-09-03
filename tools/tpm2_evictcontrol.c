@@ -102,11 +102,8 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-    bool evicted = false;
-
     /* load up the object/handle to work on */
-    rc = tpm2_util_object_load(ectx, ctx.to_persist_key.ctx_path,
+    tool_rc rc = tpm2_util_object_load(ectx, ctx.to_persist_key.ctx_path,
         &ctx.to_persist_key.object, TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
@@ -150,17 +147,20 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     ESYS_TR out_tr;
     if (ctx.cp_hash_path) {
-        TPM2B_DIGEST cp_hash = { .size = 0 };
         LOG_WARN("Calculating cpHash. Exiting without evicting objects.");
-        tool_rc rc = tpm2_evictcontrol(ectx, &ctx.auth_hierarchy.object,
+
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        rc = tpm2_evictcontrol(ectx, &ctx.auth_hierarchy.object,
         &ctx.to_persist_key.object, ctx.persist_handle, &out_tr, &cp_hash);
         if (rc != tool_rc_success) {
             return rc;
         }
+
         bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
         if (!result) {
             rc = tool_rc_general_error;
         }
+
         return rc;
     }
 
@@ -185,15 +185,17 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      *
      * See bug: https://github.com/tpm2-software/tpm2-tools/issues/1816
      */
-    evicted = out_tr == ESYS_TR_NONE;
     tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persist_handle);
-    tpm2_tool_output("action: %s\n", evicted ? "evicted" : "persisted");
+
+    bool is_evicted = (out_tr == ESYS_TR_NONE);
+    tpm2_tool_output("action: %s\n", is_evicted ? "evicted" : "persisted");
+
     tool_rc tmp_rc = tool_rc_success;
     if (ctx.output_arg) {
         tmp_rc = files_save_ESYS_TR(ectx, out_tr, ctx.output_arg);
     }
 
-    if (!evicted) {
+    if (!is_evicted) {
         rc = tpm2_close(ectx, &out_tr);
     }
 
