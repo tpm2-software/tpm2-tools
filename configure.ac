@@ -62,8 +62,12 @@ PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.1.0])
 PKG_CHECK_MODULES([CURL], [libcurl])
 
 # pretty print of devicepath if efivar library is present
-PKG_CHECK_MODULES([EFIVAR], [efivar],,[true])
-AC_CHECK_HEADERS([efivar/efivar.h])
+AC_ARG_WITH([efivar], AS_HELP_STRING([--without-efivar], [Build without efivar library (default: test)]))
+
+AS_IF([test "x$with_efivar" != "xno"], [
+	PKG_CHECK_MODULES([EFIVAR], [efivar])
+	AC_CHECK_HEADERS([efivar/efivar.h])
+])
 
 # backwards compat with older pkg-config
 # - pull in AC_DEFUN from pkg.m4
