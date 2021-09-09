@@ -102,18 +102,18 @@ the various known TCTI modules.
 
 # EXAMPLES
 
-To duplicate a key, one needs the key to duplicate, created with a policy that \
-allows duplication and a new parent:
+#### Example-1: Duplicate a key created with a policy that allows for duplication:
+
 ```bash
 tpm2_startauthsession -S session.dat
 tpm2_policycommandcode -S session.dat -L policy.dat TPM2_CC_Duplicate
 tpm2_flushcontext session.dat
 
 tpm2_createprimary -C o -g sha256 -G rsa -c primary.ctxt
-tpm2_create -C primary.ctxt -g sha256 -G rsa -r key.prv -u key.pub \
--L policy.dat -a "sensitivedataorigin"
+tpm2_create -C primary.ctxt -g sha256 -G rsa -r key.prv -u key.pub  -c key.ctxt \
+-L policy.dat -a "sensitivedataorigin|userwithauth|decrypt|sign"
 
-tpm2_loadexternal -C o -u new_parent.pub -c new_parent.ctxt
+tpm2_createprimary -C o -g sha256 -G ecc -c new_parent.ctxt
 
 tpm2_startauthsession \--policy-session -S session.dat
 tpm2_policycommandcode -S session.dat -L policy.dat TPM2_CC_Duplicate
@@ -122,10 +122,9 @@ tpm2_duplicate -C new_parent.ctxt -c key.ctxt -G null -p "session:session.dat" \
 tpm2_flushcontext session.dat
 ```
 
-As an end-to-end example, the following will transfer an RSA key generated on 
-`TPM-A` to `TPM-B`
+#### Example-2: As an end-to-end example, the following will transfer an RSA key generated on `TPM-A` to `TPM-B`
 
-## On TPM-B
+##### On TPM-B
 
 Create a parent object that will be used to wrap/transfer the key.
 ```
@@ -138,7 +137,7 @@ tpm2_create  -C primary.ctx -g sha256 -G rsa \
 
 Copy `new_parent.pub` to `TPM-A`.
 
-## On TPM-A
+##### On TPM-A
 
 Create root object and auth policy allows duplication only
 
@@ -208,7 +207,7 @@ Copy the following files to TPM-B:
 * dup.seed
 * (optionally data.encrypted just to test decryption)
 
-## On TPM-B
+##### On TPM-B
 
 Start an auth,policy session
 ```
@@ -268,7 +267,7 @@ tpm2_rsadecrypt -p foo -c dup.ctx -o data.ptext data.encrypted
 meet me at..
 ```
 
-## Exporting an OpenSSL RSA key for a remote TPM
+#### Example-3: Exporting an OpenSSL RSA key for a remote TPM
 
 To securely send an OpenSSL generated RSA key to a remote TPM such that
 only that remote TPM will be able to load it, and without exposing the
