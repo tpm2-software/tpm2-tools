@@ -92,7 +92,7 @@ static tool_rc check_opts(void) {
     }
 
     if (!ctx.object.privpath) {
-        LOG_ERR("Expected public object portion via -r");
+        LOG_ERR("Expected private object portion via -r");
         rc = tool_rc_option_error;
     }
 
