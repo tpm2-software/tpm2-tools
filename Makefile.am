@@ -103,6 +103,7 @@ tools_tpm2_SOURCES = \
 tpm2_tools = \
     tools/misc/tpm2_certifyX509certutil.c \
     tools/misc/tpm2_checkquote.c \
+    tools/misc/tpm2_encodeobject.c \
     tools/misc/tpm2_eventlog.c \
     tools/misc/tpm2_print.c \
     tools/misc/tpm2_rc_decode.c \
@@ -376,6 +377,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_createprimary.1 \
     man/man1/tpm2_dictionarylockout.1 \
     man/man1/tpm2_duplicate.1 \
+    man/man1/tpm2_encodeobject.1 \
     man/man1/tpm2_getcap.1 \
     man/man1/tpm2_encryptdecrypt.1 \
     man/man1/tpm2_eventlog.1 \
