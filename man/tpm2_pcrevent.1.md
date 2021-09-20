@@ -53,7 +53,7 @@ tpm2_pcrevent data
 ## Hash a file and extend PCR 8
 ```bash
 echo "foo" > data
-tpm2_pcrevent 8 data
+tpm2_pcrevent data 8
 ```
 
 [returns](common/returns.md)
