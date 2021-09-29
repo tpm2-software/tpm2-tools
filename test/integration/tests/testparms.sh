@@ -63,7 +63,7 @@ else
 fi
 
 # Attempt to specify a suite that is not supported (error from TPM)
-if tpm2 getcap ecc-curves | grep -q TPM2_ECC_NIST_P521; then
+if ! tpm2 getcap ecc-curves | grep -q TPM2_ECC_NIST_P521; then
     if tpm2 testparms "ecc521:ecdsa:camellia" &>/dev/null; then
         echo "tpm2 testparms succeeded while it shouldn't or TPM failed"
         exit 1
