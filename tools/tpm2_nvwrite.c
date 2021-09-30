@@ -11,6 +11,9 @@
 
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
 struct tpm_nvwrite_ctx {
+    /*
+     * Inputs
+     */
     struct {
         const char *ctx_path;
         const char *auth_str;
@@ -23,77 +26,33 @@ struct tpm_nvwrite_ctx {
     FILE *input_file;
     UINT16 data_size;
     UINT16 offset;
+
+    uint16_t max_data_size;
+
+    /*
+     * Outputs
+     */
+
+    /*
+     * Parameter hashes
+     */
     char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
 static tpm_nvwrite_ctx ctx = {
     .data_size = TPM2_MAX_NV_BUFFER_SIZE
 };
 
-static bool is_input_options_args_valid(ESYS_CONTEXT *ectx) {
-
-    if (ctx.cp_hash_path && ctx.data_size > TPM2_MAX_NV_BUFFER_SIZE) {
-        LOG_ERR("Cannot calculat cpHash for buffers larger than NV max buffer");
-        return false;
-    }
-
-    if (!ctx.data_size) {
-        LOG_WARN("Data to write is of size 0");
-    }
-
-    /*
-     * Ensure that writes will fit before attempting write to prevent data
-     * from being partially written to the index.
-     */
-    TPM2B_NV_PUBLIC *nv_public = NULL;
-    tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to write NVRAM public area at index 0x%X",
-                ctx.nv_index);
-        free(nv_public);
-        return false;
-    }
-
-    if (ctx.offset + ctx.data_size > nv_public->nvPublic.dataSize) {
-        LOG_ERR("The starting offset (%u) and the size (%u) are larger than the"
-                " defined space: %u.", ctx.offset, ctx.data_size,
-                nv_public->nvPublic.dataSize);
-        free(nv_public);
-        return false;
-    }
-    free(nv_public);
-    return true;
-}
-
 static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 
     TPM2B_MAX_NV_BUFFER nv_write_data;
     UINT16 data_offset = 0;
-
-    if (ctx.cp_hash_path) {
-        nv_write_data.size = ctx.data_size;
-        memcpy(nv_write_data.buffer, &ctx.nv_buffer, ctx.data_size);
-        LOG_WARN("Calculating cpHash. Exiting without performing write.");
-        TPM2B_DIGEST cp_hash = { .size = 0 };
-        tool_rc rc = tpm2_nvwrite(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-                &nv_write_data, ctx.offset, &cp_hash);
-        if (rc != tool_rc_success) {
-            LOG_ERR("CpHash calculation failed!");
-            return rc;
-        }
-
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-        }
-        return rc;
-    }
-
-    uint16_t max_data_size = tpm2_nv_util_max_allowed_nv_size(ectx, false);
     while (ctx.data_size > 0) {
-
-        nv_write_data.size =
-                ctx.data_size > max_data_size ? max_data_size : ctx.data_size;
+        nv_write_data.size = ctx.data_size > ctx.max_data_size ?
+            ctx.max_data_size : ctx.data_size;
 
         LOG_INFO("The data(size=%d) to be written:", nv_write_data.size);
 
@@ -101,7 +60,7 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
                 nv_write_data.size);
 
         tool_rc rc = tpm2_nvwrite(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-                &nv_write_data, ctx.offset + data_offset, NULL);
+                &nv_write_data, ctx.offset + data_offset, ctx.cphash);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -113,9 +72,142 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
     return tool_rc_success;
 }
 
+static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+
+    return rc;
+}
+
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+
+    /* Object #1 */
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid handle authorization");
+        return rc;
+    }
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+    /*
+     * Ensure that writes will fit before attempting write to prevent data
+     * from being partially written to the index.
+     */
+    TPM2B_NV_PUBLIC *nv_public = NULL;
+    rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to read NVRAM public area at index 0x%X",
+                ctx.nv_index);
+
+        free(nv_public);
+
+        return tool_rc_general_error;
+    }
+
+    if (ctx.offset + ctx.data_size > nv_public->nvPublic.dataSize) {
+        LOG_ERR("The starting offset (%u) and the size (%u) are larger than the"
+                " defined space: %u.", ctx.offset, ctx.data_size,
+                nv_public->nvPublic.dataSize);
+
+        free(nv_public);
+
+        return tool_rc_option_error;
+    }
+    free(nv_public);
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+
+    return rc;
+}
+
+static tool_rc check_options(ESYS_CONTEXT *ectx) {
+
+    /*
+     * Avoid overwritting cpHash
+     */
+    ctx.max_data_size = tpm2_nv_util_max_allowed_nv_size(ectx, false);
+    if (ctx.cp_hash_path && ctx.data_size > ctx.max_data_size) {
+        LOG_ERR("Cannot calculate cpHash for buffer larger than NV max buffer");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.data_size) {
+        LOG_ERR("Data to write is of size 0");
+        return tool_rc_option_error;
+    }
+
+    return tool_rc_success;
+}
+
+static bool on_arg(int argc, char **argv) {
+    /* If the user doesn't specify an authorization hierarchy use the index
+     * as the authorization object.
+     */
+    if (!ctx.auth_hierarchy.ctx_path) {
+        ctx.auth_hierarchy.ctx_path = argv[0];
+    }
+    return on_arg_nv_index(argc, argv, &ctx.nv_index);
+}
+
 static bool on_option(char key, char *value) {
+
     char *input_file;
+
     switch (key) {
+
     case 'C':
         ctx.auth_hierarchy.ctx_path = value;
         break;
@@ -141,16 +233,6 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-static bool on_arg(int argc, char **argv) {
-    /* If the user doesn't specify an authorization hierarchy use the index
-     * passed to -x/--index for the authorization index.
-     */
-    if (!ctx.auth_hierarchy.ctx_path) {
-        ctx.auth_hierarchy.ctx_path = argv[0];
-    }
-    return on_arg_nv_index(argc, argv, &ctx.nv_index);
-}
-
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
@@ -171,26 +253,59 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool retval = is_input_options_args_valid(ectx);
-    if (!retval) {
-        return tool_rc_option_error;
-    }
-
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options(ectx);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid handle authorization");
         return rc;
     }
 
-    return nv_write(ectx);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = nv_write(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx, flags);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    /*
+     * 1. Free objects
+     */
+
+    /*
+     * 2. Close authorization sessions
+     */
+    tool_rc rc = tool_rc_success;
+    tool_rc tmp_rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+    }
+
+    /*
+     * 3. Close auxiliary sessions
+     */
+
+    return rc;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("nvwrite", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("nvwrite", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, NULL)
