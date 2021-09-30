@@ -39,6 +39,8 @@ struct tpm_nvwrite_ctx {
      */
     const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
+    const char *rp_hash_path;
+    TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
     TPMI_ALG_HASH parameter_hash_algorithm;
 };
@@ -61,9 +63,9 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
         memcpy(nv_write_data.buffer, &ctx.nv_buffer[data_offset],
                 nv_write_data.size);
 
-        tool_rc rc = tpm2_nvwrite(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-            &nv_write_data, ctx.offset + data_offset, &ctx.cp_hash,
-            ctx.parameter_hash_algorithm);
+        tool_rc rc = tpm2_nvwrite(ectx, &ctx.auth_hierarchy.object,
+            ctx.nv_index, &nv_write_data, ctx.offset + data_offset,
+            &ctx.cp_hash, &ctx.rp_hash, ctx.parameter_hash_algorithm);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -98,6 +100,11 @@ static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
+
+    if (ctx.rp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.rp_hash, ctx.rp_hash_path);
+        rc = is_file_op_success ? tool_rc_success : tool_rc_general_error;
+    }
 
     return rc;
 }
@@ -173,14 +180,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    const char **rphash_path = ctx.rp_hash_path ? &ctx.rp_hash_path : 0;
 
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
-        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+        cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * !rphash && !cphash [Y]
+     * !rphash && cphash  [N]
+     * rphash && !cphash  [Y]
+     * rphash && cphash   [Y]
      */
-    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
+        false : true;
 
     return rc;
 }
@@ -191,8 +204,9 @@ static tool_rc check_options(ESYS_CONTEXT *ectx) {
      * Avoid overwritting cpHash
      */
     ctx.max_data_size = tpm2_nv_util_max_allowed_nv_size(ectx, false);
-    if (ctx.cp_hash_path && ctx.data_size > ctx.max_data_size) {
-        LOG_ERR("Cannot calculate cpHash for buffer larger than NV max buffer");
+    if ((ctx.cp_hash_path || ctx.rp_hash_path) &&
+    ctx.data_size > ctx.max_data_size) {
+        LOG_ERR("Cannot calculate pHash for buffer larger than NV max buffer");
         return tool_rc_option_error;
     }
 
@@ -240,6 +254,9 @@ static bool on_option(char key, char *value) {
     case 1:
         ctx.cp_hash_path = value;
         break;
+    case 2:
+        ctx.rp_hash_path = value;
+        break;
     }
 
     return true;
@@ -253,6 +270,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "input",                required_argument, NULL, 'i' },
         { "offset",               required_argument, NULL,  0  },
         { "cphash",               required_argument, NULL,  1  },
+        { "rphash",               required_argument, NULL,  2  },
     };
 
     *opts = tpm2_options_new("C:P:i:", ARRAY_LEN(topts), topts, on_option,
