@@ -59,6 +59,12 @@ as an argument and can be a raw handle or an offset value to the nv handle range
     File path to record the hash of the response parameters. This is commonly
     termed as rpHash.
 
+  * **-S**, **\--session**=_FILE_:
+
+    The session created using **tpm2_startauthsession**. This can be used to
+    specify an auxiliary session for auditing and or encryption/decryption of
+    the parameters.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying

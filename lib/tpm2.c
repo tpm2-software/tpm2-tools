@@ -3391,9 +3391,10 @@ tpm2_nvundefinespecial_skip_esapi_call:
 }
 
 tool_rc tpm2_nvwrite(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nvindex,
-        const TPM2B_MAX_NV_BUFFER *data, UINT16 offset, TPM2B_DIGEST *cp_hash,
-        TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+    tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nvindex,
+    const TPM2B_MAX_NV_BUFFER *data, UINT16 offset, TPM2B_DIGEST *cp_hash,
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+    ESYS_TR shandle2, ESYS_TR shandle3) {
 
     // Convert TPM2_HANDLE ctx.nv_index to an ESYS_TR
     ESYS_TR esys_tr_nv_index;
@@ -3458,8 +3459,8 @@ tpm2_nvwrite_free_name1:
     }
 
     rval = Esys_NV_Write(esys_context, auth_hierarchy_obj->tr_handle,
-            esys_tr_nv_index, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
-            ESYS_TR_NONE, data, offset);
+            esys_tr_nv_index, auth_hierarchy_obj_session_handle, shandle2,
+            shandle3, data, offset);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to write NV area at index 0x%X", nvindex);
         LOG_PERR(Tss2_Sys_NV_Write, rval);

@@ -1,9 +1,12 @@
 ## Changelog
 
 ### next
+
   * tpm2_nvwrite:
       - Added option **\--rphash**=_FILE_ to specify ile path to record the hash
         of the response parameters. This is commonly termed as rpHash.
+      - Added option **-S**, **\--session** to specify to specify an auxiliary
+        session for auditing and or encryption/decryption of the parameters.
 
 ### 5.2 2021-09-28
 ### 5.2-rc0 2021-09-01

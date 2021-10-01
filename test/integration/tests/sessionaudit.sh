@@ -415,6 +415,36 @@ diff \
 <( tail -c 32 att.data )
 
 #
+# Get audit digest: TPM command TPM2_CC_NVWrite in an audit session
+#
+tpm2 clear -Q
+
+tpm2 createprimary -Q -C e -g sha256 -G rsa -c prim.ctx
+
+tpm2 create -Q -C prim.ctx -c signing_key.ctx -u signing_key.pub \
+-r signing_key.priv
+
+tpm2 nvdefine 1 -a "authwrite|ownerread|ownerwrite" -s 32
+
+tpm2 startauthsession -S session.ctx --audit-session
+
+echo "foo" | \
+tpm2 nvwrite -i- 1 -C o --cphash cp.hash --rphash rp.hash -S session.ctx
+
+tpm2 getsessionauditdigest -c signing_key.ctx -m att.data -s att.sig \
+-S session.ctx
+
+tpm2 flushcontext session.ctx
+
+dd if=/dev/zero bs=1 count=32 status=none of=zero.bin
+dd if=cp.hash skip=2 bs=1 count=32 status=none of=cphash.bin
+dd if=rp.hash skip=2 bs=1 count=32 status=none of=rphash.bin
+
+diff \
+<( cat zero.bin cphash.bin rphash.bin | openssl dgst -sha256 -binary ) \
+<( tail -c 32 att.data )
+
+#
 # End
 #
 exit 0
