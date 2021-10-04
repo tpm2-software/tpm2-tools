@@ -475,7 +475,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 tpm2_tool_output("      Description: \"");
                 int i;
                 for (i = 0; (wchar_t)loadopt->Description[i] != 0; i++) {
-                    wchar_t c = (wchar_t)loadopt->Description[i];
+                    char16_t c = (char16_t)loadopt->Description[i];
                     tpm2_tool_output("%lc", c);
                 }
                 tpm2_tool_output("\"\n");
