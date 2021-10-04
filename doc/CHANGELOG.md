@@ -7,6 +7,9 @@
         of the response parameters. This is commonly termed as rpHash.
       - Added option **-S**, **\--session** to specify to specify an auxiliary
         session for auditing and or encryption/decryption of the parameters.
+      - Added option -n, --name to specify the name of the nvindex in hex bytes.
+        This is used when cpHash is calculated without dispatching the
+        TPM2_NV_Write command to the TPM.
 
 ### 5.2 2021-09-28
 ### 5.2-rc0 2021-09-01
