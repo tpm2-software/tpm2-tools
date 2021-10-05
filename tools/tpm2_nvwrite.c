@@ -67,6 +67,8 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 
     TPM2B_MAX_NV_BUFFER nv_write_data;
     UINT16 data_offset = 0;
+    bool is_nvwritten_set = false;
+    bool is_nv_auth_updated = false;
     while (ctx.data_size > 0) {
         nv_write_data.size = ctx.data_size > ctx.max_data_size ?
             ctx.max_data_size : ctx.data_size;
@@ -76,7 +78,31 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
         memcpy(nv_write_data.buffer, &ctx.nv_buffer[data_offset],
                 nv_write_data.size);
 
-        tool_rc rc = tpm2_nvwrite(ectx, &ctx.auth_hierarchy.object,
+        tool_rc rc = tool_rc_success;
+        /*
+         * The attribute nvwritten is set after the first write and so the
+         * HMAC must be calculated again with the new name.
+         * Fixes #2846
+         */
+        if (is_nvwritten_set && !is_nv_auth_updated &&
+        ctx.is_command_dispatch) {
+            rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
+            if (rc != tool_rc_success) {
+                LOG_ERR("Failed HMAC auth session clean-up");
+                return rc;
+            }
+
+            rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+            if (rc != tool_rc_success) {
+                LOG_ERR("Failed updating the auth");
+                return rc;
+            }
+            is_nv_auth_updated = true;
+        }
+
+        rc = tpm2_nvwrite(ectx, &ctx.auth_hierarchy.object,
             ctx.nv_index, &ctx.precalc_nvname, &nv_write_data,
             ctx.offset + data_offset, &ctx.cp_hash, &ctx.rp_hash,
             ctx.parameter_hash_algorithm, ctx.aux_session_handle[0],
@@ -84,6 +110,7 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
         if (rc != tool_rc_success) {
             return rc;
         }
+        is_nvwritten_set = true;
 
         ctx.data_size -= nv_write_data.size;
         data_offset += nv_write_data.size;
