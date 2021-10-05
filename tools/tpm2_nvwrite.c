@@ -92,7 +92,7 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
     return tool_rc_success;
 }
 
-static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
 
     UNUSED(ectx);
     /*
@@ -417,7 +417,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 4. Process outputs
      */
-    return process_output(ectx, flags);
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
