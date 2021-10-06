@@ -50,6 +50,7 @@ struct tpm_nvdefine_ctx {
     const char *rp_hash_path;
     TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
+    bool is_tcti_none;
     TPMI_ALG_HASH parameter_hash_algorithm;
 
     /*
@@ -149,6 +150,11 @@ static void handle_default_attributes(void) {
 
 static tool_rc handle_no_index_specified(ESYS_CONTEXT *ectx, TPM2_NV_INDEX *chosen) {
 
+    if (ctx.is_tcti_none) {
+        *chosen = TPM2_HR_NV_INDEX;
+        return tool_rc_success;
+    }
+
     /* get the max NV index for the TPM */
     TPMS_CAPABILITY_DATA *capabilities = NULL;
     tool_rc rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED,
@@ -231,6 +237,12 @@ out:
 
 static tool_rc validate_size(ESYS_CONTEXT *ectx) {
 
+    #define TYPICAL_NVINDEX_MAX 2048
+    if (ctx.is_tcti_none && !ctx.size_set) {
+        ctx.size = TYPICAL_NVINDEX_MAX;
+        return tool_rc_success;
+    }
+
     UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.halg);
 
     switch ((ctx.nv_attribute & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT) {
@@ -290,12 +302,18 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 1.b Add object names and their auth sessions
      */
-    rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+    rc = (!ctx.is_tcti_none) ?
+        tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
             ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P) :
+
+        tpm2_util_object_load(ectx, ctx.auth_hierarchy.ctx_path,
+            &ctx.auth_hierarchy.object,
             TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid authorization");
-        return rc;
+        LOG_ERR("Invalid handle or authorization.");
+        return tool_rc_option_error;
     }
 
     /*
@@ -331,7 +349,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
     if (ctx.policy_file) {
         ctx.public_info.nvPublic.authPolicy.size = BUFFER_SIZE(TPM2B_DIGEST,
-                buffer);
+            buffer);
 
         bool is_policy_load = files_load_bytes_from_path(ctx.policy_file,
             ctx.public_info.nvPublic.authPolicy.buffer,
@@ -360,25 +378,32 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * is_tcti_none       [N]
      * !rphash && !cphash [Y]
      * !rphash && cphash  [N]
      * rphash && !cphash  [Y]
      * rphash && cphash   [Y]
      */
-    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
-        false : true;
+    ctx.is_command_dispatch = (ctx.is_tcti_none ||
+        (ctx.cp_hash_path && !ctx.rp_hash_path)) ? false : true;
 
     return rc;
 }
 
-static tool_rc check_options(void) {
+static tool_rc check_options(tpm2_option_flags flags) {
 
     if (!ctx.size && ctx.size_set) {
         LOG_WARN("Defining an index with size 0");
     }
 
+    ctx.is_tcti_none = flags.tcti_none ? true : false;
+    if (ctx.is_tcti_none && !ctx.cp_hash_path) {
+        LOG_ERR("If tcti is none, then cpHash path must be specified");
+        return tool_rc_option_error;
+    }
+
     /*
-     * Todo: Add error checking for NV indices reserved for specific hierarchies
+     * TODO: Add error checking for NV ranges reserved for specific hierarchies
      */
 
     return tool_rc_success;
@@ -464,12 +489,12 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "index-auth",     required_argument, NULL, 'p' },
         { "policy",         required_argument, NULL, 'L' },
         { "cphash",         required_argument, NULL,  0  },
-        {"rphash",          required_argument, NULL,  1  },
+        { "rphash",         required_argument, NULL,  1  },
         { "session",        required_argument, NULL, 'S' },
     };
 
     *opts = tpm2_options_new("S:C:s:a:P:p:L:g:", ARRAY_LEN(topts), topts,
-        on_option, on_arg, 0);
+        on_option, on_arg, TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
 
     return *opts != NULL;
 }
@@ -481,7 +506,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 1. Process options
      */
-    tool_rc rc = check_options();
+    tool_rc rc = check_options(flags);
     if (rc != tool_rc_success) {
         return rc;
     }
