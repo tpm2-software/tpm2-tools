@@ -219,7 +219,8 @@ tpm2 flushcontext session.ctx
 tpm2 nvundefine 1
 
 # Test tpm2 nvdefine
-tpm2 nvdefine 1 -C o -s 32 -a "ownerread|ownerwrite" --cphash cp.hash
+tpm2 nvdefine 1 -C o -s 32 -a "ownerread|ownerwrite" --cphash cp.hash \
+  --tcti=none
 generate_policycphash
 setup_owner_policy
 tpm2 nvdefine 1 -C o -s 32 -a "ownerread|ownerwrite" -P "session:session.ctx"
