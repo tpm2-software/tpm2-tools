@@ -182,7 +182,7 @@ Below you will find information how to configure your machine locally to conduct
 Signing keys should have these four properties going forward:
   - belong to a project maintainer.
   - be discoverable using a public GPG key server.
-  - be [associated]((https://help.github.com/articles/adding-a-new-gpg-key-to-your-github-account/))
+  - be [associated](https://help.github.com/articles/adding-a-new-gpg-key-to-your-github-account/)
     with the maintainers GitHub account.
   - be discoverable via an annotated tag within the repository itself.
 
