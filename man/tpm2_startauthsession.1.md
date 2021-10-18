@@ -15,11 +15,11 @@ start a *trial* session unless the **-a** option is specified. Saves the policy
 session data to a file. This file can then be used in subsequent tools that can
 use a policy file for authorization or policy events.
 
-This will not work with resource managers (RMs) outside of [tpm2-abrmd](https://
-github.com/tpm2-software/tpm2-abrmd), as most RMs will flush session handles
-when a client disconnects from the IPC channel. However, when using a RM without
-the session gapping feature, one can use the command TCTI to keep the connection
-open.
+This will not work with resource managers (RMs) outside of
+[tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd), as most RMs will flush
+session handles when a client disconnects from the IPC channel. However, when using
+a RM without the session gapping feature, one can use the command TCTI to keep the
+connection open.
 
 The first step is to create a socket listener that uses tpm2\_send:
 ```bash
