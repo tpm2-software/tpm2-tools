@@ -3621,23 +3621,7 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
     TPM2_HANDLE nv_index, UINT16 offset, UINT16 size,
     TPMT_SIG_SCHEME *in_scheme, TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier,
-    TPM2B_DIGEST *cp_hash) {
-
-    ESYS_TR signingkey_obj_session_handle = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
-            signingkey_obj->tr_handle, signingkey_obj->session,
-            &signingkey_obj_session_handle);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    ESYS_TR nvindex_authobj_session_handle = ESYS_TR_NONE;
-    rc = tpm2_auth_util_get_shandle(esys_context,
-        nvindex_authobj->tr_handle, nvindex_authobj->session,
-        &nvindex_authobj_session_handle);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR esys_tr_nv_index;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -3647,7 +3631,8 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
         return tool_rc_from_tpm(rval);
     }
 
-    if (cp_hash) {
+    tool_rc rc = tool_rc_success;
+    if (cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
@@ -3684,10 +3669,8 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
             goto tpm2_nvcertify_free_name1_name2_name3;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(signingkey_obj->session));
         rc = tpm2_sapi_getcphash(sys_context, name1, name2, name3,
-            tpm2_session_get_authhash(signingkey_obj->session), cp_hash);
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
@@ -3699,6 +3682,22 @@ tpm2_nvcertify_free_name1_name2:
 tpm2_nvcertify_free_name1:
         Esys_Free(name1);
         goto tpm2_nvcertify_skip_esapi_call;
+    }
+
+    ESYS_TR signingkey_obj_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(esys_context,
+        signingkey_obj->tr_handle, signingkey_obj->session,
+        &signingkey_obj_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    ESYS_TR nvindex_authobj_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(esys_context,
+        nvindex_authobj->tr_handle, nvindex_authobj->session,
+        &nvindex_authobj_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     rval = Esys_NV_Certify(esys_context, signingkey_obj->tr_handle,

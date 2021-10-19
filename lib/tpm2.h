@@ -452,7 +452,7 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
     TPM2_HANDLE nv_index, UINT16 offset, UINT16 size,
     TPMT_SIG_SCHEME *in_scheme, TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier,
-    TPM2B_DIGEST *cp_hash);
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *hierarchy_object, TPM2B_DIGEST *auth_policy,
