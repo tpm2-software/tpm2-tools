@@ -3622,7 +3622,7 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
     TPMT_SIG_SCHEME *in_scheme, TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle3) {
 
     ESYS_TR esys_tr_nv_index;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -3706,7 +3706,7 @@ tpm2_nvcertify_free_name1:
     rval = Esys_NV_Certify(esys_context, signingkey_obj->tr_handle,
         nvindex_authobj->tr_handle, esys_tr_nv_index,
         signingkey_obj_session_handle, nvindex_authobj_session_handle,
-        ESYS_TR_NONE, policy_qualifier, in_scheme, size, offset, certify_info,
+        shandle3, policy_qualifier, in_scheme, size, offset, certify_info,
         signature);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_Certify, rval);
