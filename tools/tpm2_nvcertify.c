@@ -9,6 +9,7 @@
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_nvcertify_ctx tpm_nvcertify_ctx;
 struct tpm_nvcertify_ctx {
     /*
@@ -47,45 +48,25 @@ struct tpm_nvcertify_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static tpm_nvcertify_ctx ctx = {
     .halg = TPM2_ALG_NULL,
     .sig_scheme = TPM2_ALG_NULL,
     .policy_qualifier = TPM2B_EMPTY_INIT,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static tool_rc nv_certify(ESYS_CONTEXT *ectx) {
 
-    tool_rc rc = tool_rc_success;
-    if (!ctx.cp_hash_path) {
-        rc = tpm2_nvcertify(ectx, &ctx.signing_key.object,
-            &ctx.nvindex_authobj.object, ctx.nv_index, ctx.offset, ctx.size,
-            &ctx.in_scheme, &ctx.certify_info, &ctx.signature,
-            &ctx.policy_qualifier, NULL);
-
-        goto out;
-    }
-
-    TPM2B_DIGEST cp_hash = { .size = 0 };
-    rc = tpm2_nvcertify(ectx, &ctx.signing_key.object,
-            &ctx.nvindex_authobj.object, ctx.nv_index, ctx.offset, ctx.size,
-            &ctx.in_scheme, &ctx.certify_info, &ctx.signature, &ctx.policy_qualifier, &ctx.cp_hash);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-out:
-    return rc;
+    return tpm2_nvcertify(ectx, &ctx.signing_key.object,
+        &ctx.nvindex_authobj.object, ctx.nv_index, ctx.offset, ctx.size,
+        &ctx.in_scheme, &ctx.certify_info, &ctx.signature,
+        &ctx.policy_qualifier, &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -231,9 +212,21 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
 
     /*
-     * 4.a Determine pHash length and alg */
-    /*
+     * 4.a Determine pHash length and alg
+    */
 
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.signing_key.object.session,
+        ctx.nvindex_authobj.object.session,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+
+    /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
     ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
