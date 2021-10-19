@@ -445,6 +445,41 @@ diff \
 <( tail -c 32 att.data )
 
 #
+# Get audit digest: TPM command TPM2_CC_NV_Certify in an audit session
+#
+tpm2 clear -Q
+
+tpm2 createprimary -C o -c primary.ctx -Q
+
+tpm2 create -G rsa -u signing_key.pub -r signing_key.priv -C primary.ctx \
+-c signing_key.ctx -Q
+
+tpm2 readpublic -c signing_key.ctx -f pem -o sslpub.pem -Q
+
+tpm2 nvdefine -s 32 -C o -a "ownerread|ownerwrite|authread|authwrite" 1
+
+dd if=/dev/urandom bs=1 count=32 status=none| tpm2 nvwrite 1 -i-
+
+tpm2 startauthsession -S session.ctx --audit-session
+
+tpm2 nvcertify -C signing_key.ctx -g sha256 -f plain -s rsassa \
+-o signature.bin --attestation attestation.bin --size 32 1 -c o \
+--cphash cp.hash --rphash rp.hash -S session.ctx
+
+tpm2 getsessionauditdigest -c signing_key.ctx -m att.data -s att.sig \
+-S session.ctx
+
+tpm2 flushcontext session.ctx
+
+dd if=/dev/zero bs=1 count=32 status=none of=zero.bin
+dd if=cp.hash skip=2 bs=1 count=32 status=none of=cphash.bin
+dd if=rp.hash skip=2 bs=1 count=32 status=none of=rphash.bin
+
+diff \
+<( cat zero.bin cphash.bin rphash.bin | openssl dgst -sha256 -binary ) \
+<( tail -c 32 att.data )
+
+#
 # End
 #
 exit 0
