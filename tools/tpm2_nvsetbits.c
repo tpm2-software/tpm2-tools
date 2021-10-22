@@ -113,16 +113,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
 
     /* Object #1 */
-    tool_rc rc = (!ctx.is_tcti_none) ?
+    tool_rc rc = tool_rc_success;
+    if (ctx.is_tcti_none) {
+        rc = tpm2_util_handle_from_optarg(ctx.auth_hierarchy.ctx_path,
+            &ctx.auth_hierarchy.object.handle,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P) ?
+            tool_rc_success : tool_rc_option_error;
 
-            tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-                ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-                TPM2_HANDLE_FLAGS_NV|TPM2_HANDLE_FLAGS_O|TPM2_HANDLE_FLAGS_P) :
-
-            tpm2_util_handle_from_optarg(ctx.auth_hierarchy.ctx_path,
-                &ctx.auth_hierarchy.object.handle,
-                TPM2_HANDLE_FLAGS_NV|TPM2_HANDLE_FLAGS_O|TPM2_HANDLE_FLAGS_P) ?
-                tool_rc_success : tool_rc_option_error;
+        ctx.auth_hierarchy.object.tr_handle = (rc == tool_rc_success) ?
+           tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth_hierarchy.object.handle) : 0;
+    } else {
+        rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+    }
 
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid handle authorization");
