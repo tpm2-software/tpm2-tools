@@ -29,8 +29,12 @@ struct tpm_nvcertify_ctx {
     } nvindex_authobj;
 
     TPM2_HANDLE nv_index;
+    TPM2B_NAME precalc_nvname;
+    TPM2B_NAME precalc_signername;
     TPMI_ALG_HASH halg;
+    bool is_sigscheme_halg_specified;
     TPMI_ALG_SIG_SCHEME sig_scheme;
+    bool is_sigscheme_specified;
     UINT16 size;
     UINT16 offset;
     const char *policy_qualifier_arg;
@@ -53,6 +57,7 @@ struct tpm_nvcertify_ctx {
     TPM2B_DIGEST cp_hash;
     const char *rp_hash_path;
     TPM2B_DIGEST rp_hash;
+    bool is_tcti_none;
     bool is_command_dispatch;
     TPMI_ALG_HASH parameter_hash_algorithm;
 
@@ -76,10 +81,10 @@ static tpm_nvcertify_ctx ctx = {
 static tool_rc nv_certify(ESYS_CONTEXT *ectx) {
 
     return tpm2_nvcertify(ectx, &ctx.signing_key.object,
-        &ctx.nvindex_authobj.object, ctx.nv_index, ctx.offset, ctx.size,
-        &ctx.in_scheme, &ctx.certify_info, &ctx.signature,
-        &ctx.policy_qualifier, &ctx.cp_hash, &ctx.rp_hash,
-        ctx.parameter_hash_algorithm, ctx.aux_session_handle[0]);
+        &ctx.nvindex_authobj.object, ctx.nv_index, &ctx.precalc_nvname,
+        &ctx.precalc_signername, ctx.offset, ctx.size, &ctx.in_scheme,
+        &ctx.certify_info, &ctx.signature, &ctx.policy_qualifier, &ctx.cp_hash,
+        &ctx.rp_hash, ctx.parameter_hash_algorithm, ctx.aux_session_handle[0]);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -174,20 +179,35 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * Load signing key and auth
      */
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
-            ctx.signing_key.auth_str, &ctx.signing_key.object, false,
-            TPM2_HANDLES_FLAGS_TRANSIENT|TPM2_HANDLES_FLAGS_PERSISTENT);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid signing key/ authorization.");
-        return rc;
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_tcti_none) {
+        rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
+                ctx.signing_key.auth_str, &ctx.signing_key.object, false,
+                TPM2_HANDLES_FLAGS_TRANSIENT|TPM2_HANDLES_FLAGS_PERSISTENT);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Invalid signing key/ authorization.");
+            return rc;
+        }
     }
 
     /*
      * Load NV index authorization object and auth
      */
-    rc = tpm2_util_object_load_auth(ectx, ctx.nvindex_authobj.ctx_path,
-            ctx.nvindex_authobj.auth_str, &ctx.nvindex_authobj.object,
-            false, TPM2_HANDLE_ALL_W_NV);
+    if (ctx.is_tcti_none) {
+        rc = tpm2_util_handle_from_optarg(ctx.nvindex_authobj.ctx_path,
+            &ctx.nvindex_authobj.object.handle,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P) ?
+            tool_rc_success : tool_rc_option_error;
+
+        ctx.nvindex_authobj.object.tr_handle = (rc == tool_rc_success) ?
+        tpm2_tpmi_hierarchy_to_esys_tr(ctx.nvindex_authobj.object.handle) : 0;
+    } else {
+        rc = tpm2_util_object_load_auth(ectx, ctx.nvindex_authobj.ctx_path,
+            ctx.nvindex_authobj.auth_str, &ctx.nvindex_authobj.object, false,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+    }
+
+
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid object specified for NV index authorization.");
         return rc;
@@ -209,11 +229,16 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * Set appropriate signature scheme for key type
      */
-    rc = tpm2_alg_util_get_signature_scheme(ectx,
-        ctx.signing_key.object.tr_handle, &ctx.halg, ctx.sig_scheme, &ctx.in_scheme);
-    if (rc != tool_rc_success) {
-        LOG_ERR("bad signature scheme for key type!");
-        return rc;
+    if (!ctx.is_tcti_none) {
+        rc = tpm2_alg_util_get_signature_scheme(ectx,
+            ctx.signing_key.object.tr_handle, &ctx.halg, ctx.sig_scheme, &ctx.in_scheme);
+        if (rc != tool_rc_success) {
+            LOG_ERR("bad signature scheme for key type!");
+            return rc;
+        }
+    } else {
+        ctx.in_scheme.scheme = ctx.sig_scheme;
+        ctx.in_scheme.details.any.hashAlg = ctx.halg;
     }
 
     /*
@@ -250,50 +275,113 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
         cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
 
+    return rc;
+}
+
+static tool_rc check_options(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+
+    ctx.is_tcti_none = flags.tcti_none ? true : false;
+    if (ctx.is_tcti_none && !ctx.cp_hash_path) {
+        LOG_ERR("If tcti is none, then cpHash path must be specified");
+        return tool_rc_option_error;
+    }
+
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * is_tcti_none       [N]
      * !rphash && !cphash [Y]
      * !rphash && cphash  [N]
      * rphash && !cphash  [Y]
      * rphash && cphash   [Y]
      */
-    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
-        false : true;
+    ctx.is_command_dispatch = (ctx.is_tcti_none ||
+        (ctx.cp_hash_path && !ctx.rp_hash_path)) ? false : true;
 
-    return rc;
-}
-
-static tool_rc check_options(ESYS_CONTEXT *ectx) {
-
-    if (!ctx.signing_key.ctx_path) {
+    if (!ctx.signing_key.ctx_path && !ctx.is_tcti_none) {
         LOG_ERR("Must specify the signing key '-C'.");
         return tool_rc_option_error;
     }
 
-    if (!ctx.signature_path) {
+    if (!ctx.signature_path && !ctx.is_tcti_none) {
         LOG_ERR("Must specify the file path to save signature '-o'");
         return tool_rc_option_error;
     }
 
-    if (!ctx.certify_info_path) {
+    if (!ctx.certify_info_path && !ctx.is_tcti_none) {
         LOG_ERR("Must specify file path to save attestation '--attestation'");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.is_tcti_none && !ctx.is_sigscheme_specified) {
+        LOG_ERR("Must specify the signing scheme");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.is_tcti_none && !ctx.is_sigscheme_halg_specified) {
+        LOG_ERR("Must specify the digest alg for the signing scheme");
+        return tool_rc_option_error;
+    }
+
+    /*
+     * Peculiar to this and some other tools, the object (nvindex) name must
+     * be specified when only calculating the cpHash.
+     *
+     * This breaks the compatibility with the 4.X tools where in a real tcti
+     * is invoked to get a sapi handle to retrieve the params. Also this would
+     * imply that a real NV index ought to be defined even in the case of simply
+     * calculating the cpHash.
+     *
+     * To solve this conundrum, we can only mandate the requirement for the NV
+     * index name in case tcti is specified as none. If tcti is not specified as
+     * none we fall back to the old behavior of reading from a define NV index
+     * 
+     * Also, tcti is setup to a fake_tcti when tcti is specified "none" as the
+     * tool option affords TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI.
+     * 
+     * If NVindex name is not specified and tcti is not none, it is expected
+     * that the NV index is actually define. This behavior complies with the
+     * backwards compatibility with 4.X
+     */
+    bool is_nv_name_specified = ctx.precalc_nvname.size;
+    if (ctx.is_tcti_none && !is_nv_name_specified) {
+        LOG_ERR("Must specify the NVIndex name.");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.is_tcti_none && is_nv_name_specified) {
+        LOG_ERR("Do not specify NV index name, it is directly read from NV");
+        return tool_rc_option_error;
+    }
+
+    bool is_signer_name_specified = ctx.precalc_signername.size;
+    if (ctx.is_tcti_none && !is_signer_name_specified) {
+        LOG_ERR("Must specify the signing key name.");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.is_tcti_none && is_signer_name_specified) {
+        LOG_ERR("Do not specify signing key name, it is read from key handle");
         return tool_rc_option_error;
     }
 
     /*
      * Ensure that NV index is large enough for certifying data size at offset.
      */
-    TPM2B_NV_PUBLIC *nv_public = NULL;
-    tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to access NVRAM public area at index 0x%X",
-                ctx.nv_index);
-        goto is_input_options_args_valid_out;
-    }
+    tool_rc rc = tool_rc_success;
+    TPM2B_NV_PUBLIC *nv_public = 0;
+    if (!ctx.is_tcti_none) {
+        rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Failed to access NVRAM public area at index 0x%X",
+                    ctx.nv_index);
+            goto is_input_options_args_valid_out;
+        }
 
-    if (ctx.offset + ctx.size > nv_public->nvPublic.dataSize) {
-        LOG_ERR("Size to read at offset is bigger than nv index size");
-        rc = tool_rc_option_error;
+        if (ctx.offset + ctx.size > nv_public->nvPublic.dataSize) {
+            LOG_ERR("Size to read at offset is bigger than nv index size");
+            rc = tool_rc_option_error;
+            goto is_input_options_args_valid_out;
+        }
     }
 
 is_input_options_args_valid_out:
@@ -331,9 +419,11 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         result = set_digest_algorithm(value);
+        ctx.is_sigscheme_halg_specified = true;
         goto on_option_out;
     case 's':
         result = set_signing_scheme(value);
+        ctx.is_sigscheme_specified = true;
         goto on_option_out;
     case 'f':
         result = set_signature_format(value);
@@ -388,6 +478,24 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'n':
+        ctx.precalc_nvname.size = BUFFER_SIZE(TPM2B_NAME, name);
+        int q = tpm2_util_hex_to_byte_structure(value, &ctx.precalc_nvname.size,
+        ctx.precalc_nvname.name);
+        if (q) {
+            LOG_ERR("FAILED: %d", q);
+            return false;
+        }
+        break;
+    case 5:
+        ctx.precalc_signername.size = BUFFER_SIZE(TPM2B_NAME, name);
+        int r = tpm2_util_hex_to_byte_structure(value,
+            &ctx.precalc_signername.size, ctx.precalc_signername.name);
+        if (r) {
+            LOG_ERR("FAILED: %d", r);
+            return false;
+        }
+        break;
     }
 
 on_option_out:
@@ -412,10 +520,12 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "cphash",             required_argument, NULL,  3  },
         { "rphash",             required_argument, NULL,  4  },
         { "session",            required_argument, NULL, 'S' },
+        { "name",               required_argument, NULL, 'n' },
+        { "signer-name",        required_argument, NULL,  5  },
     };
 
-    *opts = tpm2_options_new("C:P:c:p:g:s:f:o:q:S:", ARRAY_LEN(topts), topts,
-        on_option, on_arg, 0);
+    *opts = tpm2_options_new("C:P:c:p:g:s:f:o:q:S:n:", ARRAY_LEN(topts), topts,
+        on_option, on_arg, TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
 
     return *opts != NULL;
 }
@@ -428,7 +538,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 1. Process options
      */
-    tool_rc rc = check_options(ectx);
+    tool_rc rc = check_options(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }

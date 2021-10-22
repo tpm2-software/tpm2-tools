@@ -3618,18 +3618,28 @@ tpm2_sign_skip_esapi_call:
 
 tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *signingkey_obj, tpm2_loaded_object *nvindex_authobj,
-    TPM2_HANDLE nv_index, UINT16 offset, UINT16 size,
+    TPM2_HANDLE nv_index, TPM2B_NAME *precalc_nvname,
+    TPM2B_NAME *precalc_signername, UINT16 offset, UINT16 size,
     TPMT_SIG_SCHEME *in_scheme, TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
     TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle3) {
 
-    ESYS_TR esys_tr_nv_index;
-    TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
+    ESYS_TR esys_tr_nv_index = ESYS_TR_NONE;
+    /*
+     * If command is to be dispatched the NV index must exist.
+     * In this case get the NV index name by reading its public information.
+     * If rpHash size is non zero then command is always dispatched.
+     */
+    TSS2_RC rval = TSS2_RC_SUCCESS;
+    bool is_nvname_specified = precalc_nvname ? precalc_nvname->size : false;
+    if (!is_nvname_specified) {
+        rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
             ESYS_TR_NONE, ESYS_TR_NONE, &esys_tr_nv_index);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        return tool_rc_from_tpm(rval);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_TR_FromTPMPublic, rval);
+            return tool_rc_from_tpm(rval);
+        }
     }
 
     tool_rc rc = tool_rc_success;
@@ -3651,22 +3661,49 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
-        rc = tpm2_tr_get_name(esys_context, signingkey_obj->tr_handle, &name1);
-        if (rc != tool_rc_success) {
-            goto tpm2_nvcertify_free_name1;
+        bool is_signername_specified = precalc_signername ?
+            precalc_signername->size : false;
+        TPM2B_NAME *name1 = 0;
+        if (is_signername_specified) {
+            name1 = precalc_signername;
+        } else {
+            rc = tpm2_tr_get_name(esys_context, signingkey_obj->tr_handle, &name1);
+                if (rc != tool_rc_success) {
+                goto tpm2_nvcertify_free_name1;
+            }
         }
 
-        TPM2B_NAME *name2 = NULL;
-        rc = tpm2_tr_get_name(esys_context, nvindex_authobj->tr_handle, &name2);
-        if (rc != tool_rc_success) {
-            goto tpm2_nvcertify_free_name1_name2;
+        /*
+         * We need this to use precalc-name for parent authorization when the
+         * NV index itself is the authorization parent AND
+         * we don't need/have the NV index defined when simply calculating cpHash.
+         */
+        bool is_auth_hierarchy_nv_index =
+            (nvindex_authobj->tr_handle != ESYS_TR_RH_OWNER) &&
+            (nvindex_authobj->tr_handle != ESYS_TR_RH_PLATFORM);
+        /*
+         * We need this to avoid requiring an NV-index be defined when simply
+         * calculating cpHash.
+         */
+        TPM2B_NAME *name2 = 0;
+        if (is_auth_hierarchy_nv_index && is_nvname_specified) {
+            name2 = precalc_nvname;
+        } else {
+            rc = tpm2_tr_get_name(esys_context, nvindex_authobj->tr_handle,
+                &name2);
+            if (rc != tool_rc_success) {
+                goto tpm2_nvcertify_free_name1_name2;
+            }
         }
 
-        TPM2B_NAME *name3 = NULL;
-        rc = tpm2_tr_get_name(esys_context, esys_tr_nv_index, &name3);
-        if (rc != tool_rc_success) {
-            goto tpm2_nvcertify_free_name1_name2_name3;
+        TPM2B_NAME *name3 = 0;
+        if (is_nvname_specified) {
+            name3 = precalc_nvname;
+        } else {
+            rc = tpm2_tr_get_name(esys_context, esys_tr_nv_index, &name3);
+            if (rc != tool_rc_success) {
+                goto tpm2_nvcertify_free_name1_name2_name3;
+            }
         }
 
         rc = tpm2_sapi_getcphash(sys_context, name1, name2, name3,
@@ -3676,11 +3713,15 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
          * Exit here without making the ESYS call since we just need the cpHash
          */
 tpm2_nvcertify_free_name1_name2_name3:
-        Esys_Free(name3);
+        if (!is_nvname_specified) {
+            Esys_Free(name3);
+        }
 tpm2_nvcertify_free_name1_name2:
-        Esys_Free(name2);
+            Esys_Free(name2);
 tpm2_nvcertify_free_name1:
-        Esys_Free(name1);
+        if (!is_signername_specified) {
+            Esys_Free(name1);
+        }
 
         if (!rp_hash->size) {
             goto tpm2_nvcertify_skip_esapi_call;

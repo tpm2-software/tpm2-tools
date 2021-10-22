@@ -264,8 +264,12 @@ tpm2 create -G rsa -u signing_key.pub -r signing_key.priv -C primary.ctx \
 tpm2 readpublic -c signing_key.ctx -f pem -o sslpub.pem -Q
 tpm2 nvdefine -s 32 -C o -a "ownerread|ownerwrite|authread|authwrite" 1
 dd if=/dev/urandom bs=1 count=32 status=none| tpm2 nvwrite 1 -i-
-tpm2 nvcertify -C signing_key.ctx -g sha256 -f plain -s rsassa \
--o signature.bin --attestation attestation.bin --size 32 1 -c o --cphash cp.hash
+
+NV_INDEX_NAME=$(tpm2 nvreadpublic | grep name | awk {'print $2'})
+SIGNER_NAME=$(tpm2 readpublic -c signing_key.ctx | grep name | grep -v -e q -e g | awk {'print $2'})
+
+tpm2 nvcertify -s rsassa -g sha256 --size 32 1 --cphash cp.hash --tcti none \
+--name $NV_INDEX_NAME --signer-name $SIGNER_NAME -c o
 generate_policycphash
 setup_owner_policy
 tpm2 nvcertify -C signing_key.ctx -g sha256 -f plain -s rsassa \
