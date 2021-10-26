@@ -42,7 +42,7 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
 
     static const alg_pair algs[] = {
 
-        // Assymetric
+        // Asymmetric
         { .name = "rsa", .id = TPM2_ALG_RSA, .flags = tpm2_alg_util_flags_asymmetric|tpm2_alg_util_flags_base },
         { .name = "ecc", .id = TPM2_ALG_ECC, .flags = tpm2_alg_util_flags_asymmetric|tpm2_alg_util_flags_base },
 
