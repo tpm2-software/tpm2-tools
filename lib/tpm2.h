@@ -313,8 +313,8 @@ tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
     ESYS_TR shandle2, ESYS_TR shandle3);
 
 tool_rc tpm2_nv_increment(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
-        TPM2B_DIGEST *cp_hash);
+    tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_nvreadlock(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
