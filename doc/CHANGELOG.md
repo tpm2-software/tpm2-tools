@@ -5,6 +5,8 @@
   * tpm2_nvincrement:
       - Added option **\--rphash**=_FILE_ to specify file path to record the hash
         of the response parameters. This is commonly termed as rpHash.
+      - Added option **-S**, **\--session** to specify to specify an auxiliary
+        session for auditing and or encryption/decryption of the parameters.
 
   * tpm2_nvcertify:
       - Added option **\--rphash**=_FILE_ to specify ile path to record the hash

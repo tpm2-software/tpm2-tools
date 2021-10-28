@@ -2679,7 +2679,7 @@ tpm2_nvdefinespace_skip_esapi_call:
 tool_rc tpm2_nv_increment(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2, ESYS_TR shandle3) {
 
     // Convert TPM2_HANDLE ctx.nv_index to an ESYS_TR
     ESYS_TR esys_tr_nv_index;
@@ -2745,8 +2745,8 @@ tpm2_nvincrement_free_name1:
     }
 
     rval = Esys_NV_Increment(esys_context, auth_hierarchy_obj->tr_handle,
-            esys_tr_nv_index, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
-            ESYS_TR_NONE);
+            esys_tr_nv_index, auth_hierarchy_obj_session_handle, shandle2,
+            shandle3);
     if (rval != TPM2_RC_SUCCESS) {
         return tool_rc_from_tpm(rval);
     }
