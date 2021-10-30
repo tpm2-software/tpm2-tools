@@ -168,6 +168,8 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
 static tool_rc check_options(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
+    UNUSED(ectx);
+
     ctx.is_tcti_none = flags.tcti_none ? true : false;
     if (ctx.is_tcti_none && !ctx.cp_hash_path) {
         LOG_ERR("If tcti is none, then cpHash path must be specified");
