@@ -2874,7 +2874,8 @@ tpm2_nvreadlock_skip_esapi_call:
 tool_rc tpm2_nvwritelock(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
+    ESYS_TR shandle3) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -2939,8 +2940,8 @@ tpm2_nvwritelock_free_name1:
     }
 
     rval = Esys_NV_WriteLock(esys_context, auth_hierarchy_obj->tr_handle,
-        esys_tr_nv_handle, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
-        ESYS_TR_NONE);
+        esys_tr_nv_handle, auth_hierarchy_obj_session_handle, shandle2,
+        shandle3);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_WriteLock, rval);
         return tool_rc_from_tpm(rval);
@@ -2957,7 +2958,8 @@ tpm2_nvwritelock_skip_esapi_call:
 
 tool_rc tpm2_nvglobalwritelock(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2B_DIGEST *cp_hash,
-    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+    ESYS_TR shandle2, ESYS_TR shandle3) {
 
     tool_rc rc = tool_rc_success;
     TSS2_SYS_CONTEXT *sys_context = 0;
@@ -3006,8 +3008,9 @@ tpm2_globalnvwritelock_free_name1:
         return rc;
     }
 
-    TSS2_RC rval = Esys_NV_GlobalWriteLock(esys_context, auth_hierarchy_obj->tr_handle,
-            auth_hierarchy_obj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE);
+    TSS2_RC rval = Esys_NV_GlobalWriteLock(esys_context,
+        auth_hierarchy_obj->tr_handle, auth_hierarchy_obj_session_handle,
+        shandle2, shandle3);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_GlobalWriteLock, rval);
         return tool_rc_from_tpm(rval);
