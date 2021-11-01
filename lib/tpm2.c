@@ -2873,7 +2873,8 @@ tpm2_nvreadlock_skip_esapi_call:
 
 tool_rc tpm2_nvwritelock(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
-    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -2884,17 +2885,16 @@ tool_rc tpm2_nvwritelock(ESYS_CONTEXT *esys_context,
     }
 
     tool_rc rc = tool_rc_success;
-    if (cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+    TSS2_SYS_CONTEXT *sys_context = 0;
+    if (cp_hash->size || rp_hash->size) {
         rc = tpm2_getsapicontext(esys_context, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
             return rc;
         }
+    }
 
+    if (cp_hash->size) {
         rval = Tss2_Sys_NV_WriteLock_Prepare(sys_context,
             auth_hierarchy_obj->handle, nv_index);
         if (rval != TPM2_RC_SUCCESS) {
@@ -2925,7 +2925,9 @@ tpm2_nvwritelock_free_name1_name2:
         Esys_Free(name2);
 tpm2_nvwritelock_free_name1:
         Esys_Free(name1);
-        goto tpm2_nvwritelock_skip_esapi_call;
+        if (!rp_hash->size) {
+            goto tpm2_nvwritelock_skip_esapi_call;
+        }
     }
 
     ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
@@ -2944,26 +2946,30 @@ tpm2_nvwritelock_free_name1:
         return tool_rc_from_tpm(rval);
     }
 
+    if (rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
+    }
+
 tpm2_nvwritelock_skip_esapi_call:
     return rc;
 }
 
 tool_rc tpm2_nvglobalwritelock(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2B_DIGEST *cp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
     tool_rc rc = tool_rc_success;
-    if (cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+    TSS2_SYS_CONTEXT *sys_context = 0;
+    if (cp_hash->size || rp_hash->size) {
         rc = tpm2_getsapicontext(esys_context, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
             return rc;
         }
+    }
 
+    if (cp_hash->size) {
         TSS2_RC rval = Tss2_Sys_NV_GlobalWriteLock_Prepare(sys_context,
             auth_hierarchy_obj->handle);
         if (rval != TPM2_RC_SUCCESS) {
@@ -2986,7 +2992,9 @@ tool_rc tpm2_nvglobalwritelock(ESYS_CONTEXT *esys_context,
          */
 tpm2_globalnvwritelock_free_name1:
         Esys_Free(name1);
-        goto tpm2_globalnvwritelock_skip_esapi_call;
+        if (!rp_hash->size) {
+            goto tpm2_globalnvwritelock_skip_esapi_call;
+        }
     }
 
     ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
@@ -3003,6 +3011,11 @@ tpm2_globalnvwritelock_free_name1:
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_GlobalWriteLock, rval);
         return tool_rc_from_tpm(rval);
+    }
+
+    if (rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
     }
 
 tpm2_globalnvwritelock_skip_esapi_call:
