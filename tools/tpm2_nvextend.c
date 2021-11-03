@@ -115,16 +115,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
     tool_rc rc = tool_rc_success;
     if (ctx.is_tcti_none) {
+        /*
+         * Cannot use tpm2_util_object_load like in nvdefine as it makes a call
+         * to tpm2_util_sys_handle_to_esys_handle which then tries to read the
+         * ESYS_TR object off of the TPM expecting it to be there.
+         * Note: this if it is a permanent handle ESYS_TR is fixed and so the
+         * TPM is not probed even with tpm2_util_sys_handle_to_esys_handle.
+         */
         rc = tpm2_util_handle_from_optarg(ctx.auth_hierarchy.ctx_path,
             &ctx.auth_hierarchy.object.handle,
             TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P) ?
         tool_rc_success : tool_rc_option_error;
-        if (rc != tool_rc_success) {
-             return rc;
-         }
 
-         ctx.auth_hierarchy.object.tr_handle =
-              tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth_hierarchy.object.handle);
+         ctx.auth_hierarchy.object.tr_handle = (rc == tool_rc_success) ?
+            tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth_hierarchy.object.handle) : 0;
     } else {
         rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
             ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
