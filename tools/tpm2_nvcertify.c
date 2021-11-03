@@ -180,6 +180,9 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * Load signing key and auth
      */
     tool_rc rc = tool_rc_success;
+    /*
+     * if tcti is none, the signer name is read when recording the options.
+     */
     if (!ctx.is_tcti_none) {
         rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
                 ctx.signing_key.auth_str, &ctx.signing_key.object, false,
@@ -194,19 +197,25 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * Load NV index authorization object and auth
      */
     if (ctx.is_tcti_none) {
+        /*
+         * Cannot use tpm2_util_object_load like in nvdefine as it makes a call
+         * to tpm2_util_sys_handle_to_esys_handle which then tries to read the
+         * ESYS_TR object off of the TPM expecting it to be there.
+         * Note: this if it is a permanent handle ESYS_TR is fixed and so the
+         * TPM is not probed even with tpm2_util_sys_handle_to_esys_handle.
+         */
         rc = tpm2_util_handle_from_optarg(ctx.nvindex_authobj.ctx_path,
             &ctx.nvindex_authobj.object.handle,
             TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P) ?
             tool_rc_success : tool_rc_option_error;
 
         ctx.nvindex_authobj.object.tr_handle = (rc == tool_rc_success) ?
-        tpm2_tpmi_hierarchy_to_esys_tr(ctx.nvindex_authobj.object.handle) : 0;
+          tpm2_tpmi_hierarchy_to_esys_tr(ctx.nvindex_authobj.object.handle) : 0;
     } else {
         rc = tpm2_util_object_load_auth(ectx, ctx.nvindex_authobj.ctx_path,
             ctx.nvindex_authobj.auth_str, &ctx.nvindex_authobj.object, false,
             TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
     }
-
 
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid object specified for NV index authorization.");
