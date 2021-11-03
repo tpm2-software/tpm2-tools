@@ -214,18 +214,42 @@ tpm2 nvundefine 1
 create_authorized_policy
 tpm2 nvdefine 1 -C o -s 32 -a "policyread|policywrite|writedefine" \
 -L authorized.policy
-tpm2 nvwritelock 1 -C 0x01000001 --cphash cp.hash
+NV_INDEX_NAME=$(tpm2 nvreadpublic | grep name | awk {'print $2'})
+#
+# Suppose TPM2_NVDefine was not run and the name was entirely created external
+# to the TPM. Note: This support still needs to be added.
+#
+# To emulate the absence of NV index while calculating the cpHash of NVRead,
+# let's Undefine the NV index and define it later.
+#
+tpm2 nvundefine 1 -C o
+tpm2 nvwritelock 1 -C 0x01000001 --cphash cp.hash -n $NV_INDEX_NAME --tcti=none
 generate_policycphash
 sign_and_verify_policycphash
+
+tpm2 nvdefine 1 -C o -s 32 -a "policyread|policywrite|writedefine" \
+-L authorized.policy
 setup_authorized_policycphash
 tpm2 nvwritelock 1 -C 0x01000001 -P "session:session.ctx"
 tpm2 flushcontext session.ctx
 tpm2 nvundefine 1
+
 ## attempt with globallock attribute set
 tpm2 nvdefine 1 -C o -s 32 -a "ownerread|ownerwrite|globallock"
-tpm2 nvwritelock --global -C o --cphash cp.hash
+NV_INDEX_NAME=$(tpm2 nvreadpublic | grep name | awk {'print $2'})
+#
+# Suppose TPM2_NVDefine was not run and the name was entirely created external
+# to the TPM. Note: This support still needs to be added.
+#
+# To emulate the absence of NV index while calculating the cpHash of NVRead,
+# let's Undefine the NV index and define it later.
+#
+tpm2 nvundefine 1 -C o
+tpm2 nvwritelock --global -C o --cphash cp.hash --tcti=none
 generate_policycphash
 setup_owner_policy
+
+tpm2 nvdefine 1 -C o -s 32 -a "ownerread|ownerwrite|globallock"
 tpm2 nvwritelock --global -C o -P "session:session.ctx"
 tpm2 flushcontext session.ctx
 tpm2 nvundefine 1
