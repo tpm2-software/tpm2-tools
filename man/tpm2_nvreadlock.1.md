@@ -45,6 +45,12 @@ value to the nv handle range "TPM2_HR_NV_INDEX".
     File path to record the hash of the response parameters. This is commonly
     termed as rpHash.
 
+  * **-S**, **\--session**=_FILE_:
+
+    The session created using **tpm2_startauthsession**. This can be used to
+    specify an auxiliary session for auditing and or encryption/decryption of
+    the parameters.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 
