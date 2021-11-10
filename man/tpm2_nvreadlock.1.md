@@ -51,6 +51,11 @@ value to the nv handle range "TPM2_HR_NV_INDEX".
     specify an auxiliary session for auditing and or encryption/decryption of
     the parameters.
 
+  * **-n**, **\--name**=_FILE_:
+
+    The name of the NV index that must be provided when only calculating the
+    cpHash without actually dispatching the command to the TPM.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 

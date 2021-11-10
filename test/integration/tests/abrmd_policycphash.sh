@@ -202,9 +202,21 @@ tpm2 nvundefine 1 -C o
 create_authorized_policy
 tpm2 nvdefine 1 -C o -s 32 -a "policyread|policywrite|read_stclear" \
 -L authorized.policy
-tpm2 nvreadlock 1 -C 0x01000001 --cphash cp.hash
+NV_INDEX_NAME=$(tpm2 nvreadpublic | grep name | awk {'print $2'})
+#
+# Suppose TPM2_NVDefine was not run and the name was entirely created external
+# to the TPM. Note: This support still needs to be added.
+#
+# To emulate the absence of NV index while calculating the cpHash of NVRead,
+# let's Undefine the NV index and define it later.
+#
+tpm2 nvundefine 1 -C o
+tpm2 nvreadlock 1 -C 0x01000001 --cphash cp.hash -n $NV_INDEX_NAME --tcti=none
 generate_policycphash
 sign_and_verify_policycphash
+
+tpm2 nvdefine 1 -C o -s 32 -a "policyread|policywrite|read_stclear" \
+-L authorized.policy
 setup_authorized_policycphash
 tpm2 nvreadlock 1 -C 0x01000001 -P "session:session.ctx"
 tpm2 flushcontext session.ctx
