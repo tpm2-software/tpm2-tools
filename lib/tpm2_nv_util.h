@@ -228,7 +228,18 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
         "Make seperate tpm2_nvread calls with proper offsets specified to "
         "specify all NV index data to be read");
 
-        rc =-tool_rc_option_error;
+        rc = tool_rc_option_error;
+        goto out;
+    }
+
+    bool is_auth_a_policy_session = is_nvread_dispatched &&
+        tpm2_session_get_type(auth_hierarchy_obj->session) == TPM2_SE_POLICY;
+    if (is_auth_a_policy_session && is_nv_index_data_larger_than_max_read) {
+        LOG_ERR("Cannot continue as the policy auth session must be "
+                "reinstantiated for multiple iterations of NV read. "
+                "Specify a max read size of %lu or specify an offset and max "
+                "read size of %lu", max_data_size, max_data_size);
+        rc = tool_rc_option_error;
         goto out;
     }
 
