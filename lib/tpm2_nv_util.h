@@ -237,8 +237,8 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
     if (is_auth_a_policy_session && is_nv_index_data_larger_than_max_read) {
         LOG_ERR("Cannot continue as the policy auth session must be "
                 "reinstantiated for multiple iterations of NV read. "
-                "Specify a max read size of %lu or specify an offset and max "
-                "read size of %lu", max_data_size, max_data_size);
+                "Specify a max read size of %u or specify an offset and max "
+                "read size of %u", max_data_size, max_data_size);
         rc = tool_rc_option_error;
         goto out;
     }

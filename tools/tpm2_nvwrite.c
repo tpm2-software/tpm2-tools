@@ -203,8 +203,8 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     if (is_auth_a_policy_session && ctx.data_size > ctx.max_data_size) {
          LOG_ERR("Cannot continue as the policy auth session must be "
                  "reinstantiated for multiple iterations of NV write. "
-                 "Specify a max write size of %lu or specify an offset and max "
-                 "write size of %lu", ctx.max_data_size, ctx.max_data_size);
+                 "Specify a max write size of %u or specify an offset and max "
+                 "write size of %u", ctx.max_data_size, ctx.max_data_size);
          return tool_rc_option_error;
     }
 
