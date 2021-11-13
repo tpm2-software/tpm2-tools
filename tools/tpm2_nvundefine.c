@@ -39,6 +39,8 @@ struct tpm_nvundefine_ctx {
      */
     const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
+    const char *rp_hash_path;
+    TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
     TPMI_ALG_HASH parameter_hash_algorithm;
 };
@@ -53,11 +55,11 @@ static tool_rc nv_undefine(ESYS_CONTEXT *ectx) {
     tool_rc rc = ctx.has_policy_delete_set ?
 
         tpm2_nvundefinespecial(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-            ctx.policy_session.session, &ctx.cp_hash,
+            ctx.policy_session.session, &ctx.cp_hash, &ctx.rp_hash,
             ctx.parameter_hash_algorithm) :
 
         tpm2_nvundefine(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-            &ctx.cp_hash, ctx.parameter_hash_algorithm);
+            &ctx.cp_hash, &ctx.rp_hash, ctx.parameter_hash_algorithm);
 
     return rc;
 }
@@ -85,8 +87,12 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
+    if (ctx.rp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.rp_hash, ctx.rp_hash_path);
+        rc = is_file_op_success ? tool_rc_success : tool_rc_general_error;
+    }
 
-    return tool_rc_success;
+    return rc;
 }
 
 
@@ -157,14 +163,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    const char **rphash_path = ctx.rp_hash_path ? &ctx.rp_hash_path : 0;
 
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
-        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+        cphash_path, &ctx.cp_hash, rphash_path, &ctx.rp_hash, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * !rphash && !cphash [Y]
+     * !rphash && cphash  [N]
+     * rphash && !cphash  [Y]
+     * rphash && cphash   [Y]
      */
-    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+    ctx.is_command_dispatch = (ctx.cp_hash_path && !ctx.rp_hash_path) ?
+        false : true;
 
     return rc;
 }
@@ -227,6 +239,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.cp_hash_path = value;
         break;
+    case 1:
+        ctx.rp_hash_path = value;
+        break;
     }
 
     return true;
@@ -253,6 +268,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth",      required_argument, NULL, 'P' },
         { "session",   required_argument, NULL, 'S' },
         { "cphash",    required_argument, NULL,  0  },
+        { "rphash",    required_argument, NULL,  1  },
     };
 
     *opts = tpm2_options_new("C:P:S:", ARRAY_LEN(topts), topts, on_option, on_arg,
