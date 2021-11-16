@@ -9,6 +9,7 @@
 #include "tpm2_options.h"
 
 #define MAX_SESSIONS 3
+#define MAX_AUX_SESSIONS 2
 typedef struct tpm_nvundefine_ctx tpm_nvundefine_ctx;
 struct tpm_nvundefine_ctx {
     /*
@@ -43,11 +44,21 @@ struct tpm_nvundefine_ctx {
     TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
     TPMI_ALG_HASH parameter_hash_algorithm;
+
+    /*
+     * Aux sessions
+     */
+    uint8_t aux_session_cnt;
+    tpm2_session *aux_session[MAX_AUX_SESSIONS];
+    const char *aux_session_path[MAX_AUX_SESSIONS];
+    ESYS_TR aux_session_handle[MAX_AUX_SESSIONS];
 };
 
 static tpm_nvundefine_ctx ctx = {
     .auth_hierarchy.ctx_path = "owner",
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
+    .aux_session_handle[0] = ESYS_TR_NONE,
+    .aux_session_handle[1] = ESYS_TR_NONE,
 };
 
 static tool_rc nv_undefine(ESYS_CONTEXT *ectx) {
@@ -56,10 +67,11 @@ static tool_rc nv_undefine(ESYS_CONTEXT *ectx) {
 
         tpm2_nvundefinespecial(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
             ctx.policy_session.session, &ctx.cp_hash, &ctx.rp_hash,
-            ctx.parameter_hash_algorithm) :
+            ctx.parameter_hash_algorithm, ctx.aux_session_handle[0]) :
 
         tpm2_nvundefine(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-            &ctx.cp_hash, &ctx.rp_hash, ctx.parameter_hash_algorithm);
+            &ctx.cp_hash, &ctx.rp_hash, ctx.parameter_hash_algorithm,
+            ctx.aux_session_handle[0], ctx.aux_session_handle[1]);
 
     return rc;
 }
@@ -131,18 +143,35 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
             return rc;
         }
 
+        /*
+         * In case of undefinespacespecial first session is expected to satisfy
+         * the ADMIN role in a policycommandcode session.
+         */
         TPM2_SE type = tpm2_session_get_type(ctx.policy_session.session);
         if (ctx.has_policy_delete_set && type != TPM2_SE_POLICY) {
             LOG_ERR("Expected a policy session when NV index has attribute"
-                    " TPMA_NV_POLICY_DELETE set.");
+                    " TPMA_NV_POLICY_DELETE set. Also note that "
+                    "the policy session must be specified first with -S");
             return tool_rc_option_error;
         }
+
+        /*
+         * Adjust aux session structure to reflect the only allowed additional
+         * aux structure.
+         */
+        ctx.aux_session_cnt-=1;
+        ctx.aux_session_path[0] = ctx.aux_session_path[1];
+        ctx.aux_session_path[1] = 0;
     }
 
     /*
      * 2. Restore auxiliary sessions
      */
-
+    rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, ctx.aux_session_handle, ctx.aux_session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
     /*
      * 3. Command specific initializations
      */
@@ -155,11 +184,15 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * 4.a Determine pHash length and alg
      */
     tpm2_session *is_undefinespecial_session = ctx.has_policy_delete_set ?
-        ctx.policy_session.session : 0;
+        ctx.policy_session.session : ctx.aux_session[0];
+
+    tpm2_session *last_aux_session = ctx.has_policy_delete_set ?
+        ctx.aux_session[0] : ctx.aux_session[1];
+
     tpm2_session *all_sessions[MAX_SESSIONS] = {
         ctx.auth_hierarchy.object.session,
         is_undefinespecial_session,
-        0
+        last_aux_session,
     };
 
     const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
@@ -234,7 +267,20 @@ static bool on_option(char key, char *value) {
         ctx.auth_hierarchy.auth_str = value;
         break;
     case 'S':
-        ctx.policy_session.path = value;
+        /*
+         * In case of undefinespacespecial first session is expected to satisfy
+         * the ADMIN role in a policycommandcode session.
+         */
+        if (!ctx.aux_session_cnt) {
+            ctx.policy_session.path = value;   
+        }
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
+            ctx.aux_session_cnt++;
+        } else {
+            LOG_ERR("Specify a max of 3 sessions");
+            return false;
+        }
         break;
     case 0:
         ctx.cp_hash_path = value;
@@ -335,6 +381,15 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     /*
      * 3. Close auxiliary sessions
      */
+    size_t i = 0;
+    for(i = 0; i < ctx.aux_session_cnt; i++) {
+        if (ctx.aux_session_path[i]) {
+            tmp_rc = tpm2_session_close(&ctx.aux_session[i]);
+            if (tmp_rc != tool_rc_success) {
+                rc = tmp_rc;
+            }
+        }
+    }
 
     return rc;
 }

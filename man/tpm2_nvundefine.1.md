@@ -37,7 +37,17 @@ default value for `-C` is the "owner" hierarchy when `TPMA_NV_POLICY_DELETE` is 
   * **-S**, **\--session**=_POLICY_SESSION_:
 
     Specify a policy session to use when the NV index has attribute
-    `TPMA_NV_POLICY_DELETE` set.
+    `TPMA_NV_POLICY_DELETE` set. This can also be used to specify an auxiliary
+    session for auditing and or encryption/decryption of the parameters.
+    Note:
+    1. If TPM2_CC_NV_UndefineSpaceSpecial is invoked then only one additional
+       aux session can be specified. The order of how sessions are specified
+       also matters. First specification of `-S` is interpreted as the session
+       for satisfying the ADMIN role required for
+       TPM2_CC_NV_UndefineSpaceSpecial.
+
+    2. If TPM2_CC_NV_Undefine is invoked then only two additional aux sessions
+       can be specified.
 
   * **\--cphash**=_FILE_
 
