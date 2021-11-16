@@ -3359,7 +3359,7 @@ tpm2_nvextend_skip_esapi_call:
 tool_rc tpm2_nvundefine(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2, ESYS_TR shandle3) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -3425,8 +3425,8 @@ tpm2_nvundefine_free_name1:
     }
 
     rval = Esys_NV_UndefineSpace(esys_context, auth_hierarchy_obj->tr_handle,
-            esys_tr_nv_handle, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
-            ESYS_TR_NONE);
+        esys_tr_nv_handle, auth_hierarchy_obj_session_handle, shandle2,
+        shandle3);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to release NV area at index 0x%X", nv_index);
         LOG_PERR(Esys_NV_UndefineSpace, rval);
@@ -3446,7 +3446,8 @@ tpm2_nvundefine_skip_esapi_call:
 tool_rc tpm2_nvundefinespecial(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
     tpm2_session *policy_session, TPM2B_DIGEST *cp_hash,
-    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+    ESYS_TR shandle3) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -3518,7 +3519,7 @@ tpm2_nvundefinespecial_free_name1:
             auth_hierarchy_obj->tr_handle,
             policy_session_handle, // policy session
             auth_hierarchy_obj_session_handle, // auth session for hierarchy
-            ESYS_TR_NONE);
+            shandle3); //aux session for enc/ audit
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to release NV area at index 0x%X", nv_index);
         LOG_PERR(Esys_NV_UndefineSpaceSpecial, rval);
