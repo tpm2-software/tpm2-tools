@@ -61,6 +61,17 @@ default value for `-C` is the "owner" hierarchy when `TPMA_NV_POLICY_DELETE` is 
     File path to record the hash of the response parameters. This is commonly
     termed as rpHash.
 
+  * **\--with-policydelete**=_NONE_
+
+    This must be specified when calculating cpHash with **\--tcti=none**. This
+    is a requirement because there is no way to know if the attribute
+    TPMA_NV_POLICYDELETE has been set from the NV index name alone.
+
+  * **-n**, **\--name**=_FILE_:
+
+    The name of the NV index that must be provided when only calculating the
+    cpHash without actually dispatching the command to the TPM.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 

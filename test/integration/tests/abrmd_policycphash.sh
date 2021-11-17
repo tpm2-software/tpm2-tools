@@ -49,6 +49,12 @@ setup_owner_policy() {
     tpm2 policycphash -S session.ctx --cphash-input cp.hash
 }
 
+setup_platform_policy() {
+    tpm2 setprimarypolicy -C p -L policy.cphash -g sha256
+    tpm2 startauthsession -S session.ctx --policy-session -g sha256
+    tpm2 policycphash -S session.ctx --cphash-input cp.hash
+}
+
 start_policy_cphash() {
     tpm2 startauthsession -S session.ctx --policy-session -g sha256
     tpm2 policycphash -S session.ctx --cphash-input cp.hash
@@ -287,9 +293,12 @@ tpm2 nvundefine 1
 
 # Test tpm2 nvundefine
 tpm2 nvdefine 1
-tpm2 nvundefine 1 --cphash cp.hash
+NV_INDEX_NAME=$(tpm2 nvreadpublic | grep name | awk {'print $2'})
+tpm2 nvundefine 1
+tpm2 nvundefine 1 --cphash cp.hash --tcti=none -n $NV_INDEX_NAME
 generate_policycphash
 setup_owner_policy
+tpm2 nvdefine 1
 tpm2 nvundefine 1 -P "session:session.ctx"
 tpm2 flushcontext session.ctx
 ## attempt failing scenario
@@ -304,6 +313,41 @@ fi
 trap onerror ERR
 tpm2 flushcontext session.ctx
 tpm2 nvundefine -C p 2
+
+# Test tpm2 nvundefine - spacespecial
+#
+# Get NV index name
+#
+tpm2 startauthsession -S special_session.ctx --policy-session
+tpm2 policycommandcode -S special_session.ctx TPM2_CC_NV_UndefineSpaceSpecial \
+-L special_policy.digest
+tpm2 nvdefine 1 -C p -s 32 -a "authread|authwrite|policydelete|platformcreate" \
+-L special_policy.digest
+NV_INDEX_NAME=$(tpm2 nvreadpublic | grep name | awk {'print $2'})
+tpm2 nvundefine 1 -S special_session.ctx -C p
+tpm2 flushcontext special_session.ctx
+#
+# Get cpHash with tcti=none
+#
+tpm2 nvundefine 1 -n $NV_INDEX_NAME --with-policydelete --cphash cp.hash \
+--tcti=none
+generate_policycphash
+setup_platform_policy
+#
+# Change platform auth to ensure using auth policy for authentication.
+#
+tpm2 nvdefine 1 -C p -s 32 -a "authread|authwrite|policydelete|platformcreate" \
+-L special_policy.digest
+tpm2 startauthsession -S special_session.ctx --policy-session
+tpm2 policycommandcode -S special_session.ctx TPM2_CC_NV_UndefineSpaceSpecial
+#
+# Auth platform with auth session this time
+#
+tpm2 changeauth -c p platformauth
+tpm2 nvundefine 1 -S special_session.ctx -P session:session.ctx
+tpm2 flushcontext session.ctx
+tpm2 flushcontext special_session.ctx
+tpm2 changeauth -c p -p platformauth
 
 #Test tpm2 nvcertify
 tpm2 createprimary -C o -c primary.ctx -Q

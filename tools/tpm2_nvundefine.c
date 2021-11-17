@@ -29,6 +29,7 @@ struct tpm_nvundefine_ctx {
     bool is_auth_hierarchy_specified;
 
     TPM2_HANDLE nv_index;
+    TPM2B_NAME precalc_nvname;
     bool has_policy_delete_set;
 
     /*
@@ -43,6 +44,7 @@ struct tpm_nvundefine_ctx {
     const char *rp_hash_path;
     TPM2B_DIGEST rp_hash;
     bool is_command_dispatch;
+    bool is_tcti_none;
     TPMI_ALG_HASH parameter_hash_algorithm;
 
     /*
@@ -66,12 +68,14 @@ static tool_rc nv_undefine(ESYS_CONTEXT *ectx) {
     tool_rc rc = ctx.has_policy_delete_set ?
 
         tpm2_nvundefinespecial(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-            ctx.policy_session.session, &ctx.cp_hash, &ctx.rp_hash,
-            ctx.parameter_hash_algorithm, ctx.aux_session_handle[0]) :
+            &ctx.precalc_nvname, ctx.policy_session.session, &ctx.cp_hash,
+            &ctx.rp_hash, ctx.parameter_hash_algorithm,
+            ctx.aux_session_handle[0]) :
 
         tpm2_nvundefine(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-            &ctx.cp_hash, &ctx.rp_hash, ctx.parameter_hash_algorithm,
-            ctx.aux_session_handle[0], ctx.aux_session_handle[1]);
+            &ctx.precalc_nvname, &ctx.cp_hash, &ctx.rp_hash,
+            ctx.parameter_hash_algorithm, ctx.aux_session_handle[0],
+            ctx.aux_session_handle[1]);
 
     return rc;
 }
@@ -123,11 +127,24 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
 
     /* Object #1 */
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-        TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+    tool_rc rc = tool_rc_success;
+    tpm2_handle_flags valid_handles =
+        TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P;
+    if (ctx.is_tcti_none) {
+         rc = tpm2_util_handle_from_optarg(ctx.auth_hierarchy.ctx_path,
+             &ctx.auth_hierarchy.object.handle, valid_handles) ?
+             tool_rc_success : tool_rc_option_error;
+
+         ctx.auth_hierarchy.object.tr_handle = (rc == tool_rc_success) ?
+            tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth_hierarchy.object.handle) : 0;
+     } else {
+         rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+             ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+             valid_handles);
+     }
+
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid handle authorization");
+        LOG_ERR("Invalid handle or authorization.");
         return rc;
     }
 
@@ -136,7 +153,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * has to be an admin policy session for undefinespecial.
      * We can at least check that it is a session.
      */
-    if (ctx.has_policy_delete_set) {
+    if (ctx.has_policy_delete_set && !ctx.is_tcti_none) {
         rc = tpm2_session_restore(ectx, ctx.policy_session.path, false,
                 &ctx.policy_session.session);
         if (rc != tool_rc_success) {
@@ -214,33 +231,95 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     return rc;
 }
 
-static tool_rc check_options(ESYS_CONTEXT *ectx) {
+static tool_rc check_options(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    /*
-     * Read the public portion of the NV index so we can ascertain if
-     * TPMA_NV_POLICYDELETE is set. This determines which command to use
-     * to undefine the space. Either undefine or undefinespecial.
-     */
-    TPM2B_NV_PUBLIC *nv_public = NULL;
-    tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to read the public part of NV index 0x%X", ctx.nv_index);
-        return rc;
+    ctx.is_tcti_none = flags.tcti_none ? true : false;
+    if (ctx.is_tcti_none && !ctx.cp_hash_path) {
+        LOG_ERR("If tcti is none, then cpHash path must be specified");
+        return tool_rc_option_error;
     }
 
-    ctx.has_policy_delete_set =
-        nv_public->nvPublic.attributes & TPMA_NV_POLICY_DELETE;
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     * is_tcti_none       [N]
+     * !rphash && !cphash [Y]
+     * !rphash && cphash  [N]
+     * rphash && !cphash  [Y]
+     * rphash && cphash   [Y]
+     */
+    ctx.is_command_dispatch = (ctx.is_tcti_none ||
+        (ctx.cp_hash_path && !ctx.rp_hash_path)) ? false : true;
 
-    bool is_platform_hierarchy_required = ctx.has_policy_delete_set ||
-        (nv_public->nvPublic.attributes & TPMA_NV_PLATFORMCREATE);
+    /*
+     * Peculiar to this and some other tools, the object (nvindex) name must
+     * be specified when only calculating the cpHash.
+     *
+     * This breaks the compatibility with the 4.X tools where in a real tcti
+     * is invoked to get a sapi handle to retrieve the params. Also this would
+     * imply that a real NV index ought to be defined even in the case of simply
+     * calculating the cpHash.
+     *
+     * To solve this conundrum, we can only mandate the requirement for the NV
+     * index name in case tcti is specified as none. If tcti is not specified as
+     * none we fall back to the old behavior of reading from a define NV index
+     * 
+     * Also, tcti is setup to a fake_tcti when tcti is specified "none" as the
+     * tool option affords TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI.
+     * 
+     * If NVindex name is not specified and tcti is not none, it is expected
+     * that the NV index is actually define. This behavior complies with the
+     * backwards compatibility with 4.X
+     */
+    bool is_nv_name_specified = ctx.precalc_nvname.size;
+    if (ctx.is_tcti_none && !is_nv_name_specified) {
+        LOG_ERR("Must specify the NVIndex name.");
+        return tool_rc_option_error;
+    }
 
-    Esys_Free(nv_public);
+    if (!ctx.is_tcti_none && is_nv_name_specified) {
+        LOG_ERR("Do not specify NVIndex name, it is directly read from NV");
+        return tool_rc_option_error;
+    }
 
+    bool is_platform_hierarchy_required = ctx.has_policy_delete_set;
+    if (!ctx.is_tcti_none) {
+        /*
+         * Read the public portion of the NV index so we can ascertain if
+         * TPMA_NV_POLICYDELETE is set. This determines which command to use
+         * to undefine the space. Either undefine or undefinespecial.
+         */
+        TPM2B_NV_PUBLIC *nv_public = NULL;
+        tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Failed to read the public part of NV index 0x%X", ctx.nv_index);
+            return rc;
+        }
+
+        if (ctx.has_policy_delete_set &&
+        !(nv_public->nvPublic.attributes & TPMA_NV_POLICY_DELETE)) {
+            LOG_ERR("Specified --with-policydelete but NV index attribute not set");
+            return tool_rc_option_error;
+        }
+        ctx.has_policy_delete_set =
+            nv_public->nvPublic.attributes & TPMA_NV_POLICY_DELETE;
+
+        is_platform_hierarchy_required = ctx.has_policy_delete_set ||
+            (nv_public->nvPublic.attributes & TPMA_NV_PLATFORMCREATE);
+
+        Esys_Free(nv_public);
+    }
+
+    /*
+     * When calculating cpHash with tcti=none, assumption is that the auth
+     * hierarchy will be specified as TPM2_RH_PLATFORM. Note that the default
+     * setting for auth hierarchy is TPM2_RH_OWNER.
+     */
     if (!ctx.is_auth_hierarchy_specified && is_platform_hierarchy_required) {
         ctx.auth_hierarchy.ctx_path = "platform";
     }
 
-    if (ctx.has_policy_delete_set && !ctx.policy_session.path) {
+    if (!ctx.is_tcti_none &&
+    (ctx.has_policy_delete_set && !ctx.policy_session.path)) {
         LOG_ERR("NV Spaces with attribute TPMA_NV_POLICY_DELETE require a "
                 "policy session to be specified via \"-S\"");
         return tool_rc_option_error;
@@ -288,6 +367,18 @@ static bool on_option(char key, char *value) {
     case 1:
         ctx.rp_hash_path = value;
         break;
+    case 2:
+        ctx.has_policy_delete_set = true;
+        break;
+    case 'n':
+        ctx.precalc_nvname.size = BUFFER_SIZE(TPM2B_NAME, name);
+        int q = tpm2_util_hex_to_byte_structure(value, &ctx.precalc_nvname.size,
+        ctx.precalc_nvname.name);
+        if (q) {
+            LOG_ERR("FAILED: %d", q);
+            return false;
+        }
+        break;
     }
 
     return true;
@@ -310,15 +401,17 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
  *          calculating cpHash and command is not dispatched.
  */
     const struct option topts[] = {
-        { "hierarchy", required_argument, NULL, 'C' },
-        { "auth",      required_argument, NULL, 'P' },
-        { "session",   required_argument, NULL, 'S' },
-        { "cphash",    required_argument, NULL,  0  },
-        { "rphash",    required_argument, NULL,  1  },
+        { "hierarchy",          required_argument, NULL, 'C' },
+        { "auth",               required_argument, NULL, 'P' },
+        { "session",            required_argument, NULL, 'S' },
+        { "cphash",             required_argument, NULL,  0  },
+        { "rphash",             required_argument, NULL,  1  },
+        { "with-policydelete",  no_argument,       NULL,  2  },
+        { "name",               required_argument, NULL, 'n' },
     };
 
-    *opts = tpm2_options_new("C:P:S:", ARRAY_LEN(topts), topts, on_option, on_arg,
-            0);
+    *opts = tpm2_options_new("C:P:S:n:", ARRAY_LEN(topts), topts, on_option,
+        on_arg, TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
 
     return *opts != NULL;
 }
@@ -330,7 +423,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 1. Process options
      */
-    tool_rc rc = check_options(ectx);
+    tool_rc rc = check_options(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }

@@ -343,14 +343,13 @@ tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_nvundefine(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
-    TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
+    TPM2B_NAME *precalc_nvname, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
     TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2, ESYS_TR shandle3);
 
-tool_rc tpm2_nvundefinespecial(ESYS_CONTEXT *esys_context,
-    tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
-    tpm2_session *policy_session,  TPM2B_DIGEST *cp_hash,
-    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
-    ESYS_TR shandle3);
+tool_rc tpm2_nvundefinespecial(ESYS_CONTEXT *esys_context, tpm2_loaded_object
+    *auth_hierarchy_obj, TPM2_HANDLE nv_index, TPM2B_NAME *precalc_nvname,
+    tpm2_session *policy_session,  TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle3);
 
 tool_rc tpm2_nvwrite(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nvindex,
