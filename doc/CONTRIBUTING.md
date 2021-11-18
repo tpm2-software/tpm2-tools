@@ -18,7 +18,7 @@ For maintainers, they either must have their pull request reviewed by another
 maintainer if possible, or leave the PR open for at least 24 hours, we consider
 this the window for comments.
 
-All tests must pass on Travis CI for the merge to occur.
+All tests must pass on Github Actions CI for the merge to occur.
 All changes must not introduce superfluous whitespace changes or whitespace errors.
 All changes should adhere to the coding standard documented under misc.
 
