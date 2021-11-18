@@ -16,7 +16,7 @@ jobs:
         env:
           DOCKER_IMAGE: ${{ matrix.docker_image }}
           CC: ${{ matrix.compiler }}
-        run: ./.ci/travis.run
+        run: ./.ci/ci.run
       - name: failure
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
@@ -35,7 +35,7 @@ jobs:
           CC: ${{ matrix.compiler }}
           TPM2_TSS_VERSION: master
           GIT_FULL_CLONE: true
-        run: ./.ci/travis.run
+        run: ./.ci/ci.run
       - name: failure
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
@@ -50,7 +50,7 @@ jobs:
           ENABLE_COVERAGE: true
           DOCKER_IMAGE: ubuntu-18.04
           CC: gcc
-        run: ./.ci/travis.run
+        run: ./.ci/ci.run
       - name: failure cat build logs
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
@@ -72,7 +72,7 @@ jobs:
           CC: gcc
           COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
           COVERITY_SUBMISSION_EMAIL: william.c.roberts@gmail.com
-        run: ./.ci/travis.run
+        run: ./.ci/ci.run
       - name: failure
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
