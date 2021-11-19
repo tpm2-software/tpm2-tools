@@ -66,7 +66,7 @@ jobs:
       - name: Launch Container
         env:
           REPO_BRANCH: ${{ github.ref }}
-          REPO_SLUG: ${{ github.repository }}
+          REPO_NAME: ${{ github.repository }}
           ENABLE_COVERITY: true
           DOCKER_IMAGE: ubuntu-18.04
           CC: gcc
