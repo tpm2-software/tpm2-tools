@@ -148,10 +148,11 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    /* Object #2 #/
     /*
-     * has to be an admin policy session for undefinespecial.
-     * We can at least check that it is a session.
+     * Object #2
+     *
+     * Must be a policy session satisfying the ADMIN role with policycommandcode
+     * TPM2_CC_NV_UndefineSpaceSpecial
      */
     if (ctx.has_policy_delete_set && !ctx.is_tcti_none) {
         rc = tpm2_session_restore(ectx, ctx.policy_session.path, false,
