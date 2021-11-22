@@ -68,6 +68,10 @@ This will work with direct TPM access, but note that internally this calls a
 
     The hash algorithm used in computation of the policy digest.
 
+  * **-G**, **\--key-algorithm**=_ALGORITHM_:
+
+    The symmetric algorithm used in parameter encryption/decryption.
+
   * **-c**, **\--key-context**=_OBJECT_:
 
     Set the tpmkey and bind objects to be the same.
