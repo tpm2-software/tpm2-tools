@@ -8,7 +8,7 @@ Only certain algorithms will be accepted by the TPM, based on usage and conditio
 ## Simple specifiers
 These are strings with no additional specification data. When creating objects,
 non-specified portions of an object are assumed to defaults. You can find the
-list of known "Simple Specifiers Below".
+list of known "Simple Specifiers" below.
 
 ### Asymmetric
   * rsa
