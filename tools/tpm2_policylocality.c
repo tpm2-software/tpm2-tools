@@ -54,15 +54,15 @@ static bool on_arg(int argc, char **argv) {
         return false;
     }
 
-    if (strcmp(argv[0], "zero")) {
+    if (strcmp(argv[0], "zero") == 0) {
         ctx.locality = TPMA_LOCALITY_TPM2_LOC_ZERO;
-    } else if (strcmp(argv[0], "one")) {
+    } else if (strcmp(argv[0], "one") == 0) {
         ctx.locality = TPMA_LOCALITY_TPM2_LOC_ONE;
-    } else if (strcmp(argv[0], "two")) {
+    } else if (strcmp(argv[0], "two") == 0) {
         ctx.locality = TPMA_LOCALITY_TPM2_LOC_TWO;
-    } else if (strcmp(argv[0], "three")) {
+    } else if (strcmp(argv[0], "three") == 0) {
         ctx.locality = TPMA_LOCALITY_TPM2_LOC_THREE;
-    } else if (strcmp(argv[0], "four")) {
+    } else if (strcmp(argv[0], "four") == 0) {
         ctx.locality = TPMA_LOCALITY_TPM2_LOC_FOUR;
     } else {
         bool result = tpm2_util_string_to_uint8(argv[0], &ctx.locality);
