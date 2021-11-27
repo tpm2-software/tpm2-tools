@@ -58,8 +58,8 @@ These options for creating the TPM entity:
     When **-L** is specified for adding policy based authorization information
     AND no string password is specified, the  attribute `TPMA_OBJECT_USERWITHAUTH`
     is cleared unless an explicit choice is made by setting of the attribute
-    with **-a** option. This prevents creation of objects with inadvertant auth
-    model where in user intended to enforce a policy but inadvertantly created
+    with **-a** option. This prevents creation of objects with inadvertent auth
+    model where in user intended to enforce a policy but inadvertently created
     an object with empty auth which can be used instead of policy authorization.
 
   * **-i**, **\--sealing-input**=_FILE_ or _STDIN_:
