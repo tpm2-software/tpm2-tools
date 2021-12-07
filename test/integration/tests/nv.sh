@@ -309,4 +309,20 @@ if [ "$check" != "$expected" ]; then
 	exit 1
 fi
 
+#
+# Test for TPM2_NV_ReadPublic cpHash output
+#
+tpm2 clear
+TPM2_CC_NV_ReadPublic="00000169"
+tpm2 nvdefine 1
+NV_INDEX_NAME=$(tpm2 nvreadpublic 1| grep name | awk {'print $2'})
+tpm2 nvreadpublic 1 --cphash cp.hash
+echo -ne $TPM2_CC_NV_ReadPublic$NV_INDEX_NAME | xxd -r -p | openssl dgst -sha256 -binary -out test.bin
+cmp -i 2:0 cp.hash test.bin
+if [ $? != 0 ]; then
+	echo "cpHash doesn't match calculated value"
+	exit 1
+fi
+tpm2 clear
+
 exit 0

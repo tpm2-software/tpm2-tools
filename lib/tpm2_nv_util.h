@@ -26,21 +26,10 @@
  *  tool_rc indicating status.
  */
 static inline tool_rc tpm2_util_nv_read_public(ESYS_CONTEXT *context,
-        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC **nv_public) {
+        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC **nv_public,
+        TPM2B_DIGEST *cp_hash) {
 
-    ESYS_TR tr_object;
-    tool_rc rc = tpm2_from_tpm_public(context, nv_index, ESYS_TR_NONE,
-            ESYS_TR_NONE, ESYS_TR_NONE, &tr_object);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    rc = tpm2_nv_readpublic(context, tr_object, nv_public, NULL);
-    tool_rc tmp_rc = tpm2_close(context, &tr_object);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-    }
-    return rc;
+    return tpm2_nv_readpublic(context, nv_index, nv_public, 0, cp_hash);
 }
 
 /**
@@ -177,7 +166,7 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
         max_data_size= tpm2_nv_util_max_allowed_nv_size(ectx, false);
 
         TPM2B_NV_PUBLIC *nv_public = NULL;
-        rc = tpm2_util_nv_read_public(ectx, nv_index, &nv_public);
+        rc = tpm2_util_nv_read_public(ectx, nv_index, &nv_public, 0);
         if (rc != tool_rc_success) {
             goto out;
         }

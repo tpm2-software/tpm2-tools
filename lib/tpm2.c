@@ -98,18 +98,60 @@ tool_rc tpm2_close(ESYS_CONTEXT *esys_context, ESYS_TR *rsrc_handle) {
     return tool_rc_success;
 }
 
-tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR nv_index,
-        TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name) {
+tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, TPMI_RH_NV_INDEX nv_index,
+    TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name, TPM2B_DIGEST *cp_hash) {
 
-    TSS2_RC rval = Esys_NV_ReadPublic(esys_context, nv_index,
+    ESYS_TR esys_tr_nv_index;
+    TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE, &esys_tr_nv_index);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = NULL;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        rval = Tss2_Sys_NV_ReadPublic_Prepare(sys_context, nv_index);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_NV_ReadPublic_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(esys_context, esys_tr_nv_index, &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_nvreadpublic_free_name1;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(TPM2_ALG_SHA256);
+        rc = tpm2_sapi_getcphash(sys_context, name1, 0, 0, TPM2_ALG_SHA256,
+            cp_hash);
+
+tpm2_nvreadpublic_free_name1:
+        Esys_Free(name1);
+        goto tpm2_nvreadpublic_skip_esapi_call;
+    }
+
+    rval = Esys_NV_ReadPublic(esys_context, esys_tr_nv_index,
             ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, nv_public, nv_name);
-
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_ReadPublic, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_nvreadpublic_skip_esapi_call:
+    //rc = tpm2_close(context, &esys_tr_nv_index);
+    return rc;
 }
 
 tool_rc tpm2_getcap(ESYS_CONTEXT *esys_context, TPM2_CAP capability,
