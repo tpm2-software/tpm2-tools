@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 
+#include "files.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_nv_util.h"
@@ -9,12 +10,15 @@
 
 typedef struct tpm2_nvreadpublic_ctx tpm2_nvreadpublic_ctx;
 struct tpm2_nvreadpublic_ctx {
+
     TPMI_RH_NV_INDEX nv_index;
+    char *cp_hash_path;
 };
 
 static tpm2_nvreadpublic_ctx ctx;
 
-static tool_rc print_nv_public(ESYS_CONTEXT *context, TPMI_RH_NV_INDEX index, TPM2B_NV_PUBLIC *nv_public) {
+static tool_rc print_nv_public(ESYS_CONTEXT *context, TPMI_RH_NV_INDEX index,
+    TPM2B_NV_PUBLIC *nv_public) {
 
     ESYS_TR tr_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_tr_from_tpm_public(context, index,
@@ -82,15 +86,25 @@ static tool_rc print_nv_public(ESYS_CONTEXT *context, TPMI_RH_NV_INDEX index, TP
 
 static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
 
+    if (ctx.cp_hash_path && ctx.nv_index == 0) {
+        LOG_ERR("Must specify NV Index to calculate cpHash");
+        return tool_rc_option_error;
+    }
 
+    tool_rc rc = tool_rc_success;
     TPMS_CAPABILITY_DATA *capability_data = NULL;
     if (ctx.nv_index == 0) {
-        tool_rc rc = tpm2_getcap(context, TPM2_CAP_HANDLES, TPM2_HT_NV_INDEX << 24,
-                TPM2_PT_NV_INDEX_MAX, NULL, &capability_data);
+        rc = tpm2_getcap(context, TPM2_CAP_HANDLES,
+            TPM2_HT_NV_INDEX << 24, TPM2_PT_NV_INDEX_MAX, NULL,
+            &capability_data);
         if (rc != tool_rc_success) {
             return rc;
         }
     } else {
+        /*
+         * This path is taken for calculating cpHash as NV index cannot be 0
+         * with cpHash option specified
+         */
         capability_data = calloc(1, sizeof(*capability_data));
         if (!capability_data) {
             LOG_ERR("oom");
@@ -99,29 +113,53 @@ static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
         capability_data->data.handles.count = 1;
         capability_data->data.handles.handle[0] = ctx.nv_index;
     }
+
     UINT32 i;
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    TPM2B_DIGEST *cphash = ctx.cp_hash_path ? &cp_hash : 0;
     for (i = 0; i < capability_data->data.handles.count; i++) {
         TPMI_RH_NV_INDEX index = capability_data->data.handles.handle[i];
-
         TPM2B_NV_PUBLIC *nv_public;
-        tool_rc rc = tpm2_util_nv_read_public(context, index, &nv_public);
+        rc = tpm2_util_nv_read_public(context, index, &nv_public, cphash);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to read the public part of NV index 0x%X", index);
             free(capability_data);
             return rc;
         }
 
-        rc = print_nv_public(context, index, nv_public);
-        free(nv_public);
-        tpm2_tool_output("\n");
-        if (rc != tool_rc_success) {
-            free(capability_data);
-            return rc;
+        if (!ctx.cp_hash_path) {
+            rc = print_nv_public(context, index, nv_public);
+            free(nv_public);
+            tpm2_tool_output("\n");
+            if (rc != tool_rc_success) {
+                free(capability_data);
+                return rc;
+            }
         }
     }
 
+    if (ctx.cp_hash_path) {
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+    }
+
+
     free(capability_data);
-    return tool_rc_success;
+    return rc;
+}
+
+static bool on_option(char key, char *value) {
+
+    bool result = true;
+    switch (key) {
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
+    }
+
+    return result;
 }
 
 static bool on_arg(int argc, char **argv) {
@@ -131,10 +169,13 @@ static bool on_arg(int argc, char **argv) {
 
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    *opts = tpm2_options_new(NULL, 0, NULL, NULL,
-            on_arg, 0);
+    static const struct option topts[] = {
+        { "cphash", required_argument, NULL,  0  },
+    };
 
-    return *opts != NULL;
+    *opts = tpm2_options_new(0, ARRAY_LEN(topts), topts, on_option, on_arg, 0);
+
+    return *opts != 0;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
@@ -145,4 +186,5 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("nvreadpublic", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)
+TPM2_TOOL_REGISTER("nvreadpublic", tpm2_tool_onstart, tpm2_tool_onrun, NULL,
+    NULL)

@@ -20,8 +20,8 @@ tool_rc tpm2_tr_deserialize(ESYS_CONTEXT *esys_context, uint8_t const *buffer,
 tool_rc tpm2_tr_serialize(ESYS_CONTEXT *esys_context, ESYS_TR object,
         uint8_t **buffer, size_t *buffer_size);
 
-tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR nv_index,
-        TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name);
+tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, TPMI_RH_NV_INDEX nv_index,
+    TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,
         TPM2B_PUBLIC **out_public, TPM2B_NAME **name,
