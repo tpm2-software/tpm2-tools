@@ -10,12 +10,45 @@
 
 typedef struct tpm2_nvreadpublic_ctx tpm2_nvreadpublic_ctx;
 struct tpm2_nvreadpublic_ctx {
-
+    /*
+     * Inputs
+     */
     TPMI_RH_NV_INDEX nv_index;
+    TPMS_CAPABILITY_DATA *capability_data;
+
+    /*
+     * Outputs
+     */
+    TPM2B_NV_PUBLIC **nv_public_list;
+  
+    /*
+     * Parameter hashes
+     */
     char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
 static tpm2_nvreadpublic_ctx ctx;
+
+static tool_rc nv_readpublic(ESYS_CONTEXT *ectx) {
+
+    tool_rc rc = tool_rc_success;
+    uint32_t i;
+    for (i = 0; i < ctx.capability_data->data.handles.count; i++) {
+        rc = tpm2_util_nv_read_public(ectx,
+            ctx.capability_data->data.handles.handle[i], &ctx.nv_public_list[i],
+            ctx.cphash);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Failed to read the public part of NV index 0x%X",
+                ctx.capability_data->data.handles.handle[i]);
+            break;
+        }
+    }
+
+    return rc;
+}
 
 static tool_rc print_nv_public(ESYS_CONTEXT *context, TPMI_RH_NV_INDEX index,
     TPM2B_NV_PUBLIC *nv_public) {
@@ -84,70 +117,134 @@ static tool_rc print_nv_public(ESYS_CONTEXT *context, TPMI_RH_NV_INDEX index,
     return tool_rc_success;
 }
 
-static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    uint32_t i;
+    for (i = 0; i < ctx.capability_data->data.handles.count; i++) {
+        if (ctx.is_command_dispatch) {
+            rc = print_nv_public(ectx,
+                ctx.capability_data->data.handles.handle[i],
+                ctx.nv_public_list[i]);
+            tpm2_tool_output("\n");
+            if (rc != tool_rc_success) {
+                return rc;
+            }
+        }
+    }
+
+    return rc;
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations dependent on loaded objects
+     */
+    tool_rc rc = tool_rc_success;
+    if (ctx.nv_index == 0 && ctx.is_command_dispatch) {
+        rc = tpm2_getcap(ectx, TPM2_CAP_HANDLES,
+            TPM2_HT_NV_INDEX << 24, TPM2_PT_NV_INDEX_MAX, NULL,
+            &ctx.capability_data);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+    }
+    
+    if (ctx.nv_index != 0 || !ctx.is_command_dispatch) {
+        /*
+         * This path is taken for calculating cpHash as NV index cannot be 0
+         * with cpHash option specified
+         */
+        ctx.capability_data = calloc(1, sizeof(*ctx.capability_data));
+        if (!ctx.capability_data) {
+            LOG_ERR("oom");
+            return tool_rc_general_error;
+        }
+        ctx.capability_data->data.handles.count = 1;
+        ctx.capability_data->data.handles.handle[0] = ctx.nv_index;
+    }
+
+    /*
+     * Allocate space for holding NV public data for all indices.
+     * Individual index NV public structure is allocated by Esys_NV_ReadPublic.
+     */
+    ctx.nv_public_list =
+    malloc(ctx.capability_data->data.handles.count * sizeof(TPM2B_NV_PUBLIC*));
+    /*
+     * When calculating cpHash only, Esys_NV_Readpublic isn't invoked and so
+     * allocate space for one index.
+     */
+    if (!ctx.is_command_dispatch) {
+        ctx.nv_public_list[0] = malloc(sizeof(TPM2B_NV_PUBLIC));
+    }
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    return rc;
+}
+
+static tool_rc check_options(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     if (ctx.cp_hash_path && ctx.nv_index == 0) {
         LOG_ERR("Must specify NV Index to calculate cpHash");
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tool_rc_success;
-    TPMS_CAPABILITY_DATA *capability_data = NULL;
-    if (ctx.nv_index == 0) {
-        rc = tpm2_getcap(context, TPM2_CAP_HANDLES,
-            TPM2_HT_NV_INDEX << 24, TPM2_PT_NV_INDEX_MAX, NULL,
-            &capability_data);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-    } else {
-        /*
-         * This path is taken for calculating cpHash as NV index cannot be 0
-         * with cpHash option specified
-         */
-        capability_data = calloc(1, sizeof(*capability_data));
-        if (!capability_data) {
-            LOG_ERR("oom");
-            return tool_rc_general_error;
-        }
-        capability_data->data.handles.count = 1;
-        capability_data->data.handles.handle[0] = ctx.nv_index;
-    }
+    return tool_rc_success;
+}
 
-    UINT32 i;
-    TPM2B_DIGEST cp_hash = { .size = 0 };
-    TPM2B_DIGEST *cphash = ctx.cp_hash_path ? &cp_hash : 0;
-    for (i = 0; i < capability_data->data.handles.count; i++) {
-        TPMI_RH_NV_INDEX index = capability_data->data.handles.handle[i];
-        TPM2B_NV_PUBLIC *nv_public;
-        rc = tpm2_util_nv_read_public(context, index, &nv_public, cphash);
-        if (rc != tool_rc_success) {
-            LOG_ERR("Failed to read the public part of NV index 0x%X", index);
-            free(capability_data);
-            return rc;
-        }
+static bool on_arg(int argc, char **argv) {
 
-        if (!ctx.cp_hash_path) {
-            rc = print_nv_public(context, index, nv_public);
-            free(nv_public);
-            tpm2_tool_output("\n");
-            if (rc != tool_rc_success) {
-                free(capability_data);
-                return rc;
-            }
-        }
-    }
-
-    if (ctx.cp_hash_path) {
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-        }
-    }
-
-
-    free(capability_data);
-    return rc;
+    return on_arg_nv_index(argc, argv, &ctx.nv_index);
 }
 
 static bool on_option(char key, char *value) {
@@ -162,11 +259,6 @@ static bool on_option(char key, char *value) {
     return result;
 }
 
-static bool on_arg(int argc, char **argv) {
-
-    return on_arg_nv_index(argc, argv, &ctx.nv_index);
-}
-
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
@@ -178,13 +270,67 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != 0;
 }
 
-static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
+    /* opts is unused, avoid compiler warning */
     UNUSED(flags);
 
-    return nv_readpublic(context);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = nv_readpublic(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
+
+}
+
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Free objects
+     */
+    uint32_t i = 0;
+    for (i = 0; i < ctx.capability_data->data.handles.count; i++) {
+        free(ctx.nv_public_list[i]);
+    }
+    free(ctx.nv_public_list);
+    free(ctx.capability_data);
+
+    /*
+     * 2. Close authorization sessions
+     */
+
+    /*
+     * 3. Close auxiliary sessions
+     */
+
+    return tool_rc_success;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("nvreadpublic", tpm2_tool_onstart, tpm2_tool_onrun, NULL,
-    NULL)
+TPM2_TOOL_REGISTER("nvreadpublic", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, NULL)
