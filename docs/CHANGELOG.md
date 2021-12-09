@@ -1,9 +1,12 @@
 ## Changelog
 
 ### next
+
   * tpm2_nvreadpublic:
       - Added option **\--cphash**=_FILE_ to specify file path to record hash
         of the command parameters. This is commonly termed as cpHash.
+      - Added option **\--rphash**=_FILE_ to specify file path to record the
+        hash of the response parameters. This is commonly termed as rpHash.
 
   * tpm2_nvundefine:
       - Added option **\--rphash**=_FILE_ to specify file path to record the

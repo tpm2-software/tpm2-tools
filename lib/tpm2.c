@@ -100,7 +100,7 @@ tool_rc tpm2_close(ESYS_CONTEXT *esys_context, ESYS_TR *rsrc_handle) {
 
 tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, TPMI_RH_NV_INDEX nv_index,
     TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name, TPM2B_DIGEST *cp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR esys_tr_nv_index;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -111,17 +111,16 @@ tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, TPMI_RH_NV_INDEX nv_index
     }
 
     tool_rc rc = tool_rc_success;
-    if (cp_hash && cp_hash->size) {
-        /*
-         * Need sys_context to be able to calculate CpHash
-         */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+    TSS2_SYS_CONTEXT *sys_context = 0;
+    if ((cp_hash && cp_hash->size) || (rp_hash && rp_hash->size)) {
         rc = tpm2_getsapicontext(esys_context, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
             return rc;
         }
+    }
 
+    if (cp_hash && cp_hash->size) {
         rval = Tss2_Sys_NV_ReadPublic_Prepare(sys_context, nv_index);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_NV_ReadPublic_Prepare, rval);
@@ -139,7 +138,9 @@ tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, TPMI_RH_NV_INDEX nv_index
 
 tpm2_nvreadpublic_free_name1:
         Esys_Free(name1);
-        goto tpm2_nvreadpublic_skip_esapi_call;
+        if (rc != tool_rc_success || (rp_hash && !rp_hash->size)) {
+            goto tpm2_nvreadpublic_skip_esapi_call;
+        }
     }
 
     rval = Esys_NV_ReadPublic(esys_context, esys_tr_nv_index,
@@ -149,8 +150,12 @@ tpm2_nvreadpublic_free_name1:
         return tool_rc_from_tpm(rval);
     }
 
+    if (rp_hash && rp_hash->size) {
+        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+            parameter_hash_algorithm);
+    }
+
 tpm2_nvreadpublic_skip_esapi_call:
-    //rc = tpm2_close(context, &esys_tr_nv_index);
     return rc;
 }
 

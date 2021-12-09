@@ -290,7 +290,7 @@ static tool_rc check_options(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
          * to undefine the space. Either undefine or undefinespecial.
          */
         TPM2B_NV_PUBLIC *nv_public = NULL;
-        tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public,
+        tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public, 0,
             0, 0);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to read the public part of NV index 0x%X", ctx.nv_index);
