@@ -28,10 +28,11 @@
 static inline tool_rc tpm2_util_nv_read_public(ESYS_CONTEXT *context,
     TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC **nv_public,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
-    TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle1, ESYS_TR shandle2,
+    ESYS_TR shandle3) {
 
     return tpm2_nv_readpublic(context, nv_index, nv_public, 0, cp_hash, rp_hash,
-        parameter_hash_algorithm);
+        parameter_hash_algorithm, shandle1, shandle2, shandle3);
 }
 
 /**
@@ -168,7 +169,8 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
         max_data_size= tpm2_nv_util_max_allowed_nv_size(ectx, false);
 
         TPM2B_NV_PUBLIC *nv_public = NULL;
-        rc = tpm2_util_nv_read_public(ectx, nv_index, &nv_public, 0, 0, 0);
+        rc = tpm2_util_nv_read_public(ectx, nv_index, &nv_public, 0, 0, 0,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
         if (rc != tool_rc_success) {
             goto out;
         }
