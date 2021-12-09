@@ -22,7 +22,8 @@ tool_rc tpm2_tr_serialize(ESYS_CONTEXT *esys_context, ESYS_TR object,
 
 tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, TPMI_RH_NV_INDEX nv_index,
     TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name, TPM2B_DIGEST *cp_hash,
-    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+    ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3);
 
 tool_rc tpm2_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,
         TPM2B_PUBLIC **out_public, TPM2B_NAME **name,

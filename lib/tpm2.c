@@ -100,7 +100,8 @@ tool_rc tpm2_close(ESYS_CONTEXT *esys_context, ESYS_TR *rsrc_handle) {
 
 tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, TPMI_RH_NV_INDEX nv_index,
     TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name, TPM2B_DIGEST *cp_hash,
-    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+    TPM2B_DIGEST *rp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+    ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3) {
 
     ESYS_TR esys_tr_nv_index;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -143,8 +144,8 @@ tpm2_nvreadpublic_free_name1:
         }
     }
 
-    rval = Esys_NV_ReadPublic(esys_context, esys_tr_nv_index,
-            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, nv_public, nv_name);
+    rval = Esys_NV_ReadPublic(esys_context, esys_tr_nv_index, shandle1,
+        shandle2, shandle3, nv_public, nv_name);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_ReadPublic, rval);
         return tool_rc_from_tpm(rval);

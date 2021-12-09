@@ -57,6 +57,11 @@ Display metadata for all defined NV indices. Metadata includes:
     File path to record the hash of the response parameters. This is commonly
     termed as rpHash.
 
+  * **-S**, **\--session**=_POLICY_SESSION_:
+
+    Specify an auxiliary session for auditing and or encryption/decryption of
+    the parameters.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
