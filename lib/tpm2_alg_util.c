@@ -314,14 +314,33 @@ static alg_parser_rc handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_ECC;
 
-    size_t len = ext ? strlen(ext) : 0;
-    if (len == 0 || ext[0] == '\0') {
-        ext = "256";
-    }
-
     TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
     e->kdf.scheme = TPM2_ALG_NULL;
+    e->curveID = TPM2_ECC_NONE;
 
+    /* handle default ecc curve (NIST_P256) */
+    if (ext == NULL || ext[0] == '\0') {
+        e->curveID = TPM2_ECC_NIST_P256;
+        return alg_parser_rc_continue;
+    }
+
+    if (ext[0] == '_') {
+        /* skip separator */
+        ext++;
+        if (!strcmp(ext, "sm2_p256") || !strcmp(ext, "sm2")) {
+            e->curveID = TPM2_ECC_SM2_P256;
+            return alg_parser_rc_continue;
+        } else if (strncmp(ext, "nist_p", 6)) {
+            return alg_parser_rc_error;
+        }
+        ext += 6;
+        if (ext[0] == '\0') {
+            return alg_parser_rc_error;
+        }
+        /* fall through to NIST curves */
+    }
+
+    /* parse NIST curves */
     if (!strncmp(ext, "192", 3)) {
         e->curveID = TPM2_ECC_NIST_P192;
         ext += 3;
@@ -337,8 +356,6 @@ static alg_parser_rc handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
     } else if (!strncmp(ext, "521", 3)) {
         e->curveID = TPM2_ECC_NIST_P521;
         ext += 3;
-    } else {
-        e->curveID = TPM2_ECC_NIST_P256;
     }
 
     /* ecc extension should be consumed at this point */
@@ -364,6 +381,16 @@ static alg_parser_rc handle_camellia(const char *ext, TPM2B_PUBLIC *public) {
 
     TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
     s->algorithm = TPM2_ALG_CAMELLIA;
+
+    return handle_sym_common(ext, s);
+}
+
+static alg_parser_rc handle_sm4(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_SYMCIPHER;
+
+    TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
+    s->algorithm = TPM2_ALG_SM4;
 
     return handle_sym_common(ext, s);
 }
@@ -405,6 +432,9 @@ static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
     } else if (!strncmp(object, "camellia", 8)) {
         object += 8;
         return handle_camellia(object, public);
+    } else if (!strncmp(object, "sm4", 3)) {
+        object += (object[3] == '_') ? 4 : 3;
+        return handle_sm4(object, public);
     } else if (!strcmp(object, "hmac")) {
         return handle_hmac(public);
     } else if (!strcmp(object, "xor")) {
@@ -485,6 +515,10 @@ static alg_parser_rc handle_asym_detail(const char *detail,
         } else if (!strncmp(detail, "camellia", 8)) {
             s->algorithm = TPM2_ALG_CAMELLIA;
             return handle_sym_common(detail + 8, s);
+        } else if (!strncmp(detail, "sm4", 3)) {
+            s->algorithm = TPM2_ALG_SM4;
+            detail += (detail[3] == '_') ? 4 : 3;
+            return handle_sym_common(detail, s);
         } else if (!strcmp(detail, "null")) {
             s->algorithm = TPM2_ALG_NULL;
             return alg_parser_rc_done;
@@ -959,8 +993,9 @@ tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *ectx,
     return tool_rc_success;
 }
 
-tool_rc tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
-        char *auth_policy,  TPMA_OBJECT def_attrs, TPM2B_PUBLIC *public) {
+tool_rc tpm2_alg_util_public_init(const char *alg_details, const char *name_halg,
+        char *attrs, char *auth_policy,  TPMA_OBJECT def_attrs,
+        TPM2B_PUBLIC *public) {
 
     memset(public, 0, sizeof(*public));
 

@@ -71,14 +71,16 @@ general format for specifying this data:
   * aes192`<mode>` - Same as aes128`<mode>`, except for a 192 bit key size.
   * aes256`<mode>` - Same as aes128`<mode>`, except for a 256 bit key size.
   * ecc - Elliptical Curve, defaults to ecc256.
-  * ecc192 - 192 bit ECC
-  * ecc224 - 224 bit ECC
-  * ecc256 - 256 bit ECC
-  * ecc384 - 384 bit ECC
-  * ecc521 - 521 bit ECC
+  * ecc192 or ecc_nist_p192 - 192 bit ECC NIST curve
+  * ecc224 or ecc_nist_p224 - 224 bit ECC NIST curve
+  * ecc256 or ecc_nist_p256 - 256 bit ECC NIST curve
+  * ecc384 or ecc_nist_p384 - 384 bit ECC NIST curve
+  * ecc521 or ecc_nist_p521 - 521 bit ECC NIST curve
+  * ecc_sm2 or ecc_sm2_p256 - 256 bit SM2 curve
   * rsa - Default RSA: rsa2048
   * rsa1024 - RSA with 1024 bit keysize.
   * rsa2048 - RSA with 2048 bit keysize.
+  * rsa3072 - RSA with 3072 bit keysize.
   * rsa4096 - RSA with 4096 bit keysize.
 
 ### Scheme Specifiers

@@ -185,8 +185,9 @@ tool_rc tpm2_alg_util_handle_rsa_ext_alg(const char *alg_spec,
  * @param public
  * @return
  */
-tool_rc tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
-        char *auth_policy,  TPMA_OBJECT def_attrs, TPM2B_PUBLIC *public);
+tool_rc tpm2_alg_util_public_init(const char *alg_details, const char *name_halg,
+        char *attrs, char *auth_policy,  TPMA_OBJECT def_attrs,
+        TPM2B_PUBLIC *public);
 
 /**
  * Returns an ECC curve as a friendly name.
