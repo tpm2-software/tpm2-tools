@@ -42,7 +42,8 @@ Refer to:
   * **-G**, **\--key-algorithm**=_ALGORITHM_:
 
     The endorsement key algorithm. Supports:
-    * **ecc** - An P256 key.
+    * **ecc** - A NIST_P256 key by default. Alternative curves can be selected
+      using algorithm specifiers (e.g. **ecc384** or **ecc_nist_p384**) .
     * **rsa** - An RSA2048 key.
     * **keyedhash** - hmac key.
 
@@ -81,9 +82,14 @@ the various known TCTI modules.
 
 # EXAMPLES
 
-### Create an Endorsement Key and make it persistent
+### Create an RSA Endorsement Key and make it persistent
 ```bash
 tpm2_createek -P abc123 -w abc123 -c 0x81010001 -G rsa -u ek.pub
+```
+
+### Create an ECC NIST_P384 Endorsement Key and make it persistent
+```bash
+tpm2_createek -G ecc384 -c 0x81010002
 ```
 
 ### Create a transient Endorsement Key, flush it, and reload it.
