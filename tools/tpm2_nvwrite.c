@@ -226,8 +226,8 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
     if (!ctx.is_tcti_none) {
         TPM2B_NV_PUBLIC *nv_public = NULL;
-        rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public, 0, 0, 0,
-            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
+        rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, 0, &nv_public, 0, 0,
+            0, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to read NVRAM public area at index 0x%X",\
                 ctx.nv_index);

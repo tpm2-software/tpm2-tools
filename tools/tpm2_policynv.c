@@ -188,8 +188,8 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * Ensure that NV index is large enough to compare the size of input data.
      */
     TPM2B_NV_PUBLIC *nv_public = NULL;
-    tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public, 0, 0,
-        0, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
+    tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, 0, &nv_public, 0,
+        0, 0, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rc != tool_rc_success) {
         LOG_ERR("Failed to access NVRAM public area at index 0x%X",
                 ctx.nv_index);
