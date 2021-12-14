@@ -62,6 +62,11 @@ Display metadata for all defined NV indices. Metadata includes:
     Specify an auxiliary session for auditing and or encryption/decryption of
     the parameters.
 
+  * **-n**, **\--name**=_FILE_:
+
+    The name of the NV index that must be provided when only calculating the
+    cpHash without actually dispatching the command to the TPM.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)

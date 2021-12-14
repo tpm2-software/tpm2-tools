@@ -379,7 +379,7 @@ static tool_rc check_options(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tool_rc rc = tool_rc_success;
     TPM2B_NV_PUBLIC *nv_public = 0;
     if (!ctx.is_tcti_none) {
-        rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public, 0, 0, 0,
+        rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, 0, &nv_public, 0, 0, 0,
         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to access NVRAM public area at index 0x%X",
