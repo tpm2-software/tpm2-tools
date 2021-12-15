@@ -2,12 +2,11 @@
 
 All tpm2-tools project releases before 4.0 is considered legacy and is or will
 be reaching end of life. Releases greater than 4.0 will always
-**will be backwards compatible**. Thus, based on the semver.org rules outlined,
-pretty much dictates we will never be off of a 4.X version number. Because of
-this, master will always be the *next* release, and bugfix only releases can be
-branched off of *master* as needed. These patch level branches will be supported
-on an as needed bases, since we don't have dedicated stable maintainers. The
-majority of development will occur on *master* with tagged release numbers
+**will be backwards compatible**.
+
+Release will be conducted off the master branch and feature/bugfix only releas branches
+can be created off of *master* and maintained as needed.
+The majority of development will occur on *master* with tagged release numbers
 following semver.org recommendations. This page explicitly does not formalize an
 LTS support timeline, and that is intentional. The release schedules and
 required features are driven by community involvement and needs. However,
