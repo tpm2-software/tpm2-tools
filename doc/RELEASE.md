@@ -1,3 +1,11 @@
+# Release Process
+This document describes the overall release process of the tpm2-tools project.
+
+# Milestones
+All releases should have a milestone used to track the release. If the release version is not known, as covered in [Version Numbers](#Version Numbers),
+then an "x" may be used for the unknown number, or the generic term "next" may be used. The description field of the milestone will be used to record
+the CHANGELOG for that release. See [CHANGELOG Update](#CHANGELOG Update) for details.
+
 # Release Lifecycle
 
 All tpm2-tools project releases before 4.0 is considered legacy and is or will
@@ -42,32 +50,14 @@ When a release is cut, the process is the same as a Release Candidate (RC), with
 it is not marked as "pre-release" on GitHub. The release notes should include everything from the
 last release to the latest release.
 
-## Updating the CHANGELOG for release candidates and final releases
-
-When a first release candidate is cut, a new entry will be added to the CHANGELOG file. This
-entry will have the release candidate version and the date on which the release candidate was
-released. The entry will list all the changes that happened between the latest final release
-and the first release candidate.
-
-The commit that made the change will be tagged with a release version and a -rc0 suffix as an
-indication that is not a final release but a first release candidate. If after a week the -rc
-has no changes, then a final release can be made as explained above. But if changes are made,
-then a new releases candidate will be released and the -rc suffix will be incremented.
-
-For each release candidate, the changes that happened between the previous release candidate
-will be appended to the CHANGELOG entry, and both the release candidate version and the date
-of the release will be updated to reflect the latest release candidate.
-
-The commit that updated the CHANGELOG entry will be tagged as the latest release candidate.
-
-When a final version will be released, there will not be changes to append to the CHANGELOG
-entry since otherwise a new release candidate should be cut. So only the release version and
-date should be updated in the CHANGELOG.
+# CHANGELOG Update
+Before tagging the repository with the release version, the maintainer MUST update the CHANGELOG file with the contents from the description field
+from the corresponding release milestone and update any missing version string details in the CHANGELOG and milestone entry.
 
 The commit that updated the CHANGELOG entry will be tagged as the final release.
 
 For a final release, change the version to the final release version (i.e: 3.0.5-rc3 -> 3.0.5) and
-update the date. The commit for this change will be tagged as $version.
+update the date. The commit for this change will be tagged as the release version.
 
 ## Testing
 The tools code **MUST** pass the Github Actions CI testing and have a clean
@@ -85,7 +75,8 @@ The steps, in order, required to make a release.
 - Ensure [Github Actions CI](https://github.com/tpm2-software/tpm2-tools/actions) has conducted a passing build of
   HEAD.
 
-- Update version and date information in [CHANGELOG.md](CHANGELOG.md) **and** commit.
+- Update version and date information in [CHANGELOG.md](CHANGELOG.md) **and** commit per the
+  [CHANGELOG Update](#CHANGELOG Update) instructions.
 
 - Create a signed tag for the release. Use the version number as the title line in the tag commit
   message and use the [CHANGELOG.md](CHANGELOG.md) contents for that release as the body.
