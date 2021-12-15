@@ -18,10 +18,6 @@ the next release.
 - [2.X](https://github.com/tpm2-software/tpm2-tools/tree/2.X)
 - [3.0.X](https://github.com/tpm2-software/tpm2-tools/tree/3.0.X)
 
-## Near End of Life
-- [3.0.X](https://github.com/tpm2-software/tpm2-tools/tree/3.0.X): EOL after
-3.2.1 release.
-
 # Release Information
 
 Releases shall be tagged following semantic version guidelines found at:
