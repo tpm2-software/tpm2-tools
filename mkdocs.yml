@@ -1,6 +1,6 @@
 site_name: tpm2-tools
 
-docs_dir: doc
+docs_dir: docs
 
 theme: readthedocs
 

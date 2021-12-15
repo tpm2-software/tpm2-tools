@@ -344,14 +344,14 @@ EXTRA_DIST_IGNORE = \
 
 EXTRA_DIST = \
     bootstrap \
-    doc/AUTHORS.md \
-    doc/CHANGELOG.md \
-    doc/CONTRIBUTING.md \
-    doc/INSTALL.md \
-    doc/LICENSE \
-    doc/MAINTAINERS.md \
-    doc/README.md \
-    doc/RELEASE.md \
+    docs/AUTHORS.md \
+    docs/CHANGELOG.md \
+    docs/CONTRIBUTING.md \
+    docs/INSTALL.md \
+    docs/LICENSE \
+    docs/MAINTAINERS.md \
+    docs/README.md \
+    docs/RELEASE.md \
     man \
     scripts \
     test
