@@ -16,7 +16,7 @@ the next release.
 ## End Of Life versions
 - [1.X](https://github.com/tpm2-software/tpm2-tools/tree/1.X)
 - [2.X](https://github.com/tpm2-software/tpm2-tools/tree/2.X)
-- [3.0.X](https://github.com/tpm2-software/tpm2-tools/tree/3.0.X)
+- [3.X](https://github.com/tpm2-software/tpm2-tools/tree/3.X)
 
 # Release Information
 
