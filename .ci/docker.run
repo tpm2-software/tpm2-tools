@@ -41,6 +41,8 @@ if [[ "$CC" == clang* ]]; then
     unset ASAN_SYMBOLIZER_PATH
   fi
 else #GCC
+  export CFLAGS="-Wall -Wextra -Werror"
+  echo "Exported CFLAGS=$CFLAGS"
   config_flags="--disable-hardening --enable-code-coverage"
 fi
 
