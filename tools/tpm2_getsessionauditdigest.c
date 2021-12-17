@@ -31,6 +31,7 @@ struct tpm_getsessionauditdigest_ctx {
     char *message_path;
     tpm2_convert_sig_fmt sig_format;
     TPMI_ALG_HASH sig_hash_algorithm;
+    TPMI_ALG_SIG_SCHEME sig_scheme;
     TPM2B_DATA qualification_data;
     TPM2B_ATTEST *audit_info;
     TPMT_SIGNATURE *signature;
@@ -43,6 +44,7 @@ struct tpm_getsessionauditdigest_ctx {
 
 static tpm_getsessionauditdigest_ctx ctx = {
     .sig_hash_algorithm = TPM2_ALG_NULL,
+    .sig_scheme = TPM2_ALG_NULL,
     .qualification_data = TPM2B_EMPTY_INIT,
     .endorsement_hierarchy = {
         .ctx_path = "e"
@@ -93,6 +95,14 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 0:
+        ctx.sig_scheme = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_sig);
+        if (ctx.sig_scheme == TPM2_ALG_ERROR) {
+            LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
+            return false;
+        }
+        break;
     case 'S':
         ctx.audit_session_path = value;
         break;
@@ -112,6 +122,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "message",        required_argument, NULL, 'm' },
         { "format",         required_argument, NULL, 'f' },
         { "hash-algorithm", required_argument, NULL, 'g' },
+        { "scheme",         required_argument, NULL,  0  },
         { "session",        required_argument, NULL, 'S' }
     };
 

@@ -34,6 +34,7 @@ struct tpm_quote_ctx {
     tpm2_pcrs pcrs;
     tpm2_convert_pcrs_output_fmt pcrs_format;
     TPMT_SIG_SCHEME in_scheme;
+    TPMI_ALG_SIG_SCHEME sig_scheme;
 
     /*
      * Outputs
@@ -60,6 +61,7 @@ static tpm_quote_ctx ctx = {
     .qualification_data = TPM2B_EMPTY_INIT,
     .pcrs_format = pcrs_output_format_serialized,
     .in_scheme.scheme = TPM2_ALG_NULL,
+    .sig_scheme = TPM2_ALG_NULL,
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
@@ -246,7 +248,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     }
 
     rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.key.object.tr_handle,
-        &ctx.sig_hash_algorithm, TPM2_ALG_NULL, &ctx.in_scheme);
+        &ctx.sig_hash_algorithm, ctx.sig_scheme, &ctx.in_scheme);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -351,6 +353,14 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.cp_hash_path = value;
         break;
+    case 1:
+        ctx.sig_scheme = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_sig);
+        if (ctx.in_scheme.scheme == TPM2_ALG_ERROR) {
+            LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
+            return false;
+        }
+        break;
     }
 
     return true;
@@ -369,7 +379,8 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "pcrs_format",    required_argument, 0, 'F' },
         { "format",         required_argument, 0, 'f' },
         { "hash-algorithm", required_argument, 0, 'g' },
-        { "cphash",         required_argument, 0,  0  }
+        { "cphash",         required_argument, 0,  0  },
+        { "scheme",         required_argument, 0,  1  },
     };
 
     *opts = tpm2_options_new("c:p:l:q:s:m:o:F:f:g:", ARRAY_LEN(topts), topts,
