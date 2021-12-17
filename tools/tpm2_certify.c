@@ -32,6 +32,7 @@ struct tpm_certify_ctx {
     TPMI_ALG_HASH halg;
     tpm2_convert_sig_fmt sig_fmt;
     TPMT_SIG_SCHEME scheme;
+    TPMI_ALG_SIG_SCHEME sig_scheme;
 
     /*
      * Outputs
@@ -64,8 +65,13 @@ struct tpm_certify_ctx {
 
 static tpm_certify_ctx ctx = {
     .sig_fmt = signature_format_tss,
+    .halg = TPM2_ALG_NULL,
+    .sig_scheme = TPM2_ALG_NULL,
     .aux_session_handle[0] = ESYS_TR_NONE,
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
+    .scheme = {
+        .scheme = TPM2_ALG_NULL,
+    }
 };
 
 static tool_rc certify(ESYS_CONTEXT *ectx) {
@@ -131,53 +137,6 @@ out:
     return is_file_op_success ? tool_rc_success : tool_rc_general_error;
 }
 
-static tool_rc get_key_type(ESYS_CONTEXT *ectx, ESYS_TR object_handle,
-        TPMI_ALG_PUBLIC *type) {
-
-    TPM2B_PUBLIC *out_public = NULL;
-    tool_rc rc = tpm2_readpublic(ectx, object_handle, &out_public, NULL, NULL);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    *type = out_public->publicArea.type;
-
-    free(out_public);
-
-    return tool_rc_success;
-}
-
-static tool_rc set_scheme(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
-        TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *scheme) {
-
-    TPM2_ALG_ID type;
-    tool_rc rc = get_key_type(ectx, key_handle, &type);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    switch (type) {
-    case TPM2_ALG_RSA:
-        scheme->scheme = TPM2_ALG_RSASSA;
-        scheme->details.rsassa.hashAlg = halg;
-        break;
-    case TPM2_ALG_KEYEDHASH:
-        scheme->scheme = TPM2_ALG_HMAC;
-        scheme->details.hmac.hashAlg = halg;
-        break;
-    case TPM2_ALG_ECC:
-        scheme->scheme = TPM2_ALG_ECDSA;
-        scheme->details.ecdsa.hashAlg = halg;
-        break;
-    case TPM2_ALG_SYMCIPHER:
-    default:
-        LOG_ERR("Unknown key type, got: 0x%x", type);
-        return tool_rc_general_error;
-    }
-
-    return tool_rc_success;
-}
-
 static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
     /*
@@ -219,10 +178,10 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 3. Command specific initializations
      */
-    rc = set_scheme(ectx, ctx.signing_key.object.tr_handle, ctx.halg,
+    rc = tpm2_alg_util_get_signature_scheme(ectx,
+        ctx.signing_key.object.tr_handle, &ctx.halg, ctx.sig_scheme,
         &ctx.scheme);
     if (rc != tool_rc_success) {
-        LOG_ERR("No suitable signing scheme!");
         return rc;
     }
 
@@ -308,6 +267,14 @@ static bool on_option(char key, char *value) {
     case 1:
         ctx.rp_hash_path = value;
         break;
+    case 2:
+        ctx.sig_scheme = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_sig);
+        if (ctx.sig_scheme == TPM2_ALG_ERROR) {
+            LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
+            return false;
+        }
+        break;
     case 'f':
         ctx.sig_fmt = tpm2_convert_sig_fmt_from_optarg(value);
         if (ctx.sig_fmt == signature_format_err) {
@@ -341,6 +308,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "format",               required_argument, NULL, 'f' },
       { "cphash",               required_argument, NULL,  0  },
       { "rphash",               required_argument, NULL,  1  },
+      { "scheme",               required_argument, NULL,  2  },
       { "session",              required_argument, NULL, 'S' },
     };
 

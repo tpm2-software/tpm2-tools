@@ -31,6 +31,7 @@ struct tpm_getcommandauditdigest_ctx {
     char *message_path;
     tpm2_convert_sig_fmt sig_format;
     TPMI_ALG_HASH sig_hash_algorithm;
+    TPMI_ALG_SIG_SCHEME sig_scheme;
     TPM2B_DATA qualification_data;
     TPM2B_ATTEST *audit_info;
     TPMT_SIGNATURE *signature;
@@ -39,6 +40,7 @@ struct tpm_getcommandauditdigest_ctx {
 
 static tpm_getcommandauditdigest_ctx ctx = {
     .sig_hash_algorithm = TPM2_ALG_NULL,
+    .sig_scheme = TPM2_ALG_NULL,
     .qualification_data = TPM2B_EMPTY_INIT,
     .endorsement_hierarchy = {
         .ctx_path = "e"
@@ -88,6 +90,14 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 0:
+        ctx.sig_scheme = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_sig);
+        if (ctx.sig_scheme == TPM2_ALG_ERROR) {
+            LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
+            return false;
+        }
+        break;
     }
 
     return true;
@@ -103,7 +113,8 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "signature",      required_argument, NULL, 's' },
         { "message",        required_argument, NULL, 'm' },
         { "format",         required_argument, NULL, 'f' },
-        { "hash-algorithm", required_argument, NULL, 'g' }
+        { "hash-algorithm", required_argument, NULL, 'g' },
+        { "scheme",         required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("P:c:p:q:s:m:f:g:", ARRAY_LEN(topts), topts,
@@ -157,7 +168,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * Setup signature scheme
      */
     rc = tpm2_alg_util_get_signature_scheme(ectx,
-            ctx.key.object.tr_handle, &ctx.sig_hash_algorithm, TPM2_ALG_NULL,
+            ctx.key.object.tr_handle, &ctx.sig_hash_algorithm, ctx.sig_scheme,
             &ctx.in_scheme);
     if (rc != tool_rc_success) {
         return rc;

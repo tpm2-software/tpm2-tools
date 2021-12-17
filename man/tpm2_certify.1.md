@@ -39,6 +39,17 @@ These options control the certification:
 
     The hash algorithm to use in signature generation.
 
+  * **\--scheme**=_ALGORITHM_:
+
+    The signing scheme used to sign the message. Optional.
+    Signing schemes should follow the "formatting standards", see section
+     "Algorithm Specifiers".
+    Also, see section "Supported Signing Schemes" for a list of supported
+     signature schemes.
+    If specified, the signature scheme must match the key type.
+    If left unspecified, a default signature scheme for the key type will
+     be used.
+
   * **-P**, **\--signingkey-auth**=_AUTH_:
 
     The authorization value for the signing key specified with -C.
