@@ -25,7 +25,8 @@ as an argument and can be a raw handle or an offset value to the nv handle range
 
   * **-i**, **\--input**=_FILE_:
 
-    Specifies the input file with data to write to NV.
+    This is a mandatory input to specify the input file with data to write to
+    NV. The input can also be specified from stdin with **-i-** option.
 
   * **-C**, **\--hierarchy**=_OBJECT_:
 
