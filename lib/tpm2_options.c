@@ -119,8 +119,6 @@ void tpm2_options_free(tpm2_options *opts) {
 static bool execute_man(char *prog_name, bool show_errors) {
 
     pid_t pid;
-    int status;
-
     if ((pid = fork()) < 0) {
         LOG_ERR("Could not fork process to execute man, error: %s",
                 strerror(errno));
@@ -129,7 +127,6 @@ static bool execute_man(char *prog_name, bool show_errors) {
 
     #define MAX_TOOL_NAME_LEN 64
     if (pid == 0) {
-
         if (!show_errors) {
             /* redirect manpager errors to stderr */
             int fd = open("/dev/null", O_WRONLY);
@@ -141,29 +138,45 @@ static bool execute_man(char *prog_name, bool show_errors) {
             close(fd);
         }
 
+        /*
+         * Handle the case where tpm2 is specified without tool-name or help
+         */
         const char *manpage = basename(prog_name);
-        if (!strcmp(manpage, "tpm2")) {
-            /*
-             * Handle the case where tpm2 is specified without tool-name or help
-             */
+        bool is_only_tpm2 = (strcmp(manpage, "tpm2") == 0);
+        if (is_only_tpm2) {
             execlp("man", "man", "tpm2", NULL);
-        } else if (strncmp(manpage, "tpm2_", strlen("tpm2_"))) {
-            /*
-             * Handle the case where the tool is specified as tpm2< >tool-name
-             */
-            char man_tool_name[MAX_TOOL_NAME_LEN] = {'t','p','m','2','_'};
-            strncat(man_tool_name, manpage,
+        }
+
+        /*
+         * Handle the case where the tool is specified as tpm2< >tool-name
+         */
+        bool is_tpm2_space_toolname =
+            (strncmp(manpage, "tpm2_", strlen("tpm2_")) != 0);
+        if (is_tpm2_space_toolname) {
+            uint8_t toolname_len =
                 strlen(manpage) < (MAX_TOOL_NAME_LEN - strlen("tpm2_")) ?
-                    strlen(manpage) : (MAX_TOOL_NAME_LEN - strlen("tpm2_")));
+                strlen(manpage) : MAX_TOOL_NAME_LEN - strlen("tpm2_");
+
+            char man_tool_name[MAX_TOOL_NAME_LEN] = {'t','p','m','2','_'};
+
+            strncat(man_tool_name, manpage, toolname_len);
             execlp("man", "man", man_tool_name, NULL);
-        } else {
-            /*
-             * Handle the case where the tool is specified as tpm2<_>tool-name
-             */
+        }
+
+        /*
+         * Handle the case where the tool is specified as tpm2<_>tool-name
+         */
+        bool is_tpm2_underscore_toolname =
+            (!is_only_tpm2 && !is_tpm2_space_toolname);
+        if (is_tpm2_underscore_toolname) {
             execlp("man", "man", manpage, NULL);
         }
-    } else {
-        if (waitpid(pid, &status, 0) == -1) {
+    }
+
+    if (pid != 0) {
+        int status;
+        bool is_child_process_incomplete = (waitpid(pid, &status, 0) == -1);
+        if (is_child_process_incomplete) {
             LOG_ERR("Waiting for child process that executes man failed, error:"
                     " %s", strerror(errno));
             return false;
@@ -524,7 +537,10 @@ out:
         if (!did_manpager) {
             tpm2_print_usage(argv[0], tool_opts);
         }
-        if (tcti_conf_option && strcmp(tcti_conf_option, "none")) {
+
+        bool is_tcti_not_none = tcti_conf_option ?
+            (strcmp(tcti_conf_option, "none") != 0) : false;
+        if (is_tcti_not_none) {
             TSS2_TCTI_INFO *info = NULL;
             rc_tcti = Tss2_TctiLdr_GetInfo(tcti_conf_option, &info);
             if (rc_tcti == TSS2_RC_SUCCESS && info) {
