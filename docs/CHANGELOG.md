@@ -2,6 +2,9 @@
 
 ### next
 
+  * tpm2:
+      - Added option to specify **--help=no-man**
+
   * tpm2_nvreadpublic:
       - Added option **\--cphash**=_FILE_ to specify file path to record hash
         of the command parameters. This is commonly termed as cpHash.
