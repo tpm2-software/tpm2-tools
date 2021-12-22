@@ -538,6 +538,7 @@ static bool sig_load(const char *path, TPMI_ALG_SIG_SCHEME sig_alg,
                 &signature->signature.rsapss.sig.size);
         return res;
     case TPM2_ALG_ECDSA:
+    case TPM2_ALG_SM2:
         signature->signature.ecdsa.hash = halg;
         return pop_ecdsa(path, &signature->signature.ecdsa);
     default:
@@ -706,7 +707,8 @@ UINT8 *tpm2_convert_sig(UINT16 *size, TPMT_SIGNATURE *signature) {
         memcpy(buffer, hmac_sig, *size);
         break;
     }
-    case TPM2_ALG_ECDSA: {
+    case TPM2_ALG_ECDSA:
+    case TPM2_ALG_SM2: {
         return extract_ecdsa(&signature->signature.ecdsa, size);
     }
     default:

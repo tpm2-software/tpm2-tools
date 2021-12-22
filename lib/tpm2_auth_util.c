@@ -14,6 +14,7 @@
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_policy.h"
+#include "tpm2_capability.h"
 
 #define HEX_PREFIX "hex:"
 #define HEX_PREFIX_LEN sizeof(HEX_PREFIX) - 1
@@ -88,6 +89,29 @@ static tool_rc start_hmac_session(ESYS_CONTEXT *ectx, TPM2B_AUTH *auth,
     if (!d) {
         LOG_ERR("oom");
         return tool_rc_general_error;
+    }
+
+    if (ectx) {
+        uint32_t i;
+        tool_rc tmp_rc;
+        TPM2_CAP capability = TPM2_CAP_PCRS;
+        UINT32 property = 0;
+        UINT32 count = TPM2_MAX_TPM_PROPERTIES;
+        TPMS_CAPABILITY_DATA *capability_data = NULL;
+        TPMI_ALG_HASH hash = tpm2_session_data_get_authhash(d);
+
+        tmp_rc = tpm2_capability_get(ectx, capability, property, count, &capability_data);
+        if (tmp_rc == tool_rc_success) {
+            for (i = 0; i < capability_data->data.assignedPCR.count; i++) {
+                if(capability_data->data.assignedPCR.pcrSelections[i].hash == hash) {
+                    break;
+                }
+            }
+            if(capability_data->data.assignedPCR.count > 0 && i == capability_data->data.assignedPCR.count) {
+                tpm2_session_set_authhash(d, capability_data->data.assignedPCR.pcrSelections[0].hash);
+            }
+            free(capability_data);
+        }
     }
 
     tool_rc rc = tpm2_session_open(ectx, d, session);
@@ -220,6 +244,18 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
         LOG_ERR("oom");
         goto out;
     }
+
+    do {
+        uint32_t i;
+        for (i = 0; i < pcrs.count; i++) {
+            if(pcrs.pcrSelections[i].hash == tpm2_session_data_get_authhash(d)) {
+                break;
+            }
+        }
+        if(pcrs.count > 0 && i == pcrs.count) {
+            tpm2_session_set_authhash(d, pcrs.pcrSelections[0].hash);
+        }
+    } while (0);
 
     tpm2_session *s = NULL;
     tool_rc tmp_rc = tpm2_session_open(ectx, d, &s);

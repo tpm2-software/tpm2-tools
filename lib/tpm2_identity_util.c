@@ -177,7 +177,18 @@ static const EVP_CIPHER *tpm_alg_to_ossl(TPMT_SYM_DEF_OBJECT *sym) {
             return EVP_aes_256_cfb();
             /* no default */
         }
+        break;
     }
+#if HAVE_EVP_SM4_CFB
+    case TPM2_ALG_SM4: {
+        switch (sym->keyBits.sm4) {
+        case 128:
+            return EVP_sm4_cfb();
+            /* no default */
+        }
+        break;
+    }
+#endif
         /* no default */
     }
 

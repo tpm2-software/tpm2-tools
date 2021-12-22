@@ -10,6 +10,7 @@
 #include <openssl/err.h>
 #include <openssl/hmac.h>
 #include <openssl/rsa.h>
+#include "config.h"
 
 #include "pcr.h"
 

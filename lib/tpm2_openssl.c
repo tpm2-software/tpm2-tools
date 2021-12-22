@@ -36,6 +36,10 @@ int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm) {
         return NID_sha384;
     case TPM2_ALG_SHA512:
         return NID_sha512;
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+	case TPM2_ALG_SM3_256:
+		return NID_sm3;
+#endif
     default:
         return NID_sha256;
     }
@@ -53,6 +57,10 @@ const EVP_MD *tpm2_openssl_md_from_tpmhalg(TPMI_ALG_HASH algorithm) {
         return EVP_sha384();
     case TPM2_ALG_SHA512:
         return EVP_sha512();
+#if HAVE_EVP_SM3
+	case TPM2_ALG_SM3_256:
+		return EVP_sm3();
+#endif
     default:
         return NULL;
     }
@@ -648,7 +656,10 @@ static const struct {
     { TPM2_ECC_NIST_P224, NID_secp224r1        },
     { TPM2_ECC_NIST_P256, NID_X9_62_prime256v1 },
     { TPM2_ECC_NIST_P384, NID_secp384r1        },
-    { TPM2_ECC_NIST_P521, NID_secp521r1        }
+    { TPM2_ECC_NIST_P521, NID_secp521r1        },
+#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+    { TPM2_ECC_SM2_P256,  NID_sm2              },
+#endif
     /*
      * XXX
      * See if it's possible to support the other curves, I didn't see the
@@ -885,6 +896,47 @@ static bool load_public_AES_from_file(FILE *f, const char *path,
 
     return tpm2_util_calc_unique(name_alg, key, seed, unique);
 }
+
+static bool load_public_SM4_from_file(FILE *f, const char *path,
+        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+
+    /*
+     * Get the file size and validate that it is the proper AES keysize.
+     */
+    unsigned long file_size = 0;
+    bool result = files_get_file_size(f, &file_size, path);
+    if (!result) {
+        return false;
+    }
+
+    result = tpm2_alg_util_is_sm4_size_valid(file_size);
+    if (!result) {
+        return false;
+    }
+
+    pub->publicArea.type = TPM2_ALG_SYMCIPHER;
+    TPMT_SYM_DEF_OBJECT *s = &pub->publicArea.parameters.symDetail.sym;
+    s->algorithm = TPM2_ALG_SM4;
+    s->keyBits.sm4 = file_size * 8;
+
+    /* allow any mode later on */
+    s->mode.sm4 = TPM2_ALG_NULL;
+
+    /*
+     * Calculate the unique field with is the
+     * is HMAC(sensitive->seedValue, sensitive->sensitive(key itself))
+     * Where:
+     *   - HMAC Key is the seed
+     *   - Hash algorithm is the name algorithm
+     */
+    TPM2B_DIGEST *unique = &pub->publicArea.unique.sym;
+    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
+    TPM2B_PRIVATE_VENDOR_SPECIFIC *key = &priv->sensitiveArea.sensitive.any;
+    TPMI_ALG_HASH name_alg = pub->publicArea.nameAlg;
+
+    return tpm2_util_calc_unique(name_alg, key, seed, unique);
+}
+
 
 static bool load_private_RSA_from_key(EVP_PKEY *key, TPM2B_SENSITIVE *priv) {
 
@@ -1129,6 +1181,38 @@ static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f,
     return lprc_private | lprc_public;
 }
 
+static tpm2_openssl_load_rc load_private_SM4_from_file(FILE *f,
+        const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+
+    unsigned long file_size = 0;
+    bool result = files_get_file_size(f, &file_size, path);
+    if (!result) {
+        return lprc_error;
+    }
+
+    result = tpm2_alg_util_is_sm4_size_valid(file_size);
+    if (!result) {
+        return lprc_error;
+    }
+
+    priv->sensitiveArea.sensitiveType = TPM2_ALG_SYMCIPHER;
+
+    TPM2B_SYM_KEY *s = &priv->sensitiveArea.sensitive.sym;
+    s->size = file_size;
+
+    result = files_read_bytes(f, s->buffer, s->size);
+    if (!result) {
+        return lprc_error;
+    }
+
+    result = load_public_SM4_from_file(f, path, pub, priv);
+    if (!result) {
+        return lprc_error;
+    }
+
+    return lprc_private | lprc_public;
+}
+
 static tpm2_openssl_load_rc load_private_KEYEDHASH_from_file(FILE *f,
         const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
@@ -1198,12 +1282,14 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
         if (passin) {
             LOG_ERR("No password can be used for protecting AES key");
             rc = lprc_error;
-        } else if (template->publicArea.parameters.asymDetail.symmetric.algorithm != TPM2_ALG_AES) {
-            LOG_ERR("Cannot handle non-aes symmetric objects, got: 0x%x",
+        } else if (template->publicArea.parameters.asymDetail.symmetric.algorithm == TPM2_ALG_AES) {
+            rc = load_private_AES_from_file(f, path, pub, priv);
+        } else if (template->publicArea.parameters.asymDetail.symmetric.algorithm == TPM2_ALG_SM4) {
+            rc = load_private_SM4_from_file(f, path, pub, priv);
+        } else {
+            LOG_ERR("Cannot handle non-aes or non-sm4 symmetric objects, got: 0x%x",
                     template->publicArea.parameters.asymDetail.symmetric.algorithm);
             rc = lprc_error;
-        } else {
-            rc = load_private_AES_from_file(f, path, pub, priv);
         }
         break;
     case TPM2_ALG_HMAC:

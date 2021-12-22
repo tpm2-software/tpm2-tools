@@ -17,6 +17,7 @@ list of known "Simple Specifiers" below.
 ### Symmetric
   * aes
   * camellia
+  * sm4
 
 ### Hashing Algorithms
   * sha1
@@ -38,6 +39,7 @@ list of known "Simple Specifiers" below.
   * ecdsa
   * ecdaa
   * ecschnorr
+  * sm2
 
 ### Asymmetric Encryption Schemes
   * oaep
@@ -70,12 +72,16 @@ general format for specifying this data:
       specified, defaults to *null*.
   * aes192`<mode>` - Same as aes128`<mode>`, except for a 192 bit key size.
   * aes256`<mode>` - Same as aes128`<mode>`, except for a 256 bit key size.
+  * sm4 - Default SM4: sm4128
+  * sm4128`<mode>` - 128 bit SM4 with optional mode (*ctr*|*ofb*|*cbc*|*cfb*|*ecb*). If mode is not
+      specified, defaults to *null*.
   * ecc - Elliptical Curve, defaults to ecc256.
   * ecc192 - 192 bit ECC
   * ecc224 - 224 bit ECC
   * ecc256 - 256 bit ECC
   * ecc384 - 384 bit ECC
   * ecc521 - 521 bit ECC
+  * eccsm2 - SM2 256 bit ECC
   * rsa - Default RSA: rsa2048
   * rsa1024 - RSA with 1024 bit keysize.
   * rsa2048 - RSA with 2048 bit keysize.
@@ -98,6 +104,7 @@ These scheme specifiers are followed by a dash and a valid hash algorithm, For e
   * rsapss
   * ecdsa
   * ecschnorr
+  * sm2
 
 #### Multiple Option Scheme Specifiers
 This scheme specifier is followed by a count (max size UINT16) then followed by a dash(-) and a valid hash algorithm.

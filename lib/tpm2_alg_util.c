@@ -197,6 +197,8 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
             do_scheme_halg(scheme, 4, TPM2_ALG_ECDH);
         } else if (!strncmp(scheme, "ecschnorr", 9)) {
             do_scheme_halg(scheme, 9, TPM2_ALG_ECSCHNORR);
+        } else if (!strncmp(scheme, "sm2", 3)) {
+            do_scheme_halg(scheme, 3, TPM2_ALG_SM2);
         } else if (!strncmp(scheme, "ecdaa", 5)) {
             do_scheme_halg(scheme, 5, TPM2_ALG_ECDAA);
             /*
@@ -337,6 +339,9 @@ static alg_parser_rc handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
     } else if (!strncmp(ext, "521", 3)) {
         e->curveID = TPM2_ECC_NIST_P521;
         ext += 3;
+    } else if (!strncmp(ext, "sm2", 3)) {
+        e->curveID = TPM2_ECC_SM2_P256;
+        ext += 3;
     } else {
         e->curveID = TPM2_ECC_NIST_P256;
     }
@@ -354,6 +359,19 @@ static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
 
     TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
     s->algorithm = TPM2_ALG_AES;
+
+    return handle_sym_common(ext, s);
+}
+
+static alg_parser_rc handle_sm4(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_SYMCIPHER;
+
+    tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
+            &public->publicArea.objectAttributes);
+
+    TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
+    s->algorithm = TPM2_ALG_SM4;
 
     return handle_sym_common(ext, s);
 }
@@ -402,6 +420,9 @@ static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
     } else if (!strncmp(object, "aes", 3)) {
         object += 3;
         return handle_aes(object, public);
+    } else if (!strncmp(object, "sm4", 3)) {
+        object += 3;
+        return handle_sm4(object, public);
     } else if (!strncmp(object, "camellia", 8)) {
         object += 8;
         return handle_camellia(object, public);
@@ -481,6 +502,9 @@ static alg_parser_rc handle_asym_detail(const char *detail,
 
         if (!strncmp(detail, "aes", 3)) {
             s->algorithm = TPM2_ALG_AES;
+            return handle_sym_common(detail + 3, s);
+		} else if(!strncmp(detail, "sm4", 3)) {
+            s->algorithm = TPM2_ALG_SM4;
             return handle_sym_common(detail + 3, s);
         } else if (!strncmp(detail, "camellia", 8)) {
             s->algorithm = TPM2_ALG_CAMELLIA;
@@ -1059,6 +1083,18 @@ bool tpm2_alg_util_is_aes_size_valid(UINT16 size_in_bytes) {
         return true;
     default:
         LOG_ERR("Invalid AES key size, got %u bytes, expected 16,24 or 32",
+                size_in_bytes);
+        return false;
+    }
+}
+
+bool tpm2_alg_util_is_sm4_size_valid(UINT16 size_in_bytes) {
+
+    switch (size_in_bytes) {
+    case 16:
+        return true;
+    default:
+        LOG_ERR("Invalid SM4 key size, got %u bytes, expected 16",
                 size_in_bytes);
         return false;
     }

@@ -94,6 +94,10 @@ void tpm2_session_set_path(tpm2_session_data *data, const char *path) {
     data->path = path;
 }
 
+TPMI_ALG_HASH tpm2_session_data_get_authhash(tpm2_session_data *data) {
+    return data->auth_hash;
+}
+
 TPMI_ALG_HASH tpm2_session_get_authhash(tpm2_session *session) {
     return session->input->auth_hash;
 }
