@@ -149,21 +149,44 @@ int main(int argc, char **argv) {
      */
     umask(0117);
 
-    if (!strcmp(argv[0], "tpm2")) {
-        if (argc == 1 || (argc == 2 && (!strcmp(argv[1],"--help") ||
-            !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help=man")))) {
-            char *options[2] = {"tpm2","--help=man"};
-            tpm2_handle_options(2, options, 0, 0, 0);
-            exit(tool_rc_success);
-        }
+    bool is_str_tpm2 = (strcmp(argv[0], "tpm2") == 0);
 
-        if ((argc == 2 && (!strcmp(argv[1],"--version") ||
-        !strcmp(argv[1], "-v") ))) {
-            tpm2_handle_options(argc, argv, 0, 0, 0);
-            exit(tool_rc_success);
-        }
+    bool is_one_opt_specified = (argc == 2 && is_str_tpm2);
 
+    bool is_opt_str_help = (is_one_opt_specified &&
+        ((strcmp(argv[1],"--help") == 0) || (strcmp(argv[1],"-h") == 0) ||
+         (strcmp(argv[1],"--help=man") == 0)));
+
+    bool is_no_opts = (is_str_tpm2 && argc == 1);
+
+    if (is_no_opts || is_opt_str_help) {
+        char *options[2] = {"tpm2","--help=man"};
+        tpm2_handle_options(2, options, 0, 0, 0);
+        tool_rc rc = is_no_opts ? tool_rc_option_error : tool_rc_success;
+        exit(rc);
     }
+
+    bool is_opt_str_help_no_man = (is_one_opt_specified &&
+        (strcmp(argv[1],"--help=no-man") == 0));
+
+    if (is_opt_str_help_no_man) {
+        tpm2_tool_output("Specify [ -v | --version ], [-h | --help] or one of "
+            "the following tool names:\n");
+        for(unsigned i = 0 ; i < tool_count ; i++) {
+            fprintf(stderr, "%s\n", tools[i]->name);
+        }
+
+        exit(tool_rc_success);
+    }
+
+    bool is_opt_str_version = (is_one_opt_specified &&
+        ((strcmp(argv[1],"--version") == 0) || (strcmp(argv[1],"-v") == 0)));
+
+    if (is_opt_str_version) {
+        tpm2_handle_options(argc, argv, 0, 0, 0);
+        exit(tool_rc_success);
+    }
+
 
     /* don't buffer stdin/stdout/stderr so pipes work */
     setvbuf (stdin, NULL, _IONBF, 0);
