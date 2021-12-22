@@ -57,6 +57,7 @@ static tpm2_verifysig_ctx ctx = {
 static bool verify(void) {
 
     bool result = false;
+    EVP_PKEY_CTX *pkey_ctx = NULL;
 
     /* read the public key */
     EVP_PKEY *pkey = NULL;
@@ -65,7 +66,17 @@ static bool verify(void) {
         return false;
     }
 
-    EVP_PKEY_CTX *pkey_ctx = EVP_PKEY_CTX_new(pkey, NULL);
+#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+    if (ctx.halg == TPM2_ALG_SM3_256) {
+        ret = EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2);
+        if (!ret) {
+            LOG_ERR("EVP_PKEY_set_alias_type failed: %s", ERR_error_string(ERR_get_error(), NULL));
+            goto err;
+        }
+    }
+#endif
+
+    pkey_ctx = EVP_PKEY_CTX_new(pkey, NULL);
     if (!pkey_ctx) {
         LOG_ERR("EVP_PKEY_CTX_new failed: %s", ERR_error_string(ERR_get_error(), NULL));
         goto err;
