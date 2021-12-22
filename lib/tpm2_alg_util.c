@@ -358,6 +358,19 @@ static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
     return handle_sym_common(ext, s);
 }
 
+static alg_parser_rc handle_sm4(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_SYMCIPHER;
+
+    tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
+            &public->publicArea.objectAttributes);
+
+    TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
+    s->algorithm = TPM2_ALG_SM4;
+
+    return handle_sym_common(ext, s);
+}
+
 static alg_parser_rc handle_camellia(const char *ext, TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_SYMCIPHER;
@@ -402,6 +415,9 @@ static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
     } else if (!strncmp(object, "aes", 3)) {
         object += 3;
         return handle_aes(object, public);
+    } else if (!strncmp(object, "sm4", 3)) {
+        object += 3;
+        return handle_sm4(object, public);
     } else if (!strncmp(object, "camellia", 8)) {
         object += 8;
         return handle_camellia(object, public);
@@ -1059,6 +1075,18 @@ bool tpm2_alg_util_is_aes_size_valid(UINT16 size_in_bytes) {
         return true;
     default:
         LOG_ERR("Invalid AES key size, got %u bytes, expected 16,24 or 32",
+                size_in_bytes);
+        return false;
+    }
+}
+
+bool tpm2_alg_util_is_sm4_size_valid(UINT16 size_in_bytes) {
+
+    switch (size_in_bytes) {
+    case 16:
+        return true;
+    default:
+        LOG_ERR("Invalid SM4 key size, got %u bytes, expected 16",
                 size_in_bytes);
         return false;
     }
