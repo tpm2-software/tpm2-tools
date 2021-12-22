@@ -51,10 +51,6 @@ static bool on_args(int argc, char **argv) {
         result = false;
     }
 
-    if (algorithm.publicArea.parameters.eccDetail.curveID > TPM2_ECC_NIST_P521) {
-        result = false;
-    }
-
     if (!result) {
         LOG_ERR("Invalid/unsupported ECC curve: %s", argv[0]);
         return false;
