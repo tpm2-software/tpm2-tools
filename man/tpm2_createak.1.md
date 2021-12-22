@@ -43,9 +43,10 @@ loaded-key:
   * **-G**, **\--key-algorithm**=_ALGORITHM_:
 
     Specifies the attestation key algorithm. Supports:
-    * ecc - An P256 key.
-    * rsa - An RSA2048 key.
-    * keyedhash - hmac key.
+    * **ecc** - A NIST_P256 key by default. Alternative curves can be selected
+      using algorithm specifiers (e.g. **ecc384** or **ecc_nist_p384**) .
+    * **rsa** - An RSA2048 key.
+    * **keyedhash** - hmac key.
 
   * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
