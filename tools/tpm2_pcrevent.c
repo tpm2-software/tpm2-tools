@@ -39,8 +39,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
     bool res = files_get_file_size(input, &file_size, NULL);
 
     /* If we can get the file size and its less than 1024, just do it in one hash invocation */
-    if (res && file_size <= BUFFER_SIZE(TPM2B_EVENT, buffer)) {
-
+    if (res && file_size && file_size <= BUFFER_SIZE(TPM2B_EVENT, buffer)) {
         TPM2B_EVENT buffer = TPM2B_INIT(file_size);
 
         res = files_read_bytes(ctx.input, buffer.buffer, buffer.size);
@@ -70,7 +69,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
      * loop when 1 block is left, else we go till feof.
      */
     size_t left = file_size;
-    bool use_left = !!res;
+    bool use_left = !!res && left;
 
     TPM2B_MAX_BUFFER data;
 
