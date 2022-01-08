@@ -18,6 +18,7 @@ KEY_PATH=HS/SRK/quotekey
 NONCE_FILE=$TEMP_DIR/nonce.file
 PUBLIC_QUOTE_KEY=$TEMP_DIR/public_quote.key
 QUOTE_INFO=$TEMP_DIR/quote.info
+QUOTE_EMPTY_INFO=$TEMP_DIR/quote_empty.info
 SIGNATURE_FILE=$TEMP_DIR/signature.file
 CERTIFICATE_FILE=$TEMP_DIR/certificate.file
 PCR_LOG=$TEMP_DIR/pcr.log
@@ -35,14 +36,32 @@ tss2 provision
 
 tss2 createkey --path=$KEY_PATH --type="noDa, restricted, sign" --authValue=""
 
+tss2 exportkey --pathOfKeyToDuplicate=$KEY_PATH --exportedData=$PUBLIC_QUOTE_KEY --force
+tss2 import --path="ext/myNewParent" --importData=$PUBLIC_QUOTE_KEY
+
+
 tss2 quote --keyPath=$KEY_PATH --pcrList="11, 12, 13, 14, 15, 16" --qualifyingData=$NONCE_FILE \
     --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG \
     --certificate=$CERTIFICATE_FILE --quoteInfo=$QUOTE_INFO --force
 
+tss2 verifyquote --publicKeyPath="ext/myNewParent" \
+    --qualifyingData=$NONCE_FILE --quoteInfo=$QUOTE_INFO \
+    --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG
+
 echo "tss2 quote with EMPTY_FILE" # Expected to succeed
 tss2 quote --keyPath=$KEY_PATH --pcrList="11, 12, 13, 14, 15, 16" \
     --qualifyingData=$EMPTY_FILE --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG \
-    --certificate=$CERTIFICATE_FILE --quoteInfo=$QUOTE_INFO --force
+    --certificate=$CERTIFICATE_FILE --quoteInfo=$QUOTE_EMPTY_INFO --force
+
+echo "tss2 verifyquote with EMPTY_FILE qualifyingData" # Expected to succeed
+tss2 verifyquote --publicKeyPath="ext/myNewParent" \
+    --qualifyingData=$EMPTY_FILE --quoteInfo=$QUOTE_EMPTY_INFO \
+    --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG
+
+# Try with missing qualifyingData
+tss2 verifyquote --publicKeyPath="ext/myNewParent" \
+    --quoteInfo=$QUOTE_EMPTY_INFO \
+    --signature=$SIGNATURE_FILE
 
 echo "tss2 quote with BIG_FILE" # Expected to fail
 expect <<EOF
@@ -64,18 +83,6 @@ if [[ "`cat $LOG_FILE`" == $SANITIZER_FILTER ]]; then
   cat $LOG_FILE
   exit 1
 fi
-
-tss2 exportkey --pathOfKeyToDuplicate=$KEY_PATH --exportedData=$PUBLIC_QUOTE_KEY --force
-tss2 import --path="ext/myNewParent" --importData=$PUBLIC_QUOTE_KEY
-
-tss2 verifyquote --publicKeyPath="ext/myNewParent" \
-    --qualifyingData=$NONCE_FILE --quoteInfo=$QUOTE_INFO \
-    --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG
-
-echo "tss2 verifyquote with EMPTY_FILE qualifyingData" # Expected to succeed
-tss2 verifyquote --publicKeyPath="ext/myNewParent" \
-    --qualifyingData=$EMPTY_FILE --quoteInfo=$QUOTE_INFO \
-    --signature=$SIGNATURE_FILE --pcrLog=$PCR_LOG
 
 echo "tss2 verifyquote with BIG_FILE qualifyingData" # Expected to fail
 expect <<EOF
@@ -536,10 +543,5 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
     exit 1
 }
 EOF
-
-# Try with missing qualifyingData
-tss2 verifyquote --publicKeyPath="ext/myNewParent" \
-    --quoteInfo=$QUOTE_INFO \
-    --signature=$SIGNATURE_FILE
 
 exit 0
