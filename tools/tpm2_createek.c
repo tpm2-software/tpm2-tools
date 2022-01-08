@@ -158,7 +158,6 @@ static const alg_map *lookup_alg_map(const char *alg) {
 }
 
 static tool_rc init_ek_public(const char *key_alg, TPM2B_PUBLIC *public) {
-
     const alg_map *m = lookup_alg_map(key_alg);
 
     if (!m) {
