@@ -322,17 +322,10 @@ static bool on_option(char key, char *value) {
         ctx.auth_ek.auth_str = value;
         break;
     case 'G': {
-        /* first check for numeric key_alg ID */
-        TPM2_ALG_ID algID;
-        if (tpm2_util_string_to_uint16(value, &algID)) {
-            ctx.key_alg = tpm2_alg_util_algtostr(algID,
-                            tpm2_alg_util_flags_base);
-            if (!ctx.key_alg) {
-                LOG_ERR("Invalid key algorithm, got \"%s\"", value);
-                return false;
-            }
-        } else {
-            ctx.key_alg = value;
+        ctx.key_alg = tpm2_alg_util_numtoalgstr(value, tpm2_alg_util_flags_base);
+        if (!ctx.key_alg) {
+            LOG_ERR("Invalid key algorithm, got \"%s\"", value);
+            return false;
         }
         break;
     }

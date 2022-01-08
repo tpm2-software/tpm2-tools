@@ -407,46 +407,32 @@ out_session:
 
 static bool on_option(char key, char *value) {
 
-    TPM2_ALG_ID alg_id;
-
     switch (key) {
     case 'C':
         ctx.ek.ctx_arg = value;
         break;
     case 'G':
-        if (tpm2_util_string_to_uint16(value, &alg_id)) {
-            ctx.ak.in.alg.type = tpm2_alg_util_algtostr(alg_id,
-                            tpm2_alg_util_flags_base);
-            if (!ctx.ak.in.alg.type) {
-                LOG_ERR("Could not convert key algorithm, got \"%s\"", value);
-                return false;
-            }
-        } else {
-            ctx.ak.in.alg.type = value;
+        ctx.ak.in.alg.type = tpm2_alg_util_numtoalgstr(value,
+                                 tpm2_alg_util_flags_base);
+        if (!ctx.ak.in.alg.type) {
+            LOG_ERR("Could not convert key algorithm, got \"%s\"", value);
+            return false;
         }
         break;
     case 'g':
-        if (tpm2_util_string_to_uint16(value, &alg_id)) {
-            ctx.ak.in.alg.digest = tpm2_alg_util_algtostr(alg_id,
-                            tpm2_alg_util_flags_hash);
-            if (!ctx.ak.in.alg.digest) {
-                LOG_ERR("Could not convert digest algorithm, got \"%s\"", value);
-                return false;
-            }
-        } else {
-            ctx.ak.in.alg.digest = value;
+        ctx.ak.in.alg.digest = tpm2_alg_util_numtoalgstr(value,
+                                tpm2_alg_util_flags_hash);
+        if (!ctx.ak.in.alg.digest) {
+            LOG_ERR("Could not convert digest algorithm, got \"%s\"", value);
+            return false;
         }
         break;
     case 's':
-        if (tpm2_util_string_to_uint16(value, &alg_id)) {
-            ctx.ak.in.alg.sign = tpm2_alg_util_algtostr(alg_id,
-                            tpm2_alg_util_flags_sig);
-            if (!ctx.ak.in.alg.sign) {
-                LOG_ERR("Could not convert signing algorithm, got \"%s\"", value);
-                return false;
-            }
-        } else {
-            ctx.ak.in.alg.sign = value;
+         ctx.ak.in.alg.sign = tpm2_alg_util_numtoalgstr(value,
+                                tpm2_alg_util_flags_sig);
+        if (!ctx.ak.in.alg.sign) {
+            LOG_ERR("Could not convert signing algorithm, got \"%s\"", value);
+            return false;
         }
         break;
     case 'P':
