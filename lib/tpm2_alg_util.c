@@ -700,6 +700,16 @@ const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id, tpm2_alg_util_flags flags) {
     return userdata.name;
 }
 
+const char *tpm2_alg_util_numtoalgstr(const char *str, tpm2_alg_util_flags flags) {
+    TPM2_ALG_ID alg_id;
+
+    if (tpm2_util_string_to_uint16(str, &alg_id)) {
+        return tpm2_alg_util_algtostr(alg_id, flags);
+    } else {
+        return str;
+    }
+}
+
 tpm2_alg_util_flags tpm2_alg_util_algtoflags(TPM2_ALG_ID id) {
 
     alg_pair userdata = { .name = NULL, .id = id, .flags =

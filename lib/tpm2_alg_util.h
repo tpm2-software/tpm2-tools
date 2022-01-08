@@ -46,6 +46,16 @@ TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name, tpm2_alg_util_flags flags);
 const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id, tpm2_alg_util_flags flags);
 
 /**
+ * If the input is a numerical string then convert it to a nice-name.
+ * Otherwise return the unmodified nice-name.
+ * @param str
+ *  The numerical string to convert.
+ * @return
+ *  The nice-name.
+ */
+const char *tpm2_alg_util_numtoalgstr(const char* str, tpm2_alg_util_flags flags);
+
+/**
  * XXX DOC AND TESTME
  * @param id
  * @return
