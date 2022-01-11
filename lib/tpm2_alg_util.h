@@ -217,4 +217,17 @@ const char *tpm2_alg_util_ecc_to_str(TPM2_ECC_CURVE curve_id);
  */
 bool tpm2_alg_util_is_aes_size_valid(UINT16 size_in_bytes);
 
+/**
+ * Given an ESYS_TR handle to an object, retrieves the name algorithm
+ * without making a readpublic call.
+ *
+ * @param ectx
+ *  The ESAPI context.
+ * @param handle
+ *  The handle of the object to query.
+ * @return
+ *  The TPM2_ALG_ID name algorithm identifier or TPM2_ALG_ERROR for an error.
+ */
+TPM2_ALG_ID tpm2_alg_util_get_name_alg(ESYS_CONTEXT *ectx, ESYS_TR handle);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */
