@@ -303,7 +303,7 @@ UINT64 tpm2_util_hton_64(UINT64 data);
 UINT16 tpm2_util_ntoh_16(UINT16 data);
 
 /**
- * Just like string_bytes_endian_ntoh_16 but for 32 bit values.
+ * Just like tpm2_util_ntoh_16 but for 32 bit values.
  */
 UINT32 tpm2_util_ntoh_32(UINT32 data);
 

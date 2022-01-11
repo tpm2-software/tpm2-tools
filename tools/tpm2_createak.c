@@ -166,20 +166,16 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     TPML_PCR_SELECTION creation_pcr = { .count = 0 };
     TPM2B_DATA outside_info = TPM2B_EMPTY_INIT;
-    TPM2B_PUBLIC *ek_public, *out_public;
+    TPM2B_PUBLIC *out_public;
     TPM2B_PRIVATE *out_private;
     TPM2B_PUBLIC in_public;
-    TPMI_ALG_HASH ek_name_alg;
     TPML_DIGEST pHashList = { .count = 2 };
 
     /* get the nameAlg of the EK */
-    tool_rc tmp_rc = tpm2_readpublic(ectx, ctx.ek.ek_ctx.tr_handle, &ek_public,
-            NULL, NULL);
-    if (tmp_rc != tool_rc_success) {
-        return tmp_rc;
+    TPM2_ALG_ID ek_name_alg = tpm2_alg_util_get_name_alg(ectx, ctx.ek.ek_ctx.tr_handle);
+    if (ek_name_alg == TPM2_ALG_ERROR) {
+        return tool_rc_general_error;
     }
-    ek_name_alg = ek_public->publicArea.nameAlg;
-    free(ek_public);
 
     /* select the matching EK templates */
     switch (ek_name_alg) {
@@ -201,7 +197,7 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
         break;
     }
 
-    tmp_rc = init_ak_public(ek_name_alg, &in_public);
+    tool_rc tmp_rc = init_ak_public(ek_name_alg, &in_public);
     if (tmp_rc != tool_rc_success) {
         return tmp_rc;
     }

@@ -1108,3 +1108,23 @@ bool tpm2_alg_util_is_aes_size_valid(UINT16 size_in_bytes) {
         return false;
     }
 }
+
+TPM2_ALG_ID tpm2_alg_util_get_name_alg(ESYS_CONTEXT *ectx, ESYS_TR handle) {
+
+    TPM2B_NAME *name = NULL;
+    TSS2_RC rc = Esys_TR_GetName(ectx, handle, &name);
+    if (rc != TSS2_RC_SUCCESS) {
+        return TPM2_ALG_ERROR;
+    }
+
+    if (name->size < 2) {
+        Esys_Free(name);
+        return TPM2_ALG_ERROR;
+    }
+
+    UINT16 *big_endian_alg = (UINT16 *)name->name;
+
+    TPM2_ALG_ID name_alg = tpm2_util_ntoh_16(*big_endian_alg);
+    Esys_Free(name);
+    return name_alg;
+}
