@@ -14,6 +14,8 @@
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_policy.h"
+#include "tpm2_alg_util.h"
+#include "tpm2_capability.h"
 
 #define HEX_PREFIX "hex:"
 #define HEX_PREFIX_LEN sizeof(HEX_PREFIX) - 1
@@ -88,6 +90,40 @@ static tool_rc start_hmac_session(ESYS_CONTEXT *ectx, TPM2B_AUTH *auth,
     if (!d) {
         LOG_ERR("oom");
         return tool_rc_general_error;
+    }
+
+    if (ectx) {
+        uint32_t i;
+        tool_rc tmp_rc;
+        TPM2_CAP capability = TPM2_CAP_ALGS;
+        UINT32 property = 0;
+        UINT32 count = TPM2_MAX_CAP_ALGS;
+        TPMS_CAPABILITY_DATA *capability_data = NULL;
+        TPMS_ALG_PROPERTY alg_property;
+        TPMI_ALG_HASH def_hash = tpm2_session_data_get_authhash(d);
+        TPMI_ALG_HASH hash = 0;
+        UINT16 hash_size = 0;
+
+        tmp_rc = tpm2_capability_get(ectx, capability, property, count, &capability_data);
+        if (tmp_rc == tool_rc_success) {
+            for (i = 0; i < capability_data->data.algorithms.count; i++) {
+                alg_property = capability_data->data.algorithms.algProperties[i];
+                if ((alg_property.algProperties & TPMA_ALGORITHM_HASH) &&
+                        !(alg_property.algProperties & ~(TPMA_ALGORITHM_HASH))) {
+                    if (alg_property.alg == def_hash) {
+                        break;
+                    }
+                    if (tpm2_alg_util_get_hash_size(alg_property.alg) > hash_size) {
+                        hash = alg_property.alg;
+                        hash_size = tpm2_alg_util_get_hash_size(alg_property.alg);
+                    }
+                }
+            }
+            if (hash_size > 0 && i == capability_data->data.algorithms.count) {
+                tpm2_session_set_authhash(d, hash);
+            }
+            free(capability_data);
+        }
     }
 
     tool_rc rc = tpm2_session_open(ectx, d, session);
@@ -219,6 +255,40 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
     if (!d) {
         LOG_ERR("oom");
         goto out;
+    }
+
+    if (ectx) {
+        uint32_t i;
+        tool_rc tmp_rc;
+        TPM2_CAP capability = TPM2_CAP_ALGS;
+        UINT32 property = 0;
+        UINT32 count = TPM2_MAX_CAP_ALGS;
+        TPMS_CAPABILITY_DATA *capability_data = NULL;
+        TPMS_ALG_PROPERTY alg_property;
+        TPMI_ALG_HASH def_hash = tpm2_session_data_get_authhash(d);
+        TPMI_ALG_HASH hash = 0;
+        UINT16 hash_size = 0;
+
+        tmp_rc = tpm2_capability_get(ectx, capability, property, count, &capability_data);
+        if (tmp_rc == tool_rc_success) {
+            for (i = 0; i < capability_data->data.algorithms.count; i++) {
+                alg_property = capability_data->data.algorithms.algProperties[i];
+                if ((alg_property.algProperties & TPMA_ALGORITHM_HASH) &&
+                        !(alg_property.algProperties & ~(TPMA_ALGORITHM_HASH))) {
+                    if (alg_property.alg == def_hash) {
+                        break;
+                    }
+                    if (tpm2_alg_util_get_hash_size(alg_property.alg) > hash_size) {
+                        hash = alg_property.alg;
+                        hash_size = tpm2_alg_util_get_hash_size(alg_property.alg);
+                    }
+                }
+            }
+            if (hash_size > 0 && i == capability_data->data.algorithms.count) {
+                tpm2_session_set_authhash(d, hash);
+            }
+            free(capability_data);
+        }
     }
 
     tpm2_session *s = NULL;

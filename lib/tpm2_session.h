@@ -106,6 +106,15 @@ void tpm2_session_set_path(tpm2_session_data *data, const char *path);
 void tpm2_session_set_attrs(tpm2_session_data *data, TPMA_SESSION attrs);
 
 /**
+ * Get the authHash parameter.
+ * @param data
+ *  The session data to get
+ * @return
+ *  The authHash value.
+ */
+TPMI_ALG_HASH tpm2_session_data_get_authhash(tpm2_session_data *data);
+
+/**
  * Retrieves the authHash parameter used to start the authorization session.
  * @param session
  *  The tpm2_session started with tpm2_session_new().
