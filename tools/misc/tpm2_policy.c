@@ -58,8 +58,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = Tss2_PolicyCalculate(
-            policy_ctx->policy, /* could we just pass context and drop these? */
-            &policy_ctx->policyDigests, /* same as above */
+            policy_ctx,
             TPM2_ALG_SHA256,
             32, /* this could be computed from alg... */
             0); /* I can't figure out what this is for, looks like some kind of recursion in the tss2 lib */
@@ -158,6 +157,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
+    printf("success\n");
     return tool_rc_success;
 }
 
