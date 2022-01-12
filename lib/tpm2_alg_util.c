@@ -197,6 +197,8 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
             do_scheme_halg(scheme, 4, TPM2_ALG_ECDH);
         } else if (!strncmp(scheme, "ecschnorr", 9)) {
             do_scheme_halg(scheme, 9, TPM2_ALG_ECSCHNORR);
+        } else if (!strncmp(scheme, "sm2", 3)) {
+            do_scheme_halg(scheme, 3, TPM2_ALG_SM2);
         } else if (!strncmp(scheme, "ecdaa", 5)) {
             do_scheme_halg(scheme, 5, TPM2_ALG_ECDAA);
             /*
@@ -1104,6 +1106,18 @@ bool tpm2_alg_util_is_aes_size_valid(UINT16 size_in_bytes) {
         return true;
     default:
         LOG_ERR("Invalid AES key size, got %u bytes, expected 16,24 or 32",
+                size_in_bytes);
+        return false;
+    }
+}
+
+bool tpm2_alg_util_is_sm4_size_valid(UINT16 size_in_bytes) {
+
+    switch (size_in_bytes) {
+    case 16:
+        return true;
+    default:
+        LOG_ERR("Invalid SM4 key size, got %u bytes, expected 16",
                 size_in_bytes);
         return false;
     }
