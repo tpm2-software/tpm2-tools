@@ -160,6 +160,28 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
+    /* AFter execute hashes should match */
+    TPM2B_DIGEST *digest2 = NULL;
+    rc = Esys_PolicyGetDigest(ectx, session, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &digest2);
+    if (rc) {
+        LOG_ERR("Esys_PolicyGetDigest failed");
+        return tool_rc_general_error;
+    }
+
+    printf("hash: ");
+    tpm2_util_hexdump2(stdout, digest2->buffer, digest2->size);
+    printf("\n");
+    Esys_Free(digest2);
+
+    const char *description = NULL;
+    rc = Tss2_PolicyGetDescription(policy_ctx, &description);
+    if (rc) {
+        LOG_ERR("Tss2_PolicyGetDescription failed");
+        return tool_rc_general_error;
+    }
+
+    printf("description: \"%s\"\n", description);
+
     printf("success\n");
     return tool_rc_success;
 }
