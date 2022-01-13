@@ -137,7 +137,7 @@ static void handle_default_attributes(void) {
     if (h == ESYS_TR_RH_OWNER) {
         ctx.nv_attribute |= TPMA_NV_OWNERWRITE | TPMA_NV_OWNERREAD;
     } else if (h == ESYS_TR_RH_PLATFORM) {
-        ctx.nv_attribute |= TPMA_NV_PPWRITE | TPMA_NV_PPREAD;
+        ctx.nv_attribute |= TPMA_NV_PPWRITE | TPMA_NV_PPREAD | TPMA_NV_PLATFORMCREATE;
     } /* else it's an nv index for auth */
 
     /* if it has a policy file, set policy read and write vs auth read and write */
