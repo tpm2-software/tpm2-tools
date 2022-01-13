@@ -46,7 +46,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
-    TPMS_POLICY *policy_ctx;
+    TSS2_POLICY *policy_ctx = NULL;
 
     TSS2_RC rc = Tss2_PolicyInstantiate(
         ctx.policy_file,
@@ -68,8 +68,11 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     /* Why doesn't calculate give us the aggregate hash? */
+    TPMU_HA digest = { 0 };
+    Tss2_PolicyGetDigest(policy_ctx, &digest);
+
     printf("hash: ");
-    tpm2_util_hexdump2(stdout, policy_ctx->policyDigests.digests[0].digest.sha256, 32);
+    tpm2_util_hexdump2(stdout, digest.sha256, 32);
     printf("\n");
 
     /* TODO TAKE USER INPUTS */
