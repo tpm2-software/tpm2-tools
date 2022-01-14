@@ -13,7 +13,7 @@
 
 typedef struct tpm2_policy_ctx tpm2_policy_ctx;
 struct tpm2_policy_ctx {
-    ifapi_policyeval_INST_CB cb;
+    TSS2_POLICY_CALLBACKS cb;
     const char *policy_file;
 };
 
@@ -57,19 +57,15 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
+    TPMU_HA digest = { 0 };
     rc = Tss2_PolicyCalculate(
             policy_ctx,
             TPM2_ALG_SHA256,
-            32, /* this could be computed from alg... */
-            0); /* I can't figure out what this is for, looks like some kind of recursion in the tss2 lib */
+            &digest);
     if (rc) {
         LOG_ERR("Calculate failed");
         return tool_rc_general_error;
     }
-
-    /* Why doesn't calculate give us the aggregate hash? */
-    TPMU_HA digest = { 0 };
-    Tss2_PolicyGetDigest(policy_ctx, &digest);
 
     printf("hash: ");
     tpm2_util_hexdump2(stdout, digest.sha256, 32);
