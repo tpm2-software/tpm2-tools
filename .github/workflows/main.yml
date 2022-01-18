@@ -2,7 +2,7 @@ name: CI
 on:
   [push, pull_request]
 jobs:
-  generic-build-test:
+  build-test:
     runs-on: ubuntu-latest
     if: "!contains(github.ref, 'coverity_scan')"
     strategy:
@@ -12,11 +12,13 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
-      - name: Launch Container
-        env:
+      - name: Launch Action
+        uses:
+          tpm2-software/ci/runCI@main
+        with:
+          PROJECT_NAME: ${{ github.event.repository.name }}
           DOCKER_IMAGE: ${{ matrix.docker_image }}
           CC: ${{ matrix.compiler }}
-        run: ./.ci/ci.run
       - name: failure
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
@@ -29,13 +31,15 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
-      - name: Launch Container
-        env:
+      - name: Launch Action
+        uses:
+          tpm2-software/ci/runCI@main
+        with:
+          PROJECT_NAME: ${{ github.event.repository.name }}
           DOCKER_IMAGE: ubuntu-18.04
           CC: ${{ matrix.compiler }}
           TPM2_TSS_VERSION: master
           GIT_FULL_CLONE: true
-        run: ./.ci/ci.run
       - name: failure
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
@@ -45,12 +49,14 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
-      - name: Launch Container
-        env:
+      - name: Launch Action
+        uses:
+          tpm2-software/ci/runCI@main
+        with:
+          PROJECT_NAME: ${{ github.event.repository.name }}
           ENABLE_COVERAGE: true
           DOCKER_IMAGE: ubuntu-18.04
           CC: gcc
-        run: ./.ci/ci.run
       - name: failure cat build logs
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
@@ -63,8 +69,11 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
-      - name: Launch Container
-        env:
+      - name: Launch Coverity Action
+        uses:
+          tpm2-software/ci/coverityScan@main
+        with:
+          PROJECT_NAME: ${{ github.event.repository.name }}
           REPO_BRANCH: ${{ github.ref }}
           REPO_NAME: ${{ github.repository }}
           ENABLE_COVERITY: true
@@ -72,7 +81,6 @@ jobs:
           CC: gcc
           COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
           COVERITY_SUBMISSION_EMAIL: william.c.roberts@gmail.com
-        run: ./.ci/ci.run
       - name: failure
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
