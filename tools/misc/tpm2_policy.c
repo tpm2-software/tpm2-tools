@@ -57,7 +57,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    TPMU_HA digest = { 0 };
+    TPM2B_DIGEST digest = { 0 };
     rc = Tss2_PolicyCalculate(
             policy_ctx,
             TPM2_ALG_SHA256,
@@ -68,7 +68,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     printf("hash: ");
-    tpm2_util_hexdump2(stdout, digest.sha256, 32);
+    tpm2_util_hexdump2(stdout, digest.buffer, digest.size);
     printf("\n");
 
     /* TODO TAKE USER INPUTS */
