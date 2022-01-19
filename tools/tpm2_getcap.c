@@ -182,11 +182,12 @@ static void print_cap_map() {
 
 /*
  * There are a number of fixed TPM properties (tagged properties) that are
- * characters (8bit chars) packed into 32bit integers, trim leading and trailing spaces
+ * characters (8bit chars) packed into 32bit integers, trim leading and trailing
+ * spaces.
+ * Also add the escape characters when necessary.
  */
 static char *
 get_uint32_as_chars(UINT32 value) {
-    static char buf[5];
 
     value = tpm2_util_ntoh_32(value);
     UINT8 *bytes = (UINT8 *) &value;
@@ -215,8 +216,18 @@ get_uint32_as_chars(UINT32 value) {
         }
     }
 
-    memcpy(buf, bytes, j);
-    buf[j] = '\0';
+    static char buf[10] = { 0 };
+    unsigned k = 0;
+    for(i = 0; i < j; i++) {
+        if (bytes[i] == '"') {  // Characters that must be escaped
+            buf[k] = '\\';      // The escape character
+            k+=1;
+        }
+        buf[k] = bytes[i];
+        k++;
+    }
+    buf[k] = '\0';
+
     return buf;
 }
 /*
