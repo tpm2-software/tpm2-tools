@@ -91,14 +91,16 @@ struct tpm_create_ctx {
 #define DEFAULT_KEY_ALG "rsa2048"
 
 static tpm_create_ctx ctx = {
-        .object = { .alg = DEFAULT_KEY_ALG },
-        .object.creation_pcr = { .count = 0 },
+        .object = {
+            .alg = DEFAULT_KEY_ALG,
+            .creation_pcr = { .count = 0 },
+            .object_handle = ESYS_TR_NONE,
+            .outside_info.size = 0,
+        },
         .aux_session_handle[0] = ESYS_TR_NONE,
         .aux_session_handle[1] = ESYS_TR_NONE,
-        .object.object_handle = ESYS_TR_NONE,
         .cp_hash.size = 0,
         .is_command_dispatch = true,
-        .object.outside_info.size = 0,
         .parameter_hash_algorithm = TPM2_ALG_ERROR,
         .format = pubkey_format_tss,
 };
