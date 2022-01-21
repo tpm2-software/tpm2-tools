@@ -88,6 +88,66 @@ out:
     return rc;
 }
 
+/* e = M */
+static TPM2B *message_from_file(const char *msg_file_path) {
+
+    unsigned long size = 0;
+    bool result = files_get_file_size_path(msg_file_path, &size);
+    if (!result) {
+        return 0;
+    }
+
+    if (!size) {
+        LOG_ERR("The msg file \"%s\" is empty", msg_file_path);
+        return 0;
+    }
+
+    TPM2B *msg = (TPM2B *) calloc(1, sizeof(TPM2B) + size);
+    if (!msg) {
+        LOG_ERR("OOM");
+        return 0;
+    }
+
+    UINT16 tmp = msg->size = size;
+    if (!files_load_bytes_from_path(msg_file_path, msg->buffer, &tmp)) {
+        free(msg);
+        return 0;
+    }
+    return msg;
+}
+
+/* e = Z || M, specified in GM/T 0003.2-2012*/
+static TPM2B *message_from_file_with_sm2_z_digest(const char *msg_file_path, ESYS_CONTEXT *ectx) {
+
+    TPM2B_DIGEST *z_digest = tpm2_alg_util_sm2_calculate_z_digest(ectx, ctx.signing_key.object.tr_handle);
+    if(z_digest == 0) {
+        LOG_ERR("a error to calculate Z digest!");
+        return 0;
+    }
+
+    TPM2B *msg = message_from_file(msg_file_path);
+    if(msg == 0) {
+        LOG_ERR("a error to read message file!");
+        free(z_digest);
+        return 0;
+    }
+
+    TPM2B *message_sigend_by_sm2 = (TPM2B *) calloc(1, sizeof(TPM2B) + z_digest->size + msg->size);
+    if(message_sigend_by_sm2 == 0) {
+        LOG_ERR("a error to calloc memory!");
+        goto done;
+    }
+    message_sigend_by_sm2->size = z_digest->size + msg->size;
+
+    memcpy(message_sigend_by_sm2->buffer, z_digest->buffer, z_digest->size);
+    memcpy(message_sigend_by_sm2->buffer+z_digest->size, msg->buffer, msg->size);
+
+done:
+    free(z_digest);
+    free(msg);
+    return message_sigend_by_sm2;
+}
+
 static tool_rc init(ESYS_CONTEXT *ectx) {
 
     /*
@@ -146,6 +206,27 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
      * A digest is calculated first in this case.
      */
     if (!ctx.flags.d) {
+        if(ctx.in_scheme.scheme == TPM2_ALG_SM2) {
+            TPM2B *m_input = message_from_file_with_sm2_z_digest(ctx.input_file, ectx);
+            if(m_input == 0) {
+                LOG_ERR("Could not open file \"%s\"", ctx.input_file);
+                return tool_rc_general_error;
+            }
+
+            TPMT_TK_HASHCHECK *temp_validation_ticket;
+            rc = tpm2_hash_compute_data(ectx, TPM2_ALG_SM3_256, TPM2_RH_NULL, m_input->buffer,
+                    m_input->size, &ctx.digest, &temp_validation_ticket);
+            if (rc != tool_rc_success) {
+                LOG_ERR("Could not hash input");
+            } else {
+                ctx.validation = *temp_validation_ticket;
+            }
+
+            free(temp_validation_ticket);
+            free(m_input);
+            return rc;
+        }
+
         FILE *input = ctx.input_file ? fopen(ctx.input_file, "rb") : stdin;
         if (!input) {
             LOG_ERR("Could not open file \"%s\"", ctx.input_file);

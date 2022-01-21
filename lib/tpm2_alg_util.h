@@ -239,4 +239,15 @@ bool tpm2_alg_util_is_sm4_size_valid(UINT16 size_in_bytes);
  */
 TPM2_ALG_ID tpm2_alg_util_get_name_alg(ESYS_CONTEXT *ectx, ESYS_TR handle);
 
+/**
+ * Determines calculate z digest for sm2 signature algorithm.
+ * @param ectx
+ *  The Enhanced system api (ESAPI_) context.
+ * @param tr_handle
+ *  Optional. The Esys handle for the TPM2 object
+ * @return
+ *  TPM2B_DIGEST pointer if success, NULL otherwise.
+ */
+TPM2B_DIGEST *tpm2_alg_util_sm2_calculate_z_digest(ESYS_CONTEXT *ectx, ESYS_TR tr_handle);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */
