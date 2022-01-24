@@ -1,0 +1,26 @@
+ bash completion for tss2_gettpm2object              -*- shell-script -*-
+
+_tss2_gettpm2object()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[c] | --context)
+            _filedir
+            if [ x"$cur" = x ]; then COMPREPLY+=( '-' ); fi
+            return;;
+        -!(-*)[p] | --path)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f -p --path= --context= -c" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_gettpm2object tss2_gettpm2object
+
+# ex: filetype=sh
