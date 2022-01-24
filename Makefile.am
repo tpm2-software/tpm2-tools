@@ -66,6 +66,7 @@ tss2_tools = \
     tools/fapi/tss2_getplatformcertificates.c \
     tools/fapi/tss2_gettpmblobs.c \
     tools/fapi/tss2_getappdata.c \
+    tools/fapi/tss2_gettpm2object.c \
     tools/fapi/tss2_setappdata.c \
     tools/fapi/tss2_setcertificate.c \
     tools/fapi/tss2_sign.c \
@@ -483,6 +484,7 @@ dist_man1_MANS += \
     man/man1/tss2_getplatformcertificates.1 \
     man/man1/tss2_gettpmblobs.1 \
     man/man1/tss2_getappdata.1 \
+    man/man1/tss2_gettpm2object.1 \
     man/man1/tss2_setappdata.1 \
     man/man1/tss2_setcertificate.1 \
     man/man1/tss2_exportkey.1 \
@@ -589,6 +591,7 @@ dist_bashcomp_DATA+= \
     dist/bash-completion/tpm2-tools/tss2_gettpmblobs \
 	dist/bash-completion/tpm2-tools/tss2_setcertificate \
     dist/bash-completion/tpm2-tools/tss2_getappdata \
+    dist/bash-completion/tpm2-tools/tss2_gettpm2object \
     dist/bash-completion/tpm2-tools/tss2_setappdata \
 	dist/bash-completion/tpm2-tools/tss2_sign \
 	dist/bash-completion/tpm2-tools/tss2_verifysignature \
