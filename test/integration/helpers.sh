@@ -292,6 +292,7 @@ function start_sim() {
         case "$TPM2_SIM" in
             *swtpm) "$TPM2_SIM" socket --tpm2 --server port="$tpm2_sim_port" \
                                        --ctrl type=tcp,port="$tpm2_sim_cmd_port" \
+                                       --seccomp action="none" \
                                        --flags not-need-init --tpmstate dir="$PWD" &;;
             *tpm_server) "$TPM2_SIM" -port "$tpm2_sim_port" &;;
             *) echo "Unknown TPM simulator $TPM2_SIM"; return 1;;
