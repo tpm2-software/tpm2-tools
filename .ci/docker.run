@@ -51,6 +51,15 @@ fi
 # Bootstrap in the tpm2.0-tss tools directory
 ./bootstrap
 
+# Multiarch builds
+if [[ ${MULTIARCH_BUILD} == "true" ]]; then
+  mkdir ./build
+  cd ./build
+  ../configure --enable-unit --disable-fapi $config_flags
+  make check
+  exit 0
+fi
+
 # clang has asan enabled with options exported that fail
 # make distcheck, so only do this with gcc.
 # Do a make distcheck in the root, clear it and than
