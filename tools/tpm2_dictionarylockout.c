@@ -11,6 +11,9 @@
 
 typedef struct dictionarylockout_ctx dictionarylockout_ctx;
 struct dictionarylockout_ctx {
+    /*
+     * Inputs
+     */
     struct {
         const char *ctx_path;
         const char *auth_str;
@@ -25,12 +28,186 @@ struct dictionarylockout_ctx {
     bool is_setup_max_tries;
     bool is_setup_recovery_time;
     bool is_setup_lockoutrecovery_time;
+
+    /*
+     * Outputs
+     */
+
+    /*
+     * Parameter hashes
+     */
     char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
 static dictionarylockout_ctx ctx = {
     .auth_hierarchy.ctx_path = "l",
 };
+
+
+static tool_rc dictionarylockout(ESYS_CONTEXT *ectx) {
+
+    /*
+     * If setup params and clear lockout are both required, clear lockout should
+     * precede parameters setup.
+     */
+    tool_rc rc = tool_rc_success;
+    tool_rc tmp_rc = tool_rc_success;
+    if (ctx.clear_lockout) {
+        tmp_rc = tpm2_dictionarylockout_reset(ectx, &ctx.auth_hierarchy.object,
+            ctx.cphash);
+        if (tmp_rc != tool_rc_success) {
+            LOG_ERR("Failed DictionaryLockout Reset");
+            rc = tmp_rc;
+        }
+    }
+
+    if (ctx.setup_parameters) {
+        tmp_rc = tpm2_dictionarylockout_setup(ectx, &ctx.auth_hierarchy.object,
+            ctx.max_tries, ctx.recovery_time, ctx.lockout_recovery_time,
+            ctx.cphash);
+        if (tmp_rc != tool_rc_success) {
+            LOG_ERR("Failed DictionaryLockout Setup");
+            rc = tmp_rc;
+        }
+    }
+
+    return rc;
+}
+
+
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+
+    return rc;
+}
+
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+
+    /* Object #1 */
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_L);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid lockout authorization");
+        return rc;
+    }
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+    if (ctx.setup_parameters && ctx.is_command_dispatch) {
+        TPMS_CAPABILITY_DATA *capabilities = 0;
+        rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_VAR,
+            TPM2_MAX_TPM_PROPERTIES, 0, &capabilities);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Couldn't read the currently setup parameters.");
+            return rc;
+        }
+
+        TPMS_TAGGED_PROPERTY *properties = capabilities->data.tpmProperties.tpmProperty;
+        size_t count = capabilities->data.tpmProperties.count;
+
+        if (!count) {
+            LOG_ERR("Couldn't read the currently setup parameters.");
+            free(capabilities);
+            return tool_rc_general_error;
+        }
+
+        size_t i;
+        for (i = 0; i < count; i++) {
+            if (!ctx.is_setup_max_tries &&
+                properties[i].property == TPM2_PT_MAX_AUTH_FAIL) {
+                ctx.max_tries = properties[i].value;
+                continue;
+            }
+            if (!ctx.is_setup_recovery_time &&
+                properties[i].property == TPM2_PT_LOCKOUT_INTERVAL) {
+                ctx.recovery_time = properties[i].value;
+                continue;
+            }
+            if (!ctx.is_setup_lockoutrecovery_time &&
+                properties[i].property == TPM2_PT_LOCKOUT_RECOVERY) {
+                ctx.lockout_recovery_time = properties[i].value;
+                continue;
+            }
+        }
+        free(capabilities);
+    }
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    return rc;
+}
+
+static tool_rc check_options(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+
+    if (!ctx.clear_lockout && !ctx.setup_parameters) {
+        LOG_ERR("Invalid operational input: Neither Setup nor Clear lockout "
+                "requested.");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.is_command_dispatch) {
+        LOG_WARN("Generating cpHash. Exiting without executing clear.");
+    }
+
+    return tool_rc_success;
+}
 
 static bool on_option(char key, char *value) {
 
@@ -90,133 +267,75 @@ static bool on_option(char key, char *value) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "max-tries",             required_argument, NULL, 'n' },
-        { "recovery-time",         required_argument, NULL, 't' },
-        { "lockout-recovery-time", required_argument, NULL, 'l' },
-        { "auth",                  required_argument, NULL, 'p' },
-        { "clear-lockout",         no_argument,       NULL, 'c' },
-        { "setup-parameters",      no_argument,       NULL, 's' },
-        { "cphash",                required_argument, NULL,  0  },
+        { "max-tries",             required_argument, 0, 'n' },
+        { "recovery-time",         required_argument, 0, 't' },
+        { "lockout-recovery-time", required_argument, 0, 'l' },
+        { "auth",                  required_argument, 0, 'p' },
+        { "clear-lockout",         no_argument,       0, 'c' },
+        { "setup-parameters",      no_argument,       0, 's' },
+        { "cphash",                required_argument, 0,  0  },
     };
 
     *opts = tpm2_options_new("n:t:l:p:cs", ARRAY_LEN(topts), topts, on_option,
-    NULL, 0);
+        0, 0);
 
-    return *opts != NULL;
+    return *opts != 0;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (!ctx.clear_lockout && !ctx.setup_parameters) {
-        LOG_ERR("Invalid operational input: Neither Setup nor Clear lockout "
-                "requested.");
-        return tool_rc_option_error;
-    }
-
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-            TPM2_HANDLE_FLAGS_L);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options(ectx);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid authorization");
         return rc;
     }
 
     /*
-     * If calculating cpHash without executing the command, skip reading
-     * existing dictionary lockout parameters.
+     * 2. Process inputs
      */
-    if (ctx.setup_parameters && !ctx.cp_hash_path) {
-        TPMS_CAPABILITY_DATA *capabilities = NULL;
-        rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_VAR,
-            TPM2_MAX_TPM_PROPERTIES, NULL, &capabilities);
-        if (rc != tool_rc_success) {
-            LOG_ERR("Couldn't read the currently setup parameters.");
-            return rc;
-        }
-
-        TPMS_TAGGED_PROPERTY *properties = capabilities->data.tpmProperties.tpmProperty;
-        size_t count = capabilities->data.tpmProperties.count;
-
-        if (!count) {
-            LOG_ERR("Couldn't read the currently setup parameters.");
-            free(capabilities);
-            return tool_rc_general_error;
-        }
-
-        size_t i;
-        for (i = 0; i < count; i++) {
-            if (!ctx.is_setup_max_tries &&
-                properties[i].property == TPM2_PT_MAX_AUTH_FAIL) {
-                ctx.max_tries = properties[i].value;
-                continue;
-            }
-            if (!ctx.is_setup_recovery_time &&
-                properties[i].property == TPM2_PT_LOCKOUT_INTERVAL) {
-                ctx.recovery_time = properties[i].value;
-                continue;
-            }
-            if (!ctx.is_setup_lockoutrecovery_time &&
-                properties[i].property == TPM2_PT_LOCKOUT_RECOVERY) {
-                ctx.lockout_recovery_time = properties[i].value;
-                continue;
-            }
-        }
-        free(capabilities);
-    }
-
-    TPM2B_DIGEST cp_hash = { .size = 0 };
-    if (ctx.cp_hash_path && ctx.clear_lockout) {
-        LOG_WARN("Calculating cpHash. Exiting without resetting dictionary lockout");
-        tool_rc rc = tpm2_dictionarylockout_reset(ectx,
-        &ctx.auth_hierarchy.object, &cp_hash);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-        goto out;
-    }
-
-    if (ctx.cp_hash_path && ctx.setup_parameters) {
-        LOG_WARN("Calculating cpHash. Exiting without setting dictionary lockout");
-        tool_rc rc = tpm2_dictionarylockout_setup(ectx,
-        &ctx.auth_hierarchy.object, ctx.max_tries, ctx.recovery_time,
-        ctx.lockout_recovery_time, &cp_hash);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-        goto out;
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     /*
-     * If setup params and clear lockout are both required, clear lockout should
-     * precede parameters setup.
+     * 3. TPM2_CC_<command> call
      */
-    if (ctx.clear_lockout) {
-        return tpm2_dictionarylockout_reset(ectx, &ctx.auth_hierarchy.object,
-        NULL);
+    rc = dictionarylockout(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    if (ctx.setup_parameters) {
-        return tpm2_dictionarylockout_setup(ectx, &ctx.auth_hierarchy.object,
-        ctx.max_tries, ctx.recovery_time, ctx.lockout_recovery_time, NULL);
-    }
-
-out:
-    if (ctx.cp_hash_path) {
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-        }
-    }
-    return rc;
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
 
-    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    /*
+     * 1. Free objects
+     */
+
+    /*
+     * 2. Close authorization sessions
+     */
+    tool_rc rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
+
+    /*
+     * 3. Close auxiliary sessions
+     */
+
+    return rc;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("dictionarylockout", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("dictionarylockout", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, 0)
