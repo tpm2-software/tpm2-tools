@@ -9,6 +9,7 @@
 #include "tpm2_tool.h"
 #include "tpm2_options.h"
 
+#define MAX_SESSIONS 3
 typedef struct dictionarylockout_ctx dictionarylockout_ctx;
 struct dictionarylockout_ctx {
     /*
@@ -36,14 +37,15 @@ struct dictionarylockout_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static dictionarylockout_ctx ctx = {
     .auth_hierarchy.ctx_path = "l",
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 
@@ -57,7 +59,7 @@ static tool_rc dictionarylockout(ESYS_CONTEXT *ectx) {
     tool_rc tmp_rc = tool_rc_success;
     if (ctx.clear_lockout) {
         tmp_rc = tpm2_dictionarylockout_reset(ectx, &ctx.auth_hierarchy.object,
-            ctx.cphash);
+            &ctx.cp_hash, ctx.parameter_hash_algorithm);
         if (tmp_rc != tool_rc_success) {
             LOG_ERR("Failed DictionaryLockout Reset");
             rc = tmp_rc;
@@ -67,7 +69,7 @@ static tool_rc dictionarylockout(ESYS_CONTEXT *ectx) {
     if (ctx.setup_parameters) {
         tmp_rc = tpm2_dictionarylockout_setup(ectx, &ctx.auth_hierarchy.object,
             ctx.max_tries, ctx.recovery_time, ctx.lockout_recovery_time,
-            ctx.cphash);
+            &ctx.cp_hash, ctx.parameter_hash_algorithm);
         if (tmp_rc != tool_rc_success) {
             LOG_ERR("Failed DictionaryLockout Setup");
             rc = tmp_rc;
@@ -178,11 +180,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.auth_hierarchy.object.session,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     return rc;
 }
@@ -198,12 +209,14 @@ static tool_rc check_options(ESYS_CONTEXT *ectx) {
 
     if (!ctx.clear_lockout && !ctx.setup_parameters) {
         LOG_ERR("Invalid operational input: Neither Setup nor Clear lockout "
-                "requested.");
+            "requested.");
         return tool_rc_option_error;
     }
 
-    if (!ctx.is_command_dispatch) {
-        LOG_WARN("Generating cpHash. Exiting without executing clear.");
+    if (ctx.setup_parameters && ctx.clear_lockout && ctx.cp_hash_path) {
+        LOG_ERR("When calculating pHash, select parameter setup or reset,"
+            " not both");
+        return tool_rc_option_error;
     }
 
     return tool_rc_success;

@@ -257,12 +257,13 @@ tool_rc tpm2_clockrateadjust(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
         TPM2_CLOCK_ADJUST rate_adjust, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_dictionarylockout_reset(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy, TPM2B_DIGEST *cp_hash);
+    tpm2_loaded_object *auth_hierarchy, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_dictionarylockout_setup(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy, UINT32 max_tries,
-        UINT32 recovery_time, UINT32 lockout_recovery_time,
-        TPM2B_DIGEST *cp_hash);
+    tpm2_loaded_object *auth_hierarchy, UINT32 max_tries, UINT32 recovery_time,
+    UINT32 lockout_recovery_time, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_duplicate(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *duplicable_key, tpm2_loaded_object *new_parent_handle,
