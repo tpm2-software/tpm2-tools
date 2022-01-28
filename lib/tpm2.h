@@ -250,8 +250,8 @@ tool_rc tpm2_clear(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_clearcontrol(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy, TPMI_YES_NO disable_clear,
-        TPM2B_DIGEST *cp_hash);
+    tpm2_loaded_object *auth_hierarchy, TPMI_YES_NO disable_clear,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_clockrateadjust(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
         TPM2_CLOCK_ADJUST rate_adjust, TPM2B_DIGEST *cp_hash);
