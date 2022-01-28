@@ -247,7 +247,8 @@ tool_rc tpm2_load(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parentobj,
         ESYS_TR *object_handle, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_clear(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy, TPM2B_DIGEST *cp_hash);
+    tpm2_loaded_object *auth_hierarchy, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_clearcontrol(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy, TPMI_YES_NO disable_clear,
