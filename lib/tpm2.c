@@ -4688,7 +4688,8 @@ tpm2_setclock_skip_esapi_call:
 }
 
 tool_rc tpm2_clockrateadjust(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
-        TPM2_CLOCK_ADJUST rate_adjust, TPM2B_DIGEST *cp_hash) {
+    TPM2_CLOCK_ADJUST rate_adjust, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(ectx,
@@ -4698,7 +4699,7 @@ tool_rc tpm2_clockrateadjust(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
         return rc;
     }
 
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
@@ -4723,10 +4724,8 @@ tool_rc tpm2_clockrateadjust(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
             goto tpm2_clockrateadjust_free_name1;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(object->session));
-        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
-            tpm2_session_get_authhash(object->session), cp_hash);
+        rc = tpm2_sapi_getcphash(sys_context, name1, 0, 0,
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
