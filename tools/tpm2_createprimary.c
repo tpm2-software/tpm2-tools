@@ -4,7 +4,9 @@
 
 #include "files.h"
 #include "log.h"
+#include "object.h"
 #include "pcr.h"
+#include "tpm2.h"
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
@@ -12,42 +14,48 @@
 #include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
 
-#define DEFAULT_ATTRS \
-     TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT \
-    |TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT \
-    |TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH
-
-#define DEFAULT_PRIMARY_KEY_ALG "rsa2048:null:aes128cfb"
-
 typedef struct tpm_createprimary_ctx tpm_createprimary_ctx;
 struct tpm_createprimary_ctx {
+    /*
+     * Inputs
+     */
     struct {
-        char *auth_str;
-        tpm2_session *session;
-    } parent;
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } auth_hierarchy;
 
     tpm2_hierarchy_pdata objdata;
-    char *context_file;
-    char *unique_file;
-    char *key_auth_str;
-    char *creation_data_file;
-    char *creation_ticket_file;
-    char *creation_hash_file;
-    char *outside_info_data;
-    char *template_data_path;
-
     char *alg;
     char *halg;
     char *attrs;
     char *policy;
+    char *key_auth_str;
+    char *unique_file;
+    char *outside_info_data;
 
-    char *cp_hash_path;
-
+    /*
+     * Outputs
+     */
+    char *creation_data_file;
+    char *creation_ticket_file;
+    char *creation_hash_file;
+    char *template_data_path;
+    char *context_file;
     char *output_path;
     bool format_set;
     tpm2_convert_pubkey_fmt format;
+
+    /*
+     * Parameter hashes
+     */
+    char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
+#define DEFAULT_PRIMARY_KEY_ALG "rsa2048:null:aes128cfb"
 static tpm_createprimary_ctx ctx = {
     .alg = DEFAULT_PRIMARY_KEY_ALG,
     .objdata = {
@@ -57,192 +65,35 @@ static tpm_createprimary_ctx ctx = {
         },
     },
     .format = pubkey_format_tss,
+    .auth_hierarchy.ctx_path = "owner",
 };
 
-static bool on_option(char key, char *value) {
+static tool_rc createprimary(ESYS_CONTEXT *ectx) {
 
-    bool res;
-
-    switch (key) {
-    case 'C': {
-        res = tpm2_util_handle_from_optarg(value, &ctx.objdata.in.hierarchy,
-                TPM2_HANDLE_FLAGS_ALL_HIERACHIES);
-
-        if (!res) {
-            return false;
-        }
-        break;
-    }
-    case 'P':
-        ctx.parent.auth_str = value;
-        break;
-    case 'p':
-        ctx.key_auth_str = value;
-        break;
-    case 'g':
-        ctx.halg = value;
-        break;
-    case 'G':
-        ctx.alg = value;
-        break;
-    case 'c':
-        ctx.context_file = value;
-        break;
-    case 'u':
-        ctx.unique_file = value;
-        break;
-    case 'L':
-        ctx.policy = value;
-        break;
-    case 'a':
-        ctx.attrs = value;
-        break;
-    case 0:
-        ctx.creation_data_file = value;
-        break;
-    case 1:
-        ctx.template_data_path = value;
-        break;
-    case 't':
-        ctx.creation_ticket_file = value;
-        break;
-    case 'd':
-        ctx.creation_hash_file = value;
-        break;
-    case 'q':
-        ctx.outside_info_data = value;
-        break;
-    case 'l':
-        if (!pcr_parse_selections(value, &ctx.objdata.in.creation_pcr)) {
-            LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
-            return false;
-        }
-        break;
-    case 2:
-        ctx.cp_hash_path = value;
-        break;
-    case 'f':
-        ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
-        if (ctx.format == pubkey_format_err) {
-            return false;
-        }
-        ctx.format_set = true;
-        break;
-    case 'o':
-        ctx.output_path = value;
-        break;
-        /* no default */
-    }
-
-    return true;
+    return tpm2_create_primary(ectx, &ctx.auth_hierarchy.object,
+        &ctx.objdata.in.sensitive, &ctx.objdata.in.public,
+        &ctx.objdata.in.outside_info, &ctx.objdata.in.creation_pcr,
+        &ctx.objdata.out.handle, &ctx.objdata.out.public,
+        &ctx.objdata.out.creation.data, &ctx.objdata.out.hash,
+        &ctx.objdata.out.creation.ticket, ctx.cphash);
 }
 
-static bool tpm2_tool_onstart(tpm2_options **opts) {
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
 
-    const struct option topts[] = {
-        { "hierarchy",      required_argument, NULL, 'C' },
-        { "hierarchy-auth", required_argument, NULL, 'P' },
-        { "key-auth",       required_argument, NULL, 'p' },
-        { "hash-algorithm", required_argument, NULL, 'g' },
-        { "key-algorithm",  required_argument, NULL, 'G' },
-        { "key-context",    required_argument, NULL, 'c' },
-        { "policy",         required_argument, NULL, 'L' },
-        { "attributes",     required_argument, NULL, 'a' },
-        { "unique-data",    required_argument, NULL, 'u' },
-        { "creation-data",  required_argument, NULL,  0  },
-        { "template-data",  required_argument, NULL,  1  },
-        { "creation-ticket",required_argument, NULL, 't' },
-        { "creation-hash",  required_argument, NULL, 'd' },
-        { "outside-info",   required_argument, NULL, 'q' },
-        { "pcr-list",       required_argument, NULL, 'l' },
-        { "cphash",         required_argument, NULL,  2  },
-        { "format",         required_argument, NULL, 'f' },
-        { "output",         required_argument, NULL, 'o' },
-    };
 
-    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:l:o:f:", ARRAY_LEN(topts), topts,
-            on_option, NULL, 0);
-
-    return *opts != NULL;
-}
-
-static tool_rc validate_input_options(void) {
-
-    if (ctx.cp_hash_path && (ctx.creation_data_file || ctx.creation_hash_file ||
-    ctx.creation_ticket_file || ctx.context_file)) {
-        LOG_ERR("Cannot generate outputs when calculating cpHash");
-        return tool_rc_option_error;
-    }
-
-    if (ctx.format_set && !ctx.output_path) {
-        LOG_ERR("Cannot specify --format/-f without specifying --output/-o");
-        return tool_rc_option_error;
-    }
-
-    return tool_rc_success;
-}
-
-static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
-
-    /* Parent/ Hierarchy Auth */
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
-            &ctx.parent.session, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid parent key authorization");
-        return rc;
-    }
-
-    /* Primary key auth */
-    tpm2_session *tmp;
-    rc = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid new key authorization");
-        return rc;
-    }
-
-    const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
-    ctx.objdata.in.sensitive.sensitive.userAuth = *auth;
-
-    tpm2_session_close(&tmp);
-
+    UNUSED(ectx);
     /*
-     * Initialize the public properties of the key
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
-    rc = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs,
-            ctx.policy, DEFAULT_ATTRS, &ctx.objdata.in.public);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
 
-    /* Optional unique data */
-    if (ctx.unique_file) {
-        if (!strcmp(ctx.unique_file, "-")) {
-            ctx.unique_file = 0;
-        }
-        rc = files_load_unique_data(ctx.unique_file, &ctx.objdata.in.public);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-    }
-
-    /* Outside data is optional. If not specified default to 0 */
-    if (ctx.outside_info_data) {
-        ctx.objdata.in.outside_info.size = sizeof(ctx.objdata.in.outside_info.buffer);
-        bool result = tpm2_util_bin_from_hex_or_file(ctx.outside_info_data,
-                &ctx.objdata.in.outside_info.size,
-                ctx.objdata.in.outside_info.buffer);
-        if (!result) {
+        if (!is_file_op_success) {
             return tool_rc_general_error;
         }
     }
 
-    /*
-     * Template saved regardless of execution of the TPM2_CC_CreatePrimary.
-     *
-     * TODO: Does this need to be part of the no_execute_only_process_params
-     *       along side processing cphash.
-     *
-     */
     if (ctx.template_data_path) {
         bool result = files_save_template(&ctx.objdata.in.public.publicArea,
             ctx.template_data_path);
@@ -252,32 +103,18 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
         }
     }
 
-    return tool_rc_success;
-}
-
-static tool_rc no_execute_only_process_params(ESYS_CONTEXT *ectx) {
-
-    TPM2B_DIGEST cp_hash = { .size = 0 };
-    tool_rc rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session,
-    &ctx.objdata, &cp_hash);
-
-    if (rc == tool_rc_success) {
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            LOG_ERR("Failed to save cp hash");
-            rc = tool_rc_general_error;
-        }
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
     }
 
-    return rc;
-}
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    tpm2_util_public_to_yaml(ctx.objdata.out.public, 0);
 
-static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
-
-    tpm2_util_public_to_yaml(ctx.objdata.out.public, NULL);
-
-    tool_rc  rc = ctx.context_file ? files_save_tpm_context_to_path(ectx,
-    ctx.objdata.out.handle, ctx.context_file) : tool_rc_success;
+    rc = ctx.context_file ? files_save_tpm_context_to_path(ectx,
+        ctx.objdata.out.handle, ctx.context_file) : tool_rc_success;
     if (rc != tool_rc_success) {
         LOG_ERR("Failed saving object context.");
         return rc;
@@ -319,45 +156,276 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
         }
     }
 
+    return rc;
+}
+
+#define DEFAULT_ATTRS \
+     TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT \
+    |TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT \
+    |TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+    /* Primary key auth */
+    tpm2_session *tmp;
+    tool_rc rc = tpm2_auth_util_from_optarg(0, ctx.key_auth_str, &tmp, true);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid new key authorization");
+        return rc;
+    }
+
+    const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
+    ctx.objdata.in.sensitive.sensitive.userAuth = *auth;
+
+    tpm2_session_close(&tmp);
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+
+    /* Object #1 */
+    rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+        TPM2_HANDLE_FLAGS_ALL_HIERACHIES);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid hierarchy authorization");
+        return rc;
+    }
+    ctx.objdata.in.hierarchy = ctx.auth_hierarchy.object.handle;
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+    /*
+     * Initialize the public properties of the key
+     */
+    rc = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs,
+            ctx.policy, DEFAULT_ATTRS, &ctx.objdata.in.public);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /* Optional unique data */
+    if (ctx.unique_file) {
+        if (!strcmp(ctx.unique_file, "-")) {
+            ctx.unique_file = 0;
+        }
+        rc = files_load_unique_data(ctx.unique_file, &ctx.objdata.in.public);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+    }
+
+    /* Outside data is optional. If not specified default to 0 */
+    if (ctx.outside_info_data) {
+        ctx.objdata.in.outside_info.size = sizeof(ctx.objdata.in.outside_info.buffer);
+        bool result = tpm2_util_bin_from_hex_or_file(ctx.outside_info_data,
+                &ctx.objdata.in.outside_info.size,
+                ctx.objdata.in.outside_info.buffer);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+    }
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+
+    return rc;
+}
+
+static tool_rc check_options(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    if (ctx.cp_hash_path && (ctx.creation_data_file || ctx.creation_hash_file ||
+    ctx.creation_ticket_file || ctx.context_file)) {
+        LOG_ERR("Cannot generate outputs when calculating cpHash");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.format_set && !ctx.output_path) {
+        LOG_ERR("Cannot specify --format/-f without specifying --output/-o");
+        return tool_rc_option_error;
+    }
+
     return tool_rc_success;
+}
+
+static bool on_option(char key, char *value) {
+
+    bool result = true;
+    switch (key) {
+    case 'C':
+        ctx.auth_hierarchy.ctx_path = value;
+        break;
+    case 'P':
+        ctx.auth_hierarchy.auth_str = value;
+        break;
+    case 'p':
+        ctx.key_auth_str = value;
+        break;
+    case 'g':
+        ctx.halg = value;
+        break;
+    case 'G':
+        ctx.alg = value;
+        break;
+    case 'c':
+        ctx.context_file = value;
+        break;
+    case 'u':
+        ctx.unique_file = value;
+        break;
+    case 'L':
+        ctx.policy = value;
+        break;
+    case 'a':
+        ctx.attrs = value;
+        break;
+    case 0:
+        ctx.creation_data_file = value;
+        break;
+    case 1:
+        ctx.template_data_path = value;
+        break;
+    case 't':
+        ctx.creation_ticket_file = value;
+        break;
+    case 'd':
+        ctx.creation_hash_file = value;
+        break;
+    case 'q':
+        ctx.outside_info_data = value;
+        break;
+    case 'l':
+        result = pcr_parse_selections(value, &ctx.objdata.in.creation_pcr);
+        if (!result) {
+            LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
+            return result;
+        }
+        break;
+    case 2:
+        ctx.cp_hash_path = value;
+        break;
+    case 'f':
+        ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
+        if (ctx.format == pubkey_format_err) {
+            return false;
+        }
+        ctx.format_set = true;
+        break;
+    case 'o':
+        ctx.output_path = value;
+        break;
+        /* no default */
+    }
+
+    return result;
+}
+
+static bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
+        { "hierarchy",      required_argument, 0, 'C' },
+        { "hierarchy-auth", required_argument, 0, 'P' },
+        { "key-auth",       required_argument, 0, 'p' },
+        { "hash-algorithm", required_argument, 0, 'g' },
+        { "key-algorithm",  required_argument, 0, 'G' },
+        { "key-context",    required_argument, 0, 'c' },
+        { "policy",         required_argument, 0, 'L' },
+        { "attributes",     required_argument, 0, 'a' },
+        { "unique-data",    required_argument, 0, 'u' },
+        { "creation-data",  required_argument, 0,  0  },
+        { "template-data",  required_argument, 0,  1  },
+        { "creation-ticket",required_argument, 0, 't' },
+        { "creation-hash",  required_argument, 0, 'd' },
+        { "outside-info",   required_argument, 0, 'q' },
+        { "pcr-list",       required_argument, 0, 'l' },
+        { "cphash",         required_argument, 0,  2  },
+        { "format",         required_argument, 0, 'f' },
+        { "output",         required_argument, 0, 'o' },
+    };
+
+    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:l:o:f:", ARRAY_LEN(topts),
+        topts, on_option, 0, 0);
+
+    return *opts != 0;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    /* Validate input options */
-    tool_rc rc = validate_input_options();
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options(ectx);
     if (rc != tool_rc_success) {
-        return tool_rc_option_error;
+        return rc;
     }
 
-    /* Process inputs */
+    /*
+     * 2. Process inputs
+     */
     rc = process_inputs(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    /* Process & return uncoditionally if no execute paths are to be executed */
-    if (ctx.cp_hash_path) { // One of the conditions for no execute
-        return no_execute_only_process_params(ectx);
-    }
-
-    /* Dispatch TPM2_CC_CreatePrimary */
-    rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session, &ctx.objdata,
-    NULL);
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = createprimary(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    /* Process outputs and return */
-    return process_outputs(ectx);
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
 
-    return tpm2_session_close(&ctx.parent.session);
+    /*
+     * 1. Free objects
+     */
+
+    /*
+     * 2. Close authorization sessions
+     */
+    tool_rc rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
+
+    /*
+     * 3. Close auxiliary sessions
+     */
+
+    return rc;
 }
 
 static void tpm2_tool_onexit(void) {
@@ -366,4 +434,5 @@ static void tpm2_tool_onexit(void) {
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("createprimary", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, tpm2_tool_onexit)
+TPM2_TOOL_REGISTER("createprimary", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, tpm2_tool_onexit)

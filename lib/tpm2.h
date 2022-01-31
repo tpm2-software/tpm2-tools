@@ -70,13 +70,13 @@ tool_rc tpm2_get_capability(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
         UINT32 property, UINT32 property_count, TPMI_YES_NO *more_data,
         TPMS_CAPABILITY_DATA **capability_data);
 
-tool_rc tpm2_create_primary(ESYS_CONTEXT *esys_context, ESYS_TR primary_handle,
-        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-        const TPM2B_SENSITIVE_CREATE *in_sensitive, const TPM2B_PUBLIC *in_public,
-        const TPM2B_DATA *outside_info, const TPML_PCR_SELECTION *creation_pcr,
-        ESYS_TR *object_handle, TPM2B_PUBLIC **out_public,
-        TPM2B_CREATION_DATA **creation_data, TPM2B_DIGEST **creation_hash,
-        TPMT_TK_CREATION **creation_ticket);
+tool_rc tpm2_create_primary(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *auth_hierarchy_obj,
+    const TPM2B_SENSITIVE_CREATE *in_sensitive, const TPM2B_PUBLIC *in_public,
+    const TPM2B_DATA *outside_info, const TPML_PCR_SELECTION *creation_pcr,
+    ESYS_TR *object_handle, TPM2B_PUBLIC **out_public,
+    TPM2B_CREATION_DATA **creation_data, TPM2B_DIGEST **creation_hash,
+    TPMT_TK_CREATION **creation_ticket, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_pcr_read(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
         ESYS_TR shandle2, ESYS_TR shandle3,
