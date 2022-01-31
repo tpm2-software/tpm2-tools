@@ -64,20 +64,6 @@ struct tpm2_hierarchy_pdata {
 }
 
 /**
- * Creates a primary object.
- * @param context
- *  The Enhanced System API (ESAPI) context
- * @param session
- *  The authorised session for accessing the primary object
- * @param objdata
- *  The objects data configuration.
- * @return
- *  tool_rc indicating status.
- */
-tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *context, tpm2_session *sess,
-        tpm2_hierarchy_pdata *objdata, TPM2B_DIGEST *cp_hash);
-
-/**
  * Free allocated memory in a tpm2_hierarchy_pdata structure
  *
  * @param objdata

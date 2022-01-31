@@ -7,6 +7,7 @@
 #include <tss2/tss2_mu.h>
 
 #include "files.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_ctx_mgmt.h"
@@ -269,8 +270,12 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
         }
     }
 
-    rc = tpm2_hierarchy_create_primary(ectx,
-        ctx.auth_endorse_hierarchy.object.session, &ctx.objdata, NULL);
+    rc = tpm2_create_primary(ectx, &ctx.auth_endorse_hierarchy.object,
+        &ctx.objdata.in.sensitive, &ctx.objdata.in.public,
+        &ctx.objdata.in.outside_info, &ctx.objdata.in.creation_pcr,
+        &ctx.objdata.out.handle, &ctx.objdata.out.public,
+        &ctx.objdata.out.creation.data, &ctx.objdata.out.hash,
+        &ctx.objdata.out.creation.ticket, 0);
     if (rc != tool_rc_success) {
         return rc;
     }
