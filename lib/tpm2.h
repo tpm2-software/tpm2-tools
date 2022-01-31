@@ -76,7 +76,8 @@ tool_rc tpm2_create_primary(ESYS_CONTEXT *esys_context,
     const TPM2B_DATA *outside_info, const TPML_PCR_SELECTION *creation_pcr,
     ESYS_TR *object_handle, TPM2B_PUBLIC **out_public,
     TPM2B_CREATION_DATA **creation_data, TPM2B_DIGEST **creation_hash,
-    TPMT_TK_CREATION **creation_ticket, TPM2B_DIGEST *cp_hash);
+    TPMT_TK_CREATION **creation_ticket, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_pcr_read(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
         ESYS_TR shandle2, ESYS_TR shandle3,

@@ -275,7 +275,7 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
         &ctx.objdata.in.outside_info, &ctx.objdata.in.creation_pcr,
         &ctx.objdata.out.handle, &ctx.objdata.out.public,
         &ctx.objdata.out.creation.data, &ctx.objdata.out.hash,
-        &ctx.objdata.out.creation.ticket, 0);
+        &ctx.objdata.out.creation.ticket, 0, TPM2_ALG_ERROR);
     if (rc != tool_rc_success) {
         return rc;
     }
