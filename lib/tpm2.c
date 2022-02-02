@@ -2227,10 +2227,11 @@ tpm2_dictionary_attack_reset_skip_esapi_call:
 }
 
 tool_rc tpm2_duplicate(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *duplicable_key, tpm2_loaded_object *new_parent,
-        const TPM2B_DATA *in_key, const TPMT_SYM_DEF_OBJECT *sym_alg,
-        TPM2B_DATA **out_key, TPM2B_PRIVATE **duplicate,
-        TPM2B_ENCRYPTED_SECRET **encrypted_seed, TPM2B_DIGEST *cp_hash) {
+    tpm2_loaded_object *duplicable_key, tpm2_loaded_object *new_parent,
+    const TPM2B_DATA *in_key, const TPMT_SYM_DEF_OBJECT *sym_alg,
+    TPM2B_DATA **out_key, TPM2B_PRIVATE **duplicate,
+    TPM2B_ENCRYPTED_SECRET **encrypted_seed, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
@@ -2240,11 +2241,11 @@ tool_rc tpm2_duplicate(ESYS_CONTEXT *esys_context,
         return rc;
     }
 
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+        TSS2_SYS_CONTEXT *sys_context = 0;
         rc = tpm2_getsapicontext(esys_context, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
@@ -2258,22 +2259,20 @@ tool_rc tpm2_duplicate(ESYS_CONTEXT *esys_context,
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
+        TPM2B_NAME *name1 = 0;
         rc = tpm2_tr_get_name(esys_context, duplicable_key->tr_handle, &name1);
         if (rc != tool_rc_success) {
             goto tpm2_duplicate_free_name1;
         }
 
-        TPM2B_NAME *name2 = NULL;
+        TPM2B_NAME *name2 = 0;
         rc = tpm2_tr_get_name(esys_context, new_parent->tr_handle, &name2);
         if (rc != tool_rc_success) {
             goto tpm2_duplicate_free_name1_name2;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(duplicable_key->session));
-        rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
-            tpm2_session_get_authhash(duplicable_key->session), cp_hash);
+        rc = tpm2_sapi_getcphash(sys_context, name1, name2, 0,
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
