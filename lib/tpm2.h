@@ -265,10 +265,11 @@ tool_rc tpm2_dictionarylockout_setup(ESYS_CONTEXT *esys_context,
         TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_duplicate(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *duplicable_key, tpm2_loaded_object *new_parent_handle,
-        const TPM2B_DATA *in_key, const TPMT_SYM_DEF_OBJECT *sym_alg,
-        TPM2B_DATA **out_key, TPM2B_PRIVATE **duplicate,
-        TPM2B_ENCRYPTED_SECRET **encrypted_seed, TPM2B_DIGEST *cp_hash);
+    tpm2_loaded_object *duplicable_key, tpm2_loaded_object *new_parent_handle,
+    const TPM2B_DATA *in_key, const TPMT_SYM_DEF_OBJECT *sym_alg,
+    TPM2B_DATA **out_key, TPM2B_PRIVATE **duplicate,
+    TPM2B_ENCRYPTED_SECRET **encrypted_seed, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *encryption_key_obj, TPMI_YES_NO decrypt,

@@ -15,6 +15,7 @@
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_duplicate_ctx tpm_duplicate_ctx;
 struct tpm_duplicate_ctx {
     /*
@@ -71,23 +72,25 @@ struct tpm_duplicate_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static tpm_duplicate_ctx ctx = {
     .out_public_data = TPM2B_EMPTY_INIT,
     .in_private_key_data = TPM2B_EMPTY_INIT,
     .in_parent_public_key_data = TPM2B_EMPTY_INIT,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static tool_rc duplicate(ESYS_CONTEXT *ectx) {
 
     return tpm2_duplicate(ectx, &ctx.duplicable_key.object,
         &ctx.new_parent_key.object, &ctx.in_key, &ctx.sym_alg, &ctx.out_key,
-        &ctx.out_private_data, &ctx.out_sym_seed, ctx.cphash);
+        &ctx.out_private_data, &ctx.out_sym_seed, &ctx.cp_hash,
+        ctx.parameter_hash_algorithm);
 }
 
 static tool_rc openssl_create_duplicate(void) {
@@ -393,12 +396,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.duplicable_key.object.session,
+        0,
+        0
+    };
 
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
