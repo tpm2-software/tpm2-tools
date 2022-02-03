@@ -68,8 +68,19 @@ AC_CHECK_LIB(crypto, [EVP_sm4_cfb128], [
 PKG_CHECK_MODULES([CURL], [libcurl])
 
 # pretty print of devicepath if efivar library is present
-PKG_CHECK_MODULES([EFIVAR], [efivar],,[true])
-AC_CHECK_HEADERS([efivar/efivar.h])
+# auto detect if not specified via the --with-efivar option.
+AC_ARG_WITH([efivar],
+  AS_HELP_STRING([--with-efivar], [Build with lib efivar for pretty print of device path. Default auto detect]),
+  ,
+  with_efivar=auto
+)
+
+# use the true program to avoid failing hard
+AS_IF([test "x$with_efivar" == "xauto"],
+  [PKG_CHECK_MODULES([EFIVAR], [efivar],,[true])],
+  [test "x$with_efivar" == "xyes"],
+  [PKG_CHECK_MODULES([EFIVAR], [efivar])],
+)
 
 # backwards compat with older pkg-config
 # - pull in AC_DEFUN from pkg.m4
