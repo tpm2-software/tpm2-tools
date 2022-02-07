@@ -2311,6 +2311,10 @@ tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
         const TPM2B_MAX_BUFFER *input_data, TPM2B_MAX_BUFFER **output_data,
         TPM2B_IV **iv_out, TPM2B_DIGEST *cp_hash) {
 
+    /*
+     * try EncryptDecrypt2 first, and if the command is not supported by the TPM
+     * fall back to EncryptDecrypt.
+     */
     ESYS_TR shandle1 = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
     encryption_key_obj->tr_handle, encryption_key_obj->session, &shandle1);
