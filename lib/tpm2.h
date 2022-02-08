@@ -155,10 +155,10 @@ tool_rc tpm2_mu_tpmt_public_marshal(TPMT_PUBLIC const *src, uint8_t buffer[],
         size_t buffer_size, size_t *offset);
 
 tool_rc tpm2_evictcontrol(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy_obj,
-        tpm2_loaded_object *to_persist_key_obj,
-        TPMI_DH_PERSISTENT persistent_handle, ESYS_TR *new_object_handle,
-        TPM2B_DIGEST *cp_hash);
+    tpm2_loaded_object *auth_hierarchy_obj,
+    tpm2_loaded_object *to_persist_key_obj,
+    TPMI_DH_PERSISTENT persistent_handle, ESYS_TR *new_object_handle,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_hash(ESYS_CONTEXT *esys_context, ESYS_TR shandle1, ESYS_TR shandle2,
         ESYS_TR shandle3, const TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH hash_alg,
