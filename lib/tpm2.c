@@ -4781,14 +4781,11 @@ tool_rc tpm2_shutdown(ESYS_CONTEXT *ectx, TPM2_SU shutdown_type) {
     return tool_rc_success;
 }
 
-tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
-        tpm2_loaded_object *privacy_admin,
-        tpm2_loaded_object *signing_object,
-        const TPM2B_DATA *qualifying_data,
-        const TPMT_SIG_SCHEME *scheme,
-        TPM2B_ATTEST **time_info,
-        TPMT_SIGNATURE **signature,
-        TPM2B_DIGEST *cp_hash) {
+tool_rc tpm2_gettime(ESYS_CONTEXT *ectx, tpm2_loaded_object *privacy_admin,
+    tpm2_loaded_object *signing_object, const TPM2B_DATA *qualifying_data,
+    const TPMT_SIG_SCHEME *scheme, TPM2B_ATTEST **time_info,
+    TPMT_SIGNATURE **signature, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR privacy_admin_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(ectx,
@@ -4806,11 +4803,11 @@ tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
         return rc;
     }
 
-       if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+        TSS2_SYS_CONTEXT *sys_context = 0;
         rc = tpm2_getsapicontext(ectx, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
@@ -4824,22 +4821,20 @@ tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
+        TPM2B_NAME *name1 = 0;
         rc = tpm2_tr_get_name(ectx, privacy_admin->tr_handle, &name1);
         if (rc != tool_rc_success) {
             goto tpm2_gettime_free_name1;
         }
 
-        TPM2B_NAME *name2 = NULL;
+        TPM2B_NAME *name2 = 0;
         rc = tpm2_tr_get_name(ectx, signing_object->tr_handle, &name2);
         if (rc != tool_rc_success) {
             goto tpm2_gettime_free_name1_name2;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(signing_object->session));
-        rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
-            tpm2_session_get_authhash(signing_object->session), cp_hash);
+        rc = tpm2_sapi_getcphash(sys_context, name1, name2, 0,
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
@@ -4851,17 +4846,10 @@ tpm2_gettime_free_name1:
         goto tpm2_gettime_skip_esapi_call;
     }
 
-    TSS2_RC rval = Esys_GetTime(
-            ectx,
-            privacy_admin->tr_handle,
-            signing_object->tr_handle,
-            privacy_admin_session_handle,
-            sign_session_handle,
-            ESYS_TR_NONE,
-            qualifying_data,
-            scheme,
-            time_info,
-            signature);
+    TSS2_RC rval = Esys_GetTime(ectx, privacy_admin->tr_handle,
+        signing_object->tr_handle, privacy_admin_session_handle,
+        sign_session_handle, ESYS_TR_NONE, qualifying_data, scheme, time_info,
+        signature);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetTime, rval);
         return tool_rc_from_tpm(rval);
