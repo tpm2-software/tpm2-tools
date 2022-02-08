@@ -2306,10 +2306,11 @@ tpm2_duplicate_skip_esapi_call:
 }
 
 tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *encryption_key_obj, TPMI_YES_NO decrypt,
-        TPMI_ALG_SYM_MODE mode, const TPM2B_IV *iv_in,
-        const TPM2B_MAX_BUFFER *input_data, TPM2B_MAX_BUFFER **output_data,
-        TPM2B_IV **iv_out, TPM2B_DIGEST *cp_hash) {
+    tpm2_loaded_object *encryption_key_obj, TPMI_YES_NO decrypt,
+    TPMI_ALG_SYM_MODE mode, const TPM2B_IV *iv_in,
+    const TPM2B_MAX_BUFFER *input_data, TPM2B_MAX_BUFFER **output_data,
+    TPM2B_IV **iv_out, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     /*
      * try EncryptDecrypt2 first, and if the command is not supported by the TPM
@@ -2326,11 +2327,11 @@ tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
     /* Keep track of which version you ran for error reporting.*/
     unsigned version = 2;
 
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+        TSS2_SYS_CONTEXT *sys_context = 0;
         rc = tpm2_getsapicontext(esys_context, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
@@ -2354,17 +2355,15 @@ tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
+        TPM2B_NAME *name1 = 0;
         rc = tpm2_tr_get_name(esys_context, encryption_key_obj->tr_handle,
             &name1);
         if (rc != tool_rc_success) {
             goto tpm2_encryptdecrypt_free_name1;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(encryption_key_obj->session));
-        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
-            tpm2_session_get_authhash(encryption_key_obj->session), cp_hash);
+        rc = tpm2_sapi_getcphash(sys_context, name1, 0, 0,
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
