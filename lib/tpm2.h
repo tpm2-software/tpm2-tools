@@ -470,14 +470,11 @@ tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *hierarchy_object, TPM2B_DIGEST *auth_policy,
     TPMI_ALG_HASH hash_algorithm, TPM2B_DIGEST *cp_hash);
 
-tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
-        tpm2_loaded_object *privacy_admin,
-        tpm2_loaded_object *signing_object,
-        const TPM2B_DATA *qualifying_data,
-        const TPMT_SIG_SCHEME *scheme,
-        TPM2B_ATTEST **time_info,
-        TPMT_SIGNATURE **signature,
-        TPM2B_DIGEST *cp_hash);
+tool_rc tpm2_gettime(ESYS_CONTEXT *ectx, tpm2_loaded_object *privacy_admin,
+    tpm2_loaded_object *signing_object, const TPM2B_DATA *qualifying_data,
+    const TPMT_SIG_SCHEME *scheme, TPM2B_ATTEST **time_info,
+    TPMT_SIGNATURE **signature, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_setcommandcodeaudit(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_entity_obj, TPMI_ALG_HASH hash_algorithm,
