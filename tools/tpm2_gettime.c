@@ -9,14 +9,17 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
-#include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_hash.h"
 #include "tpm2_options.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm_gettime_ctx tpm_gettime_ctx;
 struct tpm_gettime_ctx {
+    /*
+     * Inputs
+     */
     struct {
         const char *ctx_path;
         const char *auth_str;
@@ -29,17 +32,29 @@ struct tpm_gettime_ctx {
         tpm2_loaded_object object;
     } privacy_admin;
 
-    tpm2_convert_sig_fmt sig_format;
     TPM2B_DATA qualifying_data;
 
     TPMI_ALG_HASH halg;
     TPMI_ALG_SIG_SCHEME sig_scheme;
     TPMT_SIG_SCHEME in_scheme;
 
+    /*
+     * Outputs
+     */
     const char *certify_info_path;
-    const char *output_path;
+    TPM2B_ATTEST *time_info;
 
+    const char *output_path;
+    TPMT_SIGNATURE *signature;
+    tpm2_convert_sig_fmt sig_format;
+
+    /*
+     * Parameter hashes
+     */
     char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
 static tpm_gettime_ctx ctx = {
@@ -48,27 +63,104 @@ static tpm_gettime_ctx ctx = {
         .privacy_admin = { .ctx_path = "endorsement" }
 };
 
-static tool_rc init(ESYS_CONTEXT *ectx) {
+static tool_rc gettime(ESYS_CONTEXT *ectx) {
 
-    if (!ctx.signing_key.ctx_path) {
-        LOG_ERR("Expected option \"-c\"");
-        return tool_rc_option_error;
+    return tpm2_gettime(ectx, &ctx.privacy_admin.object,
+        &ctx.signing_key.object, &ctx.qualifying_data, &ctx.in_scheme,
+        &ctx.time_info,&ctx.signature, ctx.cphash);
+}
+
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
     }
 
-    if (ctx.cp_hash_path && (ctx.output_path || ctx.certify_info_path)) {
-        LOG_ERR("Ignoring output options due to cpHash calculation");
-        return tool_rc_option_error;
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
     }
 
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    /* save the signature */
+    if (ctx.output_path) {
+        is_file_op_success = tpm2_convert_sig_save(ctx.signature,
+            ctx.sig_format, ctx.output_path);
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    if (ctx.certify_info_path) {
+        /* save the attestation data */
+        is_file_op_success = files_save_bytes_to_file(ctx.certify_info_path,
+            ctx.time_info->attestationData, ctx.time_info->size);
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    TPMS_ATTEST attest;
+    rc = files_tpm2b_attest_to_tpms_attest(ctx.time_info, &attest);
+    if (rc == tool_rc_success) {
+        tpm2_util_print_time(&attest.attested.time.time);
+    }
+
+    return rc;
+}
+
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+
+    /* Object #1 */
+    /* set up the privacy admin (always endorsement) hard coded in ctx init */
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.privacy_admin.ctx_path,
+        ctx.privacy_admin.auth_str, &ctx.privacy_admin.object, false,
+        TPM2_HANDLE_FLAGS_E);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /* Object #2 */
     /* load the signing key */
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
-            ctx.signing_key.auth_str, &ctx.signing_key.object, false,
-            TPM2_HANDLES_FLAGS_TRANSIENT|TPM2_HANDLES_FLAGS_PERSISTENT);
+    rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
+        ctx.signing_key.auth_str, &ctx.signing_key.object, false,
+        TPM2_HANDLES_FLAGS_TRANSIENT|TPM2_HANDLES_FLAGS_PERSISTENT);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key authorization");
         return rc;
     }
 
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
     /*
      * Set signature scheme for key type, or validate chosen scheme is allowed for key type.
      */
@@ -80,12 +172,34 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    /* set up the privacy admin (always endorsement) hard coded in ctx init */
-    rc = tpm2_util_object_load_auth(ectx, ctx.privacy_admin.ctx_path,
-            ctx.privacy_admin.auth_str, &ctx.privacy_admin.object, false,
-            TPM2_HANDLE_FLAGS_E);
-    if (rc != tool_rc_success) {
-        return rc;
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    return rc;
+}
+
+static tool_rc check_options(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+    if (!ctx.is_command_dispatch && (ctx.output_path || ctx.certify_info_path)) {
+        LOG_ERR("Ignoring output options due to cpHash calculation");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.signing_key.ctx_path) {
+        LOG_ERR("Expected option \"-c\"");
+        return tool_rc_option_error;
     }
 
     return tool_rc_success;
@@ -150,104 +264,89 @@ static bool on_option(char key, char *value) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      { "auth",                 required_argument, NULL, 'p' },
-      { "endorse-auth",         required_argument, NULL, 'P' },
-      { "hash-algorithm",       required_argument, NULL, 'g' },
-      { "scheme",               required_argument, NULL, 's' },
-      { "signature",            required_argument, NULL, 'o' },
-      { "key-context",          required_argument, NULL, 'c' },
-      { "format",               required_argument, NULL, 'f' },
-      { "qualification",        required_argument, NULL, 'q' },
-      { "attestation",          required_argument, NULL,  2  },
-      { "cphash",               required_argument, NULL,  0  },
+      { "auth",           required_argument, 0, 'p' },
+      { "endorse-auth",   required_argument, 0, 'P' },
+      { "hash-algorithm", required_argument, 0, 'g' },
+      { "scheme",         required_argument, 0, 's' },
+      { "signature",      required_argument, 0, 'o' },
+      { "key-context",    required_argument, 0, 'c' },
+      { "format",         required_argument, 0, 'f' },
+      { "qualification",  required_argument, 0, 'q' },
+      { "attestation",    required_argument, 0,  2  },
+      { "cphash",         required_argument, 0,  0  },
     };
 
     *opts = tpm2_options_new("p:g:o:c:f:s:P:q:", ARRAY_LEN(topts), topts,
-            on_option, NULL, 0);
+        on_option, 0, 0);
 
-    return *opts != NULL;
+    return *opts != 0;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = init(ectx);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    TPM2B_ATTEST *time_info = NULL;
-    TPMT_SIGNATURE *signature = NULL;
-
-    if (ctx.cp_hash_path) {
-        TPM2B_DIGEST cp_hash = { .size = 0 };
-        tool_rc rc = tpm2_gettime(ectx, &ctx.privacy_admin.object,
-        &ctx.signing_key.object, &ctx.qualifying_data, &ctx.in_scheme,
-        &time_info, &signature, &cp_hash);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-        }
-
-        return rc;
-    }
-
-    rc = tpm2_gettime(ectx,
-            &ctx.privacy_admin.object,
-            &ctx.signing_key.object,
-            &ctx.qualifying_data,
-            &ctx.in_scheme,
-            &time_info,
-            &signature,
-            NULL);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    /* save the signature */
-    if (ctx.output_path) {
-        bool result = tpm2_convert_sig_save(signature, ctx.sig_format, ctx.output_path);
-        if (!result) {
-            rc = tool_rc_general_error;
-            goto out;
-        }
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = gettime(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    if (ctx.certify_info_path) {
-        /* save the attestation data */
-        bool result = files_save_bytes_to_file(ctx.certify_info_path,
-            time_info->attestationData, time_info->size);
-        if (!result) {
-            rc = tool_rc_general_error;
-            goto out;
-        }
-    }
-
-    TPMS_ATTEST attest;
-    rc = files_tpm2b_attest_to_tpms_attest(time_info, &attest);
-    if (rc == tool_rc_success) {
-        tpm2_util_print_time(&attest.attested.time.time);
-    }
-
-out:
-    Esys_Free(time_info);
-    Esys_Free(signature);
-    return rc;
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
 
-    tool_rc rc = tpm2_session_close(&ctx.privacy_admin.object.session);
-    rc |=tpm2_session_close(&ctx.signing_key.object.session);
+    /*
+     * 1. Free objects
+     */
+    Esys_Free(ctx.time_info);
+    Esys_Free(ctx.signature);
+
+    /*
+     * 2. Close authorization sessions
+     */
+    tool_rc rc = tool_rc_success;
+    tool_rc tmp_rc = tpm2_session_close(&ctx.privacy_admin.object.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+    }
+
+    tmp_rc = tpm2_session_close(&ctx.signing_key.object.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+    }
+
+    /*
+     * 3. Close auxiliary sessions
+     */
 
     return rc;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("gettime", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("gettime", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, 0)
