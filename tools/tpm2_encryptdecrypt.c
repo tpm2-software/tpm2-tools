@@ -16,7 +16,7 @@
 #include "tpm2_options.h"
 
 #define MAX_INPUT_DATA_SIZE UINT16_MAX
-
+#define MAX_SESSIONS 3
 typedef struct tpm_encrypt_decrypt_ctx tpm_encrypt_decrypt_ctx;
 struct tpm_encrypt_decrypt_ctx {
     /*
@@ -54,10 +54,10 @@ struct tpm_encrypt_decrypt_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static tpm_encrypt_decrypt_ctx ctx = {
@@ -65,10 +65,11 @@ static tpm_encrypt_decrypt_ctx ctx = {
     .input_data_size = MAX_INPUT_DATA_SIZE,
     .padded_block_len = TPM2_MAX_SYM_BLOCK_SIZE,
     .is_padding_option_enabled = false,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static bool evaluate_pkcs7_padding_requirements(uint16_t remaining_bytes,
-bool expected) {
+    bool expected) {
 
     if (!ctx.is_padding_option_enabled) {
         return false;
@@ -182,7 +183,7 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx) {
         TPM2B_IV *iv_out = 0;
         rc = tpm2_encryptdecrypt(ectx, &ctx.encryption_key.object,
             ctx.is_decrypt, ctx.mode, ctx.iv_in, &in_data, &out_data, &iv_out,
-            ctx.cphash);
+            &ctx.cp_hash, ctx.parameter_hash_algorithm);
         if (rc != tool_rc_success) {
             goto out;
         }
@@ -375,12 +376,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.encryption_key.object.session,
+        0,
+        0
+    };
 
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */

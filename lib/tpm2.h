@@ -277,10 +277,11 @@ tool_rc tpm2_duplicate(ESYS_CONTEXT *esys_context,
     TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *encryption_key_obj, TPMI_YES_NO decrypt,
-        TPMI_ALG_SYM_MODE mode, const TPM2B_IV *iv_in,
-        const TPM2B_MAX_BUFFER *input_data, TPM2B_MAX_BUFFER **output_data,
-        TPM2B_IV **iv_out, TPM2B_DIGEST *cp_hash);
+    tpm2_loaded_object *encryption_key_obj, TPMI_YES_NO decrypt,
+    TPMI_ALG_SYM_MODE mode, const TPM2B_IV *iv_in,
+    const TPM2B_MAX_BUFFER *input_data, TPM2B_MAX_BUFFER **output_data,
+    TPM2B_IV **iv_out, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_hierarchycontrol(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy, TPMI_RH_ENABLES enable,
