@@ -9,6 +9,9 @@
 
 typedef struct hierarchycontrol_ctx hierarchycontrol_ctx;
 struct hierarchycontrol_ctx {
+    /*
+     * Inputs
+     */
     struct {
         const char *ctx_path;
         const char *auth_str;
@@ -18,7 +21,17 @@ struct hierarchycontrol_ctx {
     TPMI_RH_ENABLES enable;
     TPMI_YES_NO state;
 
+    /*
+     * Outputs
+     */
+
+    /*
+     * Parameter hashes
+     */
     char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
 static hierarchycontrol_ctx ctx = {
@@ -27,31 +40,20 @@ static hierarchycontrol_ctx ctx = {
 
 static tool_rc hierarchycontrol(ESYS_CONTEXT *ectx) {
 
-    if (ctx.cp_hash_path) {
-        TPM2B_DIGEST cp_hash = { .size = 0 };
-        tool_rc rc = tpm2_hierarchycontrol(ectx, &ctx.auth_hierarchy.object,
-        ctx.enable, ctx.state, &cp_hash);
-        if (rc == tool_rc_success) {
-            bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-            if (!result) {
-                LOG_ERR("Failed to save cp hash");
-                rc = tool_rc_general_error;
-            }
-        }
-        return rc;
-    }
-
     LOG_INFO ("Using hierarchy %s to \'%s\' TPMA_STARTUP_CLEAR bit (%s)",
-        ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_OWNER ? "TPM2_RH_OWNER" :
-        ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_ENDORSEMENT ? "TPM2_RH_ENDORSEMENT" :
-        ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_PLATFORM ? "TPM2_RH_PLATFORM" : "TPM2_RH_PLATFORM_NV",
+        ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_OWNER ?
+            "TPM2_RH_OWNER" :
+        ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_ENDORSEMENT ?
+            "TPM2_RH_ENDORSEMENT" :
+        ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_PLATFORM ?
+            "TPM2_RH_PLATFORM" : "TPM2_RH_PLATFORM_NV",
         ctx.enable == TPM2_RH_PLATFORM ? "phEnable" :
         ctx.enable == TPM2_RH_OWNER ? "shEnable" :
         ctx.enable == TPM2_RH_ENDORSEMENT ? "ehEnable" : "phEnableNV",
         ctx.state ? "SET" : "CLEAR");
 
     tool_rc rc = tpm2_hierarchycontrol(ectx, &ctx.auth_hierarchy.object,
-        ctx.enable, ctx.state, NULL);
+        ctx.enable, ctx.state, ctx.cphash);
 
     if (rc != tool_rc_success) {
         LOG_ERR("Failed hierarchycontrol operation.");
@@ -60,76 +62,79 @@ static tool_rc hierarchycontrol(ESYS_CONTEXT *ectx) {
     return rc;
 }
 
-static bool on_arg(int argc, char **argv) {
 
-    switch (argc) {
-    case 2:
-        break;
-    default:
-        return false;
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
     }
 
-    if (!strcmp(argv[0], "phEnable")) {
-        ctx.enable = TPM2_RH_PLATFORM;
-    } else if (!strcmp(argv[0], "shEnable")) {
-        ctx.enable = TPM2_RH_OWNER;
-    } else if (!strcmp(argv[0], "ehEnable")) {
-        ctx.enable = TPM2_RH_ENDORSEMENT;
-    } else if (!strcmp(argv[0], "phEnableNV")) {
-        ctx.enable = TPM2_RH_PLATFORM_NV;
-    } else {
-        LOG_ERR("Incorrect property, got: \"%s\", expected "
-                "[phEnable|shEnable|ehEnable|phEnableNV]", argv[0]);
-        return false;
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
     }
 
-    if (!strcmp(argv[1], "set")) {
-        ctx.state = TPM2_YES;
-    } else if (!strcmp(argv[1], "clear")) {
-        ctx.state = TPM2_NO;
-    } else {
-        LOG_ERR("Incorrect operation, got: \"%s\", expected [set|clear].",
-                argv[1]);
-        return false;
-    }
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
 
-    return true;
+    return rc;
 }
 
-static bool on_option(char key, char *value) {
 
-    switch (key) {
-    case 'C':
-        ctx.auth_hierarchy.ctx_path = value;
-        break;
-    case 'P':
-        ctx.auth_hierarchy.auth_str = value;
-        break;
-    case 0:
-        ctx.cp_hash_path = value;
-        break;
-    }
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
-    return true;
+    UNUSED(ectx);
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+    /*
+     * auth_hierarchy already loaded in check_options
+     */
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+
+    return tool_rc_success;
 }
 
-static bool tpm2_tool_onstart(tpm2_options **opts) {
-
-    const struct option topts[] = {
-        { "hierarchy",      required_argument, NULL, 'C' },
-        { "hierarchy-auth", required_argument, NULL, 'P' },
-        { "cphash",         required_argument, NULL,  0  },
-    };
-
-    *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option, on_arg,
-            0);
-
-    return *opts != NULL;
-}
-
-static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
-
-    UNUSED(flags);
+static tool_rc check_options(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
             ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
@@ -161,7 +166,9 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             LOG_ERR("Unknown permanent handle, got: \"0x%x\"", ctx.enable);
             return tool_rc_unsupported;
         }
-    } else {
+    }
+
+    if (ctx.state != TPM2_YES) {
         switch (ctx.enable) {
         case TPM2_RH_PLATFORM:
             if (ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_PLATFORM) {
@@ -205,14 +212,136 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    return hierarchycontrol(ectx);
+    return tool_rc_success;
+}
+
+static bool on_arg(int argc, char **argv) {
+
+    switch (argc) {
+    case 2:
+        break;
+    default:
+        return false;
+    }
+
+    bool is_phenable = strcmp(argv[0], "phEnable") == 0;
+    bool is_shenable = strcmp(argv[0], "shEnable") == 0;
+    bool is_ehenable = strcmp(argv[0], "ehEnable") == 0;
+    bool is_phenablenv = strcmp(argv[0], "phEnableNV") == 0;
+    if (is_phenable) {
+        ctx.enable = TPM2_RH_PLATFORM;
+    } else if (is_shenable) {
+        ctx.enable = TPM2_RH_OWNER;
+    } else if (is_ehenable) {
+        ctx.enable = TPM2_RH_ENDORSEMENT;
+    } else if (is_phenablenv) {
+        ctx.enable = TPM2_RH_PLATFORM_NV;
+    } else {
+        LOG_ERR("Incorrect property, got: \"%s\", expected "
+                "[phEnable|shEnable|ehEnable|phEnableNV]", argv[0]);
+        return false;
+    }
+
+    bool is_set = strcmp(argv[1], "set") == 0;
+    bool is_clear = strcmp(argv[1], "clear") == 0;
+    if (is_set) {
+        ctx.state = TPM2_YES;
+    } else if (is_clear) {
+        ctx.state = TPM2_NO;
+    } else {
+        LOG_ERR("Incorrect operation, got: \"%s\", expected [set|clear].",
+            argv[1]);
+        return false;
+    }
+
+    return true;
+}
+
+static bool on_option(char key, char *value) {
+
+    switch (key) {
+    case 'C':
+        ctx.auth_hierarchy.ctx_path = value;
+        break;
+    case 'P':
+        ctx.auth_hierarchy.auth_str = value;
+        break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
+    }
+
+    return true;
+}
+
+static bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
+        { "hierarchy",      required_argument, 0, 'C' },
+        { "hierarchy-auth", required_argument, 0, 'P' },
+        { "cphash",         required_argument, 0,  0  },
+    };
+
+    *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option, on_arg,
+        0);
+
+    return *opts != 0;
+}
+
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = hierarchycontrol(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
 
-    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    /*
+     * 1. Free objects
+     */
+
+    /*
+     * 2. Close authorization sessions
+     */
+    tool_rc rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
+
+    /*
+     * 3. Close auxiliary sessions
+     */
+
+    return rc;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("hierarchycontrol", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("hierarchycontrol", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, 0)
