@@ -15,6 +15,9 @@
 
 typedef struct tpm_hmac_ctx tpm_hmac_ctx;
 struct tpm_hmac_ctx {
+    /*
+     * Inputs
+     */
     struct {
         char *ctx_path;
         char *auth_str;
@@ -22,61 +25,63 @@ struct tpm_hmac_ctx {
     } hmac_key;
 
     FILE *input;
-    char *hmac_output_file_path;
-    char *ticket_path;
+    unsigned long input_file_size;
+
     TPMI_ALG_HASH halg;
     bool hex;
+    bool is_not_sequence;
+
+    /*
+     * Outputs
+     */
+    char *hmac_output_file_path;
+    TPM2B_DIGEST *hmac_out;
+    char *ticket_path;
+    TPMT_TK_HASHCHECK *validation;
+
+    /*
+     * Parameter hashes
+     */
     char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
 static tpm_hmac_ctx ctx;
 
-static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result,
-        TPMT_TK_HASHCHECK **validation) {
+static tool_rc hmac(ESYS_CONTEXT *ectx) {
 
     unsigned long file_size = 0;
     FILE *input = ctx.input;
-
-    tool_rc rc;
     /* Suppress error reporting with NULL path */
-    bool res = files_get_file_size(input, &file_size, NULL);
-
+    bool is_file_readable = files_get_file_size(input, &file_size, 0);
     /*
-     * If we can get the file size and its less than 1024, just do it in one hash invocation.
-     * We can't use the one-shot command if we require ticket, as it doesn't provide it in
-     * the response from the TPM.
+     * If we can get the file size and its less than 1024, just do it in one
+     * hash invocation.
+     *
+     * We can't use the one-shot command if we require ticket, as it doesn't
+     * provide it in the response from the TPM.
      */
-    if (!ctx.ticket_path && res && file_size <= TPM2_MAX_DIGEST_BUFFER) {
-
+    tool_rc rc = tool_rc_success;
+    bool is_file_op_success = false;
+    if (!ctx.ticket_path && is_file_readable &&
+        file_size <= TPM2_MAX_DIGEST_BUFFER) {
         TPM2B_MAX_BUFFER buffer = { .size = file_size };
 
-        res = files_read_bytes(ctx.input, buffer.buffer, buffer.size);
-        if (!res) {
+        is_file_readable = files_read_bytes(ctx.input, buffer.buffer,
+            buffer.size);
+        if (!is_file_readable) {
             LOG_ERR("Error reading input file!");
             return tool_rc_general_error;
         }
 
-        if (ctx.cp_hash_path) {
-            LOG_WARN("Exiting without performing HMAC when calculating cpHash");
-            TPM2B_DIGEST cp_hash = { .size = 0 };
-            tool_rc rc = tpm2_hmac(ectx, &ctx.hmac_key.object, ctx.halg,
-            &buffer, result, &cp_hash);
-            if (rc != tool_rc_success) {
-                return rc;
-            }
-
-            bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-            if (!result) {
-                rc = tool_rc_general_error;
-            }
-            return rc;
-        }
         /*
          * hash algorithm specified in the key's scheme is used as the
          * hash algorithm for the HMAC
          */
-        return tpm2_hmac(ectx, &ctx.hmac_key.object, ctx.halg, &buffer, result,
-        NULL);
+        return tpm2_hmac(ectx, &ctx.hmac_key.object, ctx.halg, &buffer,
+            &ctx.hmac_out, ctx.cphash);
     }
 
     if (ctx.cp_hash_path) {
@@ -84,14 +89,14 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result,
         return tool_rc_general_error;
     }
 
-    ESYS_TR sequence_handle;
     /*
      * Size is either unknown because the FILE * is a fifo, or it's too big
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
+    ESYS_TR sequence_handle;
     rc = tpm2_hmac_start(ectx, &ctx.hmac_key.object, ctx.halg,
-            &sequence_handle);
+        &sequence_handle);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -100,15 +105,12 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result,
      * loop when 1 block is left, else we go till feof.
      */
     size_t left = file_size;
-    bool use_left = !!res;
-
+    bool use_left = is_file_readable;
     TPM2B_MAX_BUFFER data;
-
     bool done = false;
     while (!done) {
-
         size_t bytes_read = fread(data.buffer, 1,
-                BUFFER_SIZE(typeof(data), buffer), input);
+            BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
             return tool_rc_general_error;
@@ -136,8 +138,8 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result,
 
     if (use_left) {
         data.size = left;
-        bool res = files_read_bytes(input, data.buffer, left);
-        if (!res) {
+        is_file_op_success = files_read_bytes(input, data.buffer, left);
+        if (!is_file_op_success) {
             LOG_ERR("Error reading from input file.");
             return tool_rc_general_error;
         }
@@ -145,43 +147,50 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result,
         data.size = 0;
     }
 
-    rc = tpm2_hmac_sequencecomplete(ectx, sequence_handle, &ctx.hmac_key.object,
-            &data, result, validation);
-    if (rc != tool_rc_success) {
+    return tpm2_hmac_sequencecomplete(ectx, sequence_handle,
+        &ctx.hmac_key.object, &data, &ctx.hmac_out, &ctx.validation);
+}
+
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
         return rc;
     }
 
-    return tool_rc_success;
-}
-
-static tool_rc do_hmac_and_output(ESYS_CONTEXT *ectx) {
-
-    TPM2B_DIGEST *hmac_out = NULL;
-    TPMT_TK_HASHCHECK *validation = NULL;
-
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
     FILE *out = stdout;
-
-    tool_rc rc = tpm_hmac_file(ectx, &hmac_out, &validation);
-    if (rc != tool_rc_success || ctx.cp_hash_path) {
-        goto out;
-    }
-
-    assert(hmac_out);
-
+    assert(ctx.hmac_out);
     if (ctx.ticket_path) {
-        bool res = files_save_validation(validation, ctx.ticket_path);
-        if (!res) {
+        is_file_op_success = files_save_validation(ctx.validation,
+            ctx.ticket_path);
+        if (!is_file_op_success) {
             rc = tool_rc_general_error;
             goto out;
         }
     }
 
-    rc = tool_rc_general_error;
     if (ctx.hmac_output_file_path) {
         out = fopen(ctx.hmac_output_file_path, "wb+");
         if (!out) {
             LOG_ERR("Could not open output file \"%s\", error: %s",
                     ctx.hmac_output_file_path, strerror(errno));
+            rc = tool_rc_general_error;
             goto out;
         }
     } else if (!output_enabled) {
@@ -190,25 +199,106 @@ static tool_rc do_hmac_and_output(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.hex) {
-        tpm2_util_print_tpm2b2(out, hmac_out);
+        tpm2_util_print_tpm2b2(out, ctx.hmac_out);
     } else {
-
-        bool res = files_write_bytes(out, hmac_out->buffer, hmac_out->size);
-        if (!res) {
+        is_file_op_success = files_write_bytes(out, ctx.hmac_out->buffer,
+            ctx.hmac_out->size);
+        if (!is_file_op_success) {
+            rc = tool_rc_general_error;
             goto out;
         }
     }
-
-    rc = tool_rc_success;
 
 out:
     if (out && out != stdout) {
         fclose(out);
     }
 
-    free(hmac_out);
-    free(validation);
     return rc;
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+
+    /* Object #1 */
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.hmac_key.ctx_path,
+        ctx.hmac_key.auth_str, &ctx.hmac_key.object, false,
+        TPM2_HANDLE_ALL_W_NV);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid key handle authorization");
+        return rc;
+    }
+
+    /* Object #2 */
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+
+    /*
+     * if no halg was specified, read the public portion of the key and use it's
+     * scheme
+     */
+    if (!ctx.halg) {
+        TPM2B_PUBLIC *pub = 0;
+        rc = tpm2_readpublic(ectx, ctx.hmac_key.object.tr_handle, &pub, 0, 0);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        /*
+         * if we're attempting to figure out a hashing scheme, and the scheme is NULL
+         * we default to sha256.
+         */
+        ctx.halg = pub->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
+        if (ctx.halg == TPM2_ALG_NULL) {
+            ctx.halg = TPM2_ALG_SHA256;
+        }
+        free(pub);
+    }
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+
+    return rc;
+}
+
+static tool_rc check_options(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    if (!ctx.hmac_key.ctx_path) {
+        LOG_ERR("Must specify options C.");
+        return tool_rc_option_error;
+    }
+
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -264,27 +354,21 @@ static bool on_args(int argc, char **argv) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "key-context",    required_argument, NULL, 'c' },
-        { "auth",           required_argument, NULL, 'p' },
-        { "output",         required_argument, NULL, 'o' },
-        { "hash-algorithm", required_argument, NULL, 'g' },
-        { "ticket",         required_argument, NULL, 't' },
-        { "hex",            no_argument,       NULL,  0  },
-        { "cphash",         required_argument, NULL,  1  },
+        { "key-context",    required_argument, 0, 'c' },
+        { "auth",           required_argument, 0, 'p' },
+        { "output",         required_argument, 0, 'o' },
+        { "hash-algorithm", required_argument, 0, 'g' },
+        { "ticket",         required_argument, 0, 't' },
+        { "hex",            no_argument,       0,  0  },
+        { "cphash",         required_argument, 0,  1  },
     };
 
     ctx.input = stdin;
 
     *opts = tpm2_options_new("c:p:o:g:t:", ARRAY_LEN(topts), topts, on_option,
-            on_args, 0);
+        on_args, 0);
 
-    return *opts != NULL;
-}
-
-static tool_rc readpub(ESYS_CONTEXT *ectx, ESYS_TR handle,
-        TPM2B_PUBLIC **public) {
-
-    return tpm2_readpublic(ectx, handle, public, NULL, NULL);
+    return *opts != 0;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -292,57 +376,60 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     /*
-     * Option C must be specified.
+     * 1. Process options
      */
-    if (!ctx.hmac_key.ctx_path) {
-        LOG_ERR("Must specify options C.");
-        return tool_rc_option_error;
-    }
-
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.hmac_key.ctx_path,
-            ctx.hmac_key.auth_str, &ctx.hmac_key.object, false,
-            TPM2_HANDLE_ALL_W_NV);
+    tool_rc rc = check_options(ectx);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid key handle authorization");
         return rc;
     }
 
     /*
-     * if no halg was specified, read the public portion of the key and use it's
-     * scheme
+     * 2. Process inputs
      */
-    if (!ctx.halg) {
-        TPM2B_PUBLIC *pub = NULL;
-        rc = readpub(ectx, ctx.hmac_key.object.tr_handle, &pub);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        /*
-         * if we're attempting to figure out a hashing scheme, and the scheme is NULL
-         * we default to sha256.
-         */
-        ctx.halg =
-                pub->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
-        if (ctx.halg == TPM2_ALG_NULL) {
-            ctx.halg = TPM2_ALG_SHA256;
-        }
-
-        free(pub);
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    return do_hmac_and_output(ectx);
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = hmac(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
 
+    /*
+     * 1. Free objects
+     */
     if (ctx.input && ctx.input != stdin) {
         fclose(ctx.input);
     }
+    free(ctx.hmac_out);
+    free(ctx.validation);
 
-    return tpm2_session_close(&ctx.hmac_key.object.session);
+    /*
+     * 2. Close authorization sessions
+     */
+    tool_rc rc = tpm2_session_close(&ctx.hmac_key.object.session);
+
+    /*
+     * 3. Close auxiliary sessions
+     */
+
+    return rc;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("hmac", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("hmac", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, 0)
