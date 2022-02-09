@@ -10,7 +10,7 @@
 #include "tpm2_options.h"
 
 struct tpm_flush_context_ctx {
-    TPM2_HANDLE property;
+    TPM2_HANDLE property[3];
     char *context_arg;
     unsigned encountered_option;
 };
@@ -74,24 +74,19 @@ static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
 static bool on_option(char key, char *value) {
     UNUSED(value);
 
-    if (ctx.encountered_option) {
-        LOG_ERR("Options -t, -l and -s are mutually exclusive");
-        return false;
-    }
-
-    ctx.encountered_option = true;
-
     switch (key) {
     case 't':
-        ctx.property = TPM2_TRANSIENT_FIRST;
+        ctx.property[ctx.encountered_option] = TPM2_TRANSIENT_FIRST;
         break;
     case 'l':
-        ctx.property = TPM2_LOADED_SESSION_FIRST;
+        ctx.property[ctx.encountered_option] = TPM2_LOADED_SESSION_FIRST;
         break;
     case 's':
-        ctx.property = TPM2_ACTIVE_SESSION_FIRST;
+        ctx.property[ctx.encountered_option] = TPM2_ACTIVE_SESSION_FIRST;
         break;
     }
+
+    ctx.encountered_option++;
 
     return true;
 }
@@ -126,20 +121,35 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (ctx.property) {
+    tool_rc rc = tool_rc_general_error;
+
+    /* process -t/-s/-l option(s) */
+    unsigned i = 0;
+    for (i=0; i < ctx.encountered_option; i++) {
+        TPM2_HANDLE property = ctx.property[i];
         TPMS_CAPABILITY_DATA *capability_data;
-        tool_rc rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, ctx.property,
+        tool_rc tmp_rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, property,
                 TPM2_MAX_CAP_HANDLES, &capability_data);
-        if (rc != tool_rc_success) {
-            return rc;
+        if (tmp_rc == tool_rc_success) {
+            TPML_HANDLE *handles = &capability_data->data.handles;
+            tmp_rc = flush_contexts_tpm2(ectx, handles->handle, handles->count);
+            free(capability_data);
         }
 
-        TPML_HANDLE *handles = &capability_data->data.handles;
-        rc = flush_contexts_tpm2(ectx, handles->handle, handles->count);
-        free(capability_data);
+        /*
+         * defer error handling, try and flush as much as possible
+         * Just use the last error. Always assign something to rc.
+         */
+        if (i == 0 || tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
+        }
+    }
+
+    if (ctx.encountered_option) {
         return rc;
     }
 
+    /* process argument */
     if (!ctx.context_arg) {
         LOG_ERR("Specify options to evict handles or a session context.");
         return tool_rc_option_error;
@@ -150,7 +160,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!result) {
         /* hmm not a handle, try a session */
         tpm2_session *s = NULL;
-        tool_rc rc = tpm2_session_restore(ectx, ctx.context_arg, true, &s);
+        rc = tpm2_session_restore(ectx, ctx.context_arg, true, &s);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -162,7 +172,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /* its a handle, call flush */
     ESYS_TR tr_handle = ESYS_TR_NONE;
-    tool_rc rc = tpm2_util_sys_handle_to_esys_handle(ectx, handle, &tr_handle);
+    rc = tpm2_util_sys_handle_to_esys_handle(ectx, handle, &tr_handle);
     if (rc != tool_rc_success) {
         return rc;
     }
