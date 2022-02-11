@@ -241,7 +241,14 @@ static bool retrieve_web_endorsement_certificate(char *b64h) {
         }
     }
 
-    snprintf(weblink, len, "%s%s%s", ctx.ek_server_addr, "/", b64h);
+    bool is_slash_append_required =
+        strncmp((ctx.ek_server_addr + strlen(ctx.ek_server_addr) - 1), "/", 1);
+    if (is_slash_append_required) {
+        snprintf(weblink, len, "%s%s%s", ctx.ek_server_addr, "/", b64h);
+    } else {
+        snprintf(weblink, len, "%s%s", ctx.ek_server_addr, b64h);
+    }
+
     rc = curl_easy_setopt(curl, CURLOPT_URL, weblink);
     if (rc != CURLE_OK) {
         LOG_ERR("curl_easy_setopt for CURLOPT_URL failed: %s",
