@@ -1926,8 +1926,9 @@ tool_rc tpm2_rsa_encrypt(ESYS_CONTEXT *ectx, tpm2_loaded_object *keyobj,
 }
 
 tool_rc tpm2_load(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parentobj,
-        const TPM2B_PRIVATE *in_private, const TPM2B_PUBLIC *in_public,
-        ESYS_TR *object_handle, TPM2B_DIGEST *cp_hash) {
+    const TPM2B_PRIVATE *in_private, const TPM2B_PUBLIC *in_public,
+    ESYS_TR *object_handle, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR parent_object_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context, parentobj->tr_handle,
@@ -1937,11 +1938,11 @@ tool_rc tpm2_load(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parentobj,
         return rc;
     }
 
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+        TSS2_SYS_CONTEXT *sys_context = 0;
         rc = tpm2_getsapicontext(esys_context, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
@@ -1955,17 +1956,15 @@ tool_rc tpm2_load(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parentobj,
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
+        TPM2B_NAME *name1 = 0;
         rc = tpm2_tr_get_name(esys_context, parentobj->tr_handle,
             &name1);
         if (rc != tool_rc_success) {
             goto tpm2_load_free_name1;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(parentobj->session));
-        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
-            tpm2_session_get_authhash(parentobj->session), cp_hash);
+        rc = tpm2_sapi_getcphash(sys_context, name1, 0, 0,
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
