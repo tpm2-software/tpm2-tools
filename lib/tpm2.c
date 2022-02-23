@@ -741,7 +741,8 @@ tpm2_policyauthorizenv_skip_esapi_call:
 tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
     ESYS_TR policy_session, const TPM2B_OPERAND *operand_b, UINT16 offset,
-    TPM2_EO operation, TPM2B_DIGEST *cp_hash) {
+    TPM2_EO operation, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR esys_tr_nv_index;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -760,11 +761,11 @@ tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
         return rc;
     }
 
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+        TSS2_SYS_CONTEXT *sys_context = 0;
         rc = tpm2_getsapicontext(esys_context, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
@@ -779,29 +780,27 @@ tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
+        TPM2B_NAME *name1 = 0;
         rc = tpm2_tr_get_name(esys_context, auth_hierarchy_obj->tr_handle,
             &name1);
         if (rc != tool_rc_success) {
             goto tpm2_policynv_free_name1;
         }
 
-        TPM2B_NAME *name2 = NULL;
+        TPM2B_NAME *name2 = 0;
         rc = tpm2_tr_get_name(esys_context, esys_tr_nv_index, &name2);
         if (rc != tool_rc_success) {
             goto tpm2_policynv_free_name1_name2;
         }
 
-        TPM2B_NAME *name3 = NULL;
+        TPM2B_NAME *name3 = 0;
         rc = tpm2_tr_get_name(esys_context, policy_session, &name3);
         if (rc != tool_rc_success) {
             goto tpm2_policynv_free_name1_name2_name3;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(auth_hierarchy_obj->session));
         rc = tpm2_sapi_getcphash(sys_context, name1, name2, name3,
-            tpm2_session_get_authhash(auth_hierarchy_obj->session), cp_hash);
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
