@@ -397,7 +397,8 @@ tool_rc tpm2_unseal(ESYS_CONTEXT *esys_context, tpm2_loaded_object *sealkey_obj,
 
 tool_rc tpm2_policy_authorize_nv(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *auth_entity_obj, TPM2_HANDLE nv_index,
-    ESYS_TR policy_session, TPM2B_DIGEST *cp_hash);
+    ESYS_TR policy_session, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_incrementalselftest(ESYS_CONTEXT *ectx, const TPML_ALG *to_test,
         TPML_ALG **to_do_list);
