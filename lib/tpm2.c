@@ -2637,10 +2637,10 @@ tool_rc tpm2_hmac_sequencecomplete(ESYS_CONTEXT *esys_context,
 }
 
 tool_rc tpm2_import(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
-        const TPM2B_DATA *encryption_key, const TPM2B_PUBLIC *object_public,
-        const TPM2B_PRIVATE *duplicate, const TPM2B_ENCRYPTED_SECRET *in_sym_seed,
-        const TPMT_SYM_DEF_OBJECT *symmetric_alg, TPM2B_PRIVATE **out_private,
-        TPM2B_DIGEST *cp_hash) {
+    const TPM2B_DATA *encryption_key, const TPM2B_PUBLIC *object_public,
+    const TPM2B_PRIVATE *duplicate, const TPM2B_ENCRYPTED_SECRET *in_sym_seed,
+    const TPMT_SYM_DEF_OBJECT *symmetric_alg, TPM2B_PRIVATE **out_private,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR parentobj_shandle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context, parent_obj->tr_handle,
@@ -2650,11 +2650,11 @@ tool_rc tpm2_import(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
         return rc;
     }
 
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+        TSS2_SYS_CONTEXT *sys_context = 0;
         rc = tpm2_getsapicontext(esys_context, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
@@ -2669,16 +2669,14 @@ tool_rc tpm2_import(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
+        TPM2B_NAME *name1 = 0;
         rc = tpm2_tr_get_name(esys_context, parent_obj->tr_handle, &name1);
         if (rc != tool_rc_success) {
             goto tpm2_import_free_name1;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(parent_obj->session));
-        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
-            tpm2_session_get_authhash(parent_obj->session), cp_hash);
+        rc = tpm2_sapi_getcphash(sys_context, name1, 0, 0,
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
