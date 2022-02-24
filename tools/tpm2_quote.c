@@ -14,6 +14,7 @@
 #include "tpm2_systemdeps.h"
 #include "tpm2_tool.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_quote_ctx tpm_quote_ctx;
 struct tpm_quote_ctx {
     /*
@@ -48,10 +49,10 @@ struct tpm_quote_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static tpm_quote_ctx ctx = {
@@ -59,13 +60,14 @@ static tpm_quote_ctx ctx = {
     .qualification_data = TPM2B_EMPTY_INIT,
     .pcrs_format = pcrs_output_format_serialized,
     .in_scheme.scheme = TPM2_ALG_NULL,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static tool_rc quote(ESYS_CONTEXT *ectx) {
 
     return tpm2_quote(ectx, &ctx.key.object, &ctx.in_scheme,
         &ctx.qualification_data, &ctx.pcr_selections, &ctx.quoted,
-        &ctx.signature, ctx.cphash);
+        &ctx.signature, &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc write_output_files(void) {
@@ -252,11 +254,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.key.object.session,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
