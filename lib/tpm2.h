@@ -370,9 +370,10 @@ tool_rc tpm2_sign(ESYS_CONTEXT *esys_context, tpm2_loaded_object *signingkey_obj
         TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_quote(ESYS_CONTEXT *esys_context, tpm2_loaded_object *quote_obj,
-        TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA *qualifying_data,
-        TPML_PCR_SELECTION *PCRselect, TPM2B_ATTEST **quoted,
-        TPMT_SIGNATURE **signature, TPM2B_DIGEST *cp_hash);
+    TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA *qualifying_data,
+    TPML_PCR_SELECTION *pcr_select, TPM2B_ATTEST **quoted,
+    TPMT_SIGNATURE **signature, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_changeeps(ESYS_CONTEXT *ectx,
     tpm2_session *platform_hierarchy_session, TPM2B_DIGEST *cp_hash,
