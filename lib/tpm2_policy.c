@@ -293,7 +293,8 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         INT32 expiration, TPMT_TK_AUTH **policy_ticket,
         TPM2B_TIMEOUT **timeout, bool is_nonce_tpm,
-        const char *policy_qualifier_data, TPM2B_DIGEST *cp_hash) {
+        const char *policy_qualifier_data, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm) {
 
     /*
      * Qualifier data is optional. If not specified default to 0
@@ -322,7 +323,7 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
 
     rc = tpm2_policy_secret(ectx, auth_entity_obj, policy_session_handle,
         expiration, policy_ticket, timeout, nonce_tpm, &policy_qualifier,
-        cp_hash);
+        cp_hash, parameter_hash_algorithm);
 
 tpm2_policy_build_policysecret_out:
     Esys_Free(nonce_tpm);
