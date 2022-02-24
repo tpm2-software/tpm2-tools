@@ -137,7 +137,8 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         INT32 expiration, TPMT_TK_AUTH **policy_ticket,
         TPM2B_TIMEOUT **timeout, bool is_nonce_tpm,
-        const char *policy_qualifier_path, TPM2B_DIGEST *cp_hash);
+        const char *policy_qualifier_path, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm);
 
 /**
  * Retrieves the policy digest for a session via PolicyGetDigest.
