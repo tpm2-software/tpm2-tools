@@ -1850,22 +1850,22 @@ tpm2_certify_skip_esapi_call:
 }
 
 tool_rc tpm2_rsa_decrypt(ESYS_CONTEXT *ectx, tpm2_loaded_object *keyobj,
-        const TPM2B_PUBLIC_KEY_RSA *cipher_text, const TPMT_RSA_DECRYPT *scheme,
-        const TPM2B_DATA *label, TPM2B_PUBLIC_KEY_RSA **message,
-        TPM2B_DIGEST *cp_hash) {
+    const TPM2B_PUBLIC_KEY_RSA *cipher_text, const TPMT_RSA_DECRYPT *in_scheme,
+    const TPM2B_DATA *label, TPM2B_PUBLIC_KEY_RSA **message,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR keyobj_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(ectx, keyobj->tr_handle,
-            keyobj->session, &keyobj_session_handle);
+        keyobj->session, &keyobj_session_handle);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+        TSS2_SYS_CONTEXT *sys_context = 0;
         rc = tpm2_getsapicontext(ectx, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
@@ -1873,22 +1873,20 @@ tool_rc tpm2_rsa_decrypt(ESYS_CONTEXT *ectx, tpm2_loaded_object *keyobj,
         }
 
         TSS2_RC rval = Tss2_Sys_RSA_Decrypt_Prepare(sys_context, keyobj->handle,
-        cipher_text, scheme, label);
+            cipher_text, in_scheme, label);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_RSA_Decrypt_Prepare, rval);
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
+        TPM2B_NAME *name1 = 0;
         rc = tpm2_tr_get_name(ectx, keyobj->tr_handle, &name1);
         if (rc != tool_rc_success) {
             goto tpm2_rsadecrypt_free_name1;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(keyobj->session));
-        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
-            tpm2_session_get_authhash(keyobj->session), cp_hash);
+        rc = tpm2_sapi_getcphash(sys_context, name1, 0, 0,
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
@@ -1899,8 +1897,8 @@ tpm2_rsadecrypt_free_name1:
     }
 
     TSS2_RC rval = Esys_RSA_Decrypt(ectx, keyobj->tr_handle,
-            keyobj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE, cipher_text,
-            scheme, label, message);
+        keyobj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE, cipher_text,
+        in_scheme, label, message);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_RSA_Decrypt, rval);
         return tool_rc_from_tpm(rval);
