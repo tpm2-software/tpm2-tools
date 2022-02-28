@@ -4626,7 +4626,8 @@ tool_rc tpm2_readclock(ESYS_CONTEXT *ectx, TPMS_TIME_INFO **current_time) {
 }
 
 tool_rc tpm2_setclock(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
-UINT64 new_time, TPM2B_DIGEST *cp_hash) {
+    UINT64 new_time, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(ectx,
@@ -4636,11 +4637,11 @@ UINT64 new_time, TPM2B_DIGEST *cp_hash) {
         return rc;
     }
 
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
+        TSS2_SYS_CONTEXT *sys_context = 0;
         rc = tpm2_getsapicontext(ectx, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
@@ -4654,17 +4655,15 @@ UINT64 new_time, TPM2B_DIGEST *cp_hash) {
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
+        TPM2B_NAME *name1 = 0;
         rc = tpm2_tr_get_name(ectx, object->tr_handle,
             &name1);
         if (rc != tool_rc_success) {
             goto tpm2_setclock_free_name1;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(object->session));
-        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
-            tpm2_session_get_authhash(object->session), cp_hash);
+        rc = tpm2_sapi_getcphash(sys_context, name1, 0, 0,
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
