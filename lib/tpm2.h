@@ -432,7 +432,8 @@ tool_rc tpm2_verifysignature(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
 tool_rc tpm2_readclock(ESYS_CONTEXT *ectx, TPMS_TIME_INFO **current_time);
 
 tool_rc tpm2_setclock(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
-UINT64 new_time, TPM2B_DIGEST *cp_hash);
+    UINT64 new_time, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_shutdown(ESYS_CONTEXT *ectx, TPM2_SU shutdown_type);
 
