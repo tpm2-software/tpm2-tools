@@ -367,9 +367,9 @@ tool_rc tpm2_pcr_allocate(ESYS_CONTEXT *esys_context,
         const TPML_PCR_SELECTION *pcr_allocation);
 
 tool_rc tpm2_sign(ESYS_CONTEXT *esys_context, tpm2_loaded_object *signingkey_obj,
-        TPM2B_DIGEST *digest, TPMT_SIG_SCHEME *in_scheme,
-        TPMT_TK_HASHCHECK *validation, TPMT_SIGNATURE **signature,
-        TPM2B_DIGEST *cp_hash);
+    TPM2B_DIGEST *digest, TPMT_SIG_SCHEME *in_scheme,
+    TPMT_TK_HASHCHECK *validation, TPMT_SIGNATURE **signature,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_quote(ESYS_CONTEXT *esys_context, tpm2_loaded_object *quote_obj,
         TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA *qualifying_data,
