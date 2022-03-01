@@ -4093,24 +4093,25 @@ tpm2_certifycreation_skip_esapi_call:
     return rc;
 }
 
-tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *esys_context,
+tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *ectx,
     tpm2_loaded_object *hierarchy_object, TPM2B_DIGEST *auth_policy,
-    TPMI_ALG_HASH hash_algorithm, TPM2B_DIGEST *cp_hash) {
+    TPMI_ALG_HASH hash_algorithm, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR hierarchy_object_session_handle = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
             hierarchy_object->tr_handle, hierarchy_object->session,
             &hierarchy_object_session_handle);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
-        TSS2_SYS_CONTEXT *sys_context = NULL;
-        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(ectx, &sys_context);
         if(rc != tool_rc_success) {
             LOG_ERR("Failed to acquire SAPI context.");
             return rc;
@@ -4123,17 +4124,15 @@ tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *esys_context,
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = NULL;
-        rc = tpm2_tr_get_name(esys_context, hierarchy_object->tr_handle,
+        TPM2B_NAME *name1 = 0;
+        rc = tpm2_tr_get_name(ectx, hierarchy_object->tr_handle,
             &name1);
         if (rc != tool_rc_success) {
             goto tpm2_setprimarypolicy_free_name1;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(
-            tpm2_session_get_authhash(hierarchy_object->session));
-        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
-            tpm2_session_get_authhash(hierarchy_object->session), cp_hash);
+        rc = tpm2_sapi_getcphash(sys_context, name1, 0, 0,
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash
@@ -4143,7 +4142,7 @@ tpm2_setprimarypolicy_free_name1:
         goto tpm2_setprimarypolicy_skip_esapi_call;
     }
 
-    TSS2_RC rval = Esys_SetPrimaryPolicy(esys_context,
+    TSS2_RC rval = Esys_SetPrimaryPolicy(ectx,
         hierarchy_object->tr_handle, hierarchy_object_session_handle,
         ESYS_TR_NONE, ESYS_TR_NONE, auth_policy, hash_algorithm);
     if (rval != TPM2_RC_SUCCESS) {
