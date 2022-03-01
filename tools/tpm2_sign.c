@@ -13,6 +13,7 @@
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_sign_ctx tpm_sign_ctx;
 struct tpm_sign_ctx {
     /*
@@ -48,21 +49,23 @@ struct tpm_sign_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static tpm_sign_ctx ctx = {
     .halg = TPM2_ALG_NULL,
     .sig_scheme = TPM2_ALG_NULL,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static tool_rc sign(ESYS_CONTEXT *ectx) {
 
     return tpm2_sign(ectx, &ctx.signing_key.object, ctx.digest, &ctx.in_scheme,
-        &ctx.validation, &ctx.signature, ctx.cphash);
+        &ctx.validation, &ctx.signature, &ctx.cp_hash,
+        ctx.parameter_hash_algorithm);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -265,11 +268,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.signing_key.object.session,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
