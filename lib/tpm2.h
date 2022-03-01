@@ -468,9 +468,10 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
     TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
     TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle3);
 
-tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *esys_context,
+tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *ectx,
     tpm2_loaded_object *hierarchy_object, TPM2B_DIGEST *auth_policy,
-    TPMI_ALG_HASH hash_algorithm, TPM2B_DIGEST *cp_hash);
+    TPMI_ALG_HASH hash_algorithm, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
         tpm2_loaded_object *privacy_admin,
