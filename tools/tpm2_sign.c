@@ -7,83 +7,92 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
-#include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_hash.h"
 #include "tpm2_options.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm_sign_ctx tpm_sign_ctx;
 struct tpm_sign_ctx {
-    TPMT_TK_HASHCHECK validation;
+    /*
+     * Inputs
+     */
     struct {
         const char *ctx_path;
         const char *auth_str;
         tpm2_loaded_object object;
     } signing_key;
 
+    bool is_input_msg_digest;
+    BYTE *msg;
+    UINT16 length;
+    char *input_file;
+    bool is_hash_ticket_specified;
+    TPMT_TK_HASHCHECK validation;
+
     TPMI_ALG_HASH halg;
     TPMI_ALG_SIG_SCHEME sig_scheme;
     TPMT_SIG_SCHEME in_scheme;
     TPM2B_DIGEST *digest;
-    char *output_path;
-    BYTE *msg;
-    UINT16 length;
-    char *input_file;
     tpm2_convert_sig_fmt sig_format;
 
-    struct {
-        UINT8 d :1;
-        UINT8 t :1;
-        UINT8 o :1;
-    } flags;
-
-    char *cp_hash_path;
     char *commit_index;
+
+    /*
+     * Outputs
+     */
+    TPMT_SIGNATURE *signature;
+    char *output_path;
+
+    /*
+     * Parameter hashes
+     */
+    char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
 static tpm_sign_ctx ctx = {
-        .halg = TPM2_ALG_NULL,
-        .sig_scheme = TPM2_ALG_NULL
+    .halg = TPM2_ALG_NULL,
+    .sig_scheme = TPM2_ALG_NULL,
 };
 
-static tool_rc sign_and_save(ESYS_CONTEXT *ectx) {
+static tool_rc sign(ESYS_CONTEXT *ectx) {
 
-    TPMT_SIGNATURE *signature;
-    bool result;
+    return tpm2_sign(ectx, &ctx.signing_key.object, ctx.digest, &ctx.in_scheme,
+        &ctx.validation, &ctx.signature, ctx.cphash);
+}
 
+static tool_rc process_output(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+    bool is_file_op_success = true;
     if (ctx.cp_hash_path) {
-        TPM2B_DIGEST cp_hash = { .size = 0 };
-        tool_rc rc = tpm2_sign(ectx, &ctx.signing_key.object, ctx.digest,
-            &ctx.in_scheme, &ctx.validation, &signature, &cp_hash);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
 
-        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
-        if (!result) {
-            rc = tool_rc_general_error;
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
         }
+    }
 
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
         return rc;
     }
 
-    tool_rc rc = tpm2_sign(ectx, &ctx.signing_key.object, ctx.digest,
-            &ctx.in_scheme, &ctx.validation, &signature, NULL);
-    if (rc != tool_rc_success) {
-        goto out;
-    }
-
-    result = tpm2_convert_sig_save(signature, ctx.sig_format, ctx.output_path);
-    if (!result) {
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    is_file_op_success = tpm2_convert_sig_save(ctx.signature, ctx.sig_format,
+        ctx.output_path);
+    if (!is_file_op_success) {
         rc = tool_rc_general_error;
-        goto out;
     }
-
-    rc = tool_rc_success;
-
-out:
-    free(signature);
 
     return rc;
 }
@@ -148,13 +157,143 @@ done:
     return message_sigend_by_sm2;
 }
 
-static tool_rc init(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+    /*
+     * Signing key object loaded in check_options
+     */
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+
+    /*
+     * Applicable when input data is not a digest, rather the message to sign.
+     * A digest is calculated first in this case.
+     */
+    tool_rc rc = tool_rc_success;
+    TPMT_TK_HASHCHECK *temp_validation_ticket;
+    if (!ctx.is_input_msg_digest) {
+        if(ctx.in_scheme.scheme == TPM2_ALG_SM2) {
+            TPM2B *m_input = message_from_file_with_sm2_z_digest(ctx.input_file,
+                ectx);
+            if(m_input == 0) {
+                LOG_ERR("Could not open file \"%s\"", ctx.input_file);
+                return tool_rc_general_error;
+            }
+
+            rc = tpm2_hash_compute_data(ectx, TPM2_ALG_SM3_256, TPM2_RH_NULL,
+                m_input->buffer, m_input->size, &ctx.digest,
+                &temp_validation_ticket);
+            if (rc != tool_rc_success) {
+                LOG_ERR("Could not hash input");
+            } else {
+                ctx.validation = *temp_validation_ticket;
+            }
+
+            free(temp_validation_ticket);
+            free(m_input);
+            return rc;
+        }
+
+        FILE *input = ctx.input_file ? fopen(ctx.input_file, "rb") : stdin;
+        if (!input) {
+            LOG_ERR("Could not open file \"%s\"", ctx.input_file);
+            return tool_rc_general_error;
+        }
+
+        rc = tpm2_hash_file(ectx, ctx.halg, TPM2_RH_OWNER, input, &ctx.digest,
+                &temp_validation_ticket);
+        if (input != stdin) {
+            fclose(input);
+        }
+
+        if (rc != tool_rc_success) {
+            LOG_ERR("Could not hash input");
+        } else {
+            ctx.validation = *temp_validation_ticket;
+        }
+
+        free(temp_validation_ticket);
+    }
+
+    if (ctx.is_input_msg_digest) {
+        /*
+         * else process it as a pre-computed digest
+         */
+        ctx.digest = malloc(sizeof(TPM2B_DIGEST));
+        if (!ctx.digest) {
+            LOG_ERR("oom");
+            return tool_rc_general_error;
+        }
+
+        ctx.digest->size = sizeof(ctx.digest->buffer);
+        bool result = files_load_bytes_from_buffer_or_file_or_stdin(0,
+                ctx.input_file, &ctx.digest->size, ctx.digest->buffer);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+
+        /*
+         * Applicable to un-restricted signing keys
+         * NOTE: When digests without tickets are specified for restricted keys,
+         * the sign operation will fail.
+         */
+        if (ctx.is_input_msg_digest && !ctx.is_hash_ticket_specified) {
+            ctx.validation.tag = TPM2_ST_HASHCHECK;
+            ctx.validation.hierarchy = TPM2_RH_NULL;
+            memset(&ctx.validation.digest, 0, sizeof(ctx.validation.digest));
+        }
+    }
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+
+    return rc;
+}
+
+static tool_rc check_options(ESYS_CONTEXT *ectx) {
+
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
+            ctx.signing_key.auth_str, &ctx.signing_key.object, false,
+            TPM2_HANDLE_ALL_W_NV);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid key authorization");
+        return rc;
+    }
 
     /*
      * Set signature scheme for key type, or validate chosen scheme is
      * allowed for key type.
      */
-    tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx,
+    rc = tpm2_alg_util_get_signature_scheme(ectx,
             ctx.signing_key.object.tr_handle, &ctx.halg, ctx.sig_scheme,
             &ctx.in_scheme);
     if (rc != tool_rc_success) {
@@ -191,94 +330,14 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
         return tool_rc_option_error;
     }
 
-    if (!ctx.flags.o && !ctx.cp_hash_path) {
+    if (!ctx.output_path && !ctx.cp_hash_path) {
         LOG_ERR("Expected option o");
         return tool_rc_option_error;
     }
 
-    if (!ctx.flags.d && ctx.flags.t) {
+    if (!ctx.is_input_msg_digest && ctx.is_hash_ticket_specified) {
         LOG_WARN("Ignoring the specified validation ticket since no TPM "
                  "calculated digest specified.");
-    }
-
-    /*
-     * Applicable when input data is not a digest, rather the message to sign.
-     * A digest is calculated first in this case.
-     */
-    if (!ctx.flags.d) {
-        if(ctx.in_scheme.scheme == TPM2_ALG_SM2) {
-            TPM2B *m_input = message_from_file_with_sm2_z_digest(ctx.input_file, ectx);
-            if(m_input == 0) {
-                LOG_ERR("Could not open file \"%s\"", ctx.input_file);
-                return tool_rc_general_error;
-            }
-
-            TPMT_TK_HASHCHECK *temp_validation_ticket;
-            rc = tpm2_hash_compute_data(ectx, TPM2_ALG_SM3_256, TPM2_RH_NULL, m_input->buffer,
-                    m_input->size, &ctx.digest, &temp_validation_ticket);
-            if (rc != tool_rc_success) {
-                LOG_ERR("Could not hash input");
-            } else {
-                ctx.validation = *temp_validation_ticket;
-            }
-
-            free(temp_validation_ticket);
-            free(m_input);
-            return rc;
-        }
-
-        FILE *input = ctx.input_file ? fopen(ctx.input_file, "rb") : stdin;
-        if (!input) {
-            LOG_ERR("Could not open file \"%s\"", ctx.input_file);
-            return tool_rc_general_error;
-        }
-
-        TPMT_TK_HASHCHECK *temp_validation_ticket;
-        rc = tpm2_hash_file(ectx, ctx.halg, TPM2_RH_OWNER, input, &ctx.digest,
-                &temp_validation_ticket);
-        if (input != stdin) {
-            fclose(input);
-        }
-
-        if (rc != tool_rc_success) {
-            LOG_ERR("Could not hash input");
-        } else {
-            ctx.validation = *temp_validation_ticket;
-        }
-
-        free(temp_validation_ticket);
-
-        /*
-         * we don't need to perform the digest, just read it
-         */
-        return rc;
-    }
-
-    /*
-     * else process it as a pre-computed digest
-     */
-    ctx.digest = malloc(sizeof(TPM2B_DIGEST));
-    if (!ctx.digest) {
-        LOG_ERR("oom");
-        return tool_rc_general_error;
-    }
-
-    ctx.digest->size = sizeof(ctx.digest->buffer);
-    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
-            ctx.input_file, &ctx.digest->size, ctx.digest->buffer);
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
-    /*
-     * Applicable to un-restricted signing keys
-     * NOTE: When digests without tickets are specified for restricted keys,
-     * the sign operation will fail.
-     */
-    if (ctx.flags.d && !ctx.flags.t) {
-        ctx.validation.tag = TPM2_ST_HASHCHECK;
-        ctx.validation.hierarchy = TPM2_RH_NULL;
-        memset(&ctx.validation.digest, 0, sizeof(ctx.validation.digest));
     }
 
     return tool_rc_success;
@@ -311,19 +370,18 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'd':
-        ctx.flags.d = 1;
+        ctx.is_input_msg_digest = true;
         break;
     case 't': {
         bool result = files_load_validation(value, &ctx.validation);
         if (!result) {
             return false;
         }
-        ctx.flags.t = 1;
+        ctx.is_hash_ticket_specified = true;
     }
         break;
     case 'o':
         ctx.output_path = value;
-        ctx.flags.o = 1;
         break;
     case 0:
         ctx.cp_hash_path = value;
@@ -358,47 +416,76 @@ static bool on_args(int argc, char *argv[]) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      { "auth",                 required_argument, NULL, 'p' },
-      { "hash-algorithm",       required_argument, NULL, 'g' },
-      { "scheme",               required_argument, NULL, 's' },
-      { "digest",               no_argument,       NULL, 'd' },
-      { "signature",            required_argument, NULL, 'o' },
-      { "ticket",               required_argument, NULL, 't' },
-      { "key-context",          required_argument, NULL, 'c' },
-      { "format",               required_argument, NULL, 'f' },
-      { "cphash",               required_argument, NULL,  0  },
-      { "commit-index",       required_argument, NULL,  1  },
+      { "auth",           required_argument, 0, 'p' },
+      { "hash-algorithm", required_argument, 0, 'g' },
+      { "scheme",         required_argument, 0, 's' },
+      { "digest",         no_argument,       0, 'd' },
+      { "signature",      required_argument, 0, 'o' },
+      { "ticket",         required_argument, 0, 't' },
+      { "key-context",    required_argument, 0, 'c' },
+      { "format",         required_argument, 0, 'f' },
+      { "cphash",         required_argument, 0,  0  },
+      { "commit-index",   required_argument, 0,  1  },
     };
 
     *opts = tpm2_options_new("p:g:dt:o:c:f:s:", ARRAY_LEN(topts), topts,
             on_option, on_args, 0);
 
-    return *opts != NULL;
+    return *opts != 0;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
-            ctx.signing_key.auth_str, &ctx.signing_key.object, false,
-            TPM2_HANDLE_ALL_W_NV);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid key authorization");
-        return rc;
-    }
-
-    rc = init(ectx);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    return sign_and_save(ectx);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = sign(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_output(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.signing_key.object.session);
+
+    /*
+     * 1. Free objects
+     */
+    free(ctx.signature);
+
+    /*
+     * 2. Close authorization sessions
+     */
+    tool_rc rc = tpm2_session_close(&ctx.signing_key.object.session);
+
+    /*
+     * 3. Close auxiliary sessions
+     */
+    return rc;
 }
 
 static void tpm2_tool_onexit(void) {
@@ -406,8 +493,10 @@ static void tpm2_tool_onexit(void) {
     if (ctx.digest) {
         free(ctx.digest);
     }
+
     free(ctx.msg);
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("sign", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, tpm2_tool_onexit)
+TPM2_TOOL_REGISTER("sign", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, tpm2_tool_onexit)
