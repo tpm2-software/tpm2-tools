@@ -469,12 +469,16 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
 
         /* tool doesn't request a sapi, don't initialize one */
         if (flags->tcti_none && is_optional_sapi) {
-            LOG_WARN("Tool optionally uses SAPI. Continuing with tcti=none");
+            if (!flags->quiet) {
+                LOG_WARN("Tool optionally uses SAPI. Continuing with tcti=none");
+            }
             goto none;
         }
 
         if (flags->tcti_none && is_no_sapi) {
-            LOG_WARN("Tool does not use SAPI. Continuing with tcti=none");
+            if (!flags->quiet) {
+                LOG_WARN("Tool does not use SAPI. Continuing with tcti=none");
+            }
             goto none;
         }
 
@@ -494,7 +498,9 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
         bool is_optional_fake_tcti = (flags->tcti_none && tool_opts &&
             tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
         if (is_optional_fake_tcti) {
-            LOG_WARN("Tool optionally uses SAPI. Continuing with tcti=fake");
+            if (!flags->quiet) {
+                LOG_WARN("Tool optionally uses SAPI. Continuing with tcti=fake");
+            }
             *tcti = (TSS2_TCTI_CONTEXT *)&fake_tcti;
             goto none;
         }
