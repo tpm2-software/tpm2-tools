@@ -310,11 +310,14 @@ static void set_default_TCG_EK_template(TPMI_ALG_PUBLIC alg) {
     ctx.public.publicArea.nameAlg = TPM2_ALG_SHA256;
 }
 
-static tool_rc process_input(void) {
+static tool_rc process_input(tpm2_option_flags flags) {
 
     TPMI_ALG_PUBLIC alg = TPM2_ALG_NULL;
     if (ctx.key_type) {
-        LOG_WARN("Because **-G** is specified, assuming input encryption public key is in PEM format.");
+        if (!flags.quiet) {
+            LOG_WARN("Because **-G** is specified, assuming input encryption "
+                     "public key is in PEM format.");
+        }
         alg = tpm2_alg_util_from_optarg(ctx.key_type,
             tpm2_alg_util_flags_asymmetric);
         if (alg == TPM2_ALG_ERROR ||
@@ -379,7 +382,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = process_input();
+    tool_rc rc = process_input(flags);
     if (rc != tool_rc_success) {
         return rc;
     }
