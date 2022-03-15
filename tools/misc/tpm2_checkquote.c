@@ -67,6 +67,7 @@ static bool verify(void) {
     }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101003L
+#if OPENSSL_VERSION_MAJOR < 3
     if (ctx.halg == TPM2_ALG_SM3_256) {
         ret = EVP_PKEY_set_alias_type(pkey, EVP_PKEY_SM2);
         if (!ret) {
@@ -74,6 +75,7 @@ static bool verify(void) {
             goto err;
         }
     }
+#endif
 #endif
 
     pkey_ctx = EVP_PKEY_CTX_new(pkey, NULL);
