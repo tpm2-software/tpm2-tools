@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
@@ -18,6 +19,7 @@
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "tpm2_systemdeps.h"
 
 // verify that the quote digest equals the digest we calculated
 bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest,
@@ -1256,4 +1258,75 @@ out:
     }
 
     return phash_alg;
+}
+
+void tpm2_util_tpms_nv_pin_counter_parameters_to_yaml(TPMS_NV_PIN_COUNTER_PARAMETERS *pin_params, int indent) {
+    print_yaml_indent(indent);
+    tpm2_tool_output("pinCount: %u\n", pin_params->pinCount);
+    print_yaml_indent(indent);
+    tpm2_tool_output("pinLimit: %u\n", pin_params->pinLimit);
+}
+
+void tpm2_util_tpm2_nv_to_yaml(TPM2B_NV_PUBLIC *nv_public, UINT8 *data, UINT16 size, int indent) {
+    int ds, i;
+    UINT64 v;
+    char *algstr;
+    TPMS_NV_PIN_COUNTER_PARAMETERS pin_params;
+
+    TPM2_NT nt = (nv_public->nvPublic.attributes & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT;
+    switch (nt) {
+    case TPM2_NT_COUNTER:
+        memcpy(&v, data, sizeof(UINT64));
+        v = be64toh(v);
+        print_yaml_indent(indent);
+        tpm2_tool_output("counter: %lu\n", v);
+        break;
+    case TPM2_NT_BITS:
+        memcpy(&v, data, sizeof(UINT64));
+        v = be64toh(v);
+        print_yaml_indent(indent);
+        tpm2_tool_output("bits: [");
+        bool first = true;
+        for (int i=0;i < 64;i++) {
+	    if (!(((UINT64) 1 << i) & v)) {
+	        continue;
+	    }
+	    if (first) {
+	        first = false;
+	        tpm2_tool_output(" %u", i);
+	    } else {
+	        tpm2_tool_output(", %u", i);
+	    }
+        }
+        tpm2_tool_output(" ]\n");
+        break;
+    case TPM2_NT_EXTEND:
+        algstr = (char *) tpm2_alg_util_algtostr(nv_public->nvPublic.nameAlg, tpm2_alg_util_flags_any);
+        ds = tpm2_alg_util_get_hash_size(nv_public->nvPublic.nameAlg);
+        print_yaml_indent(indent);
+        tpm2_tool_output("%s: 0x", algstr);
+        for (i=0;i < ds;i++) {
+	    tpm2_tool_output("%02X", data[i]);
+        }
+        tpm2_tool_output("\n");
+        break;
+    case TPM2_NT_PIN_FAIL:
+        Tss2_MU_TPMS_NV_PIN_COUNTER_PARAMETERS_Unmarshal(data, size, NULL, &pin_params);
+	print_yaml_indent(indent);
+	tpm2_tool_output("pinfail:\n");
+	tpm2_util_tpms_nv_pin_counter_parameters_to_yaml(&pin_params, indent + 1);
+	break;
+    case TPM2_NT_PIN_PASS:
+        Tss2_MU_TPMS_NV_PIN_COUNTER_PARAMETERS_Unmarshal(data, size, NULL, &pin_params);
+	print_yaml_indent(indent);
+	tpm2_tool_output("pinpass:\n");
+	tpm2_util_tpms_nv_pin_counter_parameters_to_yaml(&pin_params, indent + 1);
+	break;
+    default:
+        print_yaml_indent(indent);
+	tpm2_tool_output("data: ");
+	tpm2_util_hexdump(data, size);
+	tpm2_tool_output("\n");
+	break;
+    }
 }

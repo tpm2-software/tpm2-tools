@@ -69,6 +69,12 @@ index can be specified as raw handle or an offset value to the nv handle range
     specify an auxiliary session for auditing and or encryption/decryption of
     the parameters.
 
+  * **\--print-yaml**:
+
+	Output the content of the NV index in a human readable format, useful
+	for displaying the content of counter, bits and extend and pin indices.
+	When this argument is provided size and offset is ignored.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 

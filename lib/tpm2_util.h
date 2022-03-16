@@ -517,4 +517,5 @@ TPMI_ALG_HASH tpm2_util_calculate_phash_algorithm(ESYS_CONTEXT *ectx,
     const char **cphash_path, TPM2B_DIGEST *cp_hash, const char **rphash_path,
     TPM2B_DIGEST *rp_hash, tpm2_session **sessions);
 
+void tpm2_util_tpm2_nv_to_yaml(TPM2B_NV_PUBLIC *, UINT8 *, UINT16, int);
 #endif /* STRING_BYTES_H */

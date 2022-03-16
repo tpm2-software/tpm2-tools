@@ -147,7 +147,7 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
     tpm2_loaded_object * auth_hierarchy_obj, UINT8 **data_buffer,
     UINT16 *bytes_read, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
     TPMI_ALG_HASH parameter_hash_algorithm, TPM2B_NAME *precalc_nvname,
-    ESYS_TR shandle2, ESYS_TR shandle3) {
+    ESYS_TR shandle2, ESYS_TR shandle3, TPM2B_NV_PUBLIC **nv_pub_out) {
 
     /*
      * NVRead is not dispatched when:
@@ -177,8 +177,11 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
         }
 
         UINT16 data_size = nv_public->nvPublic.dataSize;
-        free(nv_public);
-
+        if (nv_pub_out) {
+            *nv_pub_out = nv_public;
+        } else {
+            free(nv_public);
+        }
         /* if size is 0, assume the whole object */
         if (size == 0) {
             size = data_size;
