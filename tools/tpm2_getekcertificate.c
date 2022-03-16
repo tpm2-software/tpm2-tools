@@ -439,11 +439,11 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
 
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.rsa_cert_buffer,
             &ctx.rsa_cert_buffer_size, &cp_hash, &rp_hash, TPM2_ALG_SHA256, 0,
-            ESYS_TR_NONE, ESYS_TR_NONE) :
+            ESYS_TR_NONE, ESYS_TR_NONE, NULL) :
 
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.ecc_cert_buffer,
             &ctx.ecc_cert_buffer_size, &cp_hash, &rp_hash, TPM2_ALG_SHA256, 0,
-            ESYS_TR_NONE, ESYS_TR_NONE);
+            ESYS_TR_NONE, ESYS_TR_NONE, NULL);
 
 nv_read_out:
     tmp_rc = tpm2_session_close(&object.session);

@@ -326,4 +326,70 @@ if [ $? != 0 ]; then
 fi
 tpm2 clear
 
+# Test human readable NV counter
+tpm2 nvdefine -C o -a "nt=counter|ownerread|ownerwrite" $nv_test_index
+tpm2 nvincrement -C o $nv_test_index
+check=$(tpm2 nvread -C o $nv_test_index --print-yaml)
+expected="counter: 1"
+if [ "$check" != "$expected" ]; then
+    echo "Expected human readable counter value of \"$expected\", got \"$check\""
+    exit 1
+fi
+tpm2 nvundefine -C o $nv_test_index
+
+# Test human readable NV bits
+tpm2 nvdefine -C o -a "nt=bits|ownerread|ownerwrite" $nv_test_index
+tpm2 nvsetbits -C o --bits 0x4000000000000001  $nv_test_index
+check=$(tpm2 nvread -C o $nv_test_index --print-yaml)
+expected="bits: [ 0, 62 ]"
+if [ "$check" != "$expected" ]; then
+    echo "Expected human readable bits value of \"$expected\", got \"$check\""
+    exit 1
+fi
+tpm2 nvundefine -C o $nv_test_index
+
+# Test human readable NV extend
+tpm2 nvdefine -C o -g sha256 -a "nt=extend|ownerread|ownerwrite" $nv_test_index
+echo -n "falafel" | tpm2 nvextend -C o -i -  $nv_test_index
+check=$(tpm2 nvread -C o $nv_test_index --print-yaml)
+expected="sha256: 0xC5728723A3BB57916DB9E5DEA901094C63A960598A8A29FE277AEE5F6A8EE7CE"
+if [ "$check" != "$expected" ]; then
+    echo "Expected human readable extended value of \"$expected\", got \"$check\""
+    exit 1
+fi
+tpm2 nvundefine -C o $nv_test_index
+
+# Test human readable NV pinfail
+tpm2 nvdefine -C o -g sha256 -a "nt=pinfail|ownerread|ownerwrite|no_da" $nv_test_index
+echo -n "000004D20000162E" | xxd -r -p | tpm2 nvwrite -C o -i - $nv_test_index
+check=$(tpm2 nvread -C o $nv_test_index --print-yaml)
+expected=$(echo -e "pinfail:\n  pinCount: 1234\n  pinLimit: 5678")
+if [ "$check" != "$expected" ]; then
+    echo "Expected human readable extended value of \"$expected\", got \"$check\""
+    exit 1
+fi
+tpm2 nvundefine -C o $nv_test_index
+
+# Test human readable NV pinpass
+tpm2 nvdefine -C o -g sha256 -a "nt=pinpass|ownerread|ownerwrite|no_da" $nv_test_index
+echo -n "000004D20000162E" | xxd -r -p | tpm2 nvwrite -C o -i - $nv_test_index
+check=$(tpm2 nvread -C o $nv_test_index --print-yaml)
+expected=$(echo -e "pinpass:\n  pinCount: 1234\n  pinLimit: 5678")
+if [ "$check" != "$expected" ]; then
+    echo "Expected human readable extended value of \"$expected\", got \"$check\""
+    exit 1
+fi
+tpm2 nvundefine -C o $nv_test_index
+
+# Test human readable NV ordinary
+tpm2 nvdefine -C o -g sha256 -s 4 -a "ownerread|ownerwrite" $nv_test_index
+echo -n "00010203" | xxd -r -p | tpm2 nvwrite -C o -i - $nv_test_index
+check=$(tpm2 nvread -C o $nv_test_index --print-yaml)
+expected="data: 00010203"
+if [ "$check" != "$expected" ]; then
+    echo "Expected human readable extended value of \"$expected\", got \"$check\""
+    exit 1
+fi
+tpm2 nvundefine -C o $nv_test_index
+
 exit 0

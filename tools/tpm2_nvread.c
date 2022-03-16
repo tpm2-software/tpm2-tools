@@ -24,6 +24,7 @@ struct tpm_nvread_ctx {
     TPM2B_NAME precalc_nvname;
     UINT32 size_to_read;
     UINT32 offset;
+    bool is_yaml;
 
     /*
      * Outputs
@@ -31,6 +32,7 @@ struct tpm_nvread_ctx {
     char *output_file;
     UINT8* data_buffer;
     UINT16 bytes_written;
+    TPM2B_NV_PUBLIC *nv_public;
 
     /*
      * Parameter hashes
@@ -63,7 +65,7 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx) {
         ctx.offset, &ctx.auth_hierarchy.object, &ctx.data_buffer,
         &ctx.bytes_written, &ctx.cp_hash, &ctx.rp_hash,
         ctx.parameter_hash_algorithm, &ctx.precalc_nvname,
-        ctx.aux_session_handle[0], ctx.aux_session_handle[1]);
+        ctx.aux_session_handle[0], ctx.aux_session_handle[1], &ctx.nv_public);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -91,7 +93,9 @@ static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /* dump ctx.data_buffer to output file, if specified */
     tool_rc rc = tool_rc_success;
-    if (ctx.output_file) {
+    if (ctx.is_yaml) {
+        tpm2_util_tpm2_nv_to_yaml(ctx.nv_public, ctx.data_buffer, ctx.bytes_written, 0);
+    } else if (ctx.output_file) {
         if (!files_save_bytes_to_file(ctx.output_file, ctx.data_buffer,
                 ctx.bytes_written)) {
             rc = tool_rc_general_error;
@@ -333,6 +337,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 3:
+        ctx.is_yaml = true;
+        break;
         /* no default */
     }
     return true;
@@ -350,10 +357,16 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "name",      required_argument, NULL, 'n' },
         { "auth",      required_argument, NULL, 'P' },
         { "session",   required_argument, NULL, 'S' },
+        { "print-yaml",      no_argument, NULL,  3  },
     };
 
     *opts = tpm2_options_new("C:s:o:P:n:S:", ARRAY_LEN(topts), topts, on_option,
             on_arg, TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
+
+    if (ctx.is_yaml) {
+        ctx.offset = 0;
+        ctx.size_to_read = 0;
+    }
 
     return *opts != NULL;
 }
