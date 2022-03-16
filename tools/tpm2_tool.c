@@ -273,6 +273,12 @@ int main(int argc, char **argv) {
     default:
         LOG_ERR("Unable to run %s", argv[0]);
     }
+    {
+        int test = 0;
+        if (test) {
+            printf("test\n");
+        }
+    }
 
     exit(ret);
 }
