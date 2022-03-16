@@ -2,6 +2,8 @@
 
 ### next
 
+  * Minimum tpm2-tss version is now 3.2.0 to support openssl3 migration.
+
   * tpm2:
       - Added option to specify **--help=no-man**
 
