@@ -161,10 +161,6 @@ static tool_rc check_options(ESYS_CONTEXT *ectx) {
         return tool_rc_option_error;
     }
 
-    if (!ctx.is_command_dispatch) {
-        LOG_WARN("Generating cpHash. Exiting without executing clear.");
-    }
-
     LOG_INFO("adjust value: %d", ctx.adjust);
 
     return tool_rc_success;
