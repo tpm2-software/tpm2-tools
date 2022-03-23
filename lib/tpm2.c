@@ -4533,24 +4533,53 @@ tool_rc tpm2_gettestresult(ESYS_CONTEXT *ectx, TPM2B_MAX_BUFFER **out_data,
 
 tool_rc tpm2_loadexternal(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE *private,
         const TPM2B_PUBLIC *public, TPMI_RH_HIERARCHY hierarchy,
-        ESYS_TR *object_handle) {
+        ESYS_TR *object_handle, TPM2B_DIGEST *cp_hash) {
 
-    TSS2_RC rval = fix_esys_hierarchy(hierarchy, &hierarchy);
+    tool_rc rc = tool_rc_success;
+    TSS2_RC rval = TSS2_RC_SUCCESS;
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(ectx, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_LoadExternal_Prepare(sys_context, private,
+            public, hierarchy);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_LoadExternal_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(TPM2_ALG_SHA256);
+        rc = tpm2_sapi_getcphash(sys_context, 0, 0, 0, TPM2_ALG_SHA256,
+            cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        goto tpm2_loadexternal_skip_esapi_call;
+    }
+
+    rval = fix_esys_hierarchy(hierarchy, &hierarchy);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Unknown hierarchy");
         return tool_rc_from_tpm(rval);
     }
 
-    rval = Esys_LoadExternal(ectx,
-            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-            private, public, hierarchy,
-            object_handle);
+    rval = Esys_LoadExternal(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+        private, public, hierarchy, object_handle);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_LoadExternal, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_loadexternal_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx,

@@ -235,5 +235,22 @@ run_rsa_passin_test "private.pem" "fd:42"
 echo -n "mypassword" > "passfile"
 run_rsa_passin_test "private.pem" "stdin" "passfile"
 
+#
+# Test cpHash output
+#
+tpm2 createprimary -C o -c prim.ctx -Q
+tpm2 create -C prim.ctx -u key.pub -r key.priv -Q
+tpm2 loadexternal -C n -u key.pub -c key.ctx --cphash cp.hash
+TPM2_CC_Loadexternal="00000167"
+External_priv_dat="0000"
+External_pub_dat=$(xxd -p key.pub | tr -d '\n')
+Hierarchy="40000007"
+echo -ne $TPM2_CC_Loadexternal$External_priv_dat$External_pub_dat$Hierarchy | \
+    xxd -r -p | openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+if [ $? != 0 ]; then
+	echo "cpHash doesn't match calculated value"
+    exit 1
+fi
 
 exit 0

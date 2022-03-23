@@ -176,7 +176,7 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
     ESYS_TR tr_handle = ESYS_TR_NONE;
 
     tool_rc rc = tpm2_loadexternal(ectx,
-            NULL, &ctx.public, TPM2_RH_NULL, &tr_handle);
+            NULL, &ctx.public, TPM2_RH_NULL, &tr_handle, 0);
     if (rc != tool_rc_success) {
         return rc;
     }
