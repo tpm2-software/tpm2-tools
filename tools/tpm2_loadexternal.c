@@ -40,6 +40,14 @@ struct tpm_loadexternal_ctx {
      */
     char *context_file_path;
     TPM2B_NAME *name;
+
+    /*
+     * Parameter hashes
+     */
+    char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
 static tpm_loadexternal_ctx ctx = {
@@ -52,25 +60,30 @@ static tpm_loadexternal_ctx ctx = {
 
 static tool_rc load_external(ESYS_CONTEXT *ectx) {
 
-    uint32_t hierarchy;
-    TSS2_RC rval = fix_esys_hierarchy(ctx.hierarchy_value, &hierarchy);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_ERR("Unknown hierarchy");
-        return tool_rc_from_tpm(rval);
-    }
-
     bool is_priv_specified = (ctx.private_key_path != 0);
     return tpm2_loadexternal(ectx, is_priv_specified ? &ctx.priv : 0, &ctx.pub,
-        hierarchy, &ctx.handle);
+        ctx.hierarchy_value, &ctx.handle, ctx.cphash);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
 
     UNUSED(ectx);
-
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
@@ -78,7 +91,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     tpm2_tr_get_name(ectx, ctx.handle, &ctx.name);
     assert(ctx.name);
 
-    tool_rc rc = files_save_tpm_context_to_path(ectx, ctx.handle,
+    rc = files_save_tpm_context_to_path(ectx, ctx.handle,
             ctx.context_file_path);
     if (rc != tool_rc_success) {
         goto out;
@@ -275,6 +288,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
@@ -283,6 +297,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     return rc;
 }
@@ -362,6 +377,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.passin = value;
         break;
+    case 1:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -381,6 +399,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "key-algorithm",  required_argument, 0, 'G'},
       { "name",           required_argument, 0, 'n'},
       { "passin",         required_argument, 0,  0 },
+      { "cphash",         required_argument, 0,  1 },
     };
 
     *opts = tpm2_options_new("C:u:r:c:a:p:L:g:G:n:", ARRAY_LEN(topts), topts,
