@@ -4532,12 +4532,13 @@ tool_rc tpm2_gettestresult(ESYS_CONTEXT *ectx, TPM2B_MAX_BUFFER **out_data,
 }
 
 tool_rc tpm2_loadexternal(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE *private,
-        const TPM2B_PUBLIC *public, TPMI_RH_HIERARCHY hierarchy,
-        ESYS_TR *object_handle, TPM2B_DIGEST *cp_hash) {
+    const TPM2B_PUBLIC *public, TPMI_RH_HIERARCHY hierarchy,
+    ESYS_TR *object_handle, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     tool_rc rc = tool_rc_success;
     TSS2_RC rval = TSS2_RC_SUCCESS;
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
@@ -4555,8 +4556,7 @@ tool_rc tpm2_loadexternal(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE *private,
             return tool_rc_general_error;
         }
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(TPM2_ALG_SHA256);
-        rc = tpm2_sapi_getcphash(sys_context, 0, 0, 0, TPM2_ALG_SHA256,
+        rc = tpm2_sapi_getcphash(sys_context, 0, 0, 0, parameter_hash_algorithm,
             cp_hash);
 
         /*

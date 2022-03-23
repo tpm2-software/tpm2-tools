@@ -16,6 +16,7 @@
 #include "tpm2_openssl.h"
 #include "tpm2_tool.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
 struct tpm_loadexternal_ctx {
     /*
@@ -44,10 +45,10 @@ struct tpm_loadexternal_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static tpm_loadexternal_ctx ctx = {
@@ -56,13 +57,15 @@ static tpm_loadexternal_ctx ctx = {
      * portion of an object in other hierarchies.
      */
     .hierarchy_value = TPM2_RH_NULL,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static tool_rc load_external(ESYS_CONTEXT *ectx) {
 
     bool is_priv_specified = (ctx.private_key_path != 0);
     return tpm2_loadexternal(ectx, is_priv_specified ? &ctx.priv : 0, &ctx.pub,
-        ctx.hierarchy_value, &ctx.handle, ctx.cphash);
+        ctx.hierarchy_value, &ctx.handle, &ctx.cp_hash,
+        ctx.parameter_hash_algorithm);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -288,12 +291,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        0,
+        0,
+        0
+    };
 
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
@@ -311,7 +322,7 @@ static tool_rc check_options(ESYS_CONTEXT *ectx) {
         return tool_rc_option_error;
     }
 
-    if (!ctx.context_file_path) {
+    if (!ctx.context_file_path && !ctx.cp_hash_path) {
         LOG_ERR("Expected -c option");
         return tool_rc_option_error;
     }

@@ -175,8 +175,8 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
     TPM2B_ENCRYPTED_SECRET *secret;
     ESYS_TR tr_handle = ESYS_TR_NONE;
 
-    tool_rc rc = tpm2_loadexternal(ectx,
-            NULL, &ctx.public, TPM2_RH_NULL, &tr_handle, 0);
+    tool_rc rc = tpm2_loadexternal(ectx, 0, &ctx.public, TPM2_RH_NULL,
+        &tr_handle, 0, TPM2_ALG_ERROR);
     if (rc != tool_rc_success) {
         return rc;
     }
