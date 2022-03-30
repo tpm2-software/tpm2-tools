@@ -179,7 +179,7 @@ static void test_tpm2_policy_build_pcr_good(void **state) {
     assert_int_equal(rc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
-    rc = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
+    rc = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest, 0);
     assert_int_equal(rc, tool_rc_success);
 
     assert_int_equal(policy_digest->size, expected_policy_digest.size);
@@ -293,7 +293,7 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     assert_int_equal(trc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
-    trc = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
+    trc = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest, 0);
     assert_int_equal(rc, tool_rc_success);
 
     assert_int_equal(policy_digest->size, expected_policy_digest.size);
