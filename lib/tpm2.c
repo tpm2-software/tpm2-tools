@@ -914,17 +914,63 @@ tpm2_policysecret_skip_esapi_call:
 }
 
 tool_rc tpm2_policy_getdigest(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
-        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-        TPM2B_DIGEST **policy_digest) {
+    ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+    TPM2B_DIGEST **policy_digest, TPM2B_DIGEST *cp_hash) {
 
-    TSS2_RC rval = Esys_PolicyGetDigest(esys_context, policy_session, shandle1,
-            shandle2, shandle3, policy_digest);
+    tool_rc rc = tool_rc_success;
+    TSS2_RC rval = TSS2_RC_SUCCESS;
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        TPM2_HANDLE sapi_session_handle = 0;
+        rval = Esys_TR_GetTpmHandle(esys_context, policy_session,
+            &sapi_session_handle);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_ERR("Failed to read session handle in sapi");
+            return tool_rc_general_error;
+        }
+
+        TSS2_RC rval = Tss2_Sys_PolicyGetDigest_Prepare(sys_context,
+            sapi_session_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_LoadExternal_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME sapi_session_handle_name = {
+            .size = sizeof(TPM2_HANDLE),
+        };
+        UINT32 sapi_session_handle_be = tpm2_util_hton_32(sapi_session_handle);
+        memcpy(&sapi_session_handle_name.name, &sapi_session_handle_be,
+            sizeof(sapi_session_handle_be));
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(TPM2_ALG_SHA256);
+        rc = tpm2_sapi_getcphash(sys_context, &sapi_session_handle_name, 0, 0,
+            TPM2_ALG_SHA256, cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        goto tpm2_policy_getdigest_skip_esapi_call;
+    }
+
+    rval = Esys_PolicyGetDigest(esys_context, policy_session, shandle1,
+        shandle2, shandle3, policy_digest);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicyGetDigest, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_policy_getdigest_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_policy_command_code(ESYS_CONTEXT *esys_context,

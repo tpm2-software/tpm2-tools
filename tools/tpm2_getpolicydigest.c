@@ -25,6 +25,10 @@ struct tpm_getpolicydigest_ctx {
     /*
      * Parameter hashes
      */
+    char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 
     /*
      * Aux Sessions
@@ -42,7 +46,8 @@ static tool_rc get_policydigest(ESYS_CONTEXT *ectx) {
      * 1. TPM2_CC_<command> OR Retrieve cpHash
      */
     tool_rc rc = tpm2_policy_getdigest(ectx, ctx.session_handle,
-        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &ctx.policy_digest);
+        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &ctx.policy_digest,
+        ctx.cphash);
     if (rc != tool_rc_success) {
         LOG_ERR("Failed getrandom");
     }
@@ -55,7 +60,19 @@ static tool_rc process_outputs(void) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
 
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
@@ -65,7 +82,6 @@ static tool_rc process_outputs(void) {
      * Either open an output file, or if stdout, do nothing as -Q
      * was specified.
      */
-    tool_rc rc = tool_rc_success;
     FILE *out = stdout;
     if (ctx.output_file) {
         out = fopen(ctx.output_file, "wb+");
@@ -84,7 +100,7 @@ static tool_rc process_outputs(void) {
         goto out;
     }
 
-    bool is_file_op_success = files_write_bytes(out, ctx.policy_digest->buffer,
+    is_file_op_success = files_write_bytes(out, ctx.policy_digest->buffer,
         ctx.policy_digest->size);
     if (!is_file_op_success) {
         rc = tool_rc_general_error;
@@ -140,6 +156,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
@@ -148,8 +165,9 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
-    return tool_rc_success;
+    return rc;
 }
 
 static tool_rc check_options(void) {
@@ -173,6 +191,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.hex = true;
         break;
+    case 1:
+        ctx.cp_hash_path = value;
+        break;
     case 'S':
         ctx.session_path = value;
         break;
@@ -185,14 +206,15 @@ static bool on_option(char key, char *value) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "output",       required_argument, NULL, 'o' },
-        { "hex",          no_argument,       NULL,  0  },
-        { "session",      required_argument, NULL, 'S' },
+        { "output",       required_argument, 0, 'o' },
+        { "hex",          no_argument,       0,  0  },
+        { "session",      required_argument, 0, 'S' },
+        { "cphash",       required_argument, 0,  1  },
     };
 
     *opts = tpm2_options_new("S:o:", ARRAY_LEN(topts), topts, on_option, 0, 0);
 
-    return *opts != NULL;
+    return *opts != 0;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -250,4 +272,4 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
 // Register this tool with tpm2_tool.c
 TPM2_TOOL_REGISTER("getpolicydigest", tpm2_tool_onstart, tpm2_tool_onrun,
-    tpm2_tool_onstop, NULL)
+    tpm2_tool_onstop, 0)
