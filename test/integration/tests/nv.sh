@@ -319,7 +319,7 @@ NV_INDEX_NAME=$(tpm2 nvreadpublic 1| grep name | awk {'print $2'})
 tpm2 nvundefine 1
 tpm2 nvreadpublic 1 --cphash cp.hash --tcti=none -n $NV_INDEX_NAME
 echo -ne $TPM2_CC_NV_ReadPublic$NV_INDEX_NAME | xxd -r -p | openssl dgst -sha256 -binary -out test.bin
-cmp -i 2:0 cp.hash test.bin
+cmp cp.hash test.bin 2
 if [ $? != 0 ]; then
 	echo "cpHash doesn't match calculated value"
 	exit 1
