@@ -9,6 +9,7 @@
 #include "tpm2.h"
 #include "tpm2_tool.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_getpolicydigest_ctx tpm_getpolicydigest_ctx;
 struct tpm_getpolicydigest_ctx {
     /*
@@ -25,10 +26,10 @@ struct tpm_getpolicydigest_ctx {
     /*
      * Parameter hashes
      */
-    char *cp_hash_path;
-    TPM2B_DIGEST *cphash;
+    const char *cp_hash_path;
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 
     /*
      * Aux Sessions
@@ -38,7 +39,9 @@ struct tpm_getpolicydigest_ctx {
     ESYS_TR session_handle;
 };
 
-static tpm_getpolicydigest_ctx ctx;
+static tpm_getpolicydigest_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
+};
 
 static tool_rc get_policydigest(ESYS_CONTEXT *ectx) {
 
@@ -47,9 +50,9 @@ static tool_rc get_policydigest(ESYS_CONTEXT *ectx) {
      */
     tool_rc rc = tpm2_policy_getdigest(ectx, ctx.session_handle,
         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &ctx.policy_digest,
-        ctx.cphash);
+        &ctx.cp_hash, ctx.parameter_hash_algorithm);
     if (rc != tool_rc_success) {
-        LOG_ERR("Failed getrandom");
+        LOG_ERR("Failed TPM2_CC_PolicyGetDigest");
     }
 
     return rc;
@@ -156,11 +159,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
-    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.session,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched

@@ -915,11 +915,12 @@ tpm2_policysecret_skip_esapi_call:
 
 tool_rc tpm2_policy_getdigest(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
     ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-    TPM2B_DIGEST **policy_digest, TPM2B_DIGEST *cp_hash) {
+    TPM2B_DIGEST **policy_digest, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     tool_rc rc = tool_rc_success;
     TSS2_RC rval = TSS2_RC_SUCCESS;
-    if (cp_hash) {
+    if (cp_hash && cp_hash->size) {
         /*
          * Need sys_context to be able to calculate CpHash
          */
@@ -952,9 +953,9 @@ tool_rc tpm2_policy_getdigest(ESYS_CONTEXT *esys_context, ESYS_TR policy_session
         memcpy(&sapi_session_handle_name.name, &sapi_session_handle_be,
             sizeof(sapi_session_handle_be));
 
-        cp_hash->size = tpm2_alg_util_get_hash_size(TPM2_ALG_SHA256);
+        cp_hash->size = tpm2_alg_util_get_hash_size(parameter_hash_algorithm);
         rc = tpm2_sapi_getcphash(sys_context, &sapi_session_handle_name, 0, 0,
-            TPM2_ALG_SHA256, cp_hash);
+            parameter_hash_algorithm, cp_hash);
 
         /*
          * Exit here without making the ESYS call since we just need the cpHash

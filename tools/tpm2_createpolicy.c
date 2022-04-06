@@ -85,7 +85,7 @@ static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
     }
 
     rc = tpm2_policy_get_digest(ectx, pctx.common_policy_options.policy_session,
-        &pctx.common_policy_options.policy_digest, 0);
+        &pctx.common_policy_options.policy_digest, 0, TPM2_ALG_ERROR);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build tpm policy");
         return rc;

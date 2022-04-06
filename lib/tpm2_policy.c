@@ -491,12 +491,13 @@ tpm2_policy_build_policysigned_out:
 }
 
 tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx, tpm2_session *session,
-        TPM2B_DIGEST **policy_digest, TPM2B_DIGEST *cphash) {
+    TPM2B_DIGEST **policy_digest, TPM2B_DIGEST *cphash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
     return tpm2_policy_getdigest(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, policy_digest, cphash);
+            ESYS_TR_NONE, policy_digest, cphash, parameter_hash_algorithm);
 }
 
 tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
@@ -657,7 +658,8 @@ tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_session *session,
         const char *save_path) {
 
     TPM2B_DIGEST *policy_digest = 0;
-    tool_rc rc = tpm2_policy_get_digest(ectx, session, &policy_digest, 0);
+    tool_rc rc = tpm2_policy_get_digest(ectx, session, &policy_digest, 0,
+        TPM2_ALG_ERROR);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build tpm policy");
         return rc;
