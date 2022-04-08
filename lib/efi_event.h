@@ -41,6 +41,10 @@
 #define EV_EFI_ACTION                    EV_EFI_EVENT_BASE + 0x7
 #define EV_EFI_PLATFORM_FIRMWARE_BLOB    EV_EFI_EVENT_BASE + 0x8
 #define EV_EFI_HANDOFF_TABLES            EV_EFI_EVENT_BASE + 0x9
+#define EV_EFI_PLATFORM_FIRMWARE_BLOB2   EV_EFI_EVENT_BASE + 0xa
+#define EV_EFI_HANDOFF_TABLES2           EV_EFI_EVENT_BASE + 0xb
+#define EV_EFI_VARIABLE_BOOT2            EV_EFI_EVENT_BASE + 0xc
+
 #define EV_EFI_VARIABLE_AUTHORITY        EV_EFI_EVENT_BASE + 0xe0
 
 #ifndef PACKED
@@ -95,6 +99,13 @@ typedef struct {
     UEFI_PHYSICAL_ADDRESS BlobBase;
     UINT64 BlobLength;
 } PACKED UEFI_PLATFORM_FIRMWARE_BLOB;
+
+
+typedef struct {
+  UINT8 BlobDescriptionSize;
+  BYTE  BlobDescription[];
+  /* UEFI_PLATFORM_FIRMWARE_BLOB comes next */
+} PACKED UEFI_PLATFORM_FIRMWARE_BLOB2;
 
 typedef struct {
     UINT32 pcrIndex;
