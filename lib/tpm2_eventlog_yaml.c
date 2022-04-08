@@ -90,6 +90,12 @@ char const *eventtype_to_string (UINT32 event_type) {
         return "EV_EFI_PLATFORM_FIRMWARE_BLOB";
     case EV_EFI_HANDOFF_TABLES:
         return "EV_EFI_HANDOFF_TABLES";
+    case EV_EFI_PLATFORM_FIRMWARE_BLOB2:
+        return "EV_EFI_PLATFORM_FIRMWARE_BLOB2";
+    case EV_EFI_HANDOFF_TABLES2:
+        return "EV_EFI_HANDOFF_TABLES2";
+    case EV_EFI_VARIABLE_BOOT2:
+        return "EV_EFI_VARIABLE_BOOT2";
     case EV_EFI_VARIABLE_AUTHORITY:
         return "EV_EFI_VARIABLE_AUTHORITY";
     default:
@@ -526,6 +532,37 @@ bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
                      data->BlobLength);
     return true;
 }
+
+/* TCG PC Client PFP (02 dec 2020) section 10.2.5 */
+bool yaml_uefi_platfwblob2(UEFI_PLATFORM_FIRMWARE_BLOB2 *data) {
+  UINT8 blobdescsize = data->BlobDescriptionSize;
+  UEFI_PLATFORM_FIRMWARE_BLOB * data2 = (UEFI_PLATFORM_FIRMWARE_BLOB *)((UINT8 *)data + sizeof(UINT8) + blobdescsize);
+
+  char * eventdesc = (char *)calloc (1, 2*blobdescsize+1);
+  if (!eventdesc) {
+    LOG_ERR("failed to allocate memory: %s\n", strerror(errno));
+    return false;
+  }
+
+  bytes_to_str (data->BlobDescription, blobdescsize, eventdesc, 2*blobdescsize);
+
+  tpm2_tool_output("  Event:\n"
+                   "    BlobDescriptionSize: %d\n"
+                   "    BlobDescription: \"%.*s\"\n"
+                   "    BlobBase: 0x%" PRIx64 "\n"
+                   "    BlobLength: 0x%" PRIx64 "\n",
+                   blobdescsize,
+                   2*blobdescsize,
+                   eventdesc,
+                   data2->BlobBase,
+                   data2->BlobLength);
+
+  free(eventdesc);
+  return true;
+}
+
+
+
 /* TCG PC Client PFP section 9.4.4 */
 bool yaml_uefi_action(UINT8 const *action, size_t size) {
 
@@ -721,6 +758,8 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, uint32_t eventlog_ver
     case EV_S_CRTM_CONTENTS:
     case EV_EFI_PLATFORM_FIRMWARE_BLOB:
         return yaml_uefi_platfwblob((UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event);
+    case EV_EFI_PLATFORM_FIRMWARE_BLOB2:
+        return yaml_uefi_platfwblob2((UEFI_PLATFORM_FIRMWARE_BLOB2*)event->Event);
     case EV_EFI_ACTION:
         return yaml_uefi_action(event->Event, event->EventSize);
     case EV_IPL:
