@@ -439,7 +439,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                              uuidstr, sdata);
             free(sdata);
             return true;
-        } else if (type == EV_EFI_VARIABLE_BOOT) {
+        } else if (type == EV_EFI_VARIABLE_BOOT || type == EV_EFI_VARIABLE_BOOT2) {
             if ((strlen(ret) == 9 && strncmp(ret, "BootOrder", 9) == 0)) {
                 free(ret);
                 tpm2_tool_output("    VariableData:\n");
@@ -750,6 +750,7 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, uint32_t eventlog_ver
     switch (type) {
     case EV_EFI_VARIABLE_DRIVER_CONFIG:
     case EV_EFI_VARIABLE_BOOT:
+    case EV_EFI_VARIABLE_BOOT2:
     case EV_EFI_VARIABLE_AUTHORITY:
         return yaml_uefi_var((UEFI_VARIABLE_DATA*)event->Event,
                                 event->EventSize, type, eventlog_version);
