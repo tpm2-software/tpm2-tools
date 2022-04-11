@@ -536,7 +536,7 @@ bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
 /* TCG PC Client PFP (02 dec 2020) section 10.2.5 */
 bool yaml_uefi_platfwblob2(UEFI_PLATFORM_FIRMWARE_BLOB2 *data) {
   UINT8 blobdescsize = data->BlobDescriptionSize;
-  UEFI_PLATFORM_FIRMWARE_BLOB * data2 = (UEFI_PLATFORM_FIRMWARE_BLOB *)((UINT8 *)data + sizeof(UINT8) + blobdescsize);
+  UEFI_PLATFORM_FIRMWARE_BLOB * data2 = (UEFI_PLATFORM_FIRMWARE_BLOB *)((UINT8 *)data + sizeof(data->BlobDescriptionSize) + blobdescsize);
 
   char * eventdesc = (char *)calloc (1, 2*blobdescsize+1);
   if (!eventdesc) {
