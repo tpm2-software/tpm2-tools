@@ -354,7 +354,8 @@ EXTRA_DIST = \
     doc/RELEASE.md \
     man \
     scripts \
-    test
+    test \
+    VERSION
 
 if HAVE_MAN_PAGES
     dist_man1_MANS := \
