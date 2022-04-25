@@ -158,7 +158,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     char *quoteInfo, *pcrLog = NULL, *certificate = NULL;
     r = Fapi_Quote (fctx, ctx.pcrList, ctx.pcrListSize, ctx.keyPath,
         NULL, qualifyingData, qualifyingDataSize, &quoteInfo,
-        &signature, &signatureSize, &pcrLog, &certificate);
+        &signature, &signatureSize, ctx.pcrLog ? &pcrLog : NULL, &certificate);
     if (r != TSS2_RC_SUCCESS) {
         LOG_PERR ("Fapi_Quote", r);
         free (ctx.pcrList);
@@ -175,7 +175,8 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             strlen(quoteInfo));
         if (r) {
             Fapi_Free (quoteInfo);
-            Fapi_Free (pcrLog);
+            if (ctx.pcrLog)
+                Fapi_Free (pcrLog);
             Fapi_Free (signature);
             Fapi_Free (certificate);
             return 1;
@@ -194,7 +195,8 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             return 1;
         }
     }
-    Fapi_Free (pcrLog);
+    if (ctx.pcrLog)
+        Fapi_Free (pcrLog);
 
     if (ctx.signature && signature) {
         r = open_write_and_close (ctx.signature, ctx.overwrite, signature,
