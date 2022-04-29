@@ -13,6 +13,12 @@ struct tpm2_loaded_object {
     tpm2_session *session;
 };
 
+/*
+ * TPM2B_PRIVATE and TPM2B_PUBLIC parsed from a TSSPEM/ tssprivkey
+ */
+extern TPM2B_PRIVATE tpm2_util_object_tsspem_priv;
+extern TPM2B_PUBLIC tpm2_util_object_tsspem_pub;
+
 /**
  * Parses a string representation of a context object, either a file or handle,
  * and loads the context object ensuring the handle member of the out object is

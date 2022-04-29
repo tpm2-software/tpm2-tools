@@ -9,8 +9,9 @@
 #include "tpm2_tool.h"
 
 #define MAX_SESSIONS 3
-typedef struct tpm_load_ctx tpm_load_ctx;
-struct tpm_load_ctx {
+
+typedef struct tpm_tool_ctx tpm_load_ctx;
+struct tpm_tool_ctx {
     /*
      * Inputs
      */
@@ -27,6 +28,8 @@ struct tpm_load_ctx {
         TPM2B_PRIVATE private;
         ESYS_TR handle;
     } object;
+
+    bool is_tss_pem;
 
     /*
      * Outputs
@@ -49,9 +52,18 @@ static tpm_load_ctx ctx = {
 
 static tool_rc load(ESYS_CONTEXT *ectx) {
 
-    return tpm2_load(ectx, &ctx.parent.object, &ctx.object.private,
-        &ctx.object.public, &ctx.object.handle, &ctx.cp_hash,
-        ctx.parameter_hash_algorithm);
+    /*
+     * If a tssprivkey was specified, load the private and public from the
+     * parsed TSSPEM file.
+     */
+    TPM2B_PRIVATE *to_load_priv =
+        ctx.is_tss_pem ? &tpm2_util_object_tsspem_priv : &ctx.object.private;
+
+    TPM2B_PUBLIC *to_load_pub =
+        ctx.is_tss_pem ? &tpm2_util_object_tsspem_pub : &ctx.object.public;
+
+    return tpm2_load(ectx, &ctx.parent.object, to_load_priv, to_load_pub,
+        &ctx.object.handle, &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -115,9 +127,26 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 1.b Add object names and their auth sessions
      */
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
-            ctx.parent.auth_str, &ctx.parent.object, false,
-            TPM2_HANDLE_ALL_W_NV);
+
+    /*
+     * If a TSS PEM file has been specified, we try to load the tssprivkey
+     * specified with -r, --private option and parse the parent information
+     * from the TSS PEM file.
+     */
+    const char *objectstr =
+        ctx.is_tss_pem ? ctx.object.privpath : ctx.parent.ctx_path;
+    /*
+     * Note: The authvalue of the parent object when loading the TSS PEM file
+     *       is assumed to be NULL per the tssprivkey format.
+     */
+    const char *auth =
+        ctx.is_tss_pem ? 0 : ctx.parent.auth_str;
+    /*
+     * Either parent information is explicitly specified OR is parsed from the
+     * tssprivkey, the parent object is always loaded.
+     */
+    tool_rc rc = tpm2_util_object_load_auth(ectx, objectstr, auth,
+        &ctx.parent.object, false, TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -129,16 +158,33 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 3. Command specific initializations
      */
-    bool is_file_op_success = files_load_public(ctx.object.pubpath,
-        &ctx.object.public);
-    if (!is_file_op_success) {
-        return tool_rc_general_error;
+    bool is_not_tss_pem = (ctx.is_tss_pem == false);
+    if (is_not_tss_pem) {
+        bool is_file_op_success;
+        is_file_op_success = files_load_public(ctx.object.pubpath,
+            &ctx.object.public);
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    
+        is_file_op_success = files_load_private(ctx.object.privpath,
+            &ctx.object.private);
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
     }
 
-    is_file_op_success = files_load_private(ctx.object.privpath,
-        &ctx.object.private);
-    if (!is_file_op_success) {
-        return tool_rc_general_error;
+    /*
+     * If a valid TSS PEM/ tssprivkey has been loaded in 1.b above, then:
+     * 1. The TPM2B_PUBLIC and TPM2B_PRIVATE shoud have been parsed,
+     * 2. The structures must have the key data.
+     */
+    if (ctx.is_tss_pem) {
+        if (!tpm2_util_object_tsspem_priv.size ||
+            !tpm2_util_object_tsspem_pub.size) {
+                LOG_ERR("Invalid public and private in TSS PEM");
+                return tool_rc_general_error;
+            }
     }
 
     /*
@@ -172,19 +218,30 @@ static tool_rc check_options(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
 
     tool_rc rc = tool_rc_success;
-    if (!ctx.parent.ctx_path) {
-        LOG_ERR("Expected parent object via -C");
-        rc = tool_rc_option_error;
-    }
-
-    if (!ctx.object.pubpath) {
-        LOG_ERR("Expected public object portion via -u");
-        rc = tool_rc_option_error;
-    }
-
     if (!ctx.object.privpath) {
         LOG_ERR("Expected private object portion via -r");
         rc = tool_rc_option_error;
+    }
+
+    /*
+     * Check for TSS PEM file input:
+     *  1. It is specified with the -r,--private option alone.
+     *  2. The parent and public objects are implicit and read directly from
+     *     the TSS PEM.
+     */
+    ctx.is_tss_pem =
+        (!ctx.parent.ctx_path && !ctx.object.pubpath && ctx.object.privpath);
+
+    if (!ctx.is_tss_pem) {
+        if (!ctx.parent.ctx_path) {
+            LOG_ERR("Expected parent object via -C or a PEM file with -r");
+            rc = tool_rc_option_error;
+        }
+
+        if (!ctx.object.pubpath) {
+            LOG_ERR("Expected public object portion via -u or a PEM file with -r");
+            rc = tool_rc_option_error;
+        }
     }
 
     if (!ctx.contextpath && !ctx.cp_hash_path) {

@@ -182,15 +182,12 @@ encode(void)
     }
 
     tpk->type = OBJ_txt2obj(OID_loadableKey, 1);
-    tpk->parent = ASN1_INTEGER_new();
-    tpk->privkey = ASN1_OCTET_STRING_new();
-    tpk->pubkey = ASN1_OCTET_STRING_new();
-    if (!tpk->type || !tpk->privkey || !tpk->pubkey || !tpk->parent) {
+    if (!tpk->type) {
         LOG_ERR("oom");
         goto error;
     }
 
-    tpk->emptyAuth = ctx.parent.auth_str == NULL ? 0xFF : 0;
+    tpk->emptyAuth = ctx.parent.auth_str == NULL ? true : false;
 
     if ((ctx.parent.object.handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT) {
 	ASN1_INTEGER_set(tpk->parent, ctx.parent.object.handle);

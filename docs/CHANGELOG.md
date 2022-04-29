@@ -2,9 +2,14 @@
 
 ### next
 
+  * tpm2_load:
+      - Added capability to load pem files in TSS2-Private-Key format for
+        interoperability with tpm2-tss-engine, tpm2-openssl provider,
+        tpm2-pkcs11, and tpm2-pytss.
+
   * tpm2_ecdhkeygen:
       - Added option to output the cpHash for the command TPM2_CC_ECDH_KeyGen.
-      
+
   * tpm2_commit:
       - Added option to output the cpHash for the command TPM2_CC_Commit.
 
