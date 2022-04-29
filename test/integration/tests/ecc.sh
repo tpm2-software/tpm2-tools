@@ -76,4 +76,20 @@ diff pass2.z2 pass3.z2
 
 trap onerror ERR
 
+# Test for cpHash with TPM2_CC_Commit
+tpm2 create -C prim.ctx -c cp_hash_commit_key.ctx -u cp_hash_commit_key.pub \
+    -r cp_hash_commit_key.priv -G ecc256:ecdaa
+
+tpm2 commit -c cp_hash_commit_key.ctx --cphash cp.hash
+
+TPM2_CC_Commit="0000018B"
+tpm2 readpublic -Q -c cp_hash_commit_key.ctx -n cp_hash_commit_key.name
+Key_Name=$(xxd -p -c64 cp_hash_commit_key.name)
+Param_P1="00040000000000000000"
+
+echo -ne $TPM2_CC_Commit$Key_Name$Param_P1 | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+
+cmp cp.hash test.bin 2
+
 exit 0

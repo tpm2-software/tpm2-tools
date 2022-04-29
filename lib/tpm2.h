@@ -516,7 +516,8 @@ tool_rc tpm2_ecephemeral(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
 tool_rc tpm2_commit(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *signing_key_object, TPM2B_ECC_POINT *P1,
     TPM2B_SENSITIVE_DATA *s2, TPM2B_ECC_PARAMETER *y2, TPM2B_ECC_POINT **K,
-    TPM2B_ECC_POINT **L, TPM2B_ECC_POINT **E, uint16_t *counter);
+    TPM2B_ECC_POINT **L, TPM2B_ECC_POINT **E, uint16_t *counter,
+    TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_ecdhkeygen(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *ecc_public_key, TPM2B_ECC_POINT **Z,
