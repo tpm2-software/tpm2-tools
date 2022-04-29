@@ -11,7 +11,9 @@
 # DESCRIPTION
 
 **tpm2_load**(1) - Load both the private and public portions of an object
-into the TPM.
+into the TPM or load the object in the TSS2-Private-Key PEM format. This can
+be done by specifying the private as well as the public section or via a pem
+file using the *-r* option.
 
 The tool outputs the name of the loaded object in a YAML dictionary format
 with the key *name* where the value for that key is the name of the object
@@ -23,6 +25,8 @@ name: 000bac25cb8743111c8e1f52f2ee7279d05d3902a18dd1af694db5d1afa7adf1c8b3
 It also saves a context file for future interactions with the object.
 
 **NOTE**: Both private and public portions of the tpm key must be specified.
+The exception to this is if a TSS2-Private-Key formatted PEM object is to be
+loaded which does not need the public specified.
 
 # OPTIONS
 
