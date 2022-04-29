@@ -2,6 +2,9 @@
 
 ### next
 
+  * tpm2_commit:
+      - Added option to output the cpHash for the command TPM2_CC_Commit.
+
   * Minimum tpm2-tss version is now 3.2.0 to support openssl3 migration.
 
   * tpm2:

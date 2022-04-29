@@ -39,6 +39,14 @@ struct tpm_ecephemeral_ctx {
     TPM2B_ECC_POINT *E;
     char *commit_counter_path;
     uint16_t counter;
+
+    /*
+     * Parameter hashes
+     */
+    char *cp_hash_path;
+    TPM2B_DIGEST *cphash;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
 };
 
 static tpm_ecephemeral_ctx ctx;
@@ -46,7 +54,7 @@ static tpm_ecephemeral_ctx ctx;
 static tool_rc commit(ESYS_CONTEXT *ectx) {
 
     return tpm2_commit(ectx, &ctx.signing_key.object, &ctx.P1, &ctx.s2, &ctx.y2,
-        &ctx.K, &ctx.L, &ctx.E, &ctx.counter);
+        &ctx.K, &ctx.L, &ctx.E, &ctx.counter, ctx.cphash);
 }
 
 static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
@@ -56,32 +64,45 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
-    bool result = files_save_ecc_point(ctx.K, ctx.eccpoint_K_data_path);
-    if (!result) {
+    is_file_op_success = files_save_ecc_point(ctx.K, ctx.eccpoint_K_data_path);
+    if (!is_file_op_success) {
         LOG_ERR("Failed to write out the ECC point K");
         return tool_rc_general_error;
     }
 
-    result = files_save_ecc_point(ctx.L, ctx.eccpoint_L_data_path);
-    if (!result) {
+    is_file_op_success = files_save_ecc_point(ctx.L, ctx.eccpoint_L_data_path);
+    if (!is_file_op_success) {
         LOG_ERR("Failed to write out the ECC point L");
         return tool_rc_general_error;
     }
 
-    result = files_save_ecc_point(ctx.E, ctx.eccpoint_E_data_path);
-    if (!result) {
+    is_file_op_success = files_save_ecc_point(ctx.E, ctx.eccpoint_E_data_path);
+    if (!is_file_op_success) {
         LOG_ERR("Failed to write out the ECC point E");
         return tool_rc_general_error;
     }
 
     FILE *fp = fopen(ctx.commit_counter_path, "wb");
-    result = files_write_16(fp, ctx.counter);
+    is_file_op_success = files_write_16(fp, ctx.counter);
     fclose(fp);
-    if (!result) {
+    if (!is_file_op_success) {
         LOG_ERR("Failed to write out the ECC commit count");
         return tool_rc_general_error;
     }
@@ -138,6 +159,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4. Configuration for calculating the pHash
      */
+    ctx.cphash = ctx.cp_hash_path ? &ctx.cp_hash : 0;
 
     /*
      * 4.a Determine pHash length and alg
@@ -146,6 +168,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     return rc;
 }
@@ -206,6 +229,9 @@ static bool on_option(char key, char *value) {
         case 't':
             ctx.commit_counter_path = value;
             break;
+        case 4:
+            ctx.cp_hash_path = value;
+            break;
     };
 
     return true;
@@ -222,6 +248,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "eccpoint-L",  required_argument, 0,  3  },
       { "public",      required_argument, 0, 'u' },
       { "counter",     required_argument, 0, 't' },
+      { "cphash",      required_argument, 0,  4  },
     };
 
     *opts = tpm2_options_new("p:c:t:u:", ARRAY_LEN(topts), topts,
