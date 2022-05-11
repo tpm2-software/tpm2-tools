@@ -365,23 +365,6 @@ static alg_parser_rc handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
     return ext[0] == '\0' ? alg_parser_rc_continue : alg_parser_rc_error;
 }
 
-static alg_parser_rc handle_sm2(const char *ext, TPM2B_PUBLIC *public) {
-
-    public->publicArea.type = TPM2_ALG_ECC;
-
-    TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
-    e->kdf.scheme = TPM2_ALG_NULL;
-    e->curveID = TPM2_ECC_NONE;
-
-    size_t len = ext ? strlen(ext) : 0;
-    if (len == 0 || ext[0] == '\0') {
-        e->curveID = TPM2_ECC_SM2_P256;
-        return alg_parser_rc_continue;
-    }
-
-    return alg_parser_rc_error;
-}
-
 static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_SYMCIPHER;
@@ -446,9 +429,6 @@ static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
     } else if (!strncmp(object, "ecc", 3)) {
         object += 3;
         return handle_ecc(object, public);
-    } else if (!strncmp(object, "sm2", 3)) {
-        object += 3;
-        return handle_sm2(object, public);
     } else if (!strncmp(object, "aes", 3)) {
         object += 3;
         return handle_aes(object, public);
@@ -1164,77 +1144,94 @@ TPM2_ALG_ID tpm2_alg_util_get_name_alg(ESYS_CONTEXT *ectx, ESYS_TR handle) {
     return name_alg;
 }
 
-TPM2B_DIGEST *tpm2_alg_util_sm2_calculate_z_digest(ESYS_CONTEXT *ectx, ESYS_TR tr_handle) {
+tool_rc tpm2_alg_util_sm2_compute_id_digest(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *id, size_t idlen, TPM2B_DIGEST *result) {
 
-    tool_rc rc = tool_rc_success;
-    TPM2B_PUBLIC *public = 0;
-    rc = tpm2_readpublic(ectx, tr_handle, &public, 0, 0);
-    if(rc != tool_rc_success || 0 == public) {
-        LOG_ERR("a error to read public key from tpm device!");
-        return 0;
+    TPMS_ALGORITHM_DETAIL_ECC *parameters = NULL;
+    TPM2B_PUBLIC *public = NULL;
+    TPM2B *id_input = NULL;
+    TPM2B_DIGEST *tmp_digest = NULL;
+
+    if (!id || !result) {
+        return tool_rc_general_error;
     }
 
-    /* The default user id as specified in GM/T 0009-2012 */
-    BYTE id[] = {0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38};
-    /* The a, b, gx, gy as specified in GM/T 0003.5-2012 */
-    BYTE a[] = {0xff,0xff,0xff,0xfe,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
-                0xff,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xfc};
-    BYTE b[] = {0x28,0xe9,0xfa,0x9e,0x9d,0x9f,0x5e,0x34,0x4d,0x5a,0x9e,0x4b,0xcf,0x65,0x09,0xa7,
-                0xf3,0x97,0x89,0xf5,0x15,0xab,0x8f,0x92,0xdd,0xbc,0xbd,0x41,0x4d,0x94,0x0e,0x93};
-    BYTE gx[] = {0x32,0xc4,0xae,0x2c,0x1f,0x19,0x81,0x19,0x5f,0x99,0x04,0x46,0x6a,0x39,0xc9,0x94,
-                0x8f,0xe3,0x0b,0xbf,0xf2,0x66,0x0b,0xe1,0x71,0x5a,0x45,0x89,0x33,0x4c,0x74,0xc7};
-    BYTE gy[] = {0xbc,0x37,0x36,0xa2,0xf4,0xf6,0x77,0x9c,0x59,0xbd,0xce,0xe3,0x6b,0x69,0x21,0x53,
-                0xd0,0xa9,0x87,0x7c,0xc6,0x2a,0x47,0x40,0x02,0xdf,0x32,0xe5,0x21,0x39,0xf0,0xa0};
-    /* size of data which is calculated to Z digest. 2 is size of variable 'ebytes' */
-    UINT16 size = 2 + sizeof(id) + sizeof(a) + sizeof(b) + sizeof(gx) + sizeof(gy) +
-            public->publicArea.unique.ecc.x.size+public->publicArea.unique.ecc.y.size;
-
-    TPM2B *z_input = (TPM2B *) calloc(1, sizeof(TPM2B) + size);
-    if(z_input == 0) {
-        LOG_ERR("a error to calloc memory!");
-        return 0;
+    /* 2-byte id length in bits */
+    if (strlen(id) != idlen) {
+        LOG_ERR("invalid sm2 id!");
+        return tool_rc_general_error;
     }
-    z_input->size = size;
 
-    UINT16 entl = 8 * sizeof(id);
-    UINT8 ebytes[2] = {0, 0};
-    ebytes[0] = entl >> 8;
-    ebytes[1] = entl % 256;
+    if (idlen > SM2_MAX_ID_LENGTH || idlen <= 0) {
+        LOG_ERR("invalid id length!");
+        return tool_rc_general_error;
+    }
+
+    tool_rc rc = tpm2_geteccparameters(ectx, TPM2_ECC_SM2_P256, &parameters);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Could not get ecc parameters!");
+        goto out;
+    }
+
+    rc = tpm2_readpublic(ectx, handle, &public, NULL, NULL);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Could not read public!");
+        goto out;
+    }
+
+    UINT16 key_nbytes = parameters->keySize/8;
+    if (public->publicArea.type != TPM2_ALG_ECC ||
+            public->publicArea.parameters.eccDetail.curveID != TPM2_ECC_SM2_P256 ||
+            public->publicArea.unique.ecc.x.size != key_nbytes ||
+            public->publicArea.unique.ecc.y.size != key_nbytes) {
+        LOG_ERR("invalid sm2 public key!");
+        rc = tool_rc_general_error;
+        goto out;
+    }
+
+    BYTE idbits[2];
+    idbits[0] = ((idlen * 8) >> 8) % 256;
+    idbits[1] = (idlen * 8) % 256;
+
+    UINT16 total_size = sizeof(idbits) + idlen + 6 * key_nbytes;
+
+    id_input = (TPM2B *) calloc(1, sizeof(TPM2B) + total_size);
+    if (id_input == NULL) {
+        LOG_ERR("Could not calloc memory!");
+        rc = tool_rc_general_error;
+        goto out;
+    }
+
+    id_input->size = total_size;
+
     UINT16 pos = 0;
-    memcpy(z_input->buffer+pos, ebytes, 2);
-    pos += 2;
-    memcpy(z_input->buffer+pos, id, sizeof(id));
-    pos += sizeof(id);
-    memcpy(z_input->buffer+pos, a, sizeof(a));
-    pos += sizeof(a);
-    memcpy(z_input->buffer+pos, b, sizeof(b));
-    pos += sizeof(b);
-    memcpy(z_input->buffer+pos, gx, sizeof(gx));
-    pos += sizeof(gx);
-    memcpy(z_input->buffer+pos, gy, sizeof(gy));
-    pos += sizeof(gy);
-    memcpy(z_input->buffer+pos, public->publicArea.unique.ecc.x.buffer,
-                                public->publicArea.unique.ecc.x.size);
-    pos += public->publicArea.unique.ecc.x.size;
-    memcpy(z_input->buffer+pos, public->publicArea.unique.ecc.y.buffer,
-                                public->publicArea.unique.ecc.y.size);
+    memcpy(id_input->buffer + pos, idbits, sizeof(idbits));
+    pos += sizeof(idbits);
+    memcpy(id_input->buffer + pos, id, idlen);
+    pos += idlen;
+    memcpy(id_input->buffer + pos, parameters->a.buffer, key_nbytes);
+    pos += key_nbytes;
+    memcpy(id_input->buffer + pos, parameters->b.buffer, key_nbytes);
+    pos += key_nbytes;
+    memcpy(id_input->buffer + pos, parameters->gX.buffer, key_nbytes);
+    pos += key_nbytes;
+    memcpy(id_input->buffer + pos, parameters->gY.buffer, key_nbytes);
+    pos += key_nbytes;
+    memcpy(id_input->buffer + pos, public->publicArea.unique.ecc.x.buffer, key_nbytes);
+    pos += key_nbytes;
+    memcpy(id_input->buffer + pos, public->publicArea.unique.ecc.y.buffer, key_nbytes);
 
-    TPM2B_DIGEST *z_digest = (TPM2B_DIGEST *) malloc(sizeof(TPM2B_DIGEST));
-    if(0 == z_digest) {
-        LOG_ERR("a error to malloc memory!");
-        free(z_input);
-        return 0;
-    }
-    z_digest->size = sizeof(z_digest->buffer);
-
-    rc = tpm2_hash_compute_data(ectx, TPM2_ALG_SM3_256, TPM2_RH_NULL,
-                        z_input->buffer, z_input->size, &z_digest, 0);
-    if(rc != tool_rc_success) {
-        LOG_ERR("a error to calculate z digest!");
-        free(z_input);
-        return 0;
+    rc = tpm2_hash_compute_data(ectx, TPM2_ALG_SM3_256, TPM2_RH_OWNER,
+                        id_input->buffer, id_input->size, &tmp_digest, NULL);
+    if (rc != tool_rc_success) {
+        goto out;
     }
 
-    free(z_input);
-    return z_digest;
+    *result = *tmp_digest;
+
+out:
+    free(id_input);
+    Esys_Free(public);
+    Esys_Free(tmp_digest);
+    Esys_Free(parameters);
+    return rc;
 }

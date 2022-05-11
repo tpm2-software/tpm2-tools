@@ -102,38 +102,6 @@ static TPM2B *message_from_file(const char *msg_file_path) {
     return msg;
 }
 
-/* e = Z || M, specified in GM/T 0003.2-2012*/
-static TPM2B *message_from_file_with_sm2_z_digest(const char *msg_file_path, ESYS_CONTEXT *ectx) {
-
-    TPM2B_DIGEST *z_digest = tpm2_alg_util_sm2_calculate_z_digest(ectx, ctx.key_context_object.tr_handle);
-    if(z_digest == 0) {
-        LOG_ERR("a error to calculate Z digest!");
-        return 0;
-    }
-
-    TPM2B *msg = message_from_file(msg_file_path);
-    if(msg == 0) {
-        LOG_ERR("a error to read message file!");
-        free(z_digest);
-        return 0;
-    }
-
-    TPM2B *message_sigend_by_sm2 = (TPM2B *) calloc(1, sizeof(TPM2B) + z_digest->size + msg->size);
-    if(message_sigend_by_sm2 == 0) {
-        LOG_ERR("a error to calloc memory!");
-        goto done;
-    }
-    message_sigend_by_sm2->size = z_digest->size + msg->size;
-
-    memcpy(message_sigend_by_sm2->buffer, z_digest->buffer, z_digest->size);
-    memcpy(message_sigend_by_sm2->buffer+z_digest->size, msg->buffer, msg->size);
-
-done:
-    free(z_digest);
-    free(msg);
-    return message_sigend_by_sm2;
-}
-
 static tool_rc init(ESYS_CONTEXT *context) {
 
     tool_rc rc = tool_rc_general_error;
@@ -158,11 +126,7 @@ static tool_rc init(ESYS_CONTEXT *context) {
     }
 
     if (ctx.flags.msg) {
-        if(ctx.format == TPM2_ALG_SM2) {
-            msg = message_from_file_with_sm2_z_digest(ctx.msg_file_path, context);
-        } else {
-            msg = message_from_file(ctx.msg_file_path);
-        }
+        msg = message_from_file(ctx.msg_file_path);
 
         if (!msg) {
             /* message_from_file() logs specific error no need to here */
@@ -193,8 +157,21 @@ static tool_rc init(ESYS_CONTEXT *context) {
                     "compute message hash!");
             goto err;
         }
-        tmp_rc = tpm2_hash_compute_data(context, ctx.halg, TPM2_RH_NULL,
-                msg->buffer, msg->size, &ctx.msg_hash, NULL);
+
+        if (ctx.signature.sigAlg == TPM2_ALG_SM2 && ctx.halg == TPM2_ALG_SM3_256) {
+            TPM2B_DIGEST z_digest;
+            tmp_rc = tpm2_alg_util_sm2_compute_id_digest(context, ctx.key_context_object.tr_handle,
+                    SM2_DEFAULT_ID, SM2_DEFAULT_ID_LENGTH, &z_digest);
+            if (tmp_rc != tool_rc_success) {
+                LOG_ERR("Verify could not compute id digest");
+            } else {
+                tmp_rc = tpm2_sm2_compute_msg_digest_data(context, ctx.halg, TPM2_RH_NULL,
+                        msg->buffer, msg->size, &z_digest, &ctx.msg_hash, NULL);
+            }
+        } else {
+            tmp_rc = tpm2_hash_compute_data(context, ctx.halg, TPM2_RH_NULL,
+                    msg->buffer, msg->size, &ctx.msg_hash, NULL);
+        }
         if (tmp_rc != tool_rc_success) {
             rc = tmp_rc;
             LOG_ERR("Compute message hash failed!");

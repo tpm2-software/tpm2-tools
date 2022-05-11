@@ -239,15 +239,31 @@ bool tpm2_alg_util_is_sm4_size_valid(UINT16 size_in_bytes);
  */
 TPM2_ALG_ID tpm2_alg_util_get_name_alg(ESYS_CONTEXT *ectx, ESYS_TR handle);
 
+#define SM2_MAX_ID_BITS             65535
+#define SM2_MAX_ID_LENGTH           (SM2_MAX_ID_BITS/8)
+#define SM2_DEFAULT_ID_GMT09            "1234567812345678"
+#define SM2_DEFAULT_ID              SM2_DEFAULT_ID_GMT09
+#define SM2_DEFAULT_ID_LENGTH           (sizeof(SM2_DEFAULT_ID) - 1)
+
 /**
- * Determines calculate z digest for sm2 signature algorithm.
+ * Given an ESYS_TR handle to an object, retrieves ecc sm2 parameters
+ * with making a geteccparameters call, retrieves the public key with
+ * making a readpublic call, and compute id digest.
+ *
  * @param ectx
- *  The Enhanced system api (ESAPI_) context.
- * @param tr_handle
- *  Optional. The Esys handle for the TPM2 object
+ *  The ESAPI context.
+ * @param handle
+ *  The handle of the object to query.
+ * @param id
+ *  sm2 id.
+ * @param idlen
+ *  sm2 id length.
+ * @param result
+ *  sm2 id digest output.
  * @return
- *  TPM2B_DIGEST pointer if success, NULL otherwise.
+ *  tool_rc indicating status.
  */
-TPM2B_DIGEST *tpm2_alg_util_sm2_calculate_z_digest(ESYS_CONTEXT *ectx, ESYS_TR tr_handle);
+tool_rc tpm2_alg_util_sm2_compute_id_digest(ESYS_CONTEXT *ectx, ESYS_TR handle,
+        const char *id, size_t idlen, TPM2B_DIGEST *result);
 
 #endif /* LIB_TPM2_ALG_UTIL_H_ */
