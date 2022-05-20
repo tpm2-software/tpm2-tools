@@ -552,11 +552,13 @@ static bool load_public_RSA_from_key(EVP_PKEY *key, TPM2B_PUBLIC *pub) {
         rdetail->scheme.details.anySig.hashAlg = TPM2_ALG_NULL;
     }
 
-    /* NULL out sym details */
+    /* NULL out sym details if not already set */
     TPMT_SYM_DEF_OBJECT *sym = &rdetail->symmetric;
-    sym->algorithm = TPM2_ALG_NULL;
-    sym->keyBits.sym = 0;
-    sym->mode.sym = TPM2_ALG_NULL;
+    if (sym->algorithm == TPM2_ALG_ERROR) {
+        sym->algorithm = TPM2_ALG_NULL;
+        sym->keyBits.sym = 0;
+        sym->mode.sym = TPM2_ALG_NULL;
+    }
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
     const BIGNUM *n; /* modulus */
@@ -836,11 +838,13 @@ static bool load_public_ECC_from_key(EVP_PKEY *key, TPM2B_PUBLIC *pub) {
         pp->scheme.details.anySig.hashAlg = TPM2_ALG_NULL;
     }
 
-    /* NULL out sym details */
+    /* NULL out sym details if not already set */
     TPMT_SYM_DEF_OBJECT *sym = &pp->symmetric;
-    sym->algorithm = TPM2_ALG_NULL;
-    sym->keyBits.sym = 0;
-    sym->mode.sym = TPM2_ALG_NULL;
+    if (sym->algorithm == TPM2_ALG_ERROR) {
+        sym->algorithm = TPM2_ALG_NULL;
+        sym->keyBits.sym = 0;
+        sym->mode.sym = TPM2_ALG_NULL;
+    }
 
     result = true;
 out:
