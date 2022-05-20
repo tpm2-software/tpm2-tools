@@ -71,6 +71,11 @@ run_rsa_import_test() {
     tpm2 import -G rsa:rsassa-sha256 -g "$name_alg" -i private.pem -C $1 \
     -u import_rsa_key2.pub -r import_rsa_key2.priv | grep -q 'rsassa'
 
+    # test import with symmetric and discard
+    tpm2 import -G rsa:aes128cfb -g "$name_alg" -i private.pem -C $1 \
+    -u import_rsa_key2.pub -r import_rsa_key2.priv -a 'userwithauth|restricted|decrypt' \
+    | grep -q cfb
+
     tpm2 load -Q -C $1 -u import_rsa_key.pub -r import_rsa_key.priv \
     -n import_rsa_key.name -c import_rsa_key.ctx
 
@@ -125,6 +130,10 @@ run_ecc_import_test() {
     # test import with scheme
     tpm2 import -G ecc:ecdsa-sha256 -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub \
     -r ecc.priv | grep -q 'ecdsa'
+
+    # test import with symmetric and discard
+    tpm2 import -G ecc:aes128cfb -g "$name_alg" -i private.ecc.pem -C $1 -u ecc2.pub \
+    -r ecc2.priv -a 'userwithauth|restricted|decrypt' | grep -q 'cfb'
 
     tpm2 load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -c ecc.ctx
 
