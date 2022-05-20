@@ -542,9 +542,15 @@ static bool load_public_RSA_from_key(EVP_PKEY *key, TPM2B_PUBLIC *pub) {
     pt->type = TPM2_ALG_RSA;
 
     TPMS_RSA_PARMS *rdetail = &pub->publicArea.parameters.rsaDetail;
-    rdetail->scheme.scheme = TPM2_ALG_NULL;
-    rdetail->symmetric.algorithm = TPM2_ALG_NULL;
-    rdetail->scheme.details.anySig.hashAlg = TPM2_ALG_NULL;
+    /*
+     * If the scheme is not TPM2_ALG_ERROR (0),
+     * its a valid scheme so don't set it to NULL scheme
+     */
+    if (rdetail->scheme.scheme == TPM2_ALG_ERROR) {
+        rdetail->scheme.scheme = TPM2_ALG_NULL;
+        rdetail->symmetric.algorithm = TPM2_ALG_NULL;
+        rdetail->scheme.details.anySig.hashAlg = TPM2_ALG_NULL;
+    }
 
     /* NULL out sym details */
     TPMT_SYM_DEF_OBJECT *sym = &rdetail->symmetric;
@@ -820,9 +826,15 @@ static bool load_public_ECC_from_key(EVP_PKEY *key, TPM2B_PUBLIC *pub) {
      * no kdf - not sure what this should be
      */
     pp->kdf.scheme = TPM2_ALG_NULL;
-    pp->scheme.scheme = TPM2_ALG_NULL;
-    pp->symmetric.algorithm = TPM2_ALG_NULL;
-    pp->scheme.details.anySig.hashAlg = TPM2_ALG_NULL;
+
+    /*
+     * If the scheme is not TPM2_ALG_ERROR (0),
+     * its a valid scheme so don't set it to NULL scheme
+     */
+    if (pp->scheme.scheme == TPM2_ALG_ERROR) {
+        pp->scheme.scheme = TPM2_ALG_NULL;
+        pp->scheme.details.anySig.hashAlg = TPM2_ALG_NULL;
+    }
 
     /* NULL out sym details */
     TPMT_SYM_DEF_OBJECT *sym = &pp->symmetric;
