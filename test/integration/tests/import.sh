@@ -4,8 +4,8 @@ source helpers.sh
 
 cleanup() {
     rm -f import_key.ctx import_key.name import_key.priv import_key.pub \
-    parent.ctx plain.dec.ssl  plain.enc plain.txt sym.key import_rsa_key.pub \
-    import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name private.pem \
+    parent.ctx plain.dec.ssl  plain.enc plain.txt sym.key import_rsa_key*.pub \
+    import_rsa_key*.priv import_rsa_key.ctx import_rsa_key.name private.pem \
     public.pem plain.rsa.enc plain.rsa.dec public.pem data.in.raw \
     data.in.digest data.out.signed ticket.out ecc.pub ecc.priv ecc.name \
     ecc.ctx private.ecc.pem public.ecc.pem passfile aes.key policy.dat \
@@ -67,6 +67,10 @@ run_rsa_import_test() {
     tpm2 import -Q -G rsa -g "$name_alg" -i private.pem -C $1 \
     -u import_rsa_key.pub -r import_rsa_key.priv
 
+    # test in import with scheme and discard
+    tpm2 import -G rsa:rsassa-sha256 -g "$name_alg" -i private.pem -C $1 \
+    -u import_rsa_key2.pub -r import_rsa_key2.priv | grep -q 'rsassa'
+
     tpm2 load -Q -C $1 -u import_rsa_key.pub -r import_rsa_key.priv \
     -n import_rsa_key.name -c import_rsa_key.ctx
 
@@ -118,8 +122,9 @@ run_ecc_import_test() {
     shasum -a 256 data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
     data.in.digest
 
-    tpm2 import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub \
-    -r ecc.priv
+    # test import with scheme
+    tpm2 import -G ecc:ecdsa-sha256 -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub \
+    -r ecc.priv | grep -q 'ecdsa'
 
     tpm2 load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -c ecc.ctx
 
