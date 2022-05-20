@@ -115,7 +115,7 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
     }
 }
 
-static alg_parser_rc handle_sym_common(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
+static alg_parser_rc handle_sym_common(const char *ext, TPMT_SYM_DEF_OBJECT *s, bool is_parent) {
 
     if (ext == NULL || ext[0] == '\0') {
         ext = "128";
@@ -134,7 +134,7 @@ static alg_parser_rc handle_sym_common(const char *ext, TPMT_SYM_DEF_OBJECT *s) 
     ext += 3;
 
     if (*ext == '\0') {
-        ext = "null";
+        ext = is_parent ? "cfb" : "null";
     }
 
     s->mode.sym = tpm2_alg_util_strtoalg(ext,
@@ -392,7 +392,7 @@ static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
     TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
     s->algorithm = TPM2_ALG_AES;
 
-    return handle_sym_common(ext, s);
+    return handle_sym_common(ext, s, false);
 }
 
 static alg_parser_rc handle_camellia(const char *ext, TPM2B_PUBLIC *public) {
@@ -402,7 +402,7 @@ static alg_parser_rc handle_camellia(const char *ext, TPM2B_PUBLIC *public) {
     TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
     s->algorithm = TPM2_ALG_CAMELLIA;
 
-    return handle_sym_common(ext, s);
+    return handle_sym_common(ext, s, false);
 }
 
 static alg_parser_rc handle_sm4(const char *ext, TPM2B_PUBLIC *public) {
@@ -412,7 +412,7 @@ static alg_parser_rc handle_sm4(const char *ext, TPM2B_PUBLIC *public) {
     TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
     s->algorithm = TPM2_ALG_SM4;
 
-    return handle_sym_common(ext, s);
+    return handle_sym_common(ext, s, false);
 }
 
 static alg_parser_rc handle_xor(TPM2B_PUBLIC *public) {
@@ -534,14 +534,14 @@ static alg_parser_rc handle_asym_detail(const char *detail,
 
         if (!strncmp(detail, "aes", 3)) {
             s->algorithm = TPM2_ALG_AES;
-            return handle_sym_common(detail + 3, s);
+            return handle_sym_common(detail + 3, s, is_restricted);
         } else if (!strncmp(detail, "camellia", 8)) {
             s->algorithm = TPM2_ALG_CAMELLIA;
-            return handle_sym_common(detail + 8, s);
+            return handle_sym_common(detail + 8, s, is_restricted);
         } else if (!strncmp(detail, "sm4", 3)) {
             s->algorithm = TPM2_ALG_SM4;
             detail += (detail[3] == '_') ? 4 : 3;
-            return handle_sym_common(detail, s);
+            return handle_sym_common(detail, s, is_restricted);
         } else if (!strcmp(detail, "null")) {
             s->algorithm = TPM2_ALG_NULL;
             return alg_parser_rc_done;

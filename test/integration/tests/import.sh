@@ -71,8 +71,8 @@ run_rsa_import_test() {
     tpm2 import -G rsa:rsassa-sha256 -g "$name_alg" -i private.pem -C $1 \
     -u import_rsa_key2.pub -r import_rsa_key2.priv | grep -q 'rsassa'
 
-    # test import with symmetric and discard
-    tpm2 import -G rsa:aes128cfb -g "$name_alg" -i private.pem -C $1 \
+    # test import with short symmetric qualifier and discard
+    tpm2 import -G rsa:aes -g "$name_alg" -i private.pem -C $1 \
     -u import_rsa_key2.pub -r import_rsa_key2.priv -a 'userwithauth|restricted|decrypt' \
     | grep -q cfb
 
