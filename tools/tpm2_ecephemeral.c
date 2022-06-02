@@ -9,7 +9,14 @@
 
 typedef struct tpm_ecephemeral_ctx tpm_ecephemeral_ctx;
 struct tpm_ecephemeral_ctx {
+    /*
+     * Inputs
+     */
     TPMI_ECC_CURVE curve_id;
+
+    /*
+     * Outputs
+     */
     uint16_t counter;
     TPM2B_ECC_POINT *Q;
     char *commit_counter_path;
@@ -19,6 +26,97 @@ struct tpm_ecephemeral_ctx {
 static tpm_ecephemeral_ctx ctx = {
     .curve_id = TPM2_ECC_NONE,
 };
+
+static tool_rc ecephemeral(ESYS_CONTEXT *ectx) {
+
+    return tpm2_ecephemeral(ectx, ctx.curve_id, &ctx.Q, &ctx.counter);
+}
+
+static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    FILE *fp = fopen(ctx.commit_counter_path, "wb");
+    bool is_file_op_success = files_write_16(fp, ctx.counter);
+    fclose(fp);
+    if (!is_file_op_success) {
+        LOG_ERR("Failed to write out the ECC commit count");
+        return tool_rc_general_error;
+    }
+
+    is_file_op_success = files_save_ecc_point(ctx.Q, ctx.ephemeral_pub_key_path);
+    if (!is_file_op_success) {
+        LOG_ERR("Failed to write out the ECC pub key");
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+
+    return tool_rc_success;
+}
+
+static tool_rc check_options(void) {
+
+    if (!ctx.ephemeral_pub_key_path) {
+        LOG_ERR("Invalid path specified for saving the ephemeral public key");
+        return tool_rc_option_error;
+    }
+
+    if (!ctx.commit_counter_path) {
+        LOG_ERR("Invalid path specified for saving the commit counter");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.curve_id == TPM2_ECC_NONE) {
+        LOG_ERR("Invalid/ unspecified ECC curve");
+        return tool_rc_option_error;
+    }
+
+    return tool_rc_success;
+}
 
 static bool on_option(char key, char *value) {
 
@@ -64,77 +162,70 @@ static bool on_args(int argc, char **argv) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      { "public",   required_argument, NULL, 'u' },
-      { "counter",  required_argument, NULL, 't' },
+      { "public",   required_argument, 0, 'u' },
+      { "counter",  required_argument, 0, 't' },
     };
 
     *opts = tpm2_options_new("u:t:", ARRAY_LEN(topts), topts,
             on_option, on_args, 0);
 
-    return *opts != NULL;
-}
-
-static tool_rc check_options(void) {
-
-    if (!ctx.ephemeral_pub_key_path) {
-        LOG_ERR("Invalid path specified for saving the ephemeral public key");
-        return tool_rc_option_error;
-    }
-
-    if (!ctx.commit_counter_path) {
-        LOG_ERR("Invalid path specified for saving the commit counter");
-        return tool_rc_option_error;
-    }
-
-    if (ctx.curve_id == TPM2_ECC_NONE) {
-        LOG_ERR("Invalid/ unspecified ECC curve");
-        return tool_rc_option_error;
-    }
-
-    return tool_rc_success;
-}
-
-static tool_rc process_outputs(void) {
-
-    FILE *fp = fopen(ctx.commit_counter_path, "wb");
-    bool result = files_write_16(fp, ctx.counter);
-    fclose(fp);
-    if (!result) {
-        LOG_ERR("Failed to write out the ECC commit count");
-        return tool_rc_general_error;
-    }
-
-    result = files_save_ecc_point(ctx.Q, ctx.ephemeral_pub_key_path);
-    if (!result) {
-        LOG_ERR("Failed to write out the ECC pub key");
-        return tool_rc_general_error;
-    }
-
-    return tool_rc_success;
+    return *opts != 0;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    // Check input options and arguments
+    /*
+     * 1. Process options
+     */
     tool_rc rc = check_options();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    // ESAPI call
-    rc = tpm2_ecephemeral(ectx, ctx.curve_id, &ctx.Q, &ctx.counter);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    // Process outputs
-    rc = process_outputs();
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = ecephemeral(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_outputs(ectx);
+}
+
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Free objects
+     */
     Esys_Free(ctx.Q);
 
-    return rc;
+    /*
+     * 2. Close authorization sessions
+     */
+
+    /*
+     * 3. Close auxiliary sessions
+     */
+
+    return tool_rc_success;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("ecephemeral", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)
+TPM2_TOOL_REGISTER("ecephemeral", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, 0)
