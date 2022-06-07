@@ -18,6 +18,7 @@
 #define RSA_EK_TEMPLATE_NV_INDEX 0x01c00004
 #define ECC_EK_NONCE_NV_INDEX 0x01c0000b
 #define ECC_EK_TEMPLATE_NV_INDEX 0x01c0000c
+#define ECC_SM2_EK_TEMPLATE_NV_INDEX 0x01c0001b
 
 #define DEFAULT_KEY_ALG "rsa2048"
 
@@ -175,7 +176,8 @@ static tool_rc init_ek_public(const char *key_alg, TPM2B_PUBLIC *public) {
     public->publicArea.authPolicy = *m->policy;
 
     if (public->publicArea.type == TPM2_ALG_ECC &&
-        public->publicArea.parameters.eccDetail.curveID == TPM2_ECC_NIST_P256) {
+        (public->publicArea.parameters.eccDetail.curveID == TPM2_ECC_NIST_P256 ||
+         public->publicArea.parameters.eccDetail.curveID == TPM2_ECC_SM2_P256)) {
         public->publicArea.unique.ecc.x.size = 32;
         public->publicArea.unique.ecc.y.size = 32;
     } else  if (public->publicArea.type == TPM2_ALG_RSA &&
@@ -195,8 +197,17 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
         nonce_nv_index = RSA_EK_NONCE_NV_INDEX;
         break;
     case TPM2_ALG_ECC:
-        template_nv_index = ECC_EK_TEMPLATE_NV_INDEX;
-        nonce_nv_index = ECC_EK_NONCE_NV_INDEX;
+        if (input_public->publicArea.parameters.eccDetail.curveID == TPM2_ECC_NIST_P256) {
+            template_nv_index = ECC_EK_TEMPLATE_NV_INDEX;
+            nonce_nv_index = ECC_EK_NONCE_NV_INDEX;
+        } else if (input_public->publicArea.parameters.eccDetail.curveID == TPM2_ECC_SM2_P256) {
+            template_nv_index = ECC_SM2_EK_TEMPLATE_NV_INDEX;
+            // EK Nonces SHALL NOT be Populated in any NV Index in the High Range.
+            nonce_nv_index = 0;
+        } else {
+            template_nv_index = ECC_EK_TEMPLATE_NV_INDEX;
+            nonce_nv_index = ECC_EK_NONCE_NV_INDEX;
+        }
         break;
     default:
         LOG_ERR("EK template and EK nonce for algorithm type input(%4.4x)"
@@ -228,11 +239,13 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
 
     // Read EK nonce
     UINT16 nonce_size = 0;
-    rc = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0,
-        &ctx.auth_owner_hierarchy.object, &nonce, &nonce_size, &cp_hash,
-        &rp_hash, TPM2_ALG_SHA256, 0, ESYS_TR_NONE, ESYS_TR_NONE, NULL);
-    if (rc != tool_rc_success) {
-        goto out;
+    if (nonce_nv_index) {
+        rc = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0,
+                &ctx.auth_owner_hierarchy.object, &nonce, &nonce_size, &cp_hash,
+                &rp_hash, TPM2_ALG_SHA256, 0, ESYS_TR_NONE, ESYS_TR_NONE, NULL);
+        if (rc != tool_rc_success) {
+            goto out;
+        }
     }
 
     if (input_public->publicArea.type == TPM2_ALG_RSA) {
@@ -240,9 +253,11 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
         input_public->publicArea.unique.rsa.size = 256;
     } else {
         // ECC is only other supported algorithm
-        memcpy(&input_public->publicArea.unique.ecc.x.buffer, &nonce, nonce_size);
-        input_public->publicArea.unique.ecc.x.size = 32;
-        input_public->publicArea.unique.ecc.y.size = 32;
+        if (nonce_size) {
+            memcpy(&input_public->publicArea.unique.ecc.x.buffer, &nonce, nonce_size);
+            input_public->publicArea.unique.ecc.x.size = 32;
+            input_public->publicArea.unique.ecc.y.size = 32;
+        }
     }
 
     out: if (template) {
