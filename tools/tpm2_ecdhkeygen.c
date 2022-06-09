@@ -6,6 +6,7 @@
 #include "tpm2_tool.h"
 #include "tpm2_options.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_ecdhkeygen_ctx tpm_ecdhkeygen_ctx;
 struct tpm_ecdhkeygen_ctx {
     /*
@@ -24,13 +25,35 @@ struct tpm_ecdhkeygen_ctx {
 
     const char *ecdh_Z_path;
     TPM2B_ECC_POINT *Z;
+
+    /*
+     * Parameter hashes
+     */
+    const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
+
+    /*
+     * Aux Sessions
+     */
+    tpm2_session *session;
+    ESYS_TR session_handle;
 };
 
-static tpm_ecdhkeygen_ctx ctx;
+static tpm_ecdhkeygen_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
+};
 
 static tool_rc ecdhkeygen(ESYS_CONTEXT *ectx) {
 
-    return tpm2_ecdhkeygen(ectx, &ctx.ecc_public_key.object, &ctx.Z, &ctx.Q);
+    tool_rc rc = tpm2_ecdhkeygen(ectx, &ctx.ecc_public_key.object, &ctx.Z,
+        &ctx.Q, &ctx.cp_hash, ctx.session_handle, ctx.parameter_hash_algorithm);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed TPM2_CC_ECDH_KeyGen");
+    }
+
+    return rc;
 }
 
 static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
@@ -40,6 +63,19 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
@@ -95,10 +131,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.session,
+        0,
+        0
+    };
 
+        const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     return rc;
 }
@@ -131,6 +177,9 @@ static bool on_option(char key, char *value) {
         case 'o':
             ctx.ecdh_Z_path = value;
             break;
+        case 0:
+            ctx.cp_hash_path = value;
+        break;
     };
 
     return true;
@@ -142,6 +191,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "context", required_argument, 0, 'c' },
       { "public",  required_argument, 0, 'u' },
       { "output",  required_argument, 0, 'o' },
+      { "cphash",  required_argument, 0,  0  },
     };
 
     *opts = tpm2_options_new("c:u:o:", ARRAY_LEN(topts), topts,

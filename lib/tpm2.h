@@ -521,7 +521,8 @@ tool_rc tpm2_commit(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_ecdhkeygen(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *ecc_public_key, TPM2B_ECC_POINT **Z,
-    TPM2B_ECC_POINT **Q);
+    TPM2B_ECC_POINT **Q, TPM2B_DIGEST *cp_hash, ESYS_TR policy_session,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_ecdhzgen(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *ecc_key_object, TPM2B_ECC_POINT **Z,
