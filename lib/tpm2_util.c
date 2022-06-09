@@ -1279,7 +1279,7 @@ void tpm2_util_tpm2_nv_to_yaml(TPM2B_NV_PUBLIC *nv_public, UINT8 *data, UINT16 s
         memcpy(&v, data, sizeof(UINT64));
         v = be64toh(v);
         print_yaml_indent(indent);
-        tpm2_tool_output("counter: %lu\n", v);
+        tpm2_tool_output("counter: %llu\n", v);
         break;
     case TPM2_NT_BITS:
         memcpy(&v, data, sizeof(UINT64));
