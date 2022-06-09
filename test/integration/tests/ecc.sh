@@ -46,12 +46,24 @@ tpm2 create -C prim.ctx -c ecdh_key.ctx -u ecdh_key.pub -r ecdh_key.priv \
 
 tpm2 ecdhkeygen -u ecc256ecdh.pub -o ecc256ecdh.priv -c ecdh_key.ctx
 
+## Test cpHash calculation for ecdhkeygen
+tpm2 ecdhkeygen -u ecc256ecdh.pub -o ecc256ecdh.priv -c ecdh_key.ctx --cphash cp.hash
+name="$(tpm2 readpublic -c ecdh_key.ctx | grep '^name:' | cut -d ' ' -f2)"
+
+cc="00000163"
+buffer="${cc}${name}"
+echo -n "${buffer}" | xxd -r -p -c256 | openssl dgst -sha256 -binary > expected.hash
+cmp cp.hash expected.hash 2
+
+tpm2 ecdhkeygen -u ecc256ecdh.pub -o ecc256ecdh.priv -c ecdh_key.ctx --cphash "sha384:cp.hash"
+echo -n "${buffer}" | xxd -r -p -c256 | openssl dgst -sha384 -binary > expected.hash
+cmp cp.hash expected.hash 2
+
 # TPM2_ECDH_ZGen
 ## Check if the recovered Z point matches
 tpm2 ecdhzgen -u ecc256ecdh.pub -o ecdhZgen.dat -c ecdh_key.ctx
 
 diff ecdhZgen.dat ecc256ecdh.priv
-
 # TPM2_ZGen_2Phase
 ## Check if output Z points are generated using separate commit count values
 tpm2 zgen2phase -c ecdh_key.ctx --static-public ecc256ecdh.pub \
