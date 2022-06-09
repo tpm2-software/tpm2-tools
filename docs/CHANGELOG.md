@@ -2,6 +2,9 @@
 
 ### next
 
+  * tpm2_ecdhkeygen:
+      - Added option to output the cpHash for the command TPM2_CC_ECDH_KeyGen.
+      
   * tpm2_commit:
       - Added option to output the cpHash for the command TPM2_CC_Commit.
 
