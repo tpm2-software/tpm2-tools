@@ -83,17 +83,11 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /* Reserve the buffer for the first chunk */
     tool_rc rc = tool_rc_success;
-    UINT8 *eventlog = calloc(1, CHUNK_SIZE);
-    if (eventlog == NULL){
-        LOG_ERR("failed to allocate %d bytes: %s", CHUNK_SIZE, strerror(errno));
-        rc = tool_rc_general_error;
-        goto out;
-    }
-
+    UINT8 *eventlog = NULL;
     size_t size = 0;
+    size_t chunk;
     bool is_file_read = false;
     do {
-        is_file_read = files_read_bytes_chunk(fileptr, eventlog + size, CHUNK_SIZE, &size);
         UINT8 *eventlog_tmp = realloc(eventlog, size + CHUNK_SIZE);
         if (!eventlog_tmp){
             LOG_ERR("failed to allocate %zu bytes: %s", size + CHUNK_SIZE, strerror(errno));
@@ -101,6 +95,9 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             goto out;
         }
         eventlog = eventlog_tmp;
+
+        is_file_read = files_read_bytes_chunk(fileptr, eventlog + size, CHUNK_SIZE, &chunk);
+        size += chunk;
     } while (is_file_read);
 
     /* Parse eventlog data */
