@@ -35,7 +35,7 @@ terminal un-friendly characters.
 
 #### Example
 ```
-hex:0x1122334455667788
+hex:1122334455667788
 ```
 
 ### File
