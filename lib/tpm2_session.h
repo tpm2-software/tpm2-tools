@@ -221,4 +221,6 @@ void tpm2_session_set_auth_value(tpm2_session *session, TPM2B_AUTH *auth_value);
 
 const TPM2B_AUTH *tpm2_session_get_auth_value(tpm2_session *session);
 
+void tpm2_session_free(tpm2_session **session);
+
 #endif /* SRC_TPM2_SESSION_H_ */

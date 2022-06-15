@@ -148,7 +148,7 @@ static tool_rc start_auth_session(tpm2_session *session) {
     return tool_rc_success;
 }
 
-static void tpm2_session_free(tpm2_session **session) {
+void tpm2_session_free(tpm2_session **session) {
 
     tpm2_session *s = *session;
 
