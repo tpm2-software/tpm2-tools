@@ -64,6 +64,18 @@ cmp cp.hash expected.hash 2
 tpm2 ecdhzgen -u ecc256ecdh.pub -o ecdhZgen.dat -c ecdh_key.ctx
 
 diff ecdhZgen.dat ecc256ecdh.priv
+
+## Check cpHash output for TPM2_ECDH_ZGen
+tpm2 ecdhzgen -u ecc256ecdh.pub -o ecdhZgen.dat -c ecdh_key.ctx --cphash cp.hash
+TPM2_CC_ECDH_ZGen="00000154"
+tpm2 readpublic -Q -c ecdh_key.ctx -n cp_hash_zgen_key.name
+Key_Name=$(xxd -p -c64 cp_hash_zgen_key.name)
+Param_inPoint=$(xxd -p -c64 ecc256ecdh.pub )
+
+echo -ne $TPM2_CC_ECDH_ZGen$Key_Name$Param_inPoint | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+
 # TPM2_ZGen_2Phase
 ## Check if output Z points are generated using separate commit count values
 tpm2 zgen2phase -c ecdh_key.ctx --static-public ecc256ecdh.pub \
