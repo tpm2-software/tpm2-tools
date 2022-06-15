@@ -5044,10 +5044,50 @@ tool_rc tpm2_ecdhkeygen(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_ecdhzgen(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *ecc_key_object, TPM2B_ECC_POINT **Z,
-    TPM2B_ECC_POINT *Q) {
+    TPM2B_ECC_POINT *Q, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
+    tool_rc rc = tool_rc_success;
+    TSS2_RC rval = TSS2_RC_SUCCESS;
+    if (cp_hash && cp_hash->size) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquireTss2_Sys_ECDH_ZGen_Prepare SAPI context.");
+            return rc;
+        }
+
+        TPM2_HANDLE h = ecc_key_object->handle;
+        TSS2_RC rval = Tss2_Sys_ECDH_ZGen_Prepare(
+        sys_context, h, Q);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_LoadExternal_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(esys_context, ecc_key_object->tr_handle,
+            &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_ecdhzgen_free_name1;
+        }
+
+        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
+            parameter_hash_algorithm, cp_hash);
+
+tpm2_ecdhzgen_free_name1:
+        Esys_Free(name1);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        goto tpm2_ecdhzgen_skip_esapi_call;
+    }
     ESYS_TR ecc_key_obj_session_handle = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+    rc = tpm2_auth_util_get_shandle(esys_context,
         ecc_key_object->tr_handle, ecc_key_object->session,
         &ecc_key_obj_session_handle);
     if (rc != tool_rc_success) {
@@ -5055,14 +5095,15 @@ tool_rc tpm2_ecdhzgen(ESYS_CONTEXT *esys_context,
         return rc;
     }
 
-    TSS2_RC rval = Esys_ECDH_ZGen(esys_context, ecc_key_object->tr_handle,
+    rval = Esys_ECDH_ZGen(esys_context, ecc_key_object->tr_handle,
     ecc_key_obj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE, Q, Z);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_ECDH_ZGen, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_ecdhzgen_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_zgen2phase(ESYS_CONTEXT *esys_context,
