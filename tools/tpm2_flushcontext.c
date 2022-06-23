@@ -8,14 +8,33 @@
 #include "tpm2_tool.h"
 #include "tpm2_capability.h"
 #include "tpm2_options.h"
+#include "tpm2_session.h"
 
+#define TOTAL_CTX_TYPES 3 // contexts are transient/ loaded/ saved.
+#define MAX_CTX_COUNT 255
 struct tpm_flush_context_ctx {
-    TPM2_HANDLE property[3];
-    char *context_arg;
+    /*
+     * Inputs
+     */
     unsigned encountered_option;
+    TPM2_HANDLE property[TOTAL_CTX_TYPES];
+    ESYS_TR context_handles[MAX_CTX_COUNT]; //ESYS_TR
+    uint8_t context_handle_count;
+    bool is_t_l_s_specified; //t l s option combination
+
+    bool is_arg_session;
+    bool is_arg_transient;
+    char *context_arg;
+    tpm2_session *arg_session;
+
+    /*
+     * Outputs
+     */
 };
 
-static struct tpm_flush_context_ctx ctx;
+static struct tpm_flush_context_ctx ctx = {
+    .context_handles = {ESYS_TR_NONE},
+};
 
 static const char *get_property_name(TPM2_HANDLE handle) {
 
@@ -31,47 +50,201 @@ static const char *get_property_name(TPM2_HANDLE handle) {
     return "invalid";
 }
 
-static tool_rc flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
-        UINT32 count) {
+static tool_rc flushcontext(ESYS_CONTEXT *ectx) {
 
-    UINT32 i;
-
-    for (i = 0; i < count; ++i) {
-
-        ESYS_TR handle;
-        tool_rc rc = tpm2_util_sys_handle_to_esys_handle(ectx, handles[i],
-                &handle);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        rc = tpm2_flush_context(ectx, handle);
-        if (rc != tool_rc_success) {
+    tool_rc rc = tool_rc_success;
+    tool_rc tmp_rc = tool_rc_success;
+    uint32_t i;
+    for (i = 0; i < ctx.context_handle_count; ++i) {
+        /*
+         * Continue flushing the handles after error AND
+         * Capture the error as final return data.
+         */
+        tmp_rc = tpm2_flush_context(ectx, ctx.context_handles[i]);
+        if (tmp_rc != tool_rc_success) {
             LOG_ERR("Failed Flush Context for %s handle 0x%x",
-                    get_property_name(handles[i]), handles[i]);
+                get_property_name(ctx.context_handles[i]),
+                ctx.context_handles[i]);
+            rc = tmp_rc;
+        }
+    }
+
+    return rc;
+}
+
+static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+
+    return tool_rc_success;
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+    tool_rc rc = tool_rc_success;
+    TPM2_HANDLE sapi_handle = 0;
+    if (!ctx.is_t_l_s_specified) {
+        ctx.is_arg_transient = tpm2_util_string_to_uint32(ctx.context_arg,
+            &sapi_handle);
+    }
+
+    if (ctx.is_arg_transient) {
+        rc = tpm2_util_sys_handle_to_esys_handle(ectx, sapi_handle,
+            ctx.context_handles);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Handle not found.");
             return rc;
         }
+
+        ctx.context_handle_count++;
+    }
+    
+    if (!ctx.is_t_l_s_specified && !ctx.is_arg_transient) {
+        rc = tpm2_session_restore(ectx, ctx.context_arg, true,
+            &ctx.arg_session);
+        if (rc == tool_rc_success) {
+            ctx.is_arg_session = true;
+            ctx.context_handles[0] = tpm2_session_get_handle(ctx.arg_session);
+            ctx.context_handle_count++;
+        }
+    }
+
+    if (!ctx.is_t_l_s_specified && !ctx.is_arg_transient &&
+    !ctx.is_arg_session) {
+        LOG_ERR("Argument neither a session nor a transient.");
+        return tool_rc_general_error;
+    }
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+
+    /*
+     * Populate ctx.context_handles with transient, loaded and saved handles
+     * Note: encountered_option is nil when context is specified as argument.
+     */
+    unsigned i = 0; // Iterates through t,l,s types
+    for (i = 0; i < ctx.encountered_option; i++) {
+        TPM2_HANDLE property = ctx.property[i];
+        TPMS_CAPABILITY_DATA *capability_data;
+        rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, property,
+            TPM2_MAX_CAP_HANDLES, &capability_data);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Error reading handle info from TPM.");
+            return tool_rc_general_error;
+        }
+    
+        unsigned j = 0; //Iterates through all available handles in t/l/s
+        for (j = 0; j < capability_data->data.handles.count; j++) {
+            rc = tpm2_util_sys_handle_to_esys_handle(ectx,
+                capability_data->data.handles.handle[j],
+                &ctx.context_handles[j]);
+            if (rc != tool_rc_success) {
+                LOG_ERR("Error reading handle info from TPM.");
+                return tool_rc_general_error;
+            }
+            ctx.context_handle_count++;
+        }
+
+        free(capability_data);
+    }
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+    /*
+     * Note: pHash cannot be calculated if multiple sessions are found needing
+     *       to be flushed. This is because pHash output needs to be written to
+     *       a single file which must contain a single pHash.
+     * 
+     *       This implies if ctx.context_handle_count > 1 and pHash must be
+     *       be calculated --> Error out.
+     */
+
+    return tool_rc_success;
+}
+
+static tool_rc check_options(void) {
+
+    /*
+     * Either an argument specifying the context to flush
+     * OR
+     * Option to flush all must be specified
+     */
+    ctx.is_t_l_s_specified = ctx.encountered_option;
+    if (!ctx.is_t_l_s_specified && !ctx.context_arg) {
+        LOG_ERR("Specify options to evict handles or a session context.");
+        return tool_rc_option_error;
+    }
+
+    /*
+     * Options are mutually exclusive of an argument
+     */
+    if (ctx.is_t_l_s_specified && ctx.context_arg) {
+        LOG_ERR("Specify either 't' 'l' 's' or a context. Cannot specify both");
+        return tool_rc_option_error;
+    }
+
+    /*
+     * Ensure specified options are within range of TOTAL_CTX_TYPES to avoid
+     * overflowing the buffers that read capability and property information.
+     * 
+     * Fixes #3015
+     */
+    if (ctx.encountered_option && (ctx.encountered_option > TOTAL_CTX_TYPES)) {
+        LOG_ERR("Can specify only one instance each of '-t' '-l' '-s'");
+        return tool_rc_option_error;
     }
 
     return tool_rc_success;
 }
 
-static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
-        UINT32 count) {
+static bool on_arg(int argc, char *argv[]) {
 
-    UINT32 i;
-
-    for (i = 0; i < count; ++i) {
-        tool_rc rc = tpm2_flush_context(ectx, handles[i]);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
+    if (argc > 1) {
+        LOG_ERR("Specify one context.");
+        return tool_rc_option_error;
     }
 
-    return tool_rc_success;
+    ctx.context_arg = argv[0];
+
+    return true;
 }
 
 static bool on_option(char key, char *value) {
+
     UNUSED(value);
 
     switch (key) {
@@ -91,94 +264,76 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-static bool on_arg(int argc, char *argv[]) {
-
-    if (ctx.encountered_option && argc != 0) {
-        LOG_ERR("Options are mutually exclusive of an argument");
-        return false;
-    }
-
-    ctx.context_arg = argv[0];
-
-    return true;
-}
-
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "transient-object", no_argument, NULL, 't' },
-        { "loaded-session",   no_argument, NULL, 'l' },
-        { "saved-session",    no_argument, NULL, 's' },
+        { "transient-object", no_argument, 0, 't' },
+        { "loaded-session",   no_argument, 0, 'l' },
+        { "saved-session",    no_argument, 0, 's' },
     };
 
     *opts = tpm2_options_new("tls", ARRAY_LEN(topts), topts, on_option, on_arg,
             0);
 
-    return *opts != NULL;
+    return *opts != 0;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-
-    /* process -t/-s/-l option(s) */
-    unsigned i = 0;
-    for (i=0; i < ctx.encountered_option; i++) {
-        TPM2_HANDLE property = ctx.property[i];
-        TPMS_CAPABILITY_DATA *capability_data;
-        tool_rc tmp_rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, property,
-                TPM2_MAX_CAP_HANDLES, &capability_data);
-        if (tmp_rc == tool_rc_success) {
-            TPML_HANDLE *handles = &capability_data->data.handles;
-            tmp_rc = flush_contexts_tpm2(ectx, handles->handle, handles->count);
-            free(capability_data);
-        }
-
-        /*
-         * defer error handling, try and flush as much as possible
-         * Just use the last error. Always assign something to rc.
-         */
-        if (i == 0 || tmp_rc != tool_rc_success) {
-            rc = tmp_rc;
-        }
-    }
-
-    if (ctx.encountered_option) {
-        return rc;
-    }
-
-    /* process argument */
-    if (!ctx.context_arg) {
-        LOG_ERR("Specify options to evict handles or a session context.");
-        return tool_rc_option_error;
-    }
-
-    TPM2_HANDLE handle;
-    bool result = tpm2_util_string_to_uint32(ctx.context_arg, &handle);
-    if (!result) {
-        /* hmm not a handle, try a session */
-        tpm2_session *s = NULL;
-        rc = tpm2_session_restore(ectx, ctx.context_arg, true, &s);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        tpm2_session_close(&s);
-
-        return tool_rc_success;
-    }
-
-    /* its a handle, call flush */
-    ESYS_TR tr_handle = ESYS_TR_NONE;
-    rc = tpm2_util_sys_handle_to_esys_handle(ectx, handle, &tr_handle);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    return flush_contexts_tr(ectx, &tr_handle, 1);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = flushcontext(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_outputs(ectx);
+}
+
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Free objects
+     */
+    if (ctx.is_arg_session) {
+        tpm2_session_free(&ctx.arg_session);
+    }
+
+    /*
+     * 2. Close authorization sessions
+     */
+
+    /*
+     * 3. Close auxiliary sessions
+     */
+
+    return tool_rc_success;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("flushcontext", tpm2_tool_onstart, tpm2_tool_onrun, NULL, NULL)
+TPM2_TOOL_REGISTER("flushcontext", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, 0)
