@@ -4950,16 +4950,47 @@ tool_rc tpm2_geteccparameters(ESYS_CONTEXT *esys_context,
 }
 
 tool_rc tpm2_ecephemeral(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
-    TPM2B_ECC_POINT **Q, uint16_t *counter) {
+    TPM2B_ECC_POINT **Q, uint16_t *counter, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
-    TSS2_RC rval = Esys_EC_Ephemeral(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
+    tool_rc rc = tool_rc_success;
+    TSS2_RC rval = TSS2_RC_SUCCESS;
+    if (cp_hash && cp_hash->size) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire Tss2_Sys_EC_Ephemeral_Prepare SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_EC_Ephemeral_Prepare(
+        sys_context, curve_id);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_EC_Ephemeral_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+       
+
+        rc = tpm2_sapi_getcphash(sys_context, NULL, NULL, NULL,
+            parameter_hash_algorithm, cp_hash);
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        goto tpm2_ecephemeral_skip_esapi_call;
+    }
+    rval = Esys_EC_Ephemeral(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
         ESYS_TR_NONE, curve_id, Q, counter);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_EC_Ephemeral, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_ecephemeral_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_commit(ESYS_CONTEXT *esys_context,

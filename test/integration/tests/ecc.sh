@@ -24,6 +24,15 @@ xxd -p pass1_ecc.ctr | grep 0000
 tpm2 ecephemeral -u pass2_ecc.q -t pass2_ecc.ctr ecc256
 xxd -p pass2_ecc.ctr | grep 0001
 
+## Check cpHash output for TPM2_EC_Ephemeral
+tpm2 ecephemeral -u pass1_ecc.q -t pass1_ecc.ctr ecc256 --cphash cp.hash
+TPM2_CC_EC_Ephemeral="0000018e"
+Param_curveID="0003"
+
+echo -ne $TPM2_CC_EC_Ephemeral$Param_curveID | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+
 # TPM2_Commit
 ## Check if commit counter in incremented after successful execution of commit
 tpm2 createprimary -C o -c prim.ctx -Q
