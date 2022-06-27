@@ -1166,7 +1166,8 @@ tool_rc tpm2_alg_util_sm2_compute_id_digest(ESYS_CONTEXT *ectx, ESYS_TR handle, 
         return tool_rc_general_error;
     }
 
-    tool_rc rc = tpm2_geteccparameters(ectx, TPM2_ECC_SM2_P256, &parameters);
+    tool_rc rc = tpm2_geteccparameters(ectx, TPM2_ECC_SM2_P256, &parameters,
+        NULL, TPM2_ALG_NULL);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not get ecc parameters!");
         goto out;
