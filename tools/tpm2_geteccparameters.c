@@ -7,6 +7,7 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_geteccparameters_ctx tpm_geteccparameters_ctx;
 struct tpm_geteccparameters_ctx {
     /*
@@ -19,15 +20,31 @@ struct tpm_geteccparameters_ctx {
      */
     TPMS_ALGORITHM_DETAIL_ECC *parameters;
     const char *ecc_parameters_path;
+
+    /*
+     * Parameter hashes
+     */
+    const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
+
 };
 
 static tpm_geteccparameters_ctx ctx = {
     .curve_id = TPM2_ECC_NONE,
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
 static tool_rc geteccparameters(ESYS_CONTEXT *ectx) {
+   
+    tool_rc rc = tpm2_geteccparameters(ectx, ctx.curve_id, &ctx.parameters,
+        &ctx.cp_hash, ctx.parameter_hash_algorithm);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed TPM2_CC_ECC_Parameters");
+    }
 
-    return tpm2_geteccparameters(ectx, ctx.curve_id, &ctx.parameters);
+    return rc;
 }
 
 static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
@@ -37,11 +54,24 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
-    bool is_file_op_success = files_save_ecc_details(ctx.parameters,
+    is_file_op_success = files_save_ecc_details(ctx.parameters,
         ctx.ecc_parameters_path);
     if (!is_file_op_success) {
         LOG_ERR("Failed to write out the ECC pub key");
@@ -81,10 +111,20 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        0,
+        0,
+        0
+    };
 
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     return tool_rc_success;
 }
@@ -110,6 +150,9 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.ecc_parameters_path = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+    break;
     };
 
     return true;
@@ -146,6 +189,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
       { "output",  required_argument, 0, 'o' },
+      { "cphash",  required_argument, 0,  0  },
     };
 
     *opts = tpm2_options_new("o:", ARRAY_LEN(topts), topts,

@@ -508,7 +508,8 @@ tool_rc tpm2_getsessionauditdigest(ESYS_CONTEXT *esys_context,
         ESYS_TR audit_session_handle);
 
 tool_rc tpm2_geteccparameters(ESYS_CONTEXT *esys_context,
-    TPMI_ECC_CURVE curve_id, TPMS_ALGORITHM_DETAIL_ECC **parameters);
+    TPMI_ECC_CURVE curve_id, TPMS_ALGORITHM_DETAIL_ECC **parameters,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_ecephemeral(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
     TPM2B_ECC_POINT **Q, uint16_t *counter);

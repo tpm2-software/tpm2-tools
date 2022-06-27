@@ -1,6 +1,9 @@
 ## Changelog
 
 ### next
+  * tpm2_geteccparameters:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_ECC_Parameters.
 
   * tpm2_ecdhkeygen:
       - Added option to output the cpHash for the command TPM2_CC_ECDH_KeyGen.

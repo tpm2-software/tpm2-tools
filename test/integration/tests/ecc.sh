@@ -16,6 +16,17 @@ start_up
 
 cleanup "no-shut-down"
 
+# TPM2_ECC_Parameters
+## Check cpHash output for TPM2_ECC_Parameters
+tpm2 geteccparameters ecc256 -o ecc.params --cphash cp.hash
+TPM2_CC_ECC_Parameters="00000178"
+Param_curveID="0003"
+
+echo -ne $TPM2_CC_ECC_Parameters$Param_curveID | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+
+
 # TPM2_EC_Ephemeral
 ## Check if commit counter is zero on first invocation
 tpm2 ecephemeral -u pass1_ecc.q -t pass1_ecc.ctr ecc256
