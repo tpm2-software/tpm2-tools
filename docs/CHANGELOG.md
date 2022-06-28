@@ -2,6 +2,9 @@
 
 ### next
 
+  * tpm2_ecdhzgen:
+      - Added option to output the cpHash for the command TPM2_CC_ECDH_ZGen.
+      
   * tpm2_load:
       - Added capability to load pem files in TSS2-Private-Key format for
         interoperability with tpm2-tss-engine, tpm2-openssl provider,
