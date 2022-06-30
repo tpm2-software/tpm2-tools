@@ -16,6 +16,9 @@ file_loadexternal_key_ctx=ctx_loadexternal_out_"$alg_primary_obj"_\
 "$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
 file_loadexternal_output=loadexternal_"$file_loadexternal_key_ctx"
 
+tss_privkey=tss_pk
+tss_prim=prim
+
 Handle_parent=0x81010019
 
 cleanup() {
@@ -252,5 +255,18 @@ if [ $? != 0 ]; then
 	echo "cpHash doesn't match calculated value"
     exit 1
 fi
+
+#
+# TSS Privkey
+#
+tpm2 createprimary -G rsa -C o \
+-a "fixedtpm|fixedparent|sensitivedataorigin|userwithauth|restricted|decrypt|noda" \
+-c $tss_prim.ctx
+
+tpm2 create -C $tss_prim.ctx -u $tss_privkey.pub -r $tss_privkey.priv
+
+tpm2 encodeobject -C $tss_prim.ctx -u $tss_privkey.pub -r $tss_privkey.priv -o $tss_privkey.pem
+
+tpm2 loadexternal -r $tss_privkey.pem -c $tss_privkey.ctx
 
 exit 0
