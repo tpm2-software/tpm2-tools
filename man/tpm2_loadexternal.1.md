@@ -12,8 +12,10 @@
 
 **tpm2_loadexternal**(1) - This command loads an external object into the TPM,
 forgoing TPM protections. Ie, the key material is not protected by the parent
-object's seed. The command allows loading of just the public portion of an
-object or both the public and private portions of an object.
+object's seed. It can also be used to load TSS2 Private Keys in pem format.
+The command allows loading of just the public portion of an object or both the
+public and private portions of an object. For TSS2 Private Keys, only the public
+portion of the key is loaded.
 
 The tool outputs the name of the loaded object in a YAML dictionary format
 with the key *name* where the value for that key is the name of the object
@@ -62,6 +64,7 @@ It also saves a context file for future interactions with the object.
         `openssl genrsa -out private.pem 2048`
         Since an RSA public key can be derived from the private PEM file, their
         is no need to specify -u for the public portion.
+      * TSS2 PrivateKey PEM formats.
 
     *Note*: The private portion does not respect TSS formats as it's impossible
     to get a **TPM2B_SENSITIVE** output from a previous command. They are always
@@ -179,6 +182,13 @@ dd if=/dev/urandom of=sym.key bs=1 count=16
 
 tpm2_loadexternal -C n -Gaes -r sym.key -c key.ctx
 name: 000bfc4d8dd7e4f921bcc9dca4b04f49564243cd9def129a3740002bfd4b9e966d34
+```
+
+## Load TSS2 Private Key into the *null* hierarchy
+
+```bash
+tpm2_loadexternal -r tss_privkey.pem -c tss_privkey.ctx
+name: 000bc5a216702aca9ba226af1214c50dc4dc33ce6269677aa581ea6d9eec7f27000d
 ```
 
 [returns](common/returns.md)
