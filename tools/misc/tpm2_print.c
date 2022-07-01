@@ -333,9 +333,6 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 't':
         return handle_type(value);
-    case 'i':
-        ctx.file.path = value;
-        break;
     case 'f':
         ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
         if (ctx.format == pubkey_format_err) {
