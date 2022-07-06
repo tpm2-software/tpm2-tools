@@ -527,7 +527,8 @@ tool_rc tpm2_ecdhkeygen(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_ecdhzgen(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *ecc_key_object, TPM2B_ECC_POINT **Z,
-    TPM2B_ECC_POINT *Q);
+    TPM2B_ECC_POINT *Q, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_zgen2phase(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *ecc_key_object, TPM2B_ECC_POINT *Q1,
