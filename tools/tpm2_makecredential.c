@@ -188,7 +188,7 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    rc = tpm2_flush_context(ectx, tr_handle);
+    rc = tpm2_flush_context(ectx, tr_handle, NULL, TPM2_ALG_NULL);
     if (rc != tool_rc_success) {
         free(cred_blob);
         free(secret);

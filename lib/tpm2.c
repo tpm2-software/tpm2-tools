@@ -336,15 +336,53 @@ tool_rc tpm2_context_load(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
-tool_rc tpm2_flush_context(ESYS_CONTEXT *esys_context, ESYS_TR flush_handle) {
+tool_rc tpm2_flush_context(ESYS_CONTEXT *esys_context, ESYS_TR flush_handle,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
-    TSS2_RC rval = Esys_FlushContext(esys_context, flush_handle);
+   tool_rc rc = tool_rc_success;
+   TSS2_RC rval = TSS2_RC_SUCCESS;
+    if (cp_hash && cp_hash->size) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire Tss2_Sys_FlushContext_Prepare SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_FlushContext_Prepare(
+        sys_context, flush_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_FlushContext_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+
+        TPM2B_NAME *name1 = 0;
+        rc = tpm2_tr_get_name(esys_context, flush_handle, &name1);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI handle");
+            return tool_rc_general_error;
+        }
+
+        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
+            parameter_hash_algorithm, cp_hash);
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        goto tpm2_flushcontext_skip_esapi_call;
+    }
+
+    rval = Esys_FlushContext(esys_context, flush_handle);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_FlushContext, rval);
         return tool_rc_from_tpm(rval);
     }
-
-    return tool_rc_success;
+    
+tpm2_flushcontext_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_start_auth_session(ESYS_CONTEXT *esys_context, ESYS_TR tpm_key,

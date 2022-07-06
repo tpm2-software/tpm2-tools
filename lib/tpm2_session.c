@@ -139,7 +139,7 @@ static tool_rc start_auth_session(tpm2_session *session) {
                 session->output.session_handle, d->attrs, 0xff);
         if (rc != tool_rc_success) {
             tool_rc tmp_rc = tpm2_flush_context(session->internal.ectx,
-                    session->output.session_handle);
+                    session->output.session_handle, NULL, TPM2_ALG_NULL);
             UNUSED(tmp_rc);
             return rc;
         }
@@ -356,7 +356,7 @@ tool_rc tpm2_session_close(tpm2_session **s) {
     bool flush = path ? session->internal.is_final : true;
     if (flush) {
         rc = tpm2_flush_context(session->internal.ectx,
-                session->output.session_handle);
+                session->output.session_handle, NULL, TPM2_ALG_NULL);
         /* done, use rc to indicate status */
         goto out;
     }

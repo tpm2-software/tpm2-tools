@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 
+#include "files.h"
 #include "log.h"
 #include "object.h"
 #include "tpm2.h"
@@ -10,6 +11,7 @@
 #include "tpm2_options.h"
 #include "tpm2_session.h"
 
+#define MAX_SESSIONS 3
 #define TOTAL_CTX_TYPES 3 // contexts are transient/ loaded/ saved.
 #define MAX_CTX_COUNT 255
 struct tpm_flush_context_ctx {
@@ -30,10 +32,20 @@ struct tpm_flush_context_ctx {
     /*
      * Outputs
      */
+        
+    /*
+     * Parameter hashes
+     */
+    const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
+
 };
 
 static struct tpm_flush_context_ctx ctx = {
     .context_handles = {ESYS_TR_NONE},
+    .parameter_hash_algorithm = TPM2_ALG_ERROR
 };
 
 static const char *get_property_name(TPM2_HANDLE handle) {
@@ -60,7 +72,8 @@ static tool_rc flushcontext(ESYS_CONTEXT *ectx) {
          * Continue flushing the handles after error AND
          * Capture the error as final return data.
          */
-        tmp_rc = tpm2_flush_context(ectx, ctx.context_handles[i]);
+        tmp_rc = tpm2_flush_context(ectx, ctx.context_handles[i], &ctx.cp_hash,
+            ctx.parameter_hash_algorithm);
         if (tmp_rc != tool_rc_success) {
             LOG_ERR("Failed Flush Context for %s handle 0x%x",
                 get_property_name(ctx.context_handles[i]),
@@ -69,6 +82,11 @@ static tool_rc flushcontext(ESYS_CONTEXT *ectx) {
         }
     }
 
+    // rc = tpm2_flush_context(ectx, ESYS_TR_NONE, &ctx.cp_hash,
+    //     ctx.parameter_hash_algorithm);
+    // if (rc != tool_rc_success) {
+    //     LOG_ERR("Failed TPM2_CC_FlushContext");
+    // }
     return rc;
 }
 
@@ -79,6 +97,19 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
@@ -180,10 +211,22 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        0,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+    
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
+
     /*
      * Note: pHash cannot be calculated if multiple sessions are found needing
      *       to be flushed. This is because pHash output needs to be written to
@@ -250,16 +293,20 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 't':
         ctx.property[ctx.encountered_option] = TPM2_TRANSIENT_FIRST;
+        ctx.encountered_option++;
         break;
     case 'l':
         ctx.property[ctx.encountered_option] = TPM2_LOADED_SESSION_FIRST;
+        ctx.encountered_option++;
         break;
     case 's':
         ctx.property[ctx.encountered_option] = TPM2_ACTIVE_SESSION_FIRST;
+        ctx.encountered_option++;
+        break;
+    case 0:
+        ctx.cp_hash_path = value;
         break;
     }
-
-    ctx.encountered_option++;
 
     return true;
 }
@@ -270,6 +317,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "transient-object", no_argument, 0, 't' },
         { "loaded-session",   no_argument, 0, 'l' },
         { "saved-session",    no_argument, 0, 's' },
+        { "cphash",     required_argument, 0,  0  },
     };
 
     *opts = tpm2_options_new("tls", ARRAY_LEN(topts), topts, on_option, on_arg,
