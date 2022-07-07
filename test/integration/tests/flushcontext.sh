@@ -16,6 +16,17 @@ trap cleanup EXIT
 cleanup "no-shut-down"
 tpm2 clear
 
+## Check cpHash output
+tpm2 startauthsession -S session.ctx
+Param_flushHandle="$(tpm2 sessionconfig session.ctx  | \
+grep 'Session-Handle' | cut -d' ' -f2-2)"
+tpm2 flushcontext $Param_flushHandle --cphash cp.hash
+TPM2_CC_flushContext="00000165"
+
+echo -ne $TPM2_CC_flushContext$Param_flushHandle | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+
 # Test for flushing the specified handle
 tpm2 createprimary -Q -C o -g sha256 -G rsa
 # tpm2-abrmd may save the transient object and restore it when using

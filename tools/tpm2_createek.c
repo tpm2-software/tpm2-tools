@@ -289,7 +289,8 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
             return rc;
         }
 
-        rc = tpm2_flush_context(ectx, ctx.objdata.out.handle);
+        rc = tpm2_flush_context(ectx, ctx.objdata.out.handle, NULL,
+            TPM2_ALG_NULL);
         if (rc != tool_rc_success) {
             return rc;
         }
