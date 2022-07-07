@@ -26,7 +26,9 @@ fi
 
 # Test for flushing a transient object
 tpm2 createprimary -Q -C o -g sha256 -G rsa
-tpm2 flushcontext -Q -t
+# make sure multiple options don't overflow
+# bug: https://github.com/tpm2-software/tpm2-tools/issues/3035
+tpm2 flushcontext -Q -ttttttttttt
 
 # Test for flushing a loaded session
 tpm2 createpolicy -Q --policy-session --policy-pcr -l sha256:0

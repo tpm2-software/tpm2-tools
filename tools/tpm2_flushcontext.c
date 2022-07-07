@@ -16,7 +16,7 @@ struct tpm_flush_context_ctx {
     /*
      * Inputs
      */
-    unsigned encountered_option;
+    unsigned encountered_option_flags;
     TPM2_HANDLE property[TOTAL_CTX_TYPES];
     ESYS_TR context_handles[MAX_CTX_COUNT]; //ESYS_TR
     uint8_t context_handle_count;
@@ -147,11 +147,23 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * Populate ctx.context_handles with transient, loaded and saved handles
      * Note: encountered_option is nil when context is specified as argument.
      */
+    TPM2_HANDLE property[3] = { 0 };
+    unsigned offset = 0;
+    if (ctx.encountered_option_flags & 1 << 0) {
+        property[offset++] = TPM2_TRANSIENT_FIRST;
+    }
+    if (ctx.encountered_option_flags & 1 << 1) {
+        property[offset++] = TPM2_LOADED_SESSION_FIRST;
+    }
+    if (ctx.encountered_option_flags & 1 << 2) {
+        property[offset++] = TPM2_ACTIVE_SESSION_FIRST;
+    }
+
     unsigned i = 0; // Iterates through t,l,s types
-    for (i = 0; i < ctx.encountered_option; i++) {
-        TPM2_HANDLE property = ctx.property[i];
+    for (i = 0; i < offset; i++) {
+        TPM2_HANDLE p = property[i];
         TPMS_CAPABILITY_DATA *capability_data;
-        rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, property,
+        rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, p,
             TPM2_MAX_CAP_HANDLES, &capability_data);
         if (rc != tool_rc_success) {
             LOG_ERR("Error reading handle info from TPM.");
@@ -203,7 +215,7 @@ static tool_rc check_options(void) {
      * OR
      * Option to flush all must be specified
      */
-    ctx.is_t_l_s_specified = ctx.encountered_option;
+    ctx.is_t_l_s_specified = ctx.encountered_option_flags;
     if (!ctx.is_t_l_s_specified && !ctx.context_arg) {
         LOG_ERR("Specify options to evict handles or a session context.");
         return tool_rc_option_error;
@@ -214,17 +226,6 @@ static tool_rc check_options(void) {
      */
     if (ctx.is_t_l_s_specified && ctx.context_arg) {
         LOG_ERR("Specify either 't' 'l' 's' or a context. Cannot specify both");
-        return tool_rc_option_error;
-    }
-
-    /*
-     * Ensure specified options are within range of TOTAL_CTX_TYPES to avoid
-     * overflowing the buffers that read capability and property information.
-     * 
-     * Fixes #3015
-     */
-    if (ctx.encountered_option && (ctx.encountered_option > TOTAL_CTX_TYPES)) {
-        LOG_ERR("Can specify only one instance each of '-t' '-l' '-s'");
         return tool_rc_option_error;
     }
 
@@ -249,17 +250,17 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 't':
-        ctx.property[ctx.encountered_option] = TPM2_TRANSIENT_FIRST;
+        ctx.encountered_option_flags |= 1 << 0;
         break;
     case 'l':
-        ctx.property[ctx.encountered_option] = TPM2_LOADED_SESSION_FIRST;
+
+        ctx.encountered_option_flags |= 1 << 1;
+        ctx.encountered_option_flags++;
         break;
     case 's':
-        ctx.property[ctx.encountered_option] = TPM2_ACTIVE_SESSION_FIRST;
+        ctx.encountered_option_flags |= 1 << 3;
         break;
     }
-
-    ctx.encountered_option++;
 
     return true;
 }
