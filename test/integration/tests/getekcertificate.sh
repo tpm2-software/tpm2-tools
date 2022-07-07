@@ -27,6 +27,25 @@ else
     fi
 fi
 
+# Setup retries for when EK certificate cannot be retrieved on first try
+getekcert_with_retries() {
+    trap - ERR
+    cert_done=
+    for i in 1 2 3;
+        do
+        tpm2 getekcertificate -u $1 -x -X -o $2
+        tpm2 getekcertificate -u $1 -x -X > $3
+        # Test that stdout output is the same as output to file
+        cmp $2 $3
+        if [ $? == 0 ]; then
+            cert_done=1
+            break
+        fi
+    done
+    trap onerror ERR
+    test $cert_done
+}
+
 # Sample RSA ek public from a real platform
 echo "013a0001000b000300b20020837197674484b3f81a90cc8d46a5d724fd52
 d76e06520b64f2a1da1b331469aa00060080004300100800000000000100
@@ -40,14 +59,10 @@ bc3e1d4084e835c7c8906a1c05b4d2d30fdbebc1dbad950fa6b165bd4b6a
 79a8f32938dd8197e29dae839f5b4ca0f5de27c9522c23c54e1c2ce57859
 525118bd4470b18180eef78ae4267bcd" | xxd -r -p > test_rsa_ek.pub
 
-# Get ek certificate and output to file
-tpm2 getekcertificate -u test_rsa_ek.pub -x -X -o rsa_ek_cert.bin
-
-# Test that stdoutput is the same
-tpm2 getekcertificate -u test_rsa_ek.pub -x -X > stdout_rsa_ek_cert.bin
-
-# stdout file should match
-cmp rsa_ek_cert.bin stdout_rsa_ek_cert.bin
+#
+# RSA EK Certificate from ekop.intel.com
+#
+getekcert_with_retries test_rsa_ek.pub rsa_ek_cert.bin stdout_rsa_ek_cert.bin
 
 # Retrieved certificate should be valid
 tpm2 loadexternal -C e  -u test_rsa_ek.pub -c rsa_key.ctx
@@ -62,14 +77,11 @@ d76e06520b64f2a1da1b331469aa00060080004300100003001000206d8e
 002021a536c8fef7482313d7f4517f11c9f2b4cd424cbc8fe9094b895668
 51fe0853" | xxd -r -p > test_ecc_ek.pub
 
-# Get ecc certificate and output to file
-tpm2 getekcertificate -u test_ecc_ek.pub -x -X -o ecc_ek_cert.bin
+#
+# ECC EK Certificate from ekop.intel.com
+#
+getekcert_with_retries test_ecc_ek.pub ecc_ek_cert.bin stdout_ecc_ek_cert.bin
 
-# Test that stdoutput is the same
-tpm2 getekcertificate -u test_ecc_ek.pub -x -X > stdout_ecc_ek_cert.bin
-
-# stdout file should match
-cmp ecc_ek_cert.bin stdout_ecc_ek_cert.bin
 
 # Retrieved certificate should be valid
 tpm2 loadexternal -C e  -u test_ecc_ek.pub -c ecc_key.ctx
