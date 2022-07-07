@@ -2,6 +2,10 @@
 
 ### next
 
+  * tpm2_ecephemeral:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_EC_Ephemeral.
+        
   * tpm2_ecdhzgen:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_ECDH_ZGen.
