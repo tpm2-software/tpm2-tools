@@ -17,39 +17,32 @@
 
 typedef struct tpm_pcrevent_ctx tpm_pcrevent_ctx;
 struct tpm_pcrevent_ctx {
+    /*
+     * Inputs
+     */
     struct {
         const char *auth_str;
         tpm2_session *session;
     } auth;
+
     ESYS_TR pcr;
     FILE *input;
+    unsigned long file_size;
+    TPM2B_EVENT pcrevent_buffer;
+    bool is_input_not_fifo;
+    bool is_hashsequence_needed;
+
+    /*
+     * Outputs
+     */
+    TPML_DIGEST_VALUES *digests;
 };
 
 static tpm_pcrevent_ctx ctx = {
     .pcr = ESYS_TR_RH_NULL,
 };
 
-static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
-        TPML_DIGEST_VALUES **result) {
-
-    unsigned long file_size = 0;
-    FILE *input = ctx.input;
-
-    /* Suppress error reporting with NULL path */
-    bool res = files_get_file_size(input, &file_size, NULL);
-
-    /* If we can get the file size and its less than 1024, just do it in one hash invocation */
-    if (res && file_size && file_size <= BUFFER_SIZE(TPM2B_EVENT, buffer)) {
-        TPM2B_EVENT buffer = TPM2B_INIT(file_size);
-
-        res = files_read_bytes(ctx.input, buffer.buffer, buffer.size);
-        if (!res) {
-            LOG_ERR("Error reading input file!");
-            return tool_rc_general_error;
-        }
-
-        return tpm2_pcr_event(ectx, ctx.pcr, ctx.auth.session, &buffer, result);
-    }
+static tool_rc pcr_hashsequence(ESYS_CONTEXT *ectx) {
 
     ESYS_TR sequence_handle;
     TPM2B_AUTH null_auth = TPM2B_EMPTY_INIT;
@@ -65,20 +58,22 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         return rc;
     }
 
-    /* If we know the file size, we decrement the amount read and terminate the
-     * loop when 1 block is left, else we go till feof.
+    /*
+     * If file size is non-zero we decrement the amount read and terminate the
+     * loop when 1 block is left.
+     *
+     * If file size is reported zero we go till feof.
      */
-    size_t left = file_size;
-    bool use_left = !!res && left;
+    size_t left = ctx.file_size;
+    bool is_filesize_nonzero = !!ctx.is_input_not_fifo && left;
 
     TPM2B_MAX_BUFFER data;
-
     bool done = false;
     while (!done) {
 
         size_t bytes_read = fread(data.buffer, 1,
-                BUFFER_SIZE(typeof(data), buffer), input);
-        if (ferror(input)) {
+                BUFFER_SIZE(typeof(data), buffer), ctx.input);
+        if (ferror(ctx.input)) {
             LOG_ERR("Error reading from input file");
             return tool_rc_general_error;
         }
@@ -91,21 +86,21 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
             return rc;
         }
 
-        if (use_left) {
+        if (is_filesize_nonzero) {
             left -= bytes_read;
             if (left <= TPM2_MAX_DIGEST_BUFFER) {
                 done = true;
                 continue;
             }
-        } else if (feof(input)) {
+        } else if (feof(ctx.input)) {
             done = true;
         }
     } /* end file read/hash update loop */
 
-    if (use_left) {
+    if (is_filesize_nonzero) {
         data.size = left;
-        bool res = files_read_bytes(input, data.buffer, left);
-        if (!res) {
+        bool result = files_read_bytes(ctx.input, data.buffer, left);
+        if (!result) {
             LOG_ERR("Error reading from input file.");
             return tool_rc_general_error;
         }
@@ -114,22 +109,39 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
     }
 
     return tpm2_event_sequence_complete(ectx, ctx.pcr, sequence_handle,
-            ctx.auth.session, &data, result);
+            ctx.auth.session, &data, &ctx.digests);
 }
 
-static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
+static tool_rc pcrevent(ESYS_CONTEXT *ectx) {
 
-    TPML_DIGEST_VALUES *digests = NULL;
-    tool_rc rc = tpm_pcrevent_file(ectx, &digests);
-    if (rc != tool_rc_success) {
-        return rc;
+    if (!ctx.is_hashsequence_needed) {
+        return tpm2_pcr_event(ectx, ctx.pcr, ctx.auth.session,
+            &ctx.pcrevent_buffer, &ctx.digests);
+    } else {
+        /*
+         * Note: We must not calculate pHash in this case to avoid overwriting
+         *       the pHash output in the file when we loop.
+         */
+        return pcr_hashsequence(ectx);
     }
+}
 
-    assert(digests);
+static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    assert(ctx.digests);
 
     UINT32 i;
-    for (i = 0; i < digests->count; i++) {
-        TPMT_HA *d = &digests->digests[i];
+    for (i = 0; i < ctx.digests->count; i++) {
+        TPMT_HA *d = &ctx.digests->digests[i];
 
         tpm2_tool_output("%s: ",
                 tpm2_alg_util_algtostr(d->hashAlg, tpm2_alg_util_flags_hash));
@@ -164,7 +176,7 @@ static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
             static const BYTE byte = 0;
             bytes = &byte;
             size = sizeof(byte);
-        }
+            }
         }
 
         size_t j;
@@ -173,10 +185,83 @@ static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
         }
 
         tpm2_tool_output("\n");
-
     }
 
-    free(digests);
+    free(ctx.digests);
+    return tool_rc_success;
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+            &ctx.auth.session, false);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid key handle authorization");
+        return rc;
+    }
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+    /*
+     * If no arguments are given:
+     * a. ctx.pcr defaults to zero which is a valid pcr handle
+     * b. ctx.input defaults to stdin
+     */
+    ctx.input = ctx.input ? ctx.input : stdin;
+    /*
+     * Suppress error reporting with NULL path
+     */
+    ctx.is_input_not_fifo = files_get_file_size(ctx.input, &ctx.file_size, NULL);
+    /*
+     * If we can get the non-zero file-size and its less than 1024,
+     * just an invocation of TPM2_CC_PCR_EVENT suffices.
+     */
+    if (ctx.is_input_not_fifo && ctx.file_size &&
+    (ctx.file_size <= BUFFER_SIZE(TPM2B_EVENT, buffer))) {
+        ctx.pcrevent_buffer.size = ctx.file_size;
+        bool result = files_read_bytes(ctx.input, ctx.pcrevent_buffer.buffer,
+            ctx.pcrevent_buffer.size);
+        if (!result) {
+            LOG_ERR("Error reading input file!");
+            return tool_rc_general_error;
+        }
+    } else {
+        ctx.is_hashsequence_needed = true;
+    }
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+
+    return tool_rc_success;
+}
+
+static tool_rc check_options(void) {
+
     return tool_rc_success;
 }
 
@@ -189,7 +274,6 @@ static bool on_arg(int argc, char **argv) {
 
     FILE *f = NULL;
     const char *pcr = NULL;
-
     unsigned i;
     /* argc can never be negative so cast is safe */
     for (i = 0; i < (unsigned) argc; i++) {
@@ -202,7 +286,8 @@ static bool on_arg(int argc, char **argv) {
             goto error;
             /* looking for file and got a file so assign */
         } else if (x && !f) {
-            f = ctx.input = x;
+            f = x;
+            ctx.input = x;
             /* looking for pcr and not a file */
         } else if (!pcr) {
             pcr = argv[i];
@@ -212,7 +297,6 @@ static bool on_arg(int argc, char **argv) {
                 LOG_ERR("Could not convert \"%s\", to a pcr index.", pcr);
                 return false;
             }
-
             /* got pcr and not a file (another pcr) */
         } else {
             LOG_ERR("Already got PCR index.");
@@ -245,11 +329,11 @@ static bool on_option(char key, char *value) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "auth",      required_argument, NULL, 'P' },
+        { "auth", required_argument, NULL, 'P' },
     };
 
     *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts, on_option, on_arg,
-            0);
+        0);
 
     return *opts != NULL;
 }
@@ -258,21 +342,52 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    ctx.input = ctx.input ? ctx.input : stdin;
-
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-            &ctx.auth.session, false);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options();
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid key handle authorization");
         return rc;
     }
 
-    return do_pcrevent_and_output(ectx);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = pcrevent(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_outputs(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
+
+    /*
+     * 1. Free objects
+     */
+
+    /*
+     * 2. Close authorization sessions
+     */
     return tpm2_session_close(&ctx.auth.session);
+
+    /*
+     * 3. Close auxiliary sessions
+     */
 }
 
 static void tpm2_tool_onexit(void) {
@@ -283,4 +398,5 @@ static void tpm2_tool_onexit(void) {
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("pcrevent", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, tpm2_tool_onexit)
+TPM2_TOOL_REGISTER("pcrevent", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, tpm2_tool_onexit)
