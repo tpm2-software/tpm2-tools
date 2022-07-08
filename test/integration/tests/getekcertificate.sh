@@ -19,6 +19,7 @@ start_up
 # Check connectivity
 if [ -z "$(curl -V 2>/dev/null)" ]; then
     echo "curl is not not installed. Skipping connection check."
+    exit 077
 else
     if [ "$(curl --silent --output /dev/null --write-out %{http_code} \
     'https://ekop.intel.com/ekcertservice/WVEG2rRwkQ7m3RpXlUphgo6Y2HLxl18h6ZZkkOAdnBE%3D')" != '200' ]; then
