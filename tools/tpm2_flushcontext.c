@@ -292,10 +292,9 @@ static bool on_option(char key, char *value) {
         break;
     case 'l':
         ctx.encountered_option_flags |= 1 << 1;
-        ctx.encountered_option_flags++;
         break;
     case 's':
-        ctx.encountered_option_flags |= 1 << 3;
+        ctx.encountered_option_flags |= 1 << 2;
         break;
     case 0:
         ctx.cp_hash_path = value;

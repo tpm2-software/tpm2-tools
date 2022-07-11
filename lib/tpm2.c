@@ -352,22 +352,54 @@ tool_rc tpm2_flush_context(ESYS_CONTEXT *esys_context, ESYS_TR flush_handle,
             return rc;
         }
 
+        TPM2_HANDLE sapi_flush_handle = 0;
+        rval = Esys_TR_GetTpmHandle(esys_context, flush_handle,
+            &sapi_flush_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_ERR("Failed to acquire SAPI handle");
+            return tool_rc_general_error;
+        }
+
         TSS2_RC rval = Tss2_Sys_FlushContext_Prepare(
-        sys_context, flush_handle);
+        sys_context, sapi_flush_handle);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_FlushContext_Prepare, rval);
             return tool_rc_general_error;
         }
 
-        TPM2B_NAME *name1 = 0;
-        rc = tpm2_tr_get_name(esys_context, flush_handle, &name1);
-        if (rc != tool_rc_success) {
-            LOG_ERR("Failed to acquire SAPI handle");
+        /*
+         * There is a bug in SAPI where in the flush handle is placed in the
+         * handle area instead of the parameter area.
+         * Ref: https://github.com/tpm2-software/tpm2-tss/issues/2382
+         *
+         * We determine this scenario by reading the parameter size in the
+         * cpBuffer which is returned as zero due to the bug. 
+         *
+         * When calculating the cpHash, the workaround for this scenario is to
+         * provide the flush handle as a name.
+         */
+        const uint8_t *command_parameters;
+        size_t command_parameters_size;
+        rval = Tss2_Sys_GetCpBuffer(sys_context, &command_parameters_size,
+            &command_parameters);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_GetCpBuffer, rval);
             return tool_rc_general_error;
         }
 
-        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
-            parameter_hash_algorithm, cp_hash);
+        TPM2B_NAME name1 = { 0 };
+        if (!command_parameters_size) {
+            name1.size = sizeof(TPM2_HANDLE);
+            rval = Tss2_MU_TPM2_HANDLE_Marshal(sapi_flush_handle, name1.name,
+                name1.size, 0);
+            if (rval != TPM2_RC_SUCCESS) {
+                LOG_ERR("Failed to populate SAPI handle");
+                return tool_rc_general_error;
+            }
+        }
+
+        rc = tpm2_sapi_getcphash(sys_context, name1.size ? &name1 : NULL, NULL,
+            NULL, parameter_hash_algorithm, cp_hash);
         /*
          * Exit here without making the ESYS call since we just need the cpHash
          */
