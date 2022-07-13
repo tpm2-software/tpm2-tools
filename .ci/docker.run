@@ -3,6 +3,8 @@
 
 set -e
 
+git config --global --add safe.directory "$DOCKER_BUILD_DIR"
+
 source $DOCKER_BUILD_DIR/.ci/docker-prelude.sh
 
 if [ -d build ]; then
