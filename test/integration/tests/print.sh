@@ -11,6 +11,10 @@ ak_pubkey_file=ak.pub
 quote_file=quote.bin
 print_file=quote.yaml
 
+pem_file=tsskeypriv
+pem_pub=public_key
+tss_prim=prim
+
 cleanup() {
     rm -f $ak_name_file $ak_pubkey_file \
           $quote_file $print_file $ak_ctx \
@@ -92,5 +96,21 @@ if [ $? -eq 0 ]; then
   echo "Expected tpm2 print without -t to fail"
   exit 1
 fi
+
+# TSS Privkey
+tpm2 createprimary -G rsa -C o \
+-a "fixedtpm|fixedparent|sensitivedataorigin|userwithauth|restricted|decrypt|noda" \
+-c $tss_prim.ctx
+
+tpm2 create -C $tss_prim.ctx -u $pem_file.pub -r $pem_file.priv
+
+tpm2 encodeobject -C $tss_prim.ctx -u $pem_file.pub -r $pem_file.priv \
+-o $pem_file.pem
+
+tpm2 print -t TSSPRIVKEY_OBJ $pem_file.pem
+
+tpm2 print -t TSSPRIVKEY_OBJ -f pem $pem_file.pem > $pem_pub.pem
+
+openssl rsa -pubin -in $pem_pub.pem -text
 
 exit 0
