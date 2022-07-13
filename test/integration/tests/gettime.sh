@@ -3,7 +3,10 @@
 source helpers.sh
 
 cleanup() {
-	rm -f attest.sig attest.data
+    rm -f attest.sig attest.data
+    if [ "$1" != "no-shut-down" ]; then
+	shut_down
+    fi
 }
 trap cleanup EXIT
 

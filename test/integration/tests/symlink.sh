@@ -4,7 +4,10 @@ source helpers.sh
 
 TMP="$(mktemp -d)"
 cleanup() {
-	rm -rf "$TMP"
+    rm -rf "$TMP"
+    if [ "$1" != "no-shut-down" ]; then
+	shut_down
+    fi
 }
 trap cleanup EXIT
 

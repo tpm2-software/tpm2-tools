@@ -3,7 +3,10 @@
 source helpers.sh
 
 cleanup() {
-	rm -f clock.yaml
+    rm -f clock.yaml
+    if [ "$1" != "no-shut-down" ]; then
+	shut_down
+    fi
 }
 trap cleanup EXIT
 
