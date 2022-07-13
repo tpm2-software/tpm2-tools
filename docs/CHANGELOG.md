@@ -1,6 +1,12 @@
 ## Changelog
 
 ### next
+
+  * tpm2_print:
+      - Added capability to parse out and print the public portion of a
+        TSS Private Key in the PEM format with the arg option
+        **TSSPRIVKEY_OBJ**.
+
   * tpm2_geteccparameters:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_ECC_Parameters.

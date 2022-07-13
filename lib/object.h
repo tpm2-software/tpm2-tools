@@ -5,6 +5,11 @@
 #include "tpm2_session.h"
 #include "tpm2_util.h"
 
+#include <openssl/pem.h>
+#include <openssl/bio.h>
+#include <openssl/asn1.h>
+#include <openssl/asn1t.h>
+
 typedef struct tpm2_loaded_object tpm2_loaded_object;
 struct tpm2_loaded_object {
     TPM2_HANDLE handle;
@@ -12,6 +17,14 @@ struct tpm2_loaded_object {
     const char *path;
     tpm2_session *session;
 };
+
+typedef struct {
+    ASN1_OBJECT *type;
+    ASN1_BOOLEAN emptyAuth;
+    ASN1_INTEGER *parent;
+    ASN1_OCTET_STRING *pubkey;
+    ASN1_OCTET_STRING *privkey;
+} TSSPRIVKEY_OBJ;
 
 /*
  * TPM2B_PRIVATE and TPM2B_PUBLIC parsed from a TSSPEM/ tssprivkey
@@ -66,5 +79,21 @@ tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx, const char *objectstr,
 tool_rc tpm2_util_object_load_auth(ESYS_CONTEXT *ctx, const char *objectstr,
         const char *auth, tpm2_loaded_object *outobject,
         bool is_restricted_pswd_session, tpm2_handle_flags flags);
+
+/**
+ * Fetches the unmarshalled public and private portions of the
+ * TSS Privkey object.
+ * 
+ * @param objectstr
+ * Path to file containing the TSS PRIVKEY object.
+ * @param pub
+ * The unmarshalled public portion of TSS Private Key.
+ * @param priv
+ * The unmarshalled private portion of TSS Private Key.
+ * @return
+ *  tool_rc indicating the status.
+ */
+tool_rc tpm2_util_object_fetch_priv_pub_from_tpk(const char *objectstr,
+        TPM2B_PUBLIC *pub, TPM2B_PRIVATE *priv);
 
 #endif /* LIB_OBJECT_H_ */
