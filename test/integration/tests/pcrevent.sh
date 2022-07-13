@@ -19,6 +19,18 @@ start_up
 
 echo "T0naX0u123abc" > $hash_in_file
 
+## Check cpHash output for TPM2_PCR_Allocate
+tpm2 pcrevent -Q $hash_in_file --cphash cp.hash
+TPM2_CC_PCR_Event="0000013c" #ok
+pcrHandle="00000000"
+size=$(printf "%04x" `stat -c "%s" $hash_in_file`)
+file_content=$(xxd -p $hash_in_file)
+Param_pcrEvent=$size$file_content
+
+echo -ne $TPM2_CC_PCR_Event$pcrHandle$Param_pcrEvent | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+
 # Run FILE and stdin as FILE
 tpm2 pcrevent -Q $hash_in_file
 tpm2 pcrevent -Q < $hash_in_file
