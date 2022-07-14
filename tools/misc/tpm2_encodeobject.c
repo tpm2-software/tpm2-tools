@@ -13,43 +13,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <openssl/asn1.h>
-#include <openssl/asn1t.h>
-#include <openssl/pem.h>
-#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
-
-#define OID_loadableKey "2.23.133.10.1.3"
-
-typedef struct {
-	ASN1_OBJECT *type;
-	ASN1_BOOLEAN emptyAuth;
-	ASN1_INTEGER *parent;
-	ASN1_OCTET_STRING *pubkey;
-	ASN1_OCTET_STRING *privkey;
-} TSSPRIVKEY;
-
-DECLARE_ASN1_FUNCTIONS(TSSPRIVKEY);
-DECLARE_PEM_write_bio(TSSPRIVKEY, TSSPRIVKEY);
-
-ASN1_SEQUENCE(TSSPRIVKEY) = {
-	ASN1_SIMPLE(TSSPRIVKEY, type, ASN1_OBJECT),
-	ASN1_EXP_OPT(TSSPRIVKEY, emptyAuth, ASN1_BOOLEAN, 0),
-	ASN1_SIMPLE(TSSPRIVKEY, parent, ASN1_INTEGER),
-	ASN1_SIMPLE(TSSPRIVKEY, pubkey, ASN1_OCTET_STRING),
-	ASN1_SIMPLE(TSSPRIVKEY, privkey, ASN1_OCTET_STRING)
-} ASN1_SEQUENCE_END(TSSPRIVKEY)
-
-#define TSSPRIVKEY_PEM_STRING "TSS2 PRIVATE KEY"
-
-IMPLEMENT_ASN1_FUNCTIONS(TSSPRIVKEY);
-IMPLEMENT_PEM_write_bio(TSSPRIVKEY, TSSPRIVKEY, TSSPRIVKEY_PEM_STRING, TSSPRIVKEY);
-IMPLEMENT_PEM_read_bio(TSSPRIVKEY, TSSPRIVKEY, TSSPRIVKEY_PEM_STRING, TSSPRIVKEY);
+#include "object.h"
 
 typedef struct tpm_encodeobject_ctx tpm_encodeobject_ctx;
 struct tpm_encodeobject_ctx {
@@ -150,32 +120,30 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
             TPM2_HANDLE_ALL_W_NV);
 }
 
-static int
-encode(void)
-{
-    TSS2_RC rc;
-    BIO *bio = NULL;
-    TSSPRIVKEY *tpk = NULL;
+static int encode(void) {
 
     uint8_t private_buf[sizeof(ctx.object.private)];
-    uint8_t public_buf[sizeof(ctx.object.public)];
-    size_t private_len = 0, public_len = 0;
-
-    rc = Tss2_MU_TPM2B_PRIVATE_Marshal(&ctx.object.private, private_buf,
-				       sizeof(private_buf), &private_len);
-    if (rc) {
+    size_t private_len = 0;
+    tool_rc rc = tool_rc_general_error;
+    BIO *bio = NULL;
+    TSSPRIVKEY_OBJ *tpk = NULL;
+    TSS2_RC rval = Tss2_MU_TPM2B_PRIVATE_Marshal(&ctx.object.private,
+        private_buf, sizeof(private_buf), &private_len);
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Error serializing private portion of object");
         goto error;
     }
 
-    rc = Tss2_MU_TPM2B_PUBLIC_Marshal(&ctx.object.public, public_buf,
-				      sizeof(public_buf), &public_len);
-    if (rc) {
+    size_t public_len = 0;
+    uint8_t public_buf[sizeof(ctx.object.public)];
+    rval = Tss2_MU_TPM2B_PUBLIC_Marshal(&ctx.object.public, public_buf,
+        sizeof(public_buf), &public_len);
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Error serializing public portion of object");
         goto error;
     }
 
-    tpk = TSSPRIVKEY_new();
+    tpk = TSSPRIVKEY_OBJ_new();
     if (!tpk) {
         LOG_ERR("oom");
         goto error;
@@ -199,22 +167,21 @@ encode(void)
     ASN1_STRING_set(tpk->privkey, private_buf, private_len);
     ASN1_STRING_set(tpk->pubkey, public_buf, public_len);
 
-    if ((bio = BIO_new_file(ctx.output_path, "w")) == NULL) {
-	LOG_ERR("Could not open file: \"%s\"", ctx.output_path);
+    bio =  BIO_new_file(ctx.output_path, "w");
+    if (bio == NULL) {
+	    LOG_ERR("Could not open file: \"%s\"", ctx.output_path);
         goto error;
     }
 
-    PEM_write_bio_TSSPRIVKEY(bio, tpk);
-    TSSPRIVKEY_free(tpk);
-    BIO_free(bio);
+    PEM_write_bio_TSSPRIVKEY_OBJ(bio, tpk);
+    rc = tool_rc_success;
 
-    return tool_rc_success;
  error:
     if (bio)
         BIO_free(bio);
     if (tpk)
-        TSSPRIVKEY_free(tpk);
-    return tool_rc_general_error;
+        TSSPRIVKEY_OBJ_free(tpk);
+    return rc;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {

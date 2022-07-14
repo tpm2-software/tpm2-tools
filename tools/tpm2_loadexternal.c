@@ -15,6 +15,7 @@
 #include "tpm2_hierarchy.h"
 #include "tpm2_openssl.h"
 #include "tpm2_tool.h"
+#include "object.h"
 
 #define MAX_SESSIONS 3
 typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
@@ -35,6 +36,10 @@ struct tpm_loadexternal_ctx {
     char *passin; /* an optional auth string for the input key file for OSSL */
     TPM2B_SENSITIVE priv; /* Set the AUTH value for sensitive portion */
     TPM2B_PUBLIC pub; /* Load the users specified public object if specified via -u*/
+    /*
+     * TSS Privkey related
+     */
+    bool is_tsspem;
 
     /*
      * Outputs
@@ -62,7 +67,7 @@ static tpm_loadexternal_ctx ctx = {
 
 static tool_rc load_external(ESYS_CONTEXT *ectx) {
 
-    bool is_priv_specified = (ctx.private_key_path != 0);
+    bool is_priv_specified = (ctx.private_key_path != 0 && !ctx.is_tsspem);
     return tpm2_loadexternal(ectx, is_priv_specified ? &ctx.priv : 0, &ctx.pub,
         ctx.hierarchy_value, &ctx.handle, &ctx.cp_hash,
         ctx.parameter_hash_algorithm);
@@ -160,6 +165,30 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
         setup_default_attrs(&def_attrs, !!ctx.policy, !!ctx.auth);
     }
 
+    tool_rc rc = tool_rc_success;
+    if (ctx.is_tsspem) {
+        /* Fetch and set public */
+        TPM2B_PRIVATE priv = { 0 };
+        rc = tpm2_util_object_fetch_priv_pub_from_tpk(ctx.private_key_path,
+            &ctx.pub, &priv);
+        if (rc != tool_rc_success) {
+            /*
+             * We only load a TSS format for the public portion, so if
+             * someone hands us a public file, we'll assume the TSS format when
+             * no -G is specified.
+             *
+             * If they specify a private they need to tell us the type we expect.
+             * This helps reduce auto-guess complexity, as well as future proofing
+             * us for being able to load XOR. Ie we don't want to guess XOR or HMAC
+             * in leui of AES or vice versa.
+             */
+            LOG_ERR("Expected key type via -G option when specifying private"
+                    " portion of object that is not in tssprivkey format");
+            return rc;
+        }
+
+        goto priv_path;
+    }
 
     /*
      * Input values are public assumed to be in the TSS format unless:
@@ -170,7 +199,6 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * 3. The third option is no public, which means the public could be coming
      *    from a private PEM file
      */
-    tool_rc rc = tool_rc_success;
     if (!ctx.key_type && ctx.public_key_path) {
         /* Load TSS */
         bool result = files_load_public(ctx.public_key_path, &ctx.pub);
@@ -233,12 +261,12 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
         return tool_rc_general_error;
     }
 
+priv_path:
     /*
      * Okay, we have the public portion in some form, at a minimum a template
-     * and at a maximum a fully specified
-     * public, load the private portion.
+     * and at a maximum a fully specified public, load the private portion.
      */
-    if (ctx.private_key_path) {
+    if (ctx.private_key_path && !ctx.is_tsspem) {
         /*
          * when nameAlg is not TPM2_ALG_NULL, seed value is needed to pass
          * consistency checks by TPM
@@ -327,21 +355,7 @@ static tool_rc check_options(ESYS_CONTEXT *ectx) {
         return tool_rc_option_error;
     }
 
-    /*
-     * We only load a TSS format for the public portion, so if
-     * someone hands us a public file, we'll assume the TSS format when
-     * no -G is specified.
-     *
-     * If they specify a private they need to tell us the type we expect.
-     * This helps reduce auto-guess complexity, as well as future proofing
-     * us for being able to load XOR. Ie we don't want to guess XOR or HMAC
-     * in leui of AES or vice versa.
-     */
-    if (!ctx.key_type && ctx.private_key_path) {
-        LOG_ERR("Expected key type via -G option when specifying private"
-                " portion of object");
-        return tool_rc_option_error;
-    }
+    ctx.is_tsspem = (!ctx.key_type && ctx.private_key_path);
 
     return tool_rc_success;
 }

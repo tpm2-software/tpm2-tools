@@ -10,9 +10,10 @@
 
 # DESCRIPTION
 
-**tpm2_print**(1) - Decodes a TPM data structure and prints enclosed elements to
-stdout as YAML. A file path containing a TPM object may be specified as the
-path argument. Reads from stdin if unspecified.
+**tpm2_print**(1) - Decodes a TPM data structure and prints enclosed elements
+to stdout as YAML. A file path containing a TPM object or a TSS2 Private Key
+in the PEM format may be specified as the path argument. Reads from stdin if
+unspecified.
 
 # OPTIONS
 
@@ -23,6 +24,7 @@ path argument. Reads from stdin if unspecified.
       * **TPMS_CONTEXT**
       * **TPM2B_PUBLIC**
       * **TPMT_PUBLIC**
+      * **TSSPRIVKEY_OBJ**
   * **ARGUMENT** the command line argument specifies the path of the TPM data.
 
 [pubkey options](common/pubkey.md)
@@ -88,6 +90,12 @@ tpm2_print -t TPMT_PUBLIC key.tpmt
 tpm2 print -t TPM2B_PUBLIC -f pem key.pub
 ```
 
+### Print public portion of TSSPRIVKEY PEM file and convert to PEM format
+
+```bash
+tpm2 print -t TSSPRIVKEY_OBJ tssprivkey.pem
+tpm2 print -t TSSPRIVKEY_OBJ tssprivkey.pem -f pem > publickey.pem
+```
 
 [returns](common/returns.md)
 

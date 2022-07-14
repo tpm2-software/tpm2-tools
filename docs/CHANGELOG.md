@@ -4,7 +4,18 @@
   * tpm2_pcrallocate:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PCR_Allocate.
+        
+  * tpm2_loadexternal:
+      - Added support to tpm2_loadexternal for parsing and loading the public
+        portion of a TSS2 Privkey PEM file. The path to the PEM file must be
+        specified using the **-r** option while skipping the **-G** option for
+        key type.
 
+  * tpm2_print:
+      - Added capability to parse out and print the public portion of a
+        TSS Private Key in the PEM format with the arg option
+        **TSSPRIVKEY_OBJ**.
+        
   * tpm2_geteccparameters:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_ECC_Parameters.

@@ -11,6 +11,7 @@
 #include "tpm2_convert.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "object.h"
 
 typedef bool (*print_fn)(FILE *f);
 
@@ -292,6 +293,28 @@ static bool print_TPM2B_PUBLIC(FILE *fstream) {
     return true;
 }
 
+static bool print_TSSPRIVKEY_OBJ(FILE *fstream) {
+
+    UNUSED(fstream);
+    
+    TPM2B_PUBLIC pub = { 0 };
+    TPM2B_PRIVATE priv = { 0 };
+    tool_rc rc = tpm2_util_object_fetch_priv_pub_from_tpk(ctx.file.path, &pub,
+        &priv);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Unable to fetch public/private portion of tss privkey");
+        return false;
+    }
+
+    if (ctx.format_set) {
+        return tpm2_convert_pubkey_save(&pub, ctx.format, NULL);
+    }
+
+    tpm2_util_public_to_yaml(&pub, NULL);
+
+    return true;
+}
+
 #define ADD_HANDLER(type) { .name = #type, .flags = 0, .fn = print_##type }
 #define ADD_HANDLER_FMT(type) { .name = #type, .flags = FLAG_FMT, .fn = print_##type }
 
@@ -306,7 +329,8 @@ static bool handle_type(const char *name) {
         ADD_HANDLER(TPMS_ATTEST),
         ADD_HANDLER(TPMS_CONTEXT),
         ADD_HANDLER_FMT(TPM2B_PUBLIC),
-        ADD_HANDLER_FMT(TPMT_PUBLIC)
+        ADD_HANDLER_FMT(TPMT_PUBLIC),
+        ADD_HANDLER_FMT(TSSPRIVKEY_OBJ)
     };
 
     size_t i;
@@ -333,9 +357,6 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 't':
         return handle_type(value);
-    case 'i':
-        ctx.file.path = value;
-        break;
     case 'f':
         ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
         if (ctx.format == pubkey_format_err) {
