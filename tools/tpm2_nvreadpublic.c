@@ -119,7 +119,7 @@ static tool_rc print_nv_public(ESYS_CONTEXT *context, TPMI_RH_NV_INDEX index,
     tpm2_tool_output("  attributes:\n");
     tpm2_tool_output("    friendly: %s\n", attrs);
     tpm2_tool_output("    value: 0x%X\n",
-            tpm2_util_ntoh_32(nv_public->nvPublic.attributes));
+            nv_public->nvPublic.attributes);
 
     tpm2_tool_output("  size: %d\n", nv_public->nvPublic.dataSize);
 
