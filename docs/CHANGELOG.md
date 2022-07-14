@@ -28,8 +28,6 @@
   * tpm2_commit:
       - Added option to output the cpHash for the command TPM2_CC_Commit.
 
-  * Minimum tpm2-tss version is now 3.2.0 to support openssl3 migration.
-
   * tpm2:
       - Added option to specify **--help=no-man**
 
@@ -97,6 +95,11 @@
       - Added option -n, --name to specify the name of the nvindex in hex bytes.
         This is used when cpHash is calculated without dispatching the
         TPM2_NV_Write command to the TPM.
+
+  * Minimum tpm2-tss version is now 3.2.0 to support openssl3 migration.
+
+  * Fix test harness leaving tpm servers running after a make check. Fixes sporadic
+    hangs in testing.
 
 ### 5.2 2021-09-28
 ### 5.2-rc0 2021-09-01
