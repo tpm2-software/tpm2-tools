@@ -5,7 +5,9 @@
 #include "tpm2.h"
 #include "tpm2_tool.h"
 #include "tpm2_options.h"
+#include "files.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_pcrallocate_ctx tpm_pcrallocate_ctx;
 struct tpm_pcrallocate_ctx {
     /*
@@ -23,9 +25,18 @@ struct tpm_pcrallocate_ctx {
     /*
      * Outputs
      */
+
+    /*
+     * Parameter hashes
+     */
+    const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static tpm_pcrallocate_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
     .auth_hierarchy.ctx_path = "platform",
     .pcr_selection = {
         .count = 2,
@@ -43,8 +54,13 @@ static tpm_pcrallocate_ctx ctx = {
 
 static tool_rc pcrallocate(ESYS_CONTEXT *ectx) {
 
-    return tpm2_pcr_allocate(ectx, &ctx.auth_hierarchy.object,
-        &ctx.pcr_selection);
+    tool_rc rc = tpm2_pcr_allocate(ectx, &ctx.auth_hierarchy.object,
+        &ctx.pcr_selection, &ctx.cp_hash, ctx.parameter_hash_algorithm);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed TPM2_CC_ECDH_ZGen"); 
+    }
+
+    return rc;
 }
 
 static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
@@ -54,6 +70,19 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
@@ -113,10 +142,21 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        0,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     return tool_rc_success;
 }
@@ -146,6 +186,9 @@ static bool on_option(char key, char *value) {
     case 'P':
         ctx.auth_hierarchy.auth_str = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -153,7 +196,9 @@ static bool on_option(char key, char *value) {
 
 static bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
-        { "auth", required_argument, NULL, 'P' }, 
+        { "auth",   required_argument, NULL, 'P' }, 
+        { "cphash", required_argument, 0,     0  },
+
     };
 
     *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts, on_option, on_arg,
