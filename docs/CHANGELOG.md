@@ -1,6 +1,9 @@
 ## Changelog
 
 ### next
+  * tpm2_pcrallocate:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PCR_Allocate.
 
   * tpm2_loadexternal:
       - Added support to tpm2_loadexternal for parsing and loading the public

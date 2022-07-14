@@ -15,6 +15,16 @@ start_up
 
 cleanup "no-shut-down"
 
+## Check cpHash output for TPM2_PCR_Allocate
+tpm2 pcrallocate sha1:0,1,2 --cphash cp.hash
+TPM2_CC_PCR_Allocate="0000012b"
+handle_Name="4000000c"
+Param_pcrAllocation="00 00 00 01 00 04 03 07 00 00"
+
+echo -ne $TPM2_CC_PCR_Allocate$handle_Name$Param_pcrAllocation | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+
 # Store the old banks because e.g. some TPM-simuators don't support SHA512
 OLDBANKS=$(tpm2 getcap pcrs | grep bank | sed 's/.*bank\: \(.*\)/+\1:all/' | \
 tr -d "\n")
