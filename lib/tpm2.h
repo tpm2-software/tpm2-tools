@@ -373,7 +373,8 @@ tool_rc tpm2_nvwrite(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_pcr_allocate(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj,
-        const TPML_PCR_SELECTION *pcr_allocation);
+        const TPML_PCR_SELECTION *pcr_allocation, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_sign(ESYS_CONTEXT *esys_context, tpm2_loaded_object *signingkey_obj,
     TPM2B_DIGEST *digest, TPMT_SIG_SCHEME *in_scheme,
