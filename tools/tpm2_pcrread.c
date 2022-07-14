@@ -12,57 +12,123 @@
 
 typedef struct listpcr_context listpcr_context;
 struct listpcr_context {
-    char *output_file_path;
-    FILE *output_file;
+    /*
+     * Inputs
+     */
     tpm2_convert_pcrs_output_fmt format;
     tpm2_algorithm algs;
     tpm2_pcrs pcrs;
     TPML_PCR_SELECTION pcr_selections;
     TPMI_ALG_HASH selected_algorithm;
+    TPMS_CAPABILITY_DATA capdata;
+
+    /*
+     * Outputs
+     */
+    char *output_file_path;
+    FILE *output_file;
 };
 
 static listpcr_context ctx = {
     .format = pcrs_output_format_values
 };
 
-static tool_rc show_pcr_list_selected_values(ESYS_CONTEXT *esys_context,
-        TPMS_CAPABILITY_DATA *capdata,
-        bool check) {
+static tool_rc pcrread(ESYS_CONTEXT *ectx) {
 
-    if (check && !pcr_check_pcr_selection(capdata, &ctx.pcr_selections)) {
-        return tool_rc_general_error;
-    }
+    return pcr_read_pcr_values(ectx, &ctx.pcr_selections, &ctx.pcrs);
+}
 
-    tool_rc rc = pcr_read_pcr_values(esys_context, &ctx.pcr_selections,
-            &ctx.pcrs);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
+static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
 
+    UNUSED(ectx);
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
     bool success = pcr_print_values(&ctx.pcr_selections, &ctx.pcrs);
     if (success && ctx.output_file) {
         if (ctx.format == pcrs_output_format_values) {
             success = pcr_fwrite_values(&ctx.pcr_selections, &ctx.pcrs,
-                                        ctx.output_file);
-        } else if (ctx.format == pcrs_output_format_serialized) {
+                ctx.output_file);
+        }
+        
+        if (ctx.format == pcrs_output_format_serialized) {
             success = pcr_fwrite_serialized(&ctx.pcr_selections, &ctx.pcrs,
-                                            ctx.output_file);
+                ctx.output_file);
         }
     }
-
     return success ? tool_rc_success : tool_rc_general_error;
 }
 
-static tool_rc show_pcr_alg_or_all_values(ESYS_CONTEXT *esys_context,
-        TPMS_CAPABILITY_DATA *capdata) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
-    bool res = pcr_init_pcr_selection(capdata, &ctx.pcr_selections,
+    UNUSED(ectx);
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+    tool_rc rc = pcr_get_banks(ectx, &ctx.capdata, &ctx.algs);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    bool result = true;
+    if (ctx.pcr_selections.count > 0) {
+        result = pcr_check_pcr_selection(&ctx.capdata, &ctx.pcr_selections);
+    } else {
+        result = pcr_init_pcr_selection(&ctx.capdata, &ctx.pcr_selections,
             ctx.selected_algorithm);
-    if (!res) {
+    }
+    if (!result) {
         return tool_rc_general_error;
     }
 
-    return show_pcr_list_selected_values(esys_context, capdata, false);
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+
+    return tool_rc_success;
+}
+
+static tool_rc check_options(void) {
+
+    if (ctx.output_file_path) {
+        ctx.output_file = fopen(ctx.output_file_path, "wb+");
+        if (!ctx.output_file) {
+            LOG_ERR("Could not open output file \"%s\" error: \"%s\"",
+                    ctx.output_file_path, strerror(errno));
+            return tool_rc_general_error;
+        }
+    }
+
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -91,7 +157,7 @@ static bool on_arg(int argc, char *argv[]) {
     }
 
     ctx.selected_algorithm = tpm2_alg_util_from_optarg(argv[0],
-            tpm2_alg_util_flags_hash);
+        tpm2_alg_util_flags_hash);
     if (ctx.selected_algorithm == TPM2_ALG_ERROR) {
         bool res = pcr_parse_selections(argv[0], &ctx.pcr_selections);
         if (!res) {
@@ -116,41 +182,61 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (ctx.output_file_path) {
-        ctx.output_file = fopen(ctx.output_file_path, "wb+");
-        if (!ctx.output_file) {
-            LOG_ERR("Could not open output file \"%s\" error: \"%s\"",
-                    ctx.output_file_path, strerror(errno));
-            return tool_rc_general_error;
-        }
-    }
-
-    TPMS_CAPABILITY_DATA capdata;
-    tool_rc rc = pcr_get_banks(esys_context, &capdata, &ctx.algs);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    if (ctx.pcr_selections.count > 0) {
-        return show_pcr_list_selected_values(esys_context, &capdata, true);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    return show_pcr_alg_or_all_values(esys_context, &capdata);
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = pcrread(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_outputs(ectx);
 }
 
-static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *esys_context) {
-    UNUSED(esys_context);
+static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
+    UNUSED(ectx);
+
+    /*
+     * 1. Free objects
+     */
     if (ctx.output_file) {
         fclose(ctx.output_file);
     }
+    /*
+     * 2. Close authorization sessions
+     */
+
+    /*
+     * 3. Close auxiliary sessions
+     */
 
     return tool_rc_success;
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("pcrread", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("pcrread", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, NULL)
