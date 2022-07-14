@@ -1,6 +1,10 @@
 ## Changelog
 
 ### next
+  * tpm2_pcrevent:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PCR_Event.
+        
   * tpm2_pcrallocate:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PCR_Allocate.

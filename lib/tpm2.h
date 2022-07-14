@@ -426,7 +426,8 @@ tool_rc tpm2_pcr_extend(ESYS_CONTEXT *ectx, TPMI_DH_PCR pcr_index,
     TPML_DIGEST_VALUES *digests);
 
 tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx, ESYS_TR pcr, tpm2_session *session,
-        const TPM2B_EVENT *event_data, TPML_DIGEST_VALUES **digests);
+        const TPM2B_EVENT *event_data, TPML_DIGEST_VALUES **digests,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
         TPM2B_DIGEST **random, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,

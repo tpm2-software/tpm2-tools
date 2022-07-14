@@ -15,6 +15,7 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_tool.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_pcrevent_ctx tpm_pcrevent_ctx;
 struct tpm_pcrevent_ctx {
     /*
@@ -36,9 +37,17 @@ struct tpm_pcrevent_ctx {
      * Outputs
      */
     TPML_DIGEST_VALUES *digests;
+    /*
+     * Parameter hashes
+     */
+    const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
 static tpm_pcrevent_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
     .pcr = ESYS_TR_RH_NULL,
 };
 
@@ -116,7 +125,8 @@ static tool_rc pcrevent(ESYS_CONTEXT *ectx) {
 
     if (!ctx.is_hashsequence_needed) {
         return tpm2_pcr_event(ectx, ctx.pcr, ctx.auth.session,
-            &ctx.pcrevent_buffer, &ctx.digests);
+            &ctx.pcrevent_buffer, &ctx.digests, &ctx.cp_hash,
+            ctx.parameter_hash_algorithm);
     } else {
         /*
          * Note: We must not calculate pHash in this case to avoid overwriting
@@ -124,6 +134,15 @@ static tool_rc pcrevent(ESYS_CONTEXT *ectx) {
          */
         return pcr_hashsequence(ectx);
     }
+
+    tool_rc rc = tpm2_pcr_event(ectx, ctx.pcr, ctx.auth.session,
+            &ctx.pcrevent_buffer, &ctx.digests, &ctx.cp_hash,
+            ctx.parameter_hash_algorithm);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed TPM2_CC_PCR_Event"); 
+    }
+
+    return rc;
 }
 
 static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
@@ -133,6 +152,19 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
@@ -252,10 +284,21 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        0,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     return tool_rc_success;
 }
@@ -321,6 +364,9 @@ static bool on_option(char key, char *value) {
         ctx.auth.auth_str = value;
         break;
         /* no default */
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -329,7 +375,9 @@ static bool on_option(char key, char *value) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "auth", required_argument, NULL, 'P' },
+        { "auth",   required_argument, NULL, 'P' },
+        { "cphash", required_argument, 0,     0  },
+
     };
 
     *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts, on_option, on_arg,

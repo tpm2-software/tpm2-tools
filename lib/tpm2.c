@@ -4705,26 +4705,64 @@ tool_rc tpm2_pcr_extend(ESYS_CONTEXT *ectx, TPMI_DH_PCR pcr_index,
     return tool_rc_success;
 }
 
-tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx,
-        ESYS_TR pcr, tpm2_session *session,
-        const TPM2B_EVENT *event_data,
-        TPML_DIGEST_VALUES **digests) {
+tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx, ESYS_TR pcr, tpm2_session *session,
+        const TPM2B_EVENT *event_data, TPML_DIGEST_VALUES **digests,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+
+    TSS2_RC rval = TSS2_RC_SUCCESS;
+    tool_rc rc = tool_rc_success;
+    if (cp_hash && cp_hash->size) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(ectx, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire Tss2_Sys_PCR_Event_Prepare SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_PCR_Event_Prepare(
+        sys_context, pcr, event_data);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_PCR_Event_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(ectx, pcr, &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_pcrevent_free_name1;
+        }
+
+        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
+            parameter_hash_algorithm, cp_hash);
+
+tpm2_pcrevent_free_name1:
+        Esys_Free(name1);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        goto tpm2_pcrevent_skip_esapi_call;
+    }
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, pcr, session,
+    rc = tpm2_auth_util_get_shandle(ectx, pcr, session,
             &shandle1);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    TSS2_RC rval = Esys_PCR_Event(ectx, pcr, shandle1, ESYS_TR_NONE,
+    rval = Esys_PCR_Event(ectx, pcr, shandle1, ESYS_TR_NONE,
             ESYS_TR_NONE, event_data, digests);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PCR_Event, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_pcrevent_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
