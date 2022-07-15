@@ -4651,6 +4651,19 @@ tpm2_loadexternal_skip_esapi_call:
     return rc;
 }
 
+tool_rc tpm2_pcr_extend(ESYS_CONTEXT *ectx, TPMI_DH_PCR pcr_index,
+    TPML_DIGEST_VALUES *digests) {
+
+    TSS2_RC rval = Esys_PCR_Extend(ectx, pcr_index, ESYS_TR_PASSWORD,
+        ESYS_TR_NONE, ESYS_TR_NONE, digests);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PCR_Extend, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx,
         ESYS_TR pcr, tpm2_session *session,
         const TPM2B_EVENT *event_data,
