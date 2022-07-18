@@ -16,6 +16,7 @@
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 /**
  * This is the magic for the file header. The header is organized
@@ -163,7 +164,7 @@ bool file_read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
     return true;
 }
 
-bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size) {
+TEST_WEAK bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size) {
 
     if (!buf || !size || !path) {
         return false;
@@ -494,7 +495,7 @@ bool files_does_file_exist(const char *path) {
     return false;
 }
 
-bool files_get_file_size_path(const char *path, unsigned long *file_size) {
+TEST_WEAK bool files_get_file_size_path(const char *path, unsigned long *file_size) {
 
     bool result = false;
 

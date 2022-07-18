@@ -58,6 +58,21 @@ static TPM2B_DIGEST expected_policy_digest = {
         }
 };
 
+/* fake sha256 digests */
+static const UINT8 sha256_digest[32] =  {
+    0xb5, 0xbb, 0x9d, 0x80, 0x14, 0xa0, 0xf9, 0xb1, 0xd6, 0x1e, 0x21, 0xe7,
+    0x96, 0xd7, 0x8d, 0xcc, 0xdf, 0x13, 0x52, 0xf2, 0x3c, 0xd3, 0x28, 0x12,
+    0xf4, 0x85, 0x0b, 0x87, 0x8a, 0xe4, 0x94, 0x4c
+};
+
+static const UINT8 sha256_digest_2[32] =  {
+    0x7d, 0x86, 0x5e, 0x95, 0x9b, 0x24, 0x66, 0x91, 0x8c, 0x98, 0x63, 0xaf,
+    0xca, 0x94, 0x2d, 0x0f, 0xb8, 0x9d, 0x7c, 0x9a, 0xc0, 0xc9, 0x9b, 0xaf,
+    0xc3, 0x74, 0x95, 0x04, 0xde, 0xd9, 0x77, 0x30
+};
+
+static const UINT8 *current_sha256_digest = sha256_digest;
+
 TSS2_RC __wrap_Esys_StartAuthSession(ESYS_CONTEXT *esysContext, ESYS_TR tpmKey,
         ESYS_TR bind, ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
         const TPM2B_NONCE *nonceCaller, TPM2_SE sessionType,
@@ -159,6 +174,32 @@ TSS2_RC __wrap_Esys_FlushContext(ESYS_CONTEXT *esysContext, ESYS_TR flushHandle)
 
     return TSS2_RC_SUCCESS;
 }
+
+bool __real_files_get_file_size_path(const char *path, unsigned long *file_size);
+bool __wrap_files_get_file_size_path(const char *path, unsigned long *file_size) {
+
+    if (strcmp(path, "testpolicy.sha256")) {
+        return __real_files_get_file_size_path(path, file_size);
+    }
+
+    *file_size = 32;
+    return true;
+}
+
+bool __real_files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size);
+bool __wrap_files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size) {
+
+    if (strcmp(path, "testpolicy.sha256")) {
+        return __real_files_load_bytes_from_path(path, buf, size);
+    }
+
+    /* plop in a fake digest */
+    *size = 32;
+    memcpy(buf, current_sha256_digest, 32);
+
+    return true;
+}
+
 
 static void test_tpm2_policy_build_pcr_good(void **state) {
     UNUSED(state);
@@ -355,6 +396,56 @@ static void test_tpm2_policy_build_pcr_file_bad_size(void **state) {
     assert_int_equal(trc, tool_rc_general_error);
 }
 
+static void tpm2_policy_parse_policy_list_good(void **state) {
+    UNUSED(state);
+
+    TPML_DIGEST policy_list = { 0 };
+    char str[] = "sha256:testpolicy.sha256,testpolicy.sha256";
+    bool res = tpm2_policy_parse_policy_list(str, &policy_list);
+    assert_true(res);
+    assert_int_equal(policy_list.count, 2);
+    assert_int_equal(policy_list.digests[0].size, sizeof(sha256_digest));
+    assert_memory_equal(policy_list.digests[0].buffer, sha256_digest, sizeof(sha256_digest));
+    assert_int_equal(policy_list.digests[1].size, sizeof(sha256_digest));
+    assert_memory_equal(policy_list.digests[1].buffer, sha256_digest, sizeof(sha256_digest));
+}
+
+static void tpm2_policy_parse_policy_list_double_call(void **state) {
+    UNUSED(state);
+
+    TPML_DIGEST policy_list = { 0 };
+    char str[] = "sha256:testpolicy.sha256,testpolicy.sha256";
+    bool res = tpm2_policy_parse_policy_list(str, &policy_list);
+    assert_true(res);
+    assert_int_equal(policy_list.count, 2);
+    assert_int_equal(policy_list.digests[0].size, sizeof(sha256_digest));
+    assert_memory_equal(policy_list.digests[0].buffer, sha256_digest, sizeof(sha256_digest));
+    assert_int_equal(policy_list.digests[1].size, sizeof(sha256_digest));
+    assert_memory_equal(policy_list.digests[1].buffer, sha256_digest, sizeof(sha256_digest));
+
+    /* swap digests to ensure we know where we wrote to in the array */
+    current_sha256_digest = sha256_digest_2;
+
+    /* strtok_r in previous calls modifies this */
+    char str2[] = "sha256:testpolicy.sha256,testpolicy.sha256";
+    res = tpm2_policy_parse_policy_list(str2, &policy_list);
+    assert_true(res);
+    /* count should go to 4 */
+    assert_int_equal(policy_list.count, 4);
+
+    /* original data intact */
+    assert_int_equal(policy_list.digests[0].size, sizeof(sha256_digest));
+    assert_memory_equal(policy_list.digests[0].buffer, sha256_digest, sizeof(sha256_digest));
+    assert_int_equal(policy_list.digests[1].size, sizeof(sha256_digest));
+    assert_memory_equal(policy_list.digests[1].buffer, sha256_digest, sizeof(sha256_digest));
+
+    /* extra data */
+    assert_int_equal(policy_list.digests[2].size, sizeof(sha256_digest_2));
+    assert_memory_equal(policy_list.digests[2].buffer, sha256_digest_2, sizeof(sha256_digest_2));
+    assert_int_equal(policy_list.digests[3].size, sizeof(sha256_digest_2));
+    assert_memory_equal(policy_list.digests[3].buffer, sha256_digest_2, sizeof(sha256_digest_2));
+}
+
 /* link required symbol, but tpm2_tool.c declares it AND main, which
  * we have a main below for cmocka tests.
  */
@@ -366,6 +457,8 @@ int main(int argc, char *argv[]) {
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_tpm2_policy_build_pcr_good),
+        cmocka_unit_test(tpm2_policy_parse_policy_list_good),
+        cmocka_unit_test(tpm2_policy_parse_policy_list_double_call),
         cmocka_unit_test_setup_teardown(test_tpm2_policy_build_pcr_file_good,
                 test_setup, test_teardown),
         cmocka_unit_test_setup_teardown(test_tpm2_policy_build_pcr_file_bad_size,

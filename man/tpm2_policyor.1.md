@@ -36,8 +36,11 @@ if at least one of the policy events are true.
 
   * **-l**, **\--policy-list**=_POLICY\_FILE_\_LIST:
 
-    This option is retained for backwards compatibility. Use the argument method
-    instead.
+    This option is DEPRECATED yet is retained for backwards compatibility. Use the
+    argument method instead. **NOTE**: When **-l** and an argument is specified
+    it's the same as specifying it all at once. For instance:
+    `tpm2_policyor -l sha256:file1 sha256:file2` is the same as
+    `tpm2_policyor sha256:file1,file2`.
 
 ## References
 

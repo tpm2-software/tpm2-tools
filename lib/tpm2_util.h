@@ -9,7 +9,14 @@
 
 #include <tss2/tss2_esys.h>
 
+#include "config.h"
 #include "tpm2_session.h"
+
+#if defined(FUZZING) || defined(UNIT_TESTING) || !defined(NDEBUG)
+#define TEST_WEAK __attribute__((weak))
+#else
+#define TEST_WEAK
+#endif
 
 #if defined (__GNUC__)
 #define COMPILER_ATTR(...) __attribute__((__VA_ARGS__))
