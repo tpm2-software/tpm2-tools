@@ -436,7 +436,8 @@ tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
 
 tool_rc tpm2_startup(ESYS_CONTEXT *ectx, TPM2_SU startup_type);
 
-tool_rc tpm2_pcr_reset(ESYS_CONTEXT *ectx, ESYS_TR pcr_handle);
+tool_rc tpm2_pcr_reset(ESYS_CONTEXT *ectx, ESYS_TR pcr_handle,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_makecredential(ESYS_CONTEXT *ectx, ESYS_TR handle,
         const TPM2B_DIGEST *credential, const TPM2B_NAME *object_name,
