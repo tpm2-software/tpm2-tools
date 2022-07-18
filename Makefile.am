@@ -292,7 +292,9 @@ test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
                                       -Wl,--wrap=Esys_PolicyPCR \
                                       -Wl,--wrap=Esys_PCR_Read \
                                       -Wl,--wrap=Esys_PolicyGetDigest \
-                                      -Wl,--wrap=Esys_FlushContext
+                                      -Wl,--wrap=Esys_FlushContext \
+                                      -Wl,--wrap=files_get_file_size_path \
+                                      -Wl,--wrap=files_load_bytes_from_path
 
 test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 

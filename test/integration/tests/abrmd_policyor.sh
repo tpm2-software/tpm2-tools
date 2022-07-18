@@ -42,6 +42,13 @@ tpm2 flushcontext $session_ctx
 
 diff $test_vector $o_policy_digest
 
+# test that -l option and argument are concatenated
+tpm2 startauthsession -S $session_ctx
+tpm2 policyor -L $o_policy_digest -S $session_ctx -l sha256:$policy_1 sha256:$policy_2
+tpm2 flushcontext $session_ctx
+
+diff $test_vector $o_policy_digest
+
 # Test case to compound two PCR policies
 
 tpm2 pcrreset 23
