@@ -13,6 +13,15 @@ start_up
 
 cleanup "no-shut-down"
 
+## Check cpHash output for TPM2_PCR_Allocate
+tpm2 pcrreset 23 --cphash cp.hash
+TPM2_CC_PCR_Reset="0000013d"
+pcrHandle="00000017"
+
+echo -ne $TPM2_CC_PCR_Reset$pcrHandle | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+
 # Reset a resettable PCR
 tpm2 pcrreset 23
 
