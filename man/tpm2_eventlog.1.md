@@ -17,7 +17,10 @@ the "TCG PC Client Platform Firmware Profile Specification".
 
 # OPTIONS
 
-This tool takes no tool specific options.
+  * **\--eventlog-version**=_NATURAL_NUMBER_:
+
+    Specifies the yaml version of parsed event log.
+    Currently version 1 and 2 are supported. The default is 1.
 
   * **ARGUMENT** The command line argument is the path to a binary TPM2
     eventlog.
