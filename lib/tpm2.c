@@ -566,16 +566,44 @@ tpm2_create_free_name1:
 tool_rc tpm2_pcr_read(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
         ESYS_TR shandle2, ESYS_TR shandle3,
         const TPML_PCR_SELECTION *pcr_selection_in, UINT32 *pcr_update_counter,
-        TPML_PCR_SELECTION **pcr_selection_out, TPML_DIGEST **pcr_values) {
+        TPML_PCR_SELECTION **pcr_selection_out, TPML_DIGEST **pcr_values,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
-    TSS2_RC rval = Esys_PCR_Read(esys_context, shandle1, shandle2, shandle3,
+    TSS2_RC rval = TSS2_RC_SUCCESS;
+    tool_rc rc = tool_rc_success;
+    if (cp_hash && cp_hash->size) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire Tss2_Sys_PCR_Read_Prepare SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_PCR_Read_Prepare(
+        sys_context, pcr_selection_in);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_PCR_Read_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        rc = tpm2_sapi_getcphash(sys_context, NULL, NULL, NULL,
+            parameter_hash_algorithm, cp_hash);
+
+        goto tpm2_pcrread_skip_esapi_call;
+    }
+    
+    rval = Esys_PCR_Read(esys_context, shandle1, shandle2, shandle3,
             pcr_selection_in, pcr_update_counter, pcr_selection_out, pcr_values);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PCR_Read, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_pcrread_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_policy_authorize(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
