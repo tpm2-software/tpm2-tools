@@ -96,7 +96,10 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
-    tpm2_tr_get_name(ectx, ctx.handle, &ctx.name);
+    rc = tpm2_tr_get_name(ectx, ctx.handle, &ctx.name);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
     assert(ctx.name);
 
     rc = files_save_tpm_context_to_path(ectx, ctx.handle,
