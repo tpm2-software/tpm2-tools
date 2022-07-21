@@ -104,7 +104,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     r = Fapi_GetTcti(fctx, &tcti);
     if (r != TSS2_RC_SUCCESS) {
         LOG_PERR ("Fapi_GetTcti", r);
-        return 1;
+        goto error;
     }
 
     e_rc = Esys_Initialize(&esys_ctx, tcti, NULL);
