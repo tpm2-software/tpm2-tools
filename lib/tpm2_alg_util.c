@@ -635,6 +635,10 @@ tool_rc tpm2_alg_util_handle_rsa_ext_alg(const char *alg_spec,
     #define RSA_KEYBITS_STRLEN 6
     char *ext_alg_str = calloc(1, strlen(alg_spec) + strlen("rsa") +
         RSA_KEYBITS_STRLEN);
+    if (ext_alg_str == NULL) {
+        LOG_ERR("oom");
+        return tool_rc_general_error;
+    }
 
     strcat(ext_alg_str, "rsa");
     switch(public->publicArea.parameters.rsaDetail.keyBits) {
