@@ -443,6 +443,9 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
             (tool_opts && tool_opts->flags & TPM2_OPTIONS_NO_SAPI);
         /* tool doesn't use sapi, skip tcti checks and continue */
         if (is_no_sapi) {
+            if (flags->tcti_none && !flags->quiet) {
+                LOG_WARN("Tool does not use SAPI. Continuing with tcti=none");
+            }
             goto out;
         }
 
@@ -471,13 +474,6 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
         if (flags->tcti_none && is_optional_sapi) {
             if (!flags->quiet) {
                 LOG_WARN("Tool optionally uses SAPI. Continuing with tcti=none");
-            }
-            goto none;
-        }
-
-        if (flags->tcti_none && is_no_sapi) {
-            if (!flags->quiet) {
-                LOG_WARN("Tool does not use SAPI. Continuing with tcti=none");
             }
             goto none;
         }
