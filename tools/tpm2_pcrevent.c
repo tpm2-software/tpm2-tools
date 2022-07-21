@@ -123,8 +123,9 @@ static tool_rc pcr_hashsequence(ESYS_CONTEXT *ectx) {
 
 static tool_rc pcrevent(ESYS_CONTEXT *ectx) {
 
+    tool_rc rc = tool_rc_success;
     if (!ctx.is_hashsequence_needed) {
-        return tpm2_pcr_event(ectx, ctx.pcr, ctx.auth.session,
+        rc = tpm2_pcr_event(ectx, ctx.pcr, ctx.auth.session,
             &ctx.pcrevent_buffer, &ctx.digests, &ctx.cp_hash,
             ctx.parameter_hash_algorithm);
     } else {
@@ -132,14 +133,7 @@ static tool_rc pcrevent(ESYS_CONTEXT *ectx) {
          * Note: We must not calculate pHash in this case to avoid overwriting
          *       the pHash output in the file when we loop.
          */
-        return pcr_hashsequence(ectx);
-    }
-
-    tool_rc rc = tpm2_pcr_event(ectx, ctx.pcr, ctx.auth.session,
-            &ctx.pcrevent_buffer, &ctx.digests, &ctx.cp_hash,
-            ctx.parameter_hash_algorithm);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed TPM2_CC_PCR_Event"); 
+        rc = pcr_hashsequence(ectx);
     }
 
     return rc;
