@@ -83,7 +83,8 @@ tool_rc tpm2_create_primary(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_pcr_read(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
         ESYS_TR shandle2, ESYS_TR shandle3,
         const TPML_PCR_SELECTION *pcr_selection_in, UINT32 *pcr_update_counter,
-        TPML_PCR_SELECTION **pcr_selection_out, TPML_DIGEST **pcr_values);
+        TPML_PCR_SELECTION **pcr_selection_out, TPML_DIGEST **pcr_values,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_policy_authorize(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,

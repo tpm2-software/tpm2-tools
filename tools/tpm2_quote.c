@@ -158,7 +158,8 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
         }
 
         // Gather PCR values from the TPM (the quote doesn't have them!)
-        rc = pcr_read_pcr_values(ectx, &ctx.pcr_selections, &ctx.pcrs);
+        rc = pcr_read_pcr_values(ectx, &ctx.pcr_selections, &ctx.pcrs,
+            NULL, TPM2_ALG_ERROR);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to retrieve PCR values related to quote!");
             return rc;

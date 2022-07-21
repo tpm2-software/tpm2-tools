@@ -102,6 +102,7 @@ bool pcr_check_pcr_selection(TPMS_CAPABILITY_DATA *cap_data,
         TPML_PCR_SELECTION *pcr_selections);
 
 tool_rc pcr_read_pcr_values(ESYS_CONTEXT *esys_context,
-        TPML_PCR_SELECTION *pcr_selections, tpm2_pcrs *pcrs);
+        TPML_PCR_SELECTION *pcr_selections, tpm2_pcrs *pcrs,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 #endif /* SRC_PCR_H_ */

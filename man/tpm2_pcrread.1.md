@@ -41,6 +41,12 @@ sha256 :
   * **-o**, **\--output**=_FILE_:
 
     The output file to write the PCR values in binary format, optional.
+    
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
 
 [PCR output file format specifiers](common/pcrs_format.md)
     Default is 'values'.

@@ -549,7 +549,8 @@ bool pcr_check_pcr_selection(TPMS_CAPABILITY_DATA *cap_data,
 }
 
 tool_rc pcr_read_pcr_values(ESYS_CONTEXT *esys_context,
-        TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
+        TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm) {
 
     TPML_PCR_SELECTION pcr_selection_tmp;
     TPML_PCR_SELECTION *pcr_selection_out;
@@ -564,9 +565,9 @@ tool_rc pcr_read_pcr_values(ESYS_CONTEXT *esys_context,
         TPML_DIGEST *v;
         tool_rc rc = tpm2_pcr_read(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
                 ESYS_TR_NONE, &pcr_selection_tmp, &pcr_update_counter,
-                &pcr_selection_out, &v);
+                &pcr_selection_out, &v, cp_hash, parameter_hash_algorithm);
 
-        if (rc != tool_rc_success) {
+        if (rc != tool_rc_success || (cp_hash && cp_hash->size)) {
             return rc;
         }
 
