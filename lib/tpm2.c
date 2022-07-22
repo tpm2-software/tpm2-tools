@@ -4693,16 +4693,61 @@ tpm2_loadexternal_skip_esapi_call:
 }
 
 tool_rc tpm2_pcr_extend(ESYS_CONTEXT *ectx, TPMI_DH_PCR pcr_index,
-    TPML_DIGEST_VALUES *digests) {
+    TPML_DIGEST_VALUES *digests, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm) {
 
-    TSS2_RC rval = Esys_PCR_Extend(ectx, pcr_index, ESYS_TR_PASSWORD,
+    TSS2_RC rval = TSS2_RC_SUCCESS;
+    tool_rc rc = tool_rc_success;
+    if (cp_hash && cp_hash->size) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(ectx, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire Tss2_Sys_PCR_Extend_Prepare SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_PCR_Extend_Prepare(
+            sys_context, pcr_index, digests);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_PCR_Extend_Prepare, rval);
+            return tool_rc_general_error;
+        }
+        TPM2B_NAME name1 = { 0 };
+
+                name1.size = sizeof(TPM2_HANDLE);
+                rval = Tss2_MU_TPM2_HANDLE_Marshal(TPM2_RH_PW, name1.name,
+                    name1.size, 0);
+                if (rval != TPM2_RC_SUCCESS) {
+                    LOG_ERR("Failed to populate SAPI handle");
+                    return tool_rc_general_error;
+                }
+                
+        // TPM2B_NAME *name1 = NULL;
+        // rc = tpm2_tr_get_name(ectx, pcr_index, &name1);
+        // if (rc != tool_rc_success) {
+        //     goto tpm2_pcrextend_free_name1;
+        // }
+
+        rc = tpm2_sapi_getcphash(sys_context, &name1, NULL, NULL,
+            parameter_hash_algorithm, cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+        goto tpm2_pcrextend_skip_esapi_call;
+    }
+    rval = Esys_PCR_Extend(ectx, pcr_index, ESYS_TR_PASSWORD,
         ESYS_TR_NONE, ESYS_TR_NONE, digests);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PCR_Extend, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_pcrextend_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx, ESYS_TR pcr, tpm2_session *session,

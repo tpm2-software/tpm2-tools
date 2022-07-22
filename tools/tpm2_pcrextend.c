@@ -7,7 +7,9 @@
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
+#include "files.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm_pcr_extend_ctx tpm_pcr_extend_ctx;
 struct tpm_pcr_extend_ctx {
     /*
@@ -19,16 +21,27 @@ struct tpm_pcr_extend_ctx {
     /*
      * Outputs
      */
+
+    /*
+     * Parameter hashes
+     */
+    const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
-static tpm_pcr_extend_ctx ctx;
+static tpm_pcr_extend_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
+};
 
 static tool_rc pcr_extend(ESYS_CONTEXT *ectx) {
 
     size_t i;
     for (i = 0; i < ctx.digest_spec_len; i++) {
         tpm2_pcr_digest_spec *dspec = &ctx.digest_spec[i];
-        tool_rc rc = tpm2_pcr_extend(ectx, dspec->pcr_index, &dspec->digests);
+        tool_rc rc = tpm2_pcr_extend(ectx, dspec->pcr_index, &dspec->digests,
+            &ctx.cp_hash, ctx.parameter_hash_algorithm);
         if (rc != tool_rc_success) {
             LOG_ERR("Could not extend pcr index: 0x%X", dspec->pcr_index);
             return rc;
@@ -45,6 +58,19 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
@@ -83,7 +109,16 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        0,
+        0,
+        0
+    };
 
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
@@ -116,10 +151,26 @@ static bool on_arg(int argc, char **argv) {
     return pcr_parse_digest_list(argv, ctx.digest_spec_len, ctx.digest_spec);
 }
 
+static bool on_option(char key, char *value) {
+
+    switch (key) {
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
+    }
+
+    return true;
+}
+
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_arg, 0);
+    static const struct option topts[] = {
+        { "cphash", required_argument, 0, 0},
 
+    };
+    
+    *opts = tpm2_options_new(NULL, ARRAY_LEN(topts), topts, on_option, on_arg,
+        0);
     return *opts != NULL;
 }
 

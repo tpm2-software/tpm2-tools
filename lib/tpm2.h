@@ -423,7 +423,8 @@ tool_rc tpm2_loadexternal(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE *private,
     TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_pcr_extend(ESYS_CONTEXT *ectx, TPMI_DH_PCR pcr_index,
-    TPML_DIGEST_VALUES *digests);
+    TPML_DIGEST_VALUES *digests, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx, ESYS_TR pcr, tpm2_session *session,
         const TPM2B_EVENT *event_data, TPML_DIGEST_VALUES **digests,

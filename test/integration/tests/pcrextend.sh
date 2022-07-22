@@ -13,6 +13,20 @@ declare -A alg_hashes=(
 )
 
 digests=""
+## Check cpHash output for TPM2_PCR_Extend
+tpm2_pcrextend 4:sha1=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15 --cphash cp.hash
+TPM2_CC_PCR_Extend="00000182"
+pcrHandle="00000000"
+TPM2_RH_PW="40000009"
+tpml_digest_count="00000001"
+tpml_digest_0_size="0004"
+tpml_digest_0_bufer="f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"
+params=$tpml_digest_count$tpml_digest_0_size$tpml_digest_0_bufer
+
+echo -ne $TPM2_CC_PCR_Extend$TPM2_RH_PW$pcrHandle$params | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+
 # test a single algorithm based on what is supported
 for alg in `tpm2 getcap pcrs | grep sha |awk {'print $2'} | awk -F: {'print $1'}`; do
 
