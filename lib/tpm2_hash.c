@@ -135,26 +135,30 @@ tool_rc tpm2_hash_file(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
         validation);
 }
 
-static tool_rc tpm2_sm2_compute_msg_digest(ESYS_CONTEXT *ectx,
-    TPMI_ALG_HASH halg, TPMI_RH_HIERARCHY hierarchy, FILE *infilep,
-    BYTE *inbuffer, UINT16 inbuffer_len, TPM2B_DIGEST *z_digest,
-    TPM2B_DIGEST **result, TPMT_TK_HASHCHECK **validation) {
+static tool_rc tpm2_sm2_compute_msg_digest(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
+        TPMI_RH_HIERARCHY hierarchy, FILE *infilep, BYTE *inbuffer,
+        UINT16 inbuffer_len, TPM2B_DIGEST *z_digest, TPM2B_DIGEST **result,
+        TPMT_TK_HASHCHECK **validation) {
+    bool use_left = true, done;
+    unsigned long left = inbuffer_len;
+    size_t bytes_read;
+    TPM2B_AUTH null_auth = TPM2B_EMPTY_INIT;
+    TPMI_DH_OBJECT sequence_handle;
+    TPM2B_MAX_BUFFER buffer;
 
     /*  if we're using infilep, get file size */
-    bool use_left = true;
-    unsigned long left = inbuffer_len;
     if (!!infilep) {
         /* Suppress error reporting with NULL path */
         use_left = files_get_file_size(infilep, &left, NULL);
     }
 
-    TPM2B_MAX_BUFFER buffer = {0};
-    if (z_digest->size <= BUFFER_SIZE(typeof(buffer), buffer)) {
-        buffer.size = z_digest->size;
-        memcpy(&buffer.buffer[0], z_digest->buffer, z_digest->size);
-    } else {
+    buffer.size = BUFFER_SIZE(typeof(buffer), buffer);
+    if (z_digest->size > buffer.size) {
         return tool_rc_general_error;
     }
+
+    buffer.size = z_digest->size;
+    memcpy(buffer.buffer, z_digest->buffer, buffer.size);
 
     /*
      * length is either unknown because the FILE * is a fifo, or it's too
@@ -162,8 +166,6 @@ static tool_rc tpm2_sm2_compute_msg_digest(ESYS_CONTEXT *ectx,
      * chunks to loop over, if possible. This way we can call Complete with
      * data.
      */
-    TPMI_DH_OBJECT sequence_handle;
-    TPM2B_AUTH null_auth = TPM2B_EMPTY_INIT;
     tool_rc rc = tpm2_hash_sequence_start(ectx, &null_auth, halg, &sequence_handle);
     if (rc != tool_rc_success) {
         return rc;
@@ -176,14 +178,11 @@ static tool_rc tpm2_sm2_compute_msg_digest(ESYS_CONTEXT *ectx,
     /* If we know the file size, we decrement the amount read and terminate
      * the loop when 1 block is left, else we go till feof.
      */
-    bool done = false;
     if (use_left && left <= TPM2_MAX_DIGEST_BUFFER) {
         done = true;
     } else {
         done = false;
     }
-
-    size_t bytes_read;
     while (!done) {
         /*  if we're using infilep, read the file. Otherwise, directly
          copy into our local buffer. */
