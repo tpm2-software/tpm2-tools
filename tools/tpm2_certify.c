@@ -300,8 +300,8 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
       { "certifiedkey-context", required_argument, NULL, 'c' },
       { "signingkey-context",   required_argument, NULL, 'C' },
-      { "certifiedkey-auth",    required_argument, NULL, 'p' },
-      { "signingkey-auth",      required_argument, NULL, 'P' },
+      { "certifiedkey-auth",    required_argument, NULL, 'P' },
+      { "signingkey-auth",      required_argument, NULL, 'p' },
       { "hash-algorithm",       required_argument, NULL, 'g' },
       { "attestation",          required_argument, NULL, 'o' },
       { "signature",            required_argument, NULL, 's' },
