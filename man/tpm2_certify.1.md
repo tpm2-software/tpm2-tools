@@ -31,7 +31,7 @@ These options control the certification:
 
     The key used to sign the attestation structure.
 
-  * **-p**, **\--certifiedkey-auth**=_AUTH_:
+  * **-P**, **\--certifiedkey-auth**=_AUTH_:
 
     The authorization value provided for the object specified with -c.
 
@@ -50,7 +50,7 @@ These options control the certification:
     If left unspecified, a default signature scheme for the key type will
      be used.
 
-  * **-P**, **\--signingkey-auth**=_AUTH_:
+  * **-p**, **\--signingkey-auth**=_AUTH_:
 
     The authorization value for the signing key specified with -C.
 
