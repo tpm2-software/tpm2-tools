@@ -9,15 +9,96 @@
 
 typedef struct tpm2_policypassword_ctx tpm2_policypassword_ctx;
 struct tpm2_policypassword_ctx {
-    //File path for the session context data
+    /*
+     * Inputs
+     */
     const char *session_path;
-    //File path for storing the policy digest output
-    const char *out_policy_dgst_path;
-
     tpm2_session *session;
+
+    /*
+     * Outputs
+     */
+    const char *out_policy_dgst_path;
 };
 
 static tpm2_policypassword_ctx ctx;
+
+static tool_rc tpm2_policypassword_build(ESYS_CONTEXT *ectx) {
+
+    tool_rc rc = tpm2_policy_build_policypassword(ectx, ctx.session);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Could not build policyauthvalue TPM");
+    }
+
+    return rc;
+}
+
+static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.out_policy_dgst_path);
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false,
+            &ctx.session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+
+    return tool_rc_success;
+}
+
+static tool_rc check_options(void) {
+
+    if (!ctx.session_path) {
+        LOG_ERR("Must specify -S session file.");
+        return tool_rc_option_error;
+    }
+
+    return tool_rc_success;
+}
 
 static bool on_option(char key, char *value) {
 
@@ -46,44 +127,58 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool is_input_option_args_valid(void) {
-
-    if (!ctx.session_path) {
-        LOG_ERR("Must specify -S session file.");
-        return false;
-    }
-    return true;
-}
-
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool retval = is_input_option_args_valid();
-    if (!retval) {
-        return tool_rc_option_error;
-    }
-
-    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false,
-            &ctx.session);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = tpm2_policy_build_policypassword(ectx, ctx.session);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
     if (rc != tool_rc_success) {
-        LOG_ERR("Could not build policypassword TPM");
         return rc;
     }
 
-    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.out_policy_dgst_path);
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = tpm2_policypassword_build(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_outputs(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
     UNUSED(ectx);
+
+    /*
+     * 1. Free objects
+     */
+
+    /*
+     * 2. Close authorization sessions
+     */
     return tpm2_session_close(&ctx.session);
+
+    /*
+     * 3. Close auxiliary sessions
+     */
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("policypassword", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("policypassword", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, NULL)
