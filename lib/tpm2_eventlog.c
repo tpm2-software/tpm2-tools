@@ -322,7 +322,7 @@ size_t i;
         }
         break;
 
-    /* Shim and grub use this event type for various tasks */
+    /* Shim, grub & sd-boot use this event type for various tasks */
     case EV_IPL:
         switch (eventhdr->PCRIndex) {
         /* PCR9: used to measure loaded kernel and initramfs images which cannot
@@ -381,8 +381,30 @@ size_t i;
             }
             break;
 
+        /* PCR12: used by measure kernel command line (sd-boot >= 251) */
+        case 12:
+            for (i = 0; i < digest_count; i++) {
+                TPM2B_DIGEST calc_digest;
+                TPMI_ALG_HASH alg = digest->AlgorithmId;
+                bool result = tpm2_openssl_hash_compute_data(alg,
+                event->Event, event->EventSize, &calc_digest);
+
+                if (!result) {
+                    LOG_WARN("Event %zu: Cannot calculate hash value from data", eventnum - 1);
+                    return false;
+                }
+
+                size_t alg_size = tpm2_alg_util_get_hash_size(alg);
+                if (memcmp(calc_digest.buffer, digest->Digest, alg_size) != 0) {
+                    LOG_WARN("Event %zu's digest does not match its payload", eventnum - 1);
+                    return false;
+                }
+                digest = (TCG_DIGEST2*)((uintptr_t)digest->Digest + alg_size);
+            }
+            break;
+
         default:
-            LOG_WARN("Event %zu is unexpectedly not extending either PCR 8, 9, or 14", eventnum - 1);
+            LOG_WARN("Event %zu is unexectedly not extending either PCR 8, 9, 12 or 14", eventnum - 1);
             return false;
         }
 
