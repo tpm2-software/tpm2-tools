@@ -1,11 +1,186 @@
 ## Changelog
 
 ### next
+
+  * tpm2_nvextend: fix for including ESYS_TR handle to calculate object name.
+
+  * tpm2_nv(read/write): allow policy authorization only for single iterations
+    for a maximum buffer size of TPM2_PT_NV_BUFFER_MAX.
+
+  * tpm2_policylocality: fix logical inversion that caused any argument to be
+    interpreted as zero, except "zero" would be interpreted as one.
+
+  * tpm2_nvdefine: fixed to set TPMA_NV_PLATFORMCREATE attribute default when
+    authorizing with platform hierarchy.
+
+  * tpm2_getekcertificate: fixed the url/link for retrieving ek
+    certificates from ekop.intel.com.
+
+  * tools/tpm2_tool.c: fix an issue where LOG_WARN messages were displayed
+    despite setting the quite flag.
+
+  * tpm2_import: fix an issue where openssl load function resets a specified
+    scheme with TPM2_ALG_NULL.
+  
+  * tpm2_sign, tpm2_verifysignature: fixes for sm2 signing and verification.
+  
+  * Support alternative ECC curves for which default EK templates exist
+    (NIST_P256, NIST_P384, NIST_P521, and SM2_P256).
+    
+  * tools/misc/tpm2_checkquote: add sm2 verification of signature.
+
+  * tpm2_startauthsession:
+    - Added option **-G**, **--key-algorithm=ALGORITHM** to specify the
+      symmetric algorithm used in parameter encryption/decryption.
+  
+  * tpm2_certify:
+    - Added option **\--scheme**=_ALGORITHM_ for supporting signature schemes.
+     Signing schemes should follow the "formatting standards", see section
+     "Algorithm Specifiers".
+
+  * tpm2_getcommandauditdigest:
+    - Added option **\--scheme**=_ALGORITHM_ for supporting signature schemes.
+     Signing schemes should follow the "formatting standards", see section
+     "Algorithm Specifiers".
+
+  * tpm2_getsessionauditdigest:
+    - Added option **\--scheme**=_ALGORITHM_ for supporting signature schemes.
+     Signing schemes should follow the "formatting standards", see section
+     "Algorithm Specifiers".
+
+  * tpm2_quote:
+    - Added option **\--scheme**=_ALGORITHM_ for supporting signature schemes.
+     Signing schemes should follow the "formatting standards", see section
+     "Algorithm Specifiers".
+
+  * lib/tpm2.c: flushcontext cphash calculation workaround for a system api bug
+    where in the flush handle was erroneously placed in the handle area instead
+    of parameter area.
+
+  * tpm2_flushcontext: options **-t**, **-l**, **-s** can now be simultaneously
+    specified.
+
+  * tpm2_import: support restricted parent with an aes128cfb symmetric parameter.
+
+
+  * tpm2_nvreadpublic: drop ntoh on attributes because they get marshalled to
+    the correct endianness by libmu to begin with.
+
+  * tpm2_print: remove unused **-i** option.
+
+  * tpm2_policyor: fix segfault when no options or arguments to specify the list
+    of policies to be compounded.
+
+  * tpm2_certify: fix man page for short options and add tests The short
+    options for the signing-key-auth and certified-key-auth were swapped. The
+    case fix in the man page makes it less intuitive but have to go through with
+    the change so that we don't break any existing scripts. This change does not
+    affect the long options. Tests have been added to ensure the functionality.
+
+  * .cirrus.yml: updated the freebsd version to 13.
+
+  * VERSION: add version file - Generate the version file with bootstrap and
+    include in the DIST tarball so endusers can call autoreconf on a dist
+    tarball which doesn't have git. This alleviates git describe errors on
+    release tarballs in the autoreconf case.
+
+  * tpm2_clear:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_Clear.
+
+  * tpm2_dictionarylockout:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_DictionaryAttackLockReset and TPM2_CC_DictionaryAttackParameters.
+
+  * tpm2_clearcontrol:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC__ClearControl.
+
+  * tpm2_sign:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_Sign.
+
+  * tpm2_setprimarypolicy:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_SetPrimaryPolicy.
+
+  * tpm2_setclock:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_ClockSet.
+
+  * tpm2_rsadecrypt:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_RSA_Decrypt.
+
+  * tpm2_duplicate:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_Duplicate.
+
+  * tpm2_clockrateadjust:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_ClockRateAdjust.
+
+  * tpm2_createprimary:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_CreatePrimary.
+
+  * tpm2_quote:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_Quote.
+
+  * tpm2_policysecret:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PolicySecret
+
+  * tpm2_policynv:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PolicyNV.
+
+  * tpm2_policyauthorizenv:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PolicyAuthorizeNV.
+
+  * tpm2_import:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_Import.
+
+  * tpm2_hmac:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_HMAC.
+
+  * tpm2_hierarchycontrol:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_HierarchyControl.
+
+  * tpm2_load:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_Load.
+
+  * tpm2_gettime:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_GetTime.
+
+  * tpm2_evictcontrol:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_EvictControl.
+
+  * tpm2_encryptdecrypt:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_EncryptDecrypt.
+
+  * tpm2_getpolicydigest:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_GetPolicyDigest.
+
+  * tpm2_loadexternal:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_LoadExternal.
+
   * tpm2_pcrreset:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PCR_Reset.
         
-  * tpm2_pcrevent:
+  * tpm2_pcrread:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PCR_Read.
 
