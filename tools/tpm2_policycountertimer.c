@@ -11,26 +11,21 @@
 #include "tpm2_options.h"
 #include "tpm2_policy.h"
 
-#define OFFSET_TPMS_TIME_INFO_TIME offsetof(TPMS_TIME_INFO, time)
-#define OFFSET_TPMS_TIME_INFO_CLOCK offsetof(TPMS_TIME_INFO, clockInfo.clock)
-#define OFFSET_TPMS_TIME_INFO_RESETS offsetof(TPMS_TIME_INFO, clockInfo.resetCount)
-#define OFFSET_TPMS_TIME_INFO_RESTARTS offsetof(TPMS_TIME_INFO, clockInfo.restartCount)
-#define OFFSET_TPMS_TIME_INFO_SAFE offsetof(TPMS_TIME_INFO, clockInfo.safe);
-
 typedef struct tpm_policycountertimer_ctx tpm_policycountertimer_ctx;
 struct tpm_policycountertimer_ctx {
-    //Inputs
+    /*
+     * Inputs
+     */
     const char *session_path;
     tpm2_session *session;
-
     TPM2B_OPERAND operand_b;
-
     uint16_t offset;
-
     bool operation_set;
     TPM2_EO operation;
 
-    //Output
+    /*
+     * Outputs
+     */
     const char *policy_digest_path;
 };
 
@@ -38,6 +33,75 @@ static tpm_policycountertimer_ctx ctx = {
     .operation = TPM2_EO_EQ,
     .offset = 0,
 };
+
+static tool_rc policycountertimer(ESYS_CONTEXT *ectx) {
+
+    ESYS_TR policy_session = tpm2_session_get_handle(ctx.session);
+    tool_rc rc = tpm2_policy_countertimer(ectx, policy_session, &ctx.operand_b,
+        ctx.offset, ctx.operation);
+    if (rc != tool_rc_success) {
+        LOG_ERR("PolicyCounterTimer errored.");
+    }
+
+    return rc;
+}
+
+static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+
+    /*
+     * 1. Outputs that do not require TPM2_CC_<command> dispatch
+     */
+
+    /*
+     * 2. Outputs generated after TPM2_CC_<command> dispatch
+     */
+    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.policy_digest_path);
+}
+
+static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+
+    UNUSED(ectx);
+    /*
+     * 1. Object and auth initializations
+     */
+
+    /*
+     * 1.a Add the new-auth values to be set for the object.
+     */
+
+    /*
+     * 1.b Add object names and their auth sessions
+     */
+    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false,
+            &ctx.session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 2. Restore auxiliary sessions
+     */
+
+    /*
+     * 3. Command specific initializations
+     */
+
+    /*
+     * 4. Configuration for calculating the pHash
+     */
+
+    /*
+     * 4.a Determine pHash length and alg
+     */
+
+    /*
+     * 4.b Determine if TPM2_CC_<command> is to be dispatched
+     */
+
+    return tool_rc_success;
+}
 
 static bool convert_keyvalue_to_operand_buffer(const char *value,
     uint16_t offset, uint8_t size) {
@@ -90,6 +154,11 @@ static bool convert_keyvalue_to_operand_buffer(const char *value,
     return true;
 }
 
+#define OFFSET_TPMS_TIME_INFO_TIME offsetof(TPMS_TIME_INFO, time)
+#define OFFSET_TPMS_TIME_INFO_CLOCK offsetof(TPMS_TIME_INFO, clockInfo.clock)
+#define OFFSET_TPMS_TIME_INFO_RESETS offsetof(TPMS_TIME_INFO, clockInfo.resetCount)
+#define OFFSET_TPMS_TIME_INFO_RESTARTS offsetof(TPMS_TIME_INFO, clockInfo.restartCount)
+#define OFFSET_TPMS_TIME_INFO_SAFE offsetof(TPMS_TIME_INFO, clockInfo.safe);
 static bool on_arg(int argc, char **argv) {
 
     if (argc > 1) {
@@ -123,22 +192,26 @@ static bool on_arg(int argc, char **argv) {
     }
 
     // look up key and process value
-    if (!strcmp("time", key)) {
+    bool is_time = (strcmp("time", key) == 0);
+    if (is_time) {
         return convert_keyvalue_to_operand_buffer(value,
             OFFSET_TPMS_TIME_INFO_TIME, sizeof(uint64_t));
     }
 
-    if (!strcmp("clock", key)) {
+    bool is_clock = (strcmp("clock", key) == 0);
+    if (is_clock) {
         return convert_keyvalue_to_operand_buffer(value,
             OFFSET_TPMS_TIME_INFO_CLOCK, sizeof(uint64_t));
     }
 
-    if (!strcmp("resets", key)) {
+    bool is_resets = (strcmp("resets", key) == 0);
+    if (is_resets) {
         return convert_keyvalue_to_operand_buffer(value,
             OFFSET_TPMS_TIME_INFO_RESETS, sizeof(uint32_t));
     }
 
-    if (!strcmp("restarts", key)) {
+    bool is_restarts = (strcmp("restarts", key) == 0);
+    if (is_restarts) {
         return convert_keyvalue_to_operand_buffer(value,
             OFFSET_TPMS_TIME_INFO_RESTARTS, sizeof(uint32_t));
     }
@@ -209,54 +282,73 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-bool is_input_option_args_valid(void) {
+static tool_rc check_options(void) {
 
     if (!ctx.session_path) {
         LOG_ERR("Must specify -S session file.");
-        return false;
+        return tool_rc_option_error;
     }
 
     if (!ctx.operand_b.size) {
         LOG_WARN("Data to compare is of size 0");
-        return false;
+        return tool_rc_option_error;
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = is_input_option_args_valid();
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
-    //Input
-    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false,
-        &ctx.session);
+    /*
+     * 1. Process options
+     */
+    tool_rc rc = check_options();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    ESYS_TR policy_session = tpm2_session_get_handle(ctx.session);
-
-    //ESAPI call
-    rc = tpm2_policy_countertimer(ectx, policy_session, &ctx.operand_b,
-        ctx.offset, ctx.operation);
+    /*
+     * 2. Process inputs
+     */
+    rc = process_inputs(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    //Output
-    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.policy_digest_path);
+    /*
+     * 3. TPM2_CC_<command> call
+     */
+    rc = policycountertimer(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    /*
+     * 4. Process outputs
+     */
+    return process_outputs(ectx);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
+
+    /*
+     * 1. Free objects
+     */
+
+    /*
+     * 2. Close authorization sessions
+     */
     return tpm2_session_close(&ctx.session);
+
+    /*
+     * 3. Close auxiliary sessions
+     */
 }
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("policycountertimer", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("policycountertimer", tpm2_tool_onstart, tpm2_tool_onrun,
+    tpm2_tool_onstop, NULL)
