@@ -324,66 +324,68 @@ size_t i;
 
     /* Shim and grub use this event type for various tasks */
     case EV_IPL:
+        switch (eventhdr->PCRIndex) {
         /* PCR9: used to measure loaded kernel and initramfs images which cannot
            be verified from eventlog alone */
-        if (eventhdr->PCRIndex == 9) {
+        case 9:
             return true;
-        }
 
         /* PCR14: used to measure MokList, MokListX, and MokSBState which cannot
            be verified from eventlog alone */
-        if (eventhdr->PCRIndex == 14) {
+        case 14:
             return true;
-        }
 
         /* PCR8: used to measure grub and kernel command line */
-        if (eventhdr->PCRIndex != 8) {
-            LOG_WARN("Event %zu is unexpectedly not extending either PCR 8, 9, or 14", eventnum - 1);
-            return false;
-        }
+	case 8:
+            /* Digest is applied on the string between "^[a-zA-Z_]+:? " and EOL,
+             * including or excluding the trailing NULL character */
+            for (i = 0; i < digest_count; i++) {
+                size_t j;
 
-        /* Digest is applied on the string between "^[a-zA-Z_]+:? " and EOL,
-         * including or excluding the trailing NULL character */
-        for (i = 0; i < digest_count; i++) {
-            size_t j;
+                for (j = 0; j < event->EventSize; j++) {
+                    if (event->Event[j] == ' ')
+                        break;
+                }
 
-            for (j = 0; j < event->EventSize; j++) {
-                if (event->Event[j] == ' ')
-                    break;
-            }
+                if (j + 1 >= event->EventSize || event->Event[event->EventSize - 1] != '\0') {
+                    LOG_WARN("Event %zu's event data is in unexpected format", eventnum - 1);
+                    return false;
+                }
 
-            if (j + 1 >= event->EventSize || event->Event[event->EventSize - 1] != '\0') {
-                LOG_WARN("Event %zu's event data is in unexpected format", eventnum - 1);
-                return false;
-            }
-
-            TPM2B_DIGEST calc_digest;
-            TPMI_ALG_HASH alg = digest->AlgorithmId;
-            /* First try to calculate the hash excluding the trailing \0 */
-            bool result = tpm2_openssl_hash_compute_data(alg,
-            event->Event + (j + 1), event->EventSize - (j + 2), &calc_digest);
-            if (!result) {
-                LOG_WARN("Event %zu: Cannot calculate hash value from data", eventnum - 1);
-                return false;
-            }
-
-            size_t alg_size = tpm2_alg_util_get_hash_size(alg);
-            if (memcmp(calc_digest.buffer, digest->Digest, alg_size) != 0) {
-                /* Next try to calculate the hash including the trailing \0 */
+                TPM2B_DIGEST calc_digest;
+                TPMI_ALG_HASH alg = digest->AlgorithmId;
+                /* First try to calculate the hash excluding the trailing \0 */
                 bool result = tpm2_openssl_hash_compute_data(alg,
-                event->Event + (j + 1), event->EventSize - (j + 1), &calc_digest);
+                event->Event + (j + 1), event->EventSize - (j + 2), &calc_digest);
                 if (!result) {
                     LOG_WARN("Event %zu: Cannot calculate hash value from data", eventnum - 1);
                     return false;
                 }
 
+                size_t alg_size = tpm2_alg_util_get_hash_size(alg);
                 if (memcmp(calc_digest.buffer, digest->Digest, alg_size) != 0) {
-                    LOG_WARN("Event %zu's digest does not match its payload", eventnum - 1);
-                    return false;
+                    /* Next try to calculate the hash including the trailing \0 */
+                    bool result = tpm2_openssl_hash_compute_data(alg,
+                    event->Event + (j + 1), event->EventSize - (j + 1), &calc_digest);
+                    if (!result) {
+                        LOG_WARN("Event %zu: Cannot calculate hash value from data", eventnum - 1);
+                        return false;
+                    }
+
+                    if (memcmp(calc_digest.buffer, digest->Digest, alg_size) != 0) {
+                        LOG_WARN("Event %zu's digest does not match its payload", eventnum - 1);
+                        return false;
+                    }
                 }
+                digest = (TCG_DIGEST2*)((uintptr_t)digest->Digest + alg_size);
             }
-            digest = (TCG_DIGEST2*)((uintptr_t)digest->Digest + alg_size);
+            break;
+
+        default:
+            LOG_WARN("Event %zu is unexpectedly not extending either PCR 8, 9, or 14", eventnum - 1);
+            return false;
         }
+
         break;
     }
 
