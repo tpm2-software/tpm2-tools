@@ -374,13 +374,13 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                     for (i = 0; i < signatures; i++) {
                         EFI_SIGNATURE_DATA *s = (EFI_SIGNATURE_DATA *)signature;
                         char *sdata = calloc (1,
-                            BYTES_TO_HEX_STRING_SIZE(slist->SignatureSize-16));
+                            BYTES_TO_HEX_STRING_SIZE(slist->SignatureSize - sizeof(EFI_GUID)));
                         if (sdata == NULL) {
                             LOG_ERR("Failled to allocate data: %s\n", strerror(errno));
                             return false;
                         }
-                        bytes_to_str(s->SignatureData, slist->SignatureSize-16,
-                            sdata, BYTES_TO_HEX_STRING_SIZE(slist->SignatureSize-16));
+                        bytes_to_str(s->SignatureData, slist->SignatureSize - sizeof(EFI_GUID),
+                            sdata, BYTES_TO_HEX_STRING_SIZE(slist->SignatureSize - sizeof(EFI_GUID)));
                         guid_unparse_lower(s->SignatureOwner, uuidstr);
                         tpm2_tool_output("      - SignatureOwner: %s\n"
                                          "        SignatureData: %s\n",
@@ -426,13 +426,13 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
             EFI_SIGNATURE_DATA *s= (EFI_SIGNATURE_DATA *)&data->UnicodeName[
                 data->UnicodeNameLength];
             char *sdata = calloc (1,
-                BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - 16));
+                BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - sizeof(EFI_GUID)));
             if (sdata == NULL) {
                 LOG_ERR("Failled to allocate data: %s\n", strerror(errno));
                 return false;
             }
-            bytes_to_str(s->SignatureData, data->VariableDataLength - 16,
-                sdata, BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - 16));
+            bytes_to_str(s->SignatureData, data->VariableDataLength - sizeof(EFI_GUID),
+                sdata, BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - sizeof(EFI_GUID)));
             guid_unparse_lower(s->SignatureOwner, uuidstr);
             tpm2_tool_output("    - SignatureOwner: %s\n"
                              "      SignatureData: %s\n",
