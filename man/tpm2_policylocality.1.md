@@ -48,6 +48,12 @@ Anything from the range 32 - 255 are extended localities.
     File to save the policy digest.
 
   * **ARGUMENT** the command line argument specifies the locality number.
+  
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
 
 ## References
 
