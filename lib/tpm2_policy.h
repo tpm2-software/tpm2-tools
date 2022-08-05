@@ -264,7 +264,8 @@ tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
  *  A tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policynvwritten(ESYS_CONTEXT *ectx,
-        tpm2_session *session, TPMI_YES_NO written_set);
+        tpm2_session *session, TPMI_YES_NO written_set, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm);
 
 /**
  * Policy to restrict tpm object authorization to specific locality

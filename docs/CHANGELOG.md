@@ -1,5 +1,11 @@
 ## Changelog
 
+### next
+  * tpm2_policynvwritten:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PolicyNvWritten.
+        
+
 ### 5.3-rc0 2022-08-02
 
   * tpm2_nvextend: fix for including ESYS_TR handle to calculate object name.

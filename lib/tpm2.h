@@ -468,7 +468,8 @@ tool_rc tpm2_policy_countertimer(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_policy_nv_written(ESYS_CONTEXT *esys_context,
         ESYS_TR policy_session, ESYS_TR shandle1, ESYS_TR shandle2,
-        ESYS_TR shandle3, TPMI_YES_NO written_set);
+        ESYS_TR shandle3, TPMI_YES_NO written_set, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm);
 
 TSS2_RC fix_esys_hierarchy(uint32_t in, uint32_t *out);
 
