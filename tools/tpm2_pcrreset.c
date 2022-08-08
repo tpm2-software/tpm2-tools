@@ -45,7 +45,7 @@ static tool_rc pcr_reset(ESYS_CONTEXT *ectx) {
         tool_rc rc = tpm2_pcr_reset(ectx, i, &ctx.cp_hash,
             ctx.parameter_hash_algorithm);
         if (rc != tool_rc_success) {
-            LOG_ERR("Could not reset PCR index: %ld", i);
+            LOG_ERR("Could not reset PCR index: %zu", i);
             return rc;
         }
     }
