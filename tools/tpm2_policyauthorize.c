@@ -8,6 +8,7 @@
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm2_policyauthorize_ctx tpm2_policyauthorize_ctx;
 struct tpm2_policyauthorize_ctx {
     /*
@@ -24,15 +25,26 @@ struct tpm2_policyauthorize_ctx {
      * Outputs
      */
     const char *out_policy_dgst_path; //File path for storing the policy digest output
+
+    /*
+     * Parameter hashes
+     */
+    const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
-static tpm2_policyauthorize_ctx ctx;
+static tpm2_policyauthorize_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
+};
 
 static tool_rc tpm2_policyauthorize_build(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tpm2_policy_build_policyauthorize(ectx, ctx.session,
         ctx.policy_digest_path, ctx.qualifier_data_path,
-        ctx.verifying_pubkey_name_path, ctx.ticket_path);
+        ctx.verifying_pubkey_name_path, ctx.ticket_path, &ctx.cp_hash,
+        ctx.parameter_hash_algorithm);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build tpm authorized policy");
     }
@@ -47,6 +59,19 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
@@ -89,10 +114,21 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.session,
+        0,
+        0
+    };
+
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
 
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     return tool_rc_success;
 }
@@ -133,6 +169,9 @@ static bool on_option(char key, char *value) {
     case 't':
         ctx.ticket_path = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
     return true;
 }
@@ -146,6 +185,8 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "qualification", required_argument, NULL, 'q' },
         { "name",          required_argument, NULL, 'n' },
         { "ticket",        required_argument, NULL, 't' },
+        { "cphash",        required_argument, NULL,  0  },
+
     };
 
     *opts = tpm2_options_new("L:S:i:q:n:t:", ARRAY_LEN(topts), topts, on_option,

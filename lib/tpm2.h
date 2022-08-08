@@ -89,7 +89,8 @@ tool_rc tpm2_pcr_read(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
 tool_rc tpm2_policy_authorize(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
         const TPM2B_DIGEST *approved_policy, const TPM2B_NONCE *policy_ref,
-        const TPM2B_NAME *key_sign, const TPMT_TK_VERIFIED *check_ticket);
+        const TPM2B_NAME *key_sign, const TPMT_TK_VERIFIED *check_ticket,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_policy_or(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,

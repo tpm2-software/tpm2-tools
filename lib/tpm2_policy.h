@@ -51,7 +51,8 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *context,
 tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, const char *policy_digest_path,
         const char *policy_qualifier,
-        const char *verifying_pubkey_name_path, const char *ticket_path);
+        const char *verifying_pubkey_name_path, const char *ticket_path,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 /**
  * Compounds policies in an OR fashion
