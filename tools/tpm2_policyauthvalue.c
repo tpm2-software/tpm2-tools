@@ -7,6 +7,7 @@
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"
 
+#define MAX_SESSIONS 3
 typedef struct tpm2_policyauthvalue_ctx tpm2_policyauthvalue_ctx;
 struct tpm2_policyauthvalue_ctx {
     /*
@@ -19,13 +20,24 @@ struct tpm2_policyauthvalue_ctx {
      * Outputs
      */
     const char *policy_digest_path;
+
+    /*
+     * Parameter hashes
+     */
+    const char *cp_hash_path;
+    TPM2B_DIGEST cp_hash;
+    bool is_command_dispatch;
+    TPMI_ALG_HASH parameter_hash_algorithm;
 };
 
-static tpm2_policyauthvalue_ctx ctx;
+static tpm2_policyauthvalue_ctx ctx = {
+    .parameter_hash_algorithm = TPM2_ALG_ERROR,
+};
 
 static tool_rc tpm2_policyauthvalue_build(ESYS_CONTEXT *ectx) {
 
-    tool_rc rc = tpm2_policy_build_policyauthvalue(ectx, ctx.session);
+    tool_rc rc = tpm2_policy_build_policyauthvalue(ectx, ctx.session,
+        &ctx.cp_hash, ctx.parameter_hash_algorithm);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policyauthvalue TPM");
     }
@@ -40,6 +52,19 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 1. Outputs that do not require TPM2_CC_<command> dispatch
      */
+    bool is_file_op_success = true;
+    if (ctx.cp_hash_path) {
+        is_file_op_success = files_save_digest(&ctx.cp_hash, ctx.cp_hash_path);
+
+        if (!is_file_op_success) {
+            return tool_rc_general_error;
+        }
+    }
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.is_command_dispatch) {
+        return rc;
+    }
 
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
@@ -82,10 +107,21 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 4.a Determine pHash length and alg
      */
+    tpm2_session *all_sessions[MAX_SESSIONS] = {
+        ctx.session,
+        0,
+        0
+    };
 
+    const char **cphash_path = ctx.cp_hash_path ? &ctx.cp_hash_path : 0;
+
+    ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
+        cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
+        
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */
+    ctx.is_command_dispatch = ctx.cp_hash_path ? false : true;
 
     return tool_rc_success;
 }
@@ -109,6 +145,9 @@ static bool on_option(char key, char *value) {
     case 'S':
         ctx.session_path = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -119,6 +158,8 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     static struct option topts[] = {
         { "policy",  required_argument, NULL, 'L' },
         { "session", required_argument, NULL, 'S' },
+        { "cphash",  required_argument, NULL,  0  },
+
     };
 
     *opts = tpm2_options_new("S:L:", ARRAY_LEN(topts), topts, on_option,

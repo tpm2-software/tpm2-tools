@@ -281,12 +281,13 @@ tool_rc tpm2_policy_build_policycphash(ESYS_CONTEXT *ectx,
 }
 
 tool_rc tpm2_policy_build_policyauthvalue(ESYS_CONTEXT *ectx,
-        tpm2_session *session) {
+        tpm2_session *session, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(session);
 
     return tpm2_policy_authvalue(ectx, policy_session_handle, ESYS_TR_NONE,
-            ESYS_TR_NONE, ESYS_TR_NONE);
+            ESYS_TR_NONE, ESYS_TR_NONE, cp_hash, parameter_hash_algorithm);
 }
 
 tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
