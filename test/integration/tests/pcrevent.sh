@@ -19,7 +19,7 @@ start_up
 
 echo "T0naX0u123abc" > $hash_in_file
 
-## Check cpHash output for TPM2_PCR_Allocate
+## Check cpHash output for TPM2_PCR_Event
 tpm2 pcrevent 0 -Q $hash_in_file --cphash cp.hash
 TPM2_CC_PCR_Event="0000013c"
 pcrHandle="00000000"

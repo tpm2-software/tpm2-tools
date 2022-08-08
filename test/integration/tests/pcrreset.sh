@@ -13,7 +13,7 @@ start_up
 
 cleanup "no-shut-down"
 
-## Check cpHash output for TPM2_PCR_Allocate
+## Check cpHash output for TPM2_PCR_Reset
 tpm2 pcrreset 23 --cphash cp.hash
 TPM2_CC_PCR_Reset="0000013d"
 pcrHandle="00000017"
