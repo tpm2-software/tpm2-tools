@@ -25,6 +25,12 @@ would still need to satisfy the policy.
     Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
     This session is used in lieu of starting a session and using the PCR policy
     options.
+    
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
 
 ## References
 
