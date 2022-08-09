@@ -856,4 +856,16 @@ openssl dgst -sha256 -binary -out test.bin
 cmp cp.hash test.bin 2
 tpm2 flushcontext session.dat
 
+## Check cpHash output for TPM2_PolicyRestart
+tpm2 startauthsession -S session.dat
+tpm2 policyrestart -S session.dat --cphash cp.hash
+TPM2_CC_PolicyRestart="00000180"
+sessionHandle=$(tpm2 sessionconfig session.dat | grep Session-Handle | \
+    awk -F ' 0x' '{print $2}')
+
+echo -ne $TPM2_CC_PolicyRestart$sessionHandle | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+tpm2 flushcontext session.dat
+
 exit 0

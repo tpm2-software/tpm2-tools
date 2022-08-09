@@ -414,10 +414,11 @@ out2:
     return rc;
 }
 
-tool_rc tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s) {
+tool_rc tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s,
+    TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR handle = tpm2_session_get_handle(s);
 
     return tpm2_policy_restart(context, handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE);
+            ESYS_TR_NONE, cp_hash, parameter_hash_algorithm);
 }
