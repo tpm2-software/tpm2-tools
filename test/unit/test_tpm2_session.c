@@ -232,11 +232,11 @@ static void test_tpm2_session_restart(void **state) {
     assert_non_null(s);
 
     will_return(policy_restart_return, TPM2_RC_SUCCESS);
-    rc = tpm2_session_restart(CONTEXT, s);
+    rc = tpm2_session_restart(CONTEXT, s, NULL, TPM2_ALG_NULL);
     assert_int_equal(rc, tool_rc_success);
 
     will_return(policy_restart_return, TPM2_RC_HANDLE);
-    rc = tpm2_session_restart(CONTEXT, s);
+    rc = tpm2_session_restart(CONTEXT, s, NULL, TPM2_ALG_NULL);
     assert_int_equal(rc, tool_rc_general_error);
 
     tpm2_session_close(&s);
