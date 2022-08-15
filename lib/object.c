@@ -196,14 +196,26 @@ static tool_rc tpm2_util_object_fetch_parent_from_tpk(const char *objectstr,
     tool_rc rc = tool_rc_general_error;
     BIO *input_bio = 0;
     TSSPRIVKEY_OBJ *tpk = 0;
+    BIGNUM *bn_parent = 0;
     tpm2_util_object_fetch_tssprivkey_from_file(objectstr, &input_bio, &tpk);
     if (!input_bio || !tpk) {
         goto ret;
     }
 
-    uint64_t parent;
-    int ret = ASN1_INTEGER_get_uint64(&parent, tpk->parent);
-    if (ret == 0 || parent > UINT32_MAX) {
+    bn_parent = ASN1_INTEGER_to_BN(tpk->parent, NULL);
+    if (!bn_parent) {
+        goto ret;
+    }
+
+    TPM2_HANDLE parent = 0;
+    bool is_bn_parent_negative = BN_is_negative(bn_parent);
+    if (is_bn_parent_negative) {
+        parent = ASN1_INTEGER_get(tpk->parent);
+    } else {
+        parent = BN_get_word(bn_parent);
+    }
+
+    if (parent == 0) {
         LOG_ERR("Unable to convert parent to integer/value too large");
         goto ret;
     }
@@ -211,6 +223,7 @@ static tool_rc tpm2_util_object_fetch_parent_from_tpk(const char *objectstr,
     rc = tool_rc_success;
 
 ret:
+    BN_free(bn_parent);
     if (input_bio) {
         BIO_free(input_bio);
     }
