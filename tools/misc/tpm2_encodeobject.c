@@ -127,6 +127,7 @@ static int encode(void) {
     tool_rc rc = tool_rc_general_error;
     BIO *bio = NULL;
     TSSPRIVKEY_OBJ *tpk = NULL;
+    BIGNUM *bn_parent = NULL;
     TSS2_RC rval = Tss2_MU_TPM2B_PRIVATE_Marshal(&ctx.object.private,
         private_buf, sizeof(private_buf), &private_len);
     if (rval != TPM2_RC_SUCCESS) {
@@ -157,13 +158,19 @@ static int encode(void) {
 
     tpk->emptyAuth = ctx.parent.auth_str == NULL ? true : false;
 
-    if ((ctx.parent.object.handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT) {
-	ASN1_INTEGER_set(tpk->parent, ctx.parent.object.handle);
-    } else {
-	/* Indicate that the parent is a primary object generated on the fly. */
-	ASN1_INTEGER_set(tpk->parent, TPM2_RH_OWNER);
+    bn_parent = BN_new();
+    if (!bn_parent) {
+        goto error;
     }
 
+    if ((ctx.parent.object.handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT) {
+        BN_set_word(bn_parent, ctx.parent.object.handle);
+    } else {
+	/* Indicate that the parent is a primary object generated on the fly. */
+        BN_set_word(bn_parent, TPM2_RH_OWNER);
+    }
+
+    BN_to_ASN1_INTEGER(bn_parent, tpk->parent);
     ASN1_STRING_set(tpk->privkey, private_buf, private_len);
     ASN1_STRING_set(tpk->pubkey, public_buf, public_len);
 
@@ -177,6 +184,7 @@ static int encode(void) {
     rc = tool_rc_success;
 
  error:
+    BN_free(bn_parent);
     if (bio)
         BIO_free(bio);
     if (tpk)
