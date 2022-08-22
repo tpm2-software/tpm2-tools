@@ -86,9 +86,9 @@ These options control the key importation process:
 
     The authorization value for the imported key, optional.
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY_ or _HEX\_STRING_:
 
-    The policy file.
+    The policy file or policy hex string used for authorization to the object.
 
   * **-s**, **\--seed**=_FILE_:
 

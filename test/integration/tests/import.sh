@@ -269,4 +269,16 @@ run_rsa_import_passin_test "parent.ctx" "private.pem" "stdin" "passfile"
 
 run_aes_policy_import_test "parent.ctx"
 
+#
+# Test policy from hash
+#
+openssl genrsa -out private.pem 1024
+
+expected_dgst="fdb1c1e5ba81e95f2db8db6ed7627e9b01658e80df7f33220bd3638f98ad2d5f"
+tpm2 import -G rsa -g sha256 -i private.pem -C parent.ctx \
+    -u import_rsa_key.pub -r import_rsa_key.priv -L "$expected_digest"
+tpm2 load -C parent.ctx -u import_rsa_key.pub -r import_rsa_key.priv -c key.ctx
+got_digest="$(tpm2 readpublic -c key.ctx | grep "authorization policy" | cut -d ' ' -f3-)"
+test "$expected_digest" == "$got_digest"
+
 exit 0

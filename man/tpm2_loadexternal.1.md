@@ -74,10 +74,11 @@ It also saves a context file for future interactions with the object.
 
     The authorization value for the key, optional.
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_ or _HEX\_STRING_:
 
-    The input policy file, optional. A file containing the hash of a policy
-    derived from `tpm2_createpolicy`.
+    The input policy file or hex string, optional. A file or hex string
+    containing the hash of a policy derived from `tpm2_createpolicy` or
+    another policy digest generating source.
 
   * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 

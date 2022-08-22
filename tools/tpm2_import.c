@@ -36,6 +36,7 @@
 #include "tpm2_identity_util.h"
 #include "tpm2_openssl.h"
 #include "tpm2_options.h"
+#include "tpm2_policy.h"
 #include "tpm2_tool.h"
 
 #define MAX_SESSIONS 3
@@ -439,14 +440,10 @@ static tool_rc process_input_tpm_import(void) {
     }
 
     if (ctx.policy) {
-        ctx.public.publicArea.authPolicy.size =
-            sizeof(ctx.public.publicArea.authPolicy.buffer);
-        result = files_load_bytes_from_path(ctx.policy,
-            ctx.public.publicArea.authPolicy.buffer,
-            &ctx.public.publicArea.authPolicy.size);
-        if (!result) {
-            LOG_ERR("Failed to copy over the auth policy to the public data");
-            return tool_rc_general_error;
+        tool_rc rc = tpm2_policy_set_digest(ctx.policy,
+                &ctx.public.publicArea.authPolicy);
+        if (rc != tool_rc_success) {
+            return rc;
         }
     }
 
