@@ -14,6 +14,7 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_openssl.h"
+#include "tpm2_policy.h"
 #include "tpm2_tool.h"
 #include "object.h"
 
@@ -229,13 +230,10 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
         }
 
         if (ctx.policy) {
-            ctx.pub.publicArea.authPolicy.size =
-                    sizeof(ctx.pub.publicArea.authPolicy.buffer);
-            bool res = files_load_bytes_from_path(ctx.policy,
-                ctx.pub.publicArea.authPolicy.buffer,
-                &ctx.pub.publicArea.authPolicy.size);
-            if (!res) {
-                return tool_rc_general_error;
+            rc = tpm2_policy_set_digest(ctx.policy,
+                    &ctx.pub.publicArea.authPolicy);
+            if (rc != tool_rc_success) {
+                return rc;
             }
         }
 

@@ -68,9 +68,9 @@ These options for creating the TPM entity:
     When sealing data only the _TPM\_ALG\_KEYEDHASH_ algorithm with a NULL
     scheme is allowed. Thus, **-G** cannot be specified.
 
-  * **-L**, **\--policy**=_FILE_:
+  * **-L**, **\--policy**=_FILE_ or _HEX\_STRING_:
 
-    The input policy file, optional.
+    The input policy file or a hex string, optional.
 
   * **-u**, **\--public**=_FILE_:
 

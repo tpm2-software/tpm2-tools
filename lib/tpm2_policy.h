@@ -320,4 +320,16 @@ tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
 tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_session *session,
         const char *save_path);
 
+/** Sets a TPM2B_DIGEST from a file if present or a hex string.
+ *
+ * @param auth_policy
+ *  Either a file path or a hex string. A NULL pointer causes out_policy to be memset
+ *  to 0.
+ * @param out_policy
+ *  The set policy
+ * @return
+ *  tool_rc_success on success, or any tool_rc failure on failure.
+ */
+tool_rc tpm2_policy_set_digest(const char *auth_policy, TPM2B_DIGEST *out_policy);
+
 #endif /* TPM2_POLICY_H_ */

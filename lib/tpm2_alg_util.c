@@ -13,6 +13,7 @@
 #include "tpm2_attr_util.h"
 #include "tpm2_errata.h"
 #include "tpm2_hash.h"
+#include "tpm2_policy.h"
 
 typedef struct alg_pair alg_pair;
 struct alg_pair {
@@ -1018,13 +1019,10 @@ tool_rc tpm2_alg_util_public_init(const char *alg_details, const char *name_halg
 
     /* load a policy from a path if present */
     if (auth_policy) {
-    public->publicArea.authPolicy.size =
-                sizeof(public->publicArea.authPolicy.buffer);
-        bool res = files_load_bytes_from_path(auth_policy,
-            public->publicArea.authPolicy.buffer,
-                &public->publicArea.authPolicy.size);
-        if (!res) {
-            return tool_rc_general_error;
+        tool_rc rc = tpm2_policy_set_digest(auth_policy,
+                &public->publicArea.authPolicy);
+        if (rc != tool_rc_success) {
+            return rc;
         }
     }
 

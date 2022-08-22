@@ -6,6 +6,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tool_rc.h"
 #include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_openssl.h"
@@ -684,4 +685,16 @@ tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_session *session,
 error:
     free(policy_digest);
     return rc;
+}
+
+tool_rc tpm2_policy_set_digest(const char *auth_policy, TPM2B_DIGEST *out_policy) {
+
+    if (!auth_policy) {
+        memset(out_policy, 0, sizeof(*out_policy));
+        return tool_rc_success;
+    }
+
+    out_policy->size = sizeof(out_policy->buffer);
+    bool res = tpm2_util_bin_from_hex_or_file(auth_policy, &out_policy->size, out_policy->buffer);
+    return res ? tool_rc_success : tool_rc_general_error;
 }

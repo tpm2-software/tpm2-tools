@@ -52,9 +52,9 @@ future interactions with the created primary.
 
     The file path to save the object context of the generated primary object.
 
-  * **-L**, **\--policy**=_FILE_:
+  * **-L**, **\--policy**=_FILE_ or _HEX\_STRING_:
 
-    An optional file input that contains the policy digest for policy based
+    An optional file input or hex string that contains the policy digest for policy based
     authorization of the object.
 
   * **-a**, **\--attributes**=_ATTRIBUTES_:

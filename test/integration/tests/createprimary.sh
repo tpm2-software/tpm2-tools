@@ -114,4 +114,11 @@ test "${BEFORE}" = "${AFTER}"
 tpm2 createprimary -f pem -o public.pem
 openssl rsa -noout -text -inform PEM -in public.pem -pubin
 
+#
+# Test policy from hash
+#
+expected_dgst="fdb1c1e5ba81e95f2db8db6ed7627e9b01658e80df7f33220bd3638f98ad2d5f"
+got_digest="$(tpm2 createprimary -L $expected_dgst -c primary.ctx | grep 'authorization policy' | cut -d ' ' -f3-)"
+test "$expected_dgst" == "$got_digest"
+
 exit 0

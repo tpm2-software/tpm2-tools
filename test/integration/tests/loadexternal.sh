@@ -27,7 +27,7 @@ cleanup() {
   $file_loadexternal_key_ctx $file_loadexternal_output private.pem public.pem \
   plain.txt plain.rsa.dec key.ctx public.ecc.pem private.ecc.pem \
   data.in.digest data.out.signed ticket.out name.bin stdout.yaml passfile \
-  private.pem
+  private.pem key.priv key.pub
 
   if [ $(ina "$@" "keep_handle") -ne 0 ]; then
     tpm2 evictcontrol -Q -Co -c $Handle_parent 2>/dev/null || true
@@ -269,4 +269,13 @@ tpm2 encodeobject -C $tss_prim.ctx -u $tss_privkey.pub -r $tss_privkey.priv -o $
 
 tpm2 loadexternal -r $tss_privkey.pem -c $tss_privkey.ctx
 
+#
+# Test Policy from A Hash Input
+#
+openssl genrsa -out "private.pem" 1024
+
+expected_dgst="fdb1c1e5ba81e95f2db8db6ed7627e9b01658e80df7f33220bd3638f98ad2d5f"
+tpm2 loadexternal -Q -G rsa -r private.pem -c key.ctx -L "$expected_digest"
+got_digest="$(tpm2 readpublic -c key.ctx | grep "authorization policy" | cut -d ' ' -f3-)"
+test "$expected_digest" == "$got_digest"
 exit 0
