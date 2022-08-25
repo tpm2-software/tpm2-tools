@@ -236,7 +236,8 @@ check_PROGRAMS = \
     test/unit/test_options \
     test/unit/test_cc_util \
     test/unit/test_tpm2_eventlog \
-    test/unit/test_tpm2_eventlog_yaml
+    test/unit/test_tpm2_eventlog_yaml \
+    test/unit/test_object
 
 TESTS += $(ALL_SYSTEM_TESTS)
 
@@ -314,6 +315,9 @@ test_unit_test_tpm2_eventlog_LDADD = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_eventlog_yaml_CFLAGS = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_eventlog_yaml_LDADD = $(CMOCKA_LIBS) $(LDADD)
+
+test_unit_test_object_CFLAGS = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_object_LDADD = $(CMOCKA_LIBS) $(LDADD)
 
 AM_TESTS_ENVIRONMENT =	\
 	export TPM2_ABRMD=$(TPM2_ABRMD); \

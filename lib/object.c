@@ -7,6 +7,7 @@
 #include "tool_rc.h"
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
+#include "tpm2_util.h"
 
 #define NULL_OBJECT "null"
 #define NULL_OBJECT_LEN (sizeof(NULL_OBJECT) - 1)
@@ -173,35 +174,41 @@ ret:
     return rc;
 }
 
-static void tpm2_util_object_fetch_tssprivkey_from_file(const char *objectstr,
+__attribute__((weak))
+tool_rc tpm2_util_object_fetch_tssprivkey_from_file(const char *objectstr,
     BIO **input_bio, TSSPRIVKEY_OBJ **tpk) {
 
+    tool_rc rc = tool_rc_general_error;
     *input_bio = BIO_new_file(objectstr, "rb");
     if (!*input_bio) {
         LOG_ERR("Unable to read as BIO file");
-        return;
+        goto ret;
     }
 
     *tpk = PEM_read_bio_TSSPRIVKEY_OBJ(*input_bio, NULL, NULL,
         NULL);
     if (*tpk == NULL) {
         LOG_ERR("Unable to read PEM from provided BIO/file");
-        return;
+        goto ret;
     }
+    rc = tool_rc_success;
+
+ret:
+    return rc;
 }
 
-static tool_rc tpm2_util_object_fetch_parent_from_tpk(const char *objectstr,
+tool_rc tpm2_util_object_fetch_parent_from_tpk(const char *objectstr,
     uint64_t *val) {
 
-    tool_rc rc = tool_rc_general_error;
     BIO *input_bio = 0;
     TSSPRIVKEY_OBJ *tpk = 0;
     BIGNUM *bn_parent = 0;
-    tpm2_util_object_fetch_tssprivkey_from_file(objectstr, &input_bio, &tpk);
-    if (!input_bio || !tpk) {
+    tool_rc rc = tpm2_util_object_fetch_tssprivkey_from_file(objectstr, &input_bio, &tpk);
+    if (rc != tool_rc_success) {
         goto ret;
     }
 
+    rc = tool_rc_general_error;
     bn_parent = ASN1_INTEGER_to_BN(tpk->parent, NULL);
     if (!bn_parent) {
         goto ret;
