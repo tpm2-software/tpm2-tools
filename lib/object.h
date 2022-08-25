@@ -104,4 +104,17 @@ tool_rc tpm2_util_object_load_auth(ESYS_CONTEXT *ctx, const char *objectstr,
 tool_rc tpm2_util_object_fetch_priv_pub_from_tpk(const char *objectstr,
         TPM2B_PUBLIC *pub, TPM2B_PRIVATE *priv);
 
+/**
+ * Fetch TPK parent value as a long int
+ * 
+ * @param objectstr
+ * Path to file containing the TSS PRIVKEY object.
+ * @param val
+ * Parent value in long int
+ * @return
+ *  tool_rc indicating the status.
+ */
+tool_rc tpm2_util_object_fetch_parent_from_tpk(const char *objectstr,
+        uint64_t *val);
+
 #endif /* LIB_OBJECT_H_ */
