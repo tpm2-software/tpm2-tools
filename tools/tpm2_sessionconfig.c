@@ -8,6 +8,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
+#include "tpm2_policy.h"
 #include "tpm2_tool.h"
 
 typedef struct tpm_sessionconfig_ctx tpm_sessionconfig_ctx;
@@ -61,7 +62,14 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
         return rc;
     }
 
+    TPM2B_DIGEST *digest = NULL;
+    rc = tpm2_policy_get_digest(esys_context, ctx.session, &digest,
+            NULL, TPM2_ALG_NULL);
+
     tpm2_tool_output("Session-Handle: 0x%.8"PRIx32"\n", tpm_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
 
     bool is_attr_set = false;
     tpm2_tool_output("Session-Attributes: ");
@@ -72,6 +80,12 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
     PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_ENCRYPT, "encrypt");
     PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_AUDIT, "audit");
     tpm2_tool_output("\n");
+
+    tpm2_tool_output("Session-Digest: ");
+    tpm2_util_print_tpm2b(digest);
+    tpm2_tool_output("\n");
+
+    Esys_Free(digest);
 
     return tool_rc_success;
 }
