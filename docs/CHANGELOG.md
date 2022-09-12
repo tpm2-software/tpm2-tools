@@ -1,5 +1,17 @@
 ## Changelog
 
+### 5.3-rc1 2022-09-12
+
+  * tools/tpm2_pcrreset.c: fix build errors in 32bit systems.
+
+  * Fix tssprivkey formatted PEM generation and load errors on 32 bit systems.
+
+  * CI: Add testing of 32bit systems with multiarch/qemu-user-static containers.
+
+  * Known issue: FAPI tools will not work on 32bit user-static qemu on 64bit
+    host because readdir returns NULL. Follow the issue on
+    https://gitlab.com/qemu-project/qemu/-/issues/263
+
 ### 5.3-rc0 2022-08-02
 
   * tpm2_nvextend: fix for including ESYS_TR handle to calculate object name.
