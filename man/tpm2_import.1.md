@@ -94,6 +94,9 @@ These options control the key importation process:
 
     Specifies the file containing the encrypted seed of the duplicated object.
 
+    In order to perform an "unencrypted import" a seed file with the content
+    0x0000 needs to be provided (e.g. printf "0000" | xxd -r -p >seed.file).
+
   * **\--passin**=_OSSL\_PEM\_FILE\_PASSWORD_
 
     An optional password for an Open SSL (OSSL) provided input file. It mirrors
