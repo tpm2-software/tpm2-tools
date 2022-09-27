@@ -2,6 +2,10 @@
 
 ### Next
 
+  * tpm2_policyauthorize:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PolicyAuthorize.
+
   * Add a script, check_endorsement_cert.sh, to validate the endorsement
     certificate chain. It takes two inputs - A TPM2B_PUBLIC format EKpublic and
     a PEM format EKcertificate specified in that order as arguments.
