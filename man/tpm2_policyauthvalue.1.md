@@ -28,6 +28,12 @@ allows policy based authorization, ie object attribute "userwithauth" is 0.
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
 ## References
 
 [common options](common/options.md) collection of common options that provide
