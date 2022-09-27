@@ -524,12 +524,13 @@ tool_rc tpm2_policy_build_policynvwritten(ESYS_CONTEXT *ectx,
 }
 
 tool_rc tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
-        tpm2_session *session, TPMA_LOCALITY locality) {
+        tpm2_session *session, TPMA_LOCALITY locality, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
     return tpm2_policy_locality(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, locality);
+            ESYS_TR_NONE, locality, cp_hash, parameter_hash_algorithm);
 }
 
 tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
