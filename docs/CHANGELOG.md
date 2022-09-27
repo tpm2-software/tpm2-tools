@@ -2,6 +2,10 @@
 
 ### Next
 
+  * tpm2_policypassword:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PolicyPassword.
+
   * tpm2_policyauthvalue:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PolicyAuthValue.

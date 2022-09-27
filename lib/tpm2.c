@@ -739,16 +739,63 @@ tool_rc tpm2_policy_pcr(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
 }
 
 tool_rc tpm2_policy_password(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
-        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3) {
+        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
-    TSS2_RC rval = Esys_PolicyPassword(esys_context, policy_session, shandle1,
+    TSS2_RC rval = TSS2_RC_SUCCESS;
+    tool_rc rc = tool_rc_success;
+    if (cp_hash && cp_hash->size) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = 0;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire Tss2_Sys_PolicyPassword_Prepare SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_PolicyPassword_Prepare(
+        sys_context, policy_session);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_PolicyPassword_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2_HANDLE sapi_policy_session = 0;
+        rval = Esys_TR_GetTpmHandle(esys_context, policy_session,
+            &sapi_policy_session);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_ERR("Failed to acquire SAPI handle");
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME name1 = { 0 };
+        name1.size = sizeof(TPM2_HANDLE);
+        rval = Tss2_MU_TPM2_HANDLE_Marshal(sapi_policy_session, name1.name,
+            name1.size, 0);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_ERR("Failed to populate SAPI handle");
+            return tool_rc_general_error;
+        }
+        rc = tpm2_sapi_getcphash(sys_context, &name1, NULL, NULL,
+            parameter_hash_algorithm, cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+
+        goto tpm2_policypassword_skip_esapi_call;
+    }
+
+    rval = Esys_PolicyPassword(esys_context, policy_session, shandle1,
             shandle2, shandle3);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicyPassword, rval);
         return tool_rc_from_tpm(rval);
     }
-
-    return tool_rc_success;
+tpm2_policypassword_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_policy_signed(ESYS_CONTEXT *esys_context,

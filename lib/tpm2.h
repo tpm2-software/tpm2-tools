@@ -110,7 +110,8 @@ tool_rc tpm2_policy_pcr(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         const TPM2B_DIGEST *pcr_digest, const TPML_PCR_SELECTION *pcrs);
 
 tool_rc tpm2_policy_password(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
-        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3);
+        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_policy_signed(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session,

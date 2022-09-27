@@ -167,7 +167,8 @@ tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *context, tpm2_session *session,
  *  tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
-        tpm2_session *session);
+        tpm2_session *session, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm);
 
 /**
  * Enables a policy that requires the object's authvalue be provided.
