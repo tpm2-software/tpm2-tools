@@ -1,5 +1,11 @@
 ## Changelog
 
+### Next
+
+  * Add a script, check_endorsement_cert.sh, to validate the endorsement
+    certificate chain. It takes two inputs - A TPM2B_PUBLIC format EKpublic and
+    a PEM format EKcertificate specified in that order as arguments.
+
 ### 5.3 2022-09-27
 
   * .ci/download-deps.sh: update tpm2-abrmd dependency version to 2.4.1
