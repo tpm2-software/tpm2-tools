@@ -468,7 +468,8 @@ tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_policy_countertimer(ESYS_CONTEXT *esys_context,
     ESYS_TR policy_session, const TPM2B_OPERAND *operand_b, UINT16 offset,
-    TPM2_EO operation);
+    TPM2_EO operation, TPM2B_DIGEST *cp_hash,
+    TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_policy_nv_written(ESYS_CONTEXT *esys_context,
         ESYS_TR policy_session, ESYS_TR shandle1, ESYS_TR shandle2,

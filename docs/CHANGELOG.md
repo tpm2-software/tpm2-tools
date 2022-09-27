@@ -2,6 +2,10 @@
 
 ### Next
 
+  * tpm2_policycountertimer:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PolicyCounterTimer.
+
   * tpm2_policycommandcode:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PolicyCommandCode.
