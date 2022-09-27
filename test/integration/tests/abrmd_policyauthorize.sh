@@ -41,6 +41,28 @@ generate_policy_authorize () {
     rm $file_session_file
 }
 
+test_cphash () {
+## Check cpHash output for TPM2_PolicyAuthorize
+tpm2 startauthsession -Q -S session.ctx
+tpm2 policyauthorize -S session.ctx -n $file_verifying_key_name \
+    --cphash cp.hash
+
+TPM2_CC_PolicyAuthorize="0000016a"
+approvedPolicy="0000"
+nonce="0000"
+policySession=$(tpm2 sessionconfig session.ctx | grep Session-Handle | \
+    awk -F ' 0x' '{print $2}')
+file_size=$(printf "%04x" $(ls -l $file_verifying_key_name | awk {'print $5'}))
+file_data=`cat $file_verifying_key_name | xxd -p -c $file_size`
+keySign=$file_size$file_data
+checkTicket="8022400000010000"
+
+echo -ne $TPM2_CC_PolicyAuthorize$policySession$approvedPolicy$nonce$keySign$checkTicket | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+tpm2 flushcontext session.ctx
+}
+
 openssl genrsa -out $file_private_key 2048 2>/dev/null
 openssl rsa -in $file_private_key -out $file_public_key -pubout 2>/dev/null
 tpm2 loadexternal -G rsa -C n -u $file_public_key -c $file_verifying_key_ctx \
@@ -72,5 +94,7 @@ generate_policy_authorize $file_policy $file_policyref \
 $file_authorized_policy_2 $file_verifying_key_name
 
 diff $file_authorized_policy_1 $file_authorized_policy_2
+
+test_cphash
 
 exit 0

@@ -175,7 +175,8 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
 tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, const char *policy_digest_path,
         const char *qualifying_data,
-        const char *verifying_pubkey_name_path, const char *ticket_path) {
+        const char *verifying_pubkey_name_path, const char *ticket_path,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
 
     bool result = true;
     TPM2B_DIGEST approved_policy = { .size = 0 };
@@ -237,7 +238,7 @@ tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
     ESYS_TR sess_handle = tpm2_session_get_handle(policy_session);
     return tpm2_policy_authorize(ectx, sess_handle, ESYS_TR_NONE, ESYS_TR_NONE,
             ESYS_TR_NONE, &approved_policy, &policy_qualifier, &key_sign,
-            &check_ticket);
+            &check_ticket, cp_hash, parameter_hash_algorithm);
 }
 
 tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
