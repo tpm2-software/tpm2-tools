@@ -2,6 +2,10 @@
 
 ### Next
 
+  * tpm2_policynvwritten:
+      - Added option **--cphash** to output the cpHash for the command
+        TPM2_CC_PolicyNvWritten.
+
   * tpm2_policylocality:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PolicyLocality.

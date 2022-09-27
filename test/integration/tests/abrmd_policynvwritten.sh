@@ -29,6 +29,20 @@ start_up
 
 cleanup "no-shutdown"
 
+## Check cpHash output for TPM2_PolicyNvWritten
+tpm2 startauthsession -S $session_file
+tpm2 policycommandcode -S $session_file TPM2_CC_NV_Write
+tpm2 policynvwritten -S $session_file -L nvwrite.policy c --cphash cp.hash
+TPM2_CC_PolicyNvWritten="0000018f"
+writtenSet="00"
+policySession=$(tpm2 sessionconfig session.dat | grep Session-Handle | \
+    awk -F ' 0x' '{print $2}')
+
+echo -ne $TPM2_CC_PolicyNvWritten$policySession$writtenSet | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+tpm2 flushcontext $session_file
+
 tpm2 clear
 
 # Create a write once NV index. To do this the NV index is defined with a write
