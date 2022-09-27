@@ -1,6 +1,12 @@
 ## Changelog
 
-### 5.3-rc1 2022-09-12
+### 5.3 2022-09-27
+
+  * .ci/download-deps.sh: update tpm2-abrmd dependency version to 2.4.1
+
+  * .cirrus.yml: updated the freebsd version to 13.1 in the CI.
+
+  ### 5.3-rc1 2022-09-12
 
   * tools/tpm2_pcrreset.c: fix build errors in 32bit systems.
 
@@ -12,7 +18,7 @@
     host because readdir returns NULL. Follow the issue on
     https://gitlab.com/qemu-project/qemu/-/issues/263
 
-### 5.3-rc0 2022-08-02
+  ### 5.3-rc0 2022-08-02
 
   * tpm2_nvextend: fix for including ESYS_TR handle to calculate object name.
 
