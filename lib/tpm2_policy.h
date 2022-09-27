@@ -252,7 +252,8 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list);
  *  A tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
-        tpm2_session *session, uint32_t command_code);
+        tpm2_session *session, uint32_t command_code, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm);
 
 /**
  * Policy to restrict authorization to written state of the NV Index
