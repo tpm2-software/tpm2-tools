@@ -146,7 +146,8 @@ tool_rc tpm2_policy_command_code(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_policy_locality(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-        TPMA_LOCALITY locality);
+        TPMA_LOCALITY locality, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_policy_duplication_select(ESYS_CONTEXT *esys_context,
         ESYS_TR policy_session, ESYS_TR shandle1, ESYS_TR shandle2,
