@@ -141,7 +141,8 @@ tool_rc tpm2_policy_getdigest(ESYS_CONTEXT *esys_context, ESYS_TR policy_session
 
 tool_rc tpm2_policy_command_code(ESYS_CONTEXT *esys_context,
         ESYS_TR policy_session, ESYS_TR shandle1, ESYS_TR shandle2,
-        ESYS_TR shandle3, TPM2_CC code);
+        ESYS_TR shandle3, TPM2_CC code, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm);
 
 tool_rc tpm2_policy_locality(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,

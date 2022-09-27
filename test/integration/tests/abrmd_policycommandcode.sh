@@ -31,6 +31,20 @@ cleanup "no-shutdown"
 
 echo $secret > $file_input_data
 
+## Check cpHash output for TPM2_PolicyCommandCode
+tpm2 startauthsession -S $file_session_data
+tpm2 policycommandcode -S $file_session_data TPM2_CC_Unseal \
+    --cphash cp.hash
+TPM2_CC_PolicyCommandCode="0000016c"
+code="0000015e"
+policySession=$(tpm2 sessionconfig session.dat | grep Session-Handle | \
+    awk -F ' 0x' '{print $2}')
+
+echo -ne $TPM2_CC_PolicyCommandCode$policySession$code | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+tpm2 flushcontext $file_session_data
+
 tpm2 clear
 
 tpm2 createprimary -Q -C o -c $file_primary_key_ctx

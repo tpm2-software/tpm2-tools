@@ -505,12 +505,13 @@ tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx, tpm2_session *session,
 }
 
 tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
-        tpm2_session *session, uint32_t command_code) {
+        tpm2_session *session, uint32_t command_code, TPM2B_DIGEST *cp_hash,
+        TPMI_ALG_HASH parameter_hash_algorithm) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
     return tpm2_policy_command_code(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, command_code);
+            ESYS_TR_NONE, command_code, cp_hash, parameter_hash_algorithm);
 }
 
 tool_rc tpm2_policy_build_policynvwritten(ESYS_CONTEXT *ectx,
