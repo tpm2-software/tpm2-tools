@@ -17,6 +17,22 @@ start_up
 
 cleanup "no-shut-down"
 
+## Check cpHash output for TPM2_PolicyCounterTimer
+tpm2 startauthsession -S session.ctx
+tpm2 policycountertimer -S session.ctx -L policy.countertimer.minute --ult \
+  60000 --cphash cp.hash
+TPM2_CC_PolicyCounterTimer="0000016d"
+operandB="0008000000000000ea60"
+offset="0000"
+operation="0005"
+policySession=$(tpm2 sessionconfig session.ctx | grep Session-Handle | \
+  awk -F ' 0x' '{print $2}')
+
+echo -ne $TPM2_CC_PolicyCounterTimer$policySession$operandB$offset$operation \
+  | xxd -r -p | openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+tpm2 flushcontext session.ctx
+
 tpm2 clear
 
 #
