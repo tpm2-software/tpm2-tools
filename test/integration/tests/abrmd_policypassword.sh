@@ -31,6 +31,18 @@ cleanup "no-shutdown"
 
 echo "plaintext" > $plain_txt
 
+## Check cpHash output for TPM2_PolicyPassword
+tpm2 startauthsession -S $session_ctx
+tpm2 policypassword -S $session_ctx -L $policypassword --cphash cp.hash
+TPM2_CC_PolicyPassword="0000018c"
+policySession=$(tpm2 sessionconfig session.ctx | grep Session-Handle | \
+    awk -F ' 0x' '{print $2}')
+
+echo -ne $TPM2_CC_PolicyPassword$policySession | xxd -r -p | \
+openssl dgst -sha256 -binary -out test.bin
+cmp cp.hash test.bin 2
+tpm2 flushcontext $session_ctx
+
 tpm2 startauthsession -S $session_ctx
 tpm2 policypassword -S $session_ctx -L $policypassword
 tpm2 flushcontext $session_ctx
