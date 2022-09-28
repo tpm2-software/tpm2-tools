@@ -171,7 +171,6 @@ tpm2_createprimary -C o -G rsa2048:aes128cfb -g sha256 -c prim.ctx \
 noda' -u unique.dat
 
 ## Create a primary object and output the public key in pem format
-```bash
 tpm2_createprimary -c primary.ctx --format=pem --output=public.pem
 ```
 
