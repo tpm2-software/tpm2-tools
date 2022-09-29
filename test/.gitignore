@@ -9,6 +9,7 @@
 !*.sh
 !*.c
 !*.h
+!integration/fixtures/*
 
 # ...even if they are in subdirectories
 !*/

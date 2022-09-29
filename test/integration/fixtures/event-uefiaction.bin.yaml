@@ -1,0 +1,47 @@
+---
+version: 1
+events:
+- EventNum: 0
+  PCRIndex: 0
+  EventType: EV_NO_ACTION
+  Digest: "0000000000000000000000000000000000000000"
+  EventSize: 45
+  SpecID:
+  - Signature: Spec ID Event03
+    platformClass: 0
+    specVersionMinor: 0
+    specVersionMajor: 2
+    specErrata: 0
+    uintnSize: 2
+    numberOfAlgorithms: 4
+    Algorithms:
+    - Algorithm[0]:
+      algorithmId: sha1
+      digestSize: 20
+    - Algorithm[1]:
+      algorithmId: sha256
+      digestSize: 32
+    - Algorithm[2]:
+      algorithmId: sha384
+      digestSize: 48
+    - Algorithm[3]:
+      algorithmId: sha512
+      digestSize: 64
+    vendorInfoSize: 0
+- EventNum: 1
+  PCRIndex: 4
+  EventType: EV_EFI_ACTION
+  DigestCount: 2
+  Digests:
+  - AlgorithmId: sha1
+    Digest: "cd0fdb4531a6ec41be2753ba042637d6e5f7f256"
+  - AlgorithmId: sha256
+    Digest: "3d6772b4f84ed47595d72a2c4c5ffd15f5bb72c7507fe26f2aaee2c69d5633ba"
+  EventSize: 40
+  Event: |-
+    Calling EFI Application from Boot Option
+pcrs:
+  sha1:
+    4  : 0xee01a03529a6b38b5ded18ab6ae8d771aaac1925
+  sha256:
+    4  : 0x3f263b96ccbc33bb53d808771f9ab1e02d4dec8854f9530f749cde853a723273

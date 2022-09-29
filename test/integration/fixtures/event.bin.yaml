@@ -1,0 +1,56 @@
+---
+version: 1
+events:
+- EventNum: 0
+  PCRIndex: 0
+  EventType: EV_NO_ACTION
+  Digest: "0000000000000000000000000000000000000000"
+  EventSize: 45
+  SpecID:
+  - Signature: Spec ID Event03
+    platformClass: 0
+    specVersionMinor: 0
+    specVersionMajor: 2
+    specErrata: 0
+    uintnSize: 2
+    numberOfAlgorithms: 4
+    Algorithms:
+    - Algorithm[0]:
+      algorithmId: sha1
+      digestSize: 20
+    - Algorithm[1]:
+      algorithmId: sha256
+      digestSize: 32
+    - Algorithm[2]:
+      algorithmId: sha384
+      digestSize: 48
+    - Algorithm[3]:
+      algorithmId: sha512
+      digestSize: 64
+    vendorInfoSize: 0
+- EventNum: 1
+  PCRIndex: 0
+  EventType: EV_EFI_PLATFORM_FIRMWARE_BLOB
+  DigestCount: 4
+  Digests:
+  - AlgorithmId: sha1
+    Digest: "d1ee7e857e2ae54671be58f83f3b0355c4c929f1"
+  - AlgorithmId: sha256
+    Digest: "660375b3c94d47f04e30912dd931b28532d313271d1ae1bdead0a1b8f1276ed1"
+  - AlgorithmId: sha384
+    Digest: "160222ca09aba572bbe7316db5762c91a41cff111c7e0f58ae6ca6581b898fcd16c422a2aca960d72562faf617a916c0"
+  - AlgorithmId: sha512
+    Digest: "4daf4fc3dec73df75580a48c7c69de2db465b594c953250630c396ebc53f8f44ee2edb025e1b34805cdd76ee43dca8e513555369fe8f0b3a6395f366540680d1"
+  EventSize: 16
+  Event:
+    BlobBase: 0x900000
+    BlobLength: 0xb00000
+pcrs:
+  sha1:
+    0  : 0x543c314066a9cd7a6b6aa53f56b38e814a76efe7
+  sha256:
+    0  : 0x118bdc4043596f8d6b7813438131959961f6abba29bab0075d16ca39664f5862
+  sha384:
+    0  : 0x8ce4f7fcd5eaae9df051f735b0e5a37f836d54352e2efafc930fa69a28cd7c8d07014fd54c477a5dc46a0ff8c4ecaf07
+  sha512:
+    0  : 0x2b39e8bfcb64133066c8939231a424cd0a2f3ceaf21b182e82b826916b5826fa3f98fcf1333a2948947ea52f03959e7737800e49722c972e5444f7be6aa9a431
