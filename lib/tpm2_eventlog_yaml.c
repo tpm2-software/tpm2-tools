@@ -571,6 +571,125 @@ bool yaml_uefi_action(UINT8 const *action, size_t size) {
 
     return true;
 }
+
+
+/*
+ * The yaml_ipl description is received as raw bytes, but the
+ * data will represent a printable string. Unfortunately we
+ * are not told its encoding, and this can vary. For example,
+ * grub will use UTF8, while sd-boot will UTF16LE.
+ *
+ * We need to emit YAML with some rules:
+ *
+ *  - No leading ' ' without quoting it
+ *  - Escape non-printable ascii chars
+ *  - Double quotes if using escape sequences
+ *  - Valid UTF8 string
+ *
+ * This method will ignore the question of original data
+ * encoding and apply a few simple rules to make the data
+ * mostly YAML compliant. Where it falls down is not
+ * guaranteeing valid UTF8, if the input was not already
+ * valid UTF8. In practice this limitation shouldn't be
+ * a problem given expected measured data.
+ *
+ * Note: one consequence of this approach is that most
+ * UTF16LE data will be rendered with lots of \0 bytes
+ * escaped.
+ *
+ * For ease of output reading, the data is also split on newlines
+ */
+char **yaml_split_escape_string(UINT8 const *description, size_t size)
+{
+    char **lines = NULL, **tmp;
+    size_t nlines = 0;
+    size_t i, j, k;
+    size_t len;
+    UINT8 *nl;
+
+    i = 0;
+    do {
+        nl = memchr(description + i, '\n', size - i);
+        len = nl ? (size_t)(nl - (description + i)) : size - i;
+
+        tmp = realloc(lines, sizeof(char *) * (nlines + 2));
+        if (!tmp) {
+            LOG_ERR("failed to allocate memory for description lines: %s\n",
+                    strerror(errno));
+            goto error;
+        }
+        lines = tmp;
+        lines[nlines + 1] = NULL;
+        k = 0;
+
+        /* Worst case: every byte needs escaping, plus start/end quotes, plus nul */
+        lines[nlines] = calloc(1, (len * 2) + 2 + 1);
+        if (!lines[nlines]) {
+            LOG_ERR("failed to allocate memory for escaped string: %s\n",
+                    strerror(errno));
+            goto error;
+        }
+
+        lines[nlines][k++] = '"';
+        for (j = i; j < (i + len); j++) {
+            char escape = '\0';
+
+            switch (description[j]) {
+            case '\0':
+              escape = '0';
+              break;
+            case '\a':
+              escape = 'a';
+              break;
+            case '\b':
+              escape = 'b';
+              break;
+            case '\t':
+              escape = 't';
+              break;
+            case '\v':
+              escape = 'v';
+              break;
+            case '\f':
+              escape = 'f';
+              break;
+            case '\r':
+              escape = 'r';
+              break;
+            case '\e':
+              escape = 'e';
+              break;
+            case '\'':
+              escape = '\'';
+              break;
+            case '\\':
+              escape = '\\';
+              break;
+            }
+
+            if (escape == '\0') {
+                lines[nlines][k++] = description[j];
+            } else {
+                lines[nlines][k++] = '\\';
+                lines[nlines][k++] = escape;
+            }
+        }
+        lines[nlines][k++] = '"';
+
+        nlines++;
+        i += len + 1;
+    } while (i < size);
+
+    return lines;
+
+ error:
+    for (i = 0; lines != NULL && lines[i] != NULL; i++) {
+      free(lines[i]);
+    }
+    free(lines);
+    return NULL;
+}
+
 /*
  * TCG PC Client PFP section 9.4.1
  * This event type is extensively used by the Shim and Grub on a wide varities
@@ -578,21 +697,21 @@ bool yaml_uefi_action(UINT8 const *action, size_t size) {
  * the loading of grub, kernel, and initrd images.
  */
 bool yaml_ipl(UINT8 const *description, size_t size) {
-
+    char **lines = NULL;
+    size_t i;
     tpm2_tool_output("  Event:\n"
                      "    String: |-\n");
 
-    /* We need to handle when description contains multiple lines. */
-    size_t i, j;
-    for (i = 0; i < size; i++) {
-        for (j = i; j < size; j++) {
-            if (description[j] == '\n' || description[j] == '\0') {
-                break;
-            }
-        }
-        tpm2_tool_output("      %.*s\n", (int)(j - i), description+i);
-        i = j;
+    lines = yaml_split_escape_string(description, size);
+    if (!lines) {
+        return false;
     }
+
+    for (i = 0; lines[i] != NULL; i++) {
+        tpm2_tool_output("      %s\n", lines[i]);
+        free(lines[i]);
+    }
+    free(lines);
 
     return true;
 }
