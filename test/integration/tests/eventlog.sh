@@ -96,5 +96,6 @@ expect_pass ${srcdir}/test/integration/fixtures/event-postcode.bin
 # Make sure that --eventlog-version=2 works on complete TPM2 logs
 expect_pass ${srcdir}/test/integration/fixtures/event-arch-linux.bin --eventlog-version=2
 expect_pass ${srcdir}/test/integration/fixtures/event-gce-ubuntu-2104-log.bin --eventlog-version=2
+expect_pass ${srcdir}/test/integration/fixtures/event-sd-boot-fedora37.bin --eventlog-version=2
 
 exit $?
