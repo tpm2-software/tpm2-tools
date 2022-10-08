@@ -418,27 +418,49 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 }
                 return true;
             }
-            /* Other variables will be printed as a hex string */
         } else if (type == EV_EFI_VARIABLE_AUTHORITY) {
-            free(ret);
-            tpm2_tool_output("    VariableData:\n");
-            
-            EFI_SIGNATURE_DATA *s= (EFI_SIGNATURE_DATA *)&data->UnicodeName[
-                data->UnicodeNameLength];
-            char *sdata = calloc (1,
-                BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - sizeof(EFI_GUID)));
-            if (sdata == NULL) {
-                LOG_ERR("Failled to allocate data: %s\n", strerror(errno));
-                return false;
+            /* The MokListTrusted is boolean option, not a EFI_SIGNATURE_DATA*/
+            if ((strlen(ret) == 14 && strncmp(ret, "MokListTrusted", 14) == 0)) {
+                free(ret);
+                tpm2_tool_output("    VariableData:\n"
+                                 "      Enabled: ");
+                if (data->VariableDataLength == 0) {
+                    tpm2_tool_output("'No'\n");
+                } else if (data->VariableDataLength > 1) {
+                    LOG_ERR("MokListTrusted value length %" PRIu64 " is unexpectedly > 1\n",
+                            data->VariableDataLength);
+                    return false;
+                } else {
+                    uint8_t *variable_data = (uint8_t *)&data->UnicodeName[
+                        data->UnicodeNameLength];
+                    if (*variable_data == 0) {
+                        tpm2_tool_output("'No'\n");
+                    } else {
+                        tpm2_tool_output("'Yes'\n");
+                    }
+                }
+                return true;
+            } else {
+                /* Other variables will be printed as a hex string */
+                free(ret);
+                tpm2_tool_output("    VariableData:\n");
+                EFI_SIGNATURE_DATA *s= (EFI_SIGNATURE_DATA *)&data->UnicodeName[
+                    data->UnicodeNameLength];
+                char *sdata = calloc (1,
+                    BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - sizeof(EFI_GUID)));
+                if (sdata == NULL) {
+                    LOG_ERR("Failled to allocate data: %s\n", strerror(errno));
+                    return false;
+                }
+                bytes_to_str(s->SignatureData, data->VariableDataLength - sizeof(EFI_GUID),
+                    sdata, BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - sizeof(EFI_GUID)));
+                guid_unparse_lower(s->SignatureOwner, uuidstr);
+                tpm2_tool_output("    - SignatureOwner: %s\n"
+                                "      SignatureData: %s\n",
+                                uuidstr, sdata);
+                free(sdata);
+                return true;
             }
-            bytes_to_str(s->SignatureData, data->VariableDataLength - sizeof(EFI_GUID),
-                sdata, BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - sizeof(EFI_GUID)));
-            guid_unparse_lower(s->SignatureOwner, uuidstr);
-            tpm2_tool_output("    - SignatureOwner: %s\n"
-                             "      SignatureData: %s\n",
-                             uuidstr, sdata);
-            free(sdata);
-            return true;
         } else if (type == EV_EFI_VARIABLE_BOOT || type == EV_EFI_VARIABLE_BOOT2) {
             if ((strlen(ret) == 9 && strncmp(ret, "BootOrder", 9) == 0)) {
                 free(ret);
