@@ -97,5 +97,6 @@ expect_pass ${srcdir}/test/integration/fixtures/event-postcode.bin
 expect_pass ${srcdir}/test/integration/fixtures/event-arch-linux.bin --eventlog-version=2
 expect_pass ${srcdir}/test/integration/fixtures/event-gce-ubuntu-2104-log.bin --eventlog-version=2
 expect_pass ${srcdir}/test/integration/fixtures/event-sd-boot-fedora37.bin --eventlog-version=2
+expect_pass ${srcdir}/test/integration/fixtures/event-moklisttrusted.bin --eventlog-version=2
 
 exit $?
