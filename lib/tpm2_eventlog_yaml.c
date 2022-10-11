@@ -23,6 +23,22 @@
 #include <efivar/efivar.h>
 #endif
 
+/* Valid variable unicode names and their length */
+#define NAME_DB "db"
+#define NAME_DB_LEN 2
+#define NAME_DBX "dbx"
+#define NAME_DBX_LEN 3
+#define NAME_KEK "KEK"
+#define NAME_KEK_LEN 3
+#define NAME_PK "PK"
+#define NAME_PK_LEN 2
+#define NAME_MOKLISTTRUSTED "MokListTrusted"
+#define NAME_MOKLISTTRUSTED_LEN 14
+#define NAME_SECUREBOOT "SecureBoot"
+#define NAME_SECUREBOOT_LEN 10
+#define NAME_BOOTORDER "BootOrder"
+#define NAME_BOOTORDER_LEN 9
+
 static void guid_unparse_lower(EFI_GUID guid, char guid_buf[37]) {
 
     snprintf(guid_buf, 37, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
@@ -321,10 +337,10 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
          * respectively.
          */
         if (type == EV_EFI_VARIABLE_DRIVER_CONFIG) {
-            if ((strlen(ret) == 2 && strncmp(ret, "PK", 2) == 0) ||
-                (strlen(ret) == 3 && strncmp(ret, "KEK", 3) == 0) ||
-                (strlen(ret) == 2 && strncmp(ret, "db", 2) == 0) ||
-                (strlen(ret) == 3 && strncmp(ret, "dbx", 3) == 0)) {
+            if ((strlen(ret) == NAME_PK_LEN && strncmp(ret, NAME_PK, NAME_PK_LEN) == 0) ||
+                (strlen(ret) == NAME_KEK_LEN && strncmp(ret, NAME_KEK, NAME_KEK_LEN) == 0) ||
+                (strlen(ret) == NAME_DB_LEN && strncmp(ret, NAME_DB, NAME_DB_LEN) == 0) ||
+                (strlen(ret) == NAME_DBX_LEN && strncmp(ret, NAME_DBX, NAME_DBX_LEN) == 0)) {
 
                 free(ret);
                 tpm2_tool_output("    VariableData:\n");
@@ -397,7 +413,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                     variable_data += slist->SignatureListSize;
                 }
                 return true;
-            } else if ((strlen(ret) == 10 && strncmp(ret, "SecureBoot", 10) == 0)) {
+            } else if ((strlen(ret) == NAME_SECUREBOOT_LEN && strncmp(ret, NAME_SECUREBOOT, NAME_SECUREBOOT_LEN) == 0)) {
                 free(ret);
                 tpm2_tool_output("    VariableData:\n"
                                  "      Enabled: ");
@@ -420,7 +436,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
             }
         } else if (type == EV_EFI_VARIABLE_AUTHORITY) {
             /* The MokListTrusted is boolean option, not a EFI_SIGNATURE_DATA*/
-            if ((strlen(ret) == 14 && strncmp(ret, "MokListTrusted", 14) == 0)) {
+            if ((strlen(ret) == NAME_MOKLISTTRUSTED_LEN && strncmp(ret, NAME_MOKLISTTRUSTED, NAME_MOKLISTTRUSTED_LEN) == 0)) {
                 free(ret);
                 tpm2_tool_output("    VariableData:\n"
                                  "      Enabled: ");
@@ -462,7 +478,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 return true;
             }
         } else if (type == EV_EFI_VARIABLE_BOOT || type == EV_EFI_VARIABLE_BOOT2) {
-            if ((strlen(ret) == 9 && strncmp(ret, "BootOrder", 9) == 0)) {
+            if ((strlen(ret) == NAME_BOOTORDER_LEN && strncmp(ret, NAME_BOOTORDER, NAME_BOOTORDER_LEN) == 0)) {
                 free(ret);
                 tpm2_tool_output("    VariableData:\n");
                 
