@@ -39,7 +39,7 @@ These are the available options:
 
 # EXAMPLE
 ```
-    tss2_getrandom --numBytes=20 -data=- | hexdump -C
+    tss2_getrandom --numBytes=20 --data=- | hexdump -C
 ```
 
 # RETURNS
