@@ -33,7 +33,7 @@ static bool tss2_tool_onstart(tpm2_options **opts) {
         {"authValueSh",         required_argument, NULL, 'S'},
         {"authValueLockout",    required_argument, NULL, 'L'},
     };
-    return (*opts = tpm2_options_new ("E:S:L",
+    return (*opts = tpm2_options_new ("E:S:L:",
         ARRAY_LEN(topts), topts, on_option, NULL, 0)) != NULL;
 }
 
