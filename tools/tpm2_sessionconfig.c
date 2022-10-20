@@ -17,6 +17,7 @@ struct tpm_sessionconfig_ctx {
     const char *session_path;
     TPMA_SESSION bmask;
     TPMA_SESSION flags;
+    bool is_policy_session;
 };
 
 static tpm_sessionconfig_ctx ctx;
@@ -62,10 +63,6 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
         return rc;
     }
 
-    TPM2B_DIGEST *digest = NULL;
-    rc = tpm2_policy_get_digest(esys_context, ctx.session, &digest,
-            NULL, TPM2_ALG_NULL);
-
     tpm2_tool_output("Session-Handle: 0x%.8"PRIx32"\n", tpm_handle);
     if (rc != tool_rc_success) {
         return rc;
@@ -81,13 +78,23 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
     PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_AUDIT, "audit");
     tpm2_tool_output("\n");
 
-    tpm2_tool_output("Session-Digest: ");
-    tpm2_util_print_tpm2b(digest);
-    tpm2_tool_output("\n");
+    if (ctx.is_policy_session) {
+        TPM2B_DIGEST *digest = NULL;
+        rc = tpm2_policy_get_digest(esys_context, ctx.session, &digest, NULL,
+            TPM2_ALG_NULL);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Cannot read policy digest");
+            goto session_digest_out;
+        }
 
-    Esys_Free(digest);
+        tpm2_tool_output("Session-Digest: ");
+        tpm2_util_print_tpm2b(digest);
+        tpm2_tool_output("\n");
+session_digest_out:
+        Esys_Free(digest);
+    }
 
-    return tool_rc_success;
+    return rc;
 }
 
 static tool_rc process_input(ESYS_CONTEXT *esys_context) {
@@ -98,6 +105,9 @@ static tool_rc process_input(ESYS_CONTEXT *esys_context) {
         LOG_ERR("Could not restore session from the specified file");
         return rc;
     }
+
+    ctx.is_policy_session =
+        (tpm2_session_get_type(ctx.session) == TPM2_SE_POLICY);
 
     return tool_rc_success;
 }
