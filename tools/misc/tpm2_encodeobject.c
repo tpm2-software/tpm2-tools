@@ -57,7 +57,7 @@ static bool on_option(char key, char *value) {
         ctx.parent.ctx_path = value;
         break;
     case 'o':
-	ctx.output_path = value;
+        ctx.output_path = value;
 	break;
     }
 
