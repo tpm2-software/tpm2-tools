@@ -28,16 +28,20 @@
 #define NAME_DB_LEN 2
 #define NAME_DBX "dbx"
 #define NAME_DBX_LEN 3
-#define NAME_KEK "KEK"
-#define NAME_KEK_LEN 3
-#define NAME_PK "PK"
-#define NAME_PK_LEN 2
-#define NAME_MOKLISTTRUSTED "MokListTrusted"
-#define NAME_MOKLISTTRUSTED_LEN 14
-#define NAME_SECUREBOOT "SecureBoot"
-#define NAME_SECUREBOOT_LEN 10
 #define NAME_BOOTORDER "BootOrder"
 #define NAME_BOOTORDER_LEN 9
+#define NAME_KEK "KEK"
+#define NAME_KEK_LEN 3
+#define NAME_MOKLISTTRUSTED "MokListTrusted"
+#define NAME_MOKLISTTRUSTED_LEN 14
+#define NAME_PK "PK"
+#define NAME_PK_LEN 2
+#define NAME_SBATLEVEL "SbatLevel"
+#define NAME_SBATLEVEL_LEN 9
+#define NAME_SECUREBOOT "SecureBoot"
+#define NAME_SHIM "Shim"
+#define NAME_SHIM_LEN 4
+#define NAME_SECUREBOOT_LEN 10
 
 static void guid_unparse_lower(EFI_GUID guid, char guid_buf[37]) {
 
@@ -285,6 +289,123 @@ char *yaml_devicepath(BYTE* dp, UINT64 dp_len) {
 }
 #endif
 /*
+ * The yaml_ipl description is received as raw bytes, but the
+ * data will represent a printable string. Unfortunately we
+ * are not told its encoding, and this can vary. For example,
+ * grub will use UTF8, while sd-boot will UTF16LE.
+ *
+ * We need to emit YAML with some rules:
+ *
+ *  - No leading ' ' without quoting it
+ *  - Escape non-printable ascii chars
+ *  - Double quotes if using escape sequences
+ *  - Valid UTF8 string
+ *
+ * This method will ignore the question of original data
+ * encoding and apply a few simple rules to make the data
+ * mostly YAML compliant. Where it falls down is not
+ * guaranteeing valid UTF8, if the input was not already
+ * valid UTF8. In practice this limitation shouldn't be
+ * a problem given expected measured data.
+ *
+ * Note: one consequence of this approach is that most
+ * UTF16LE data will be rendered with lots of \0 bytes
+ * escaped.
+ *
+ * For ease of output reading, the data is also split on newlines
+ */
+char **yaml_split_escape_string(UINT8 const *description, size_t size)
+{
+    char **lines = NULL, **tmp;
+    size_t nlines = 0;
+    size_t i, j, k;
+    size_t len;
+    UINT8 *nl;
+
+    i = 0;
+    do {
+        nl = memchr(description + i, '\n', size - i);
+        len = nl ? (size_t)(nl - (description + i)) : size - i;
+
+        tmp = realloc(lines, sizeof(char *) * (nlines + 2));
+        if (!tmp) {
+            LOG_ERR("failed to allocate memory for description lines: %s\n",
+                    strerror(errno));
+            goto error;
+        }
+        lines = tmp;
+        lines[nlines + 1] = NULL;
+        k = 0;
+
+        /* Worst case: every byte needs escaping, plus start/end quotes, plus nul */
+        lines[nlines] = calloc(1, (len * 2) + 2 + 1);
+        if (!lines[nlines]) {
+            LOG_ERR("failed to allocate memory for escaped string: %s\n",
+                    strerror(errno));
+            goto error;
+        }
+
+        lines[nlines][k++] = '"';
+        for (j = i; j < (i + len); j++) {
+            char escape = '\0';
+
+            switch (description[j]) {
+            case '\0':
+              escape = '0';
+              break;
+            case '\a':
+              escape = 'a';
+              break;
+            case '\b':
+              escape = 'b';
+              break;
+            case '\t':
+              escape = 't';
+              break;
+            case '\v':
+              escape = 'v';
+              break;
+            case '\f':
+              escape = 'f';
+              break;
+            case '\r':
+              escape = 'r';
+              break;
+            case '\e':
+              escape = 'e';
+              break;
+            case '\'':
+              escape = '\'';
+              break;
+            case '\\':
+              escape = '\\';
+              break;
+            }
+
+            if (escape == '\0') {
+                lines[nlines][k++] = description[j];
+            } else {
+                lines[nlines][k++] = '\\';
+                lines[nlines][k++] = escape;
+            }
+        }
+        lines[nlines][k++] = '"';
+
+        nlines++;
+        i += len + 1;
+    } while (i < size);
+
+    return lines;
+
+ error:
+    for (i = 0; lines != NULL && lines[i] != NULL; i++) {
+      free(lines[i]);
+    }
+    free(lines);
+    return NULL;
+}
+
+/*
  * TCG PC Client FPF section 9.2.6
  * The tpm2_eventlog module validates the event structure but nothing within
  * the event data buffer so we must do that here.
@@ -456,12 +577,17 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                     }
                 }
                 return true;
-            } else {
-                /* Other variables will be printed as a hex string */
+            } else if ((strlen(ret) == NAME_DB_LEN && strncmp(ret, NAME_DB, NAME_DB_LEN) == 0) ||
+                       (strlen(ret) == NAME_SHIM_LEN && strncmp(ret, NAME_SHIM, NAME_SHIM_LEN) == 0)) {
+                /* db and Shim will be parsed as EFI_SIGNATURE_DATA */
                 free(ret);
                 tpm2_tool_output("    VariableData:\n");
                 EFI_SIGNATURE_DATA *s= (EFI_SIGNATURE_DATA *)&data->UnicodeName[
                     data->UnicodeNameLength];
+                if (data->VariableDataLength < sizeof(EFI_SIGNATURE_DATA)) {
+                    LOG_ERR("VariableDataLength is too short for EFI_SIGNATURE_DATA");
+                    return false;
+                }
                 char *sdata = calloc (1,
                     BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - sizeof(EFI_GUID)));
                 if (sdata == NULL) {
@@ -472,9 +598,29 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                     sdata, BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength - sizeof(EFI_GUID)));
                 guid_unparse_lower(s->SignatureOwner, uuidstr);
                 tpm2_tool_output("    - SignatureOwner: %s\n"
-                                "      SignatureData: %s\n",
+                                 "      SignatureData: %s\n",
                                 uuidstr, sdata);
                 free(sdata);
+                return true;
+            } else if (strlen(ret) == NAME_SBATLEVEL_LEN && strncmp(ret, NAME_SBATLEVEL, NAME_SBATLEVEL_LEN) == 0)  {
+                free(ret);
+                tpm2_tool_output("    VariableData:\n"
+                                 "      String: |-\n");
+
+                UINT8 *description = (UINT8 *)&data->UnicodeName[
+                    data->UnicodeNameLength];
+                char **lines = NULL;
+                lines = yaml_split_escape_string(description, data->VariableDataLength);
+                if (!lines) {
+                    return false;
+                }
+
+                size_t i;
+                for (i = 0; lines[i] != NULL; i++) {
+                    tpm2_tool_output("        %s\n", lines[i]);
+                    free(lines[i]);
+                }
+                free(lines);
                 return true;
             }
         } else if (type == EV_EFI_VARIABLE_BOOT || type == EV_EFI_VARIABLE_BOOT2) {
@@ -608,124 +754,6 @@ bool yaml_uefi_action(UINT8 const *action, size_t size) {
                      "    %.*s\n", (int) size, action);
 
     return true;
-}
-
-
-/*
- * The yaml_ipl description is received as raw bytes, but the
- * data will represent a printable string. Unfortunately we
- * are not told its encoding, and this can vary. For example,
- * grub will use UTF8, while sd-boot will UTF16LE.
- *
- * We need to emit YAML with some rules:
- *
- *  - No leading ' ' without quoting it
- *  - Escape non-printable ascii chars
- *  - Double quotes if using escape sequences
- *  - Valid UTF8 string
- *
- * This method will ignore the question of original data
- * encoding and apply a few simple rules to make the data
- * mostly YAML compliant. Where it falls down is not
- * guaranteeing valid UTF8, if the input was not already
- * valid UTF8. In practice this limitation shouldn't be
- * a problem given expected measured data.
- *
- * Note: one consequence of this approach is that most
- * UTF16LE data will be rendered with lots of \0 bytes
- * escaped.
- *
- * For ease of output reading, the data is also split on newlines
- */
-char **yaml_split_escape_string(UINT8 const *description, size_t size)
-{
-    char **lines = NULL, **tmp;
-    size_t nlines = 0;
-    size_t i, j, k;
-    size_t len;
-    UINT8 *nl;
-
-    i = 0;
-    do {
-        nl = memchr(description + i, '\n', size - i);
-        len = nl ? (size_t)(nl - (description + i)) : size - i;
-
-        tmp = realloc(lines, sizeof(char *) * (nlines + 2));
-        if (!tmp) {
-            LOG_ERR("failed to allocate memory for description lines: %s\n",
-                    strerror(errno));
-            goto error;
-        }
-        lines = tmp;
-        lines[nlines + 1] = NULL;
-        k = 0;
-
-        /* Worst case: every byte needs escaping, plus start/end quotes, plus nul */
-        lines[nlines] = calloc(1, (len * 2) + 2 + 1);
-        if (!lines[nlines]) {
-            LOG_ERR("failed to allocate memory for escaped string: %s\n",
-                    strerror(errno));
-            goto error;
-        }
-
-        lines[nlines][k++] = '"';
-        for (j = i; j < (i + len); j++) {
-            char escape = '\0';
-
-            switch (description[j]) {
-            case '\0':
-              escape = '0';
-              break;
-            case '\a':
-              escape = 'a';
-              break;
-            case '\b':
-              escape = 'b';
-              break;
-            case '\t':
-              escape = 't';
-              break;
-            case '\v':
-              escape = 'v';
-              break;
-            case '\f':
-              escape = 'f';
-              break;
-            case '\r':
-              escape = 'r';
-              break;
-            case '\e':
-              escape = 'e';
-              break;
-            case '\'':
-              escape = '\'';
-              break;
-            case '\\':
-              escape = '\\';
-              break;
-            }
-
-            if (escape == '\0') {
-                lines[nlines][k++] = description[j];
-            } else {
-                lines[nlines][k++] = '\\';
-                lines[nlines][k++] = escape;
-            }
-        }
-        lines[nlines][k++] = '"';
-
-        nlines++;
-        i += len + 1;
-    } while (i < size);
-
-    return lines;
-
- error:
-    for (i = 0; lines != NULL && lines[i] != NULL; i++) {
-      free(lines[i]);
-    }
-    free(lines);
-    return NULL;
 }
 
 /*
