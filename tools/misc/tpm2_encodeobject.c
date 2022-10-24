@@ -35,6 +35,7 @@ struct tpm_encodeobject_ctx {
         const char *privpath;
         TPM2B_PRIVATE private;
         ESYS_TR handle;
+        bool needs_auth;
     } object;
 
     char *output_path;
@@ -59,6 +60,9 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.output_path = value;
 	break;
+    case 'p':
+        ctx.object.needs_auth = true;
+        break;
     }
 
     return true;
@@ -71,9 +75,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "private",        required_argument, NULL, 'r' },
       { "parent-context", required_argument, NULL, 'C' },
       { "output",         required_argument, NULL, 'o' },
+      { "key-auth",       no_argument,       NULL, 'p' },
     };
 
-    *opts = tpm2_options_new("P:u:r:C:o:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:u:r:C:o:p", ARRAY_LEN(topts), topts, on_option,
             NULL, 0);
 
     return *opts != NULL;
@@ -156,7 +161,7 @@ static int encode(void) {
         goto error;
     }
 
-    tpk->emptyAuth = ctx.parent.auth_str == NULL ? true : false;
+    tpk->emptyAuth = ctx.object.needs_auth;
 
     bn_parent = BN_new();
     if (!bn_parent) {

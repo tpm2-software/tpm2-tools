@@ -37,6 +37,11 @@ applications.
 
     A file containing the sensitive portion of the object.
 
+  * **-p**, **\--key-auth**:
+
+    Indicates if an authorization value is needed for the object specified by
+    **-r** and **-u**.
+
   * **-o**, **\--output**=_FILE_:
 
     The output file path, recording the public portion of the object.
