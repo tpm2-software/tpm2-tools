@@ -511,8 +511,8 @@ events:
     VariableDataLength: 18
     UnicodeName: SbatLevel
     VariableData:
-    - SignatureOwner: 74616273-312c-322c-3032-313033303231
-      SignatureData: 380a
+      String: |-
+        "sbat,1,2021030218"
 - EventNum: 27
   PCRIndex: 4
   EventType: EV_EFI_BOOT_SERVICES_APPLICATION
