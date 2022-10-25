@@ -14,9 +14,8 @@
 
 # DESCRIPTION
 
-**tss2_import**(1) - This command imports a JSON encoded policy or policy
-template and stores it under the provided path or it imports a JSON encoded key
-under the provided path.
+**tss2_import**(1) - This command imports a JSON encoded key, policy or policy
+template and stores it under the provided path.
 
 # OPTIONS
 
