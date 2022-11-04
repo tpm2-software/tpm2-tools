@@ -266,16 +266,6 @@ static tool_rc process_input_data(ESYS_CONTEXT *ectx) {
         if (rc != tool_rc_success) {
             return rc;
         }
-
-        /* if loaded object is non-permanant, it should ideally be persistent */
-        if (ctx.session.tpmkey.key_context_object.handle) {
-
-            bool is_transient = (ctx.session.tpmkey.key_context_object.handle
-                    >> TPM2_HR_SHIFT) == TPM2_HT_TRANSIENT;
-            if (!is_transient) {
-                LOG_WARN("check public portion of the tpmkey manually");
-            }
-        }
     }
 
     /*
