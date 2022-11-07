@@ -526,12 +526,6 @@ static tool_rc get_ek_certificates(ESYS_CONTEXT *ectx) {
     /*
      * Following is everything applicable to ctx.is_cert_on_nv = false.
      */
-
-    rc = print_intel_ek_certificate_warning();
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
     if (!ctx.ek_path) {
         LOG_ERR("Must specify the EK public key path");
         return tool_rc_option_error;
