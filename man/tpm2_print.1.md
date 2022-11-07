@@ -25,6 +25,7 @@ unspecified.
       * **TPM2B_PUBLIC**
       * **TPMT_PUBLIC**
       * **TSSPRIVKEY_OBJ**
+      * **ESYS_TR**
   * **ARGUMENT** the command line argument specifies the path of the TPM data.
 
 [pubkey options](common/pubkey.md)
@@ -95,6 +96,17 @@ tpm2 print -t TPM2B_PUBLIC -f pem key.pub
 ```bash
 tpm2 print -t TSSPRIVKEY_OBJ tssprivkey.pem
 tpm2 print -t TSSPRIVKEY_OBJ tssprivkey.pem -f pem > publickey.pem
+```
+
+### Print the name of a serialized ESYS\_TR handle.
+
+Serialized ESYS\_TR handles are returned from tools like `tpm2_evictcontrol`'s
+`-o` and `tpm2_readpublic`'s `-t` options.
+
+```bash
+tpm2_createprimary -c primary.ctx
+tpm2_evictcontrol -c primary.ctx -o primary.tr
+tpm2 print -t ESYS_TR primary.tr
 ```
 
 [returns](common/returns.md)

@@ -5,8 +5,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <tss2/tss2_esys.h>
+#include <tss2/tss2_rc.h>
+
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_tool.h"
@@ -26,6 +30,8 @@ struct tpm2_print_ctx {
     bool format_set;
     tpm2_convert_pubkey_fmt format;
 };
+
+#define TCTI_FAKE_MAGIC 0x46414b454d414700ULL
 
 static tpm2_print_ctx ctx = {
         .format = pubkey_format_tss
@@ -315,6 +321,150 @@ static bool print_TSSPRIVKEY_OBJ(FILE *fstream) {
     return true;
 }
 
+typedef struct TSS2_TCTI_FAKE_CONTEXT TSS2_TCTI_FAKE_CONTEXT;
+struct TSS2_TCTI_FAKE_CONTEXT {
+    TSS2_TCTI_CONTEXT_COMMON_V2 common;
+};
+
+static TSS2_RC tcti_fake_transmit (
+    TSS2_TCTI_CONTEXT *tcti_ctx,
+    size_t size,
+    const uint8_t *cmd_buf)
+{
+    UNUSED(size);
+    UNUSED(cmd_buf);
+    UNUSED(tcti_ctx);
+    return TSS2_RC_SUCCESS;
+}
+static TSS2_RC tcti_fake_receive (
+    TSS2_TCTI_CONTEXT *tcti_ctx,
+    size_t *size,
+    unsigned char *resp_buf,
+    int32_t timeout)
+{
+    UNUSED(size);
+    UNUSED(resp_buf);
+    UNUSED(tcti_ctx);
+    UNUSED(timeout);
+    return TSS2_RC_SUCCESS;
+}
+
+static TSS2_RC
+Tss2_Tcti_Fake_Init (
+    TSS2_TCTI_CONTEXT *tcti_ctx,
+    size_t *size)
+{
+    if (size == NULL) {
+        return TSS2_TCTI_RC_BAD_VALUE;
+    }
+    if (tcti_ctx == NULL) {
+        *size = sizeof (TSS2_TCTI_FAKE_CONTEXT);
+        return TSS2_RC_SUCCESS;
+    }
+    if (*size != sizeof (TSS2_TCTI_FAKE_CONTEXT)) {
+        return TSS2_TCTI_RC_BAD_VALUE;
+    }
+
+    TSS2_TCTI_FAKE_CONTEXT *t = (TSS2_TCTI_FAKE_CONTEXT *)tcti_ctx;
+    TSS2_TCTI_CONTEXT_COMMON_V2 *tcti_common = &t->common;
+
+    TSS2_TCTI_MAGIC (tcti_common) = TCTI_FAKE_MAGIC;
+    TSS2_TCTI_VERSION (tcti_common) = 2;
+    TSS2_TCTI_TRANSMIT (tcti_common) = tcti_fake_transmit;
+    TSS2_TCTI_RECEIVE (tcti_common) = tcti_fake_receive;
+    TSS2_TCTI_FINALIZE (tcti_common) = NULL;
+    TSS2_TCTI_CANCEL (tcti_common) = NULL;
+    TSS2_TCTI_GET_POLL_HANDLES (tcti_common) = NULL;
+    TSS2_TCTI_SET_LOCALITY (tcti_common) = NULL;
+    TSS2_TCTI_MAKE_STICKY (tcti_common) = NULL;
+
+    return TSS2_RC_SUCCESS;
+}
+
+static bool print_ESYS_TR(FILE* fd) {
+
+
+    uint8_t *buffer = NULL;
+    ESYS_CONTEXT *esys_ctx = NULL;
+    TPM2B_NAME *name = NULL;
+
+    unsigned long size = 0;
+    bool result = files_get_file_size(fd, &size, NULL);
+    if (!result) {
+        LOG_ERR("Failed to get file size: %s", strerror(ferror(fd)));
+        return false;
+    }
+
+    if (size < 1) {
+        LOG_ERR("Invalid serialized ESYS_TR size, got: %lu", size);
+        return false;
+    }
+
+    buffer = calloc(1, size);
+    if (!buffer) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    result = files_read_bytes(fd, buffer, size);
+    if (!result) {
+        LOG_ERR("Could not read serialized ESYS_TR from disk");
+        goto error;
+    }
+
+    uint8_t tcti_buf[sizeof(TSS2_TCTI_FAKE_CONTEXT)] = { 0 };
+    TSS2_TCTI_CONTEXT *tcti_ctx = (TSS2_TCTI_CONTEXT *)tcti_buf;
+    size_t tcti_size = sizeof(tcti_buf);
+    TSS2_RC rc = Tss2_Tcti_Fake_Init(tcti_ctx, &tcti_size);
+    if (rc != TSS2_RC_SUCCESS) {
+        LOG_ERR("Tss2_Tcti_Fake_Init: %s", Tss2_RC_Decode(rc));
+        goto error;
+    }
+
+    rc = Esys_Initialize(&esys_ctx, tcti_ctx, NULL);
+    if (rc != TSS2_RC_SUCCESS) {
+        LOG_ERR("Esys_Initialize: %s", Tss2_RC_Decode(rc));
+        goto error;
+    }
+
+    ESYS_TR handle;
+    result = tpm2_tr_deserialize(esys_ctx, buffer, size, &handle) == tool_rc_success;
+    if (!result) {
+        LOG_ERR("Was the handle for a transient object?");
+        goto error;
+    }
+
+    rc = Esys_TR_GetName(esys_ctx, handle, &name);
+    if (rc != TSS2_RC_SUCCESS) {
+        LOG_ERR("Esys_TR_GetName: %s", Tss2_RC_Decode(rc));
+        goto error;
+    }
+
+    TPM2_HANDLE tpm_handle = 0;
+    rc = Esys_TR_GetTpmHandle(esys_ctx, handle, &tpm_handle);
+    if (rc != TSS2_RC_SUCCESS) {
+        LOG_ERR("Esys_TR_GetTpmHandle: %s", Tss2_RC_Decode(rc));
+        goto error;
+    }
+
+    tpm2_tool_output("tpm-handle: 0x%x\n", tpm_handle);
+    tpm2_tool_output("name: ");
+    tpm2_util_hexdump(name->name, name->size);
+    tpm2_tool_output("\n");
+
+    result = true;
+
+out:
+    free(buffer);
+    Esys_Free(name);
+    Esys_Finalize(&esys_ctx);
+
+    return result;
+error:
+    result = false;
+    goto out;
+}
+
 #define ADD_HANDLER(type) { .name = #type, .flags = 0, .fn = print_##type }
 #define ADD_HANDLER_FMT(type) { .name = #type, .flags = FLAG_FMT, .fn = print_##type }
 
@@ -330,7 +480,8 @@ static bool handle_type(const char *name) {
         ADD_HANDLER(TPMS_CONTEXT),
         ADD_HANDLER_FMT(TPM2B_PUBLIC),
         ADD_HANDLER_FMT(TPMT_PUBLIC),
-        ADD_HANDLER_FMT(TSSPRIVKEY_OBJ)
+        ADD_HANDLER_FMT(TSSPRIVKEY_OBJ),
+        ADD_HANDLER(ESYS_TR)
     };
 
     size_t i;
