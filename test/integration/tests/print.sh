@@ -18,7 +18,7 @@ tss_prim=prim
 cleanup() {
     rm -f $ak_name_file $ak_pubkey_file \
           $quote_file $print_file $ak_ctx \
-          tpmt_public.ak
+          tpmt_public.ak ${tss_prim}\.*
 
     if [ "$1" != "no-shut-down" ]; then
        shut_down
@@ -112,5 +112,11 @@ tpm2 print -t TSSPRIVKEY_OBJ $pem_file.pem
 tpm2 print -t TSSPRIVKEY_OBJ -f pem $pem_file.pem > $pem_pub.pem
 
 openssl rsa -pubin -in $pem_pub.pem -text
+
+tpm2 evictcontrol -c ${tss_prim}.ctx -o ${tss2_prim}.tr
+tpm2 readpublic -n ${tss_prim}.name
+name="$(tpm2 print -t ESYS_TR ${tss2_prim}.tr | grep 'name:' | cut -d' ' -f2-)"
+expected_name="$(xxd -c256 -p ${tss_prim}.name)"
+test "${name}" == "${expected_name}"
 
 exit 0
