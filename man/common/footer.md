@@ -4,4 +4,4 @@
 
 # HELP
 
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
+See the [Mailing List](https://lists.linuxfoundation.org/mailman/listinfo/tpm2)
