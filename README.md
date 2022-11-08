@@ -13,7 +13,7 @@ Instructions for building and installing the tpm2-tools are provided in the [INS
 Instructions for how releases are conducted, including our QA practices, please see the [RELEASE.md](doc/RELEASE.md) file.
 
 ## Support
-Please use the mailing list at https://lists.01.org/postorius/lists/tpm2.lists.01.org/ for general questions. The Issue Tracker on
+Please use the mailing list at https://lists.linuxfoundation.org/mailman/listinfo/tpm2 for general questions. The Issue Tracker on
 github should be reserved for actual feature requests or bugs. For security bugs, please see [CONTRIBUTING.md](doc/CONTRIBUTING.md)
 for information on how to submit those.
 
