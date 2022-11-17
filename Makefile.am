@@ -220,6 +220,7 @@ if HAVE_FAPI
 endif
 
 if UNIT
+check_SCRIPTS =
 TESTS += $(check_PROGRAMS)
 check_PROGRAMS = \
     test/unit/test_string_bytes \
@@ -240,6 +241,11 @@ check_PROGRAMS = \
     test/unit/test_object
 
 TESTS += $(ALL_SYSTEM_TESTS)
+
+if HAVE_ESYS_4_0
+check_SCRIPTS += test/unit/vendor_tests.sh
+TESTS += test/unit/vendor_tests.sh
+endif
 
 if HAVE_FAPI
 TESTS += $(ALL_FAPI_TESTS)

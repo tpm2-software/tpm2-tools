@@ -46,14 +46,29 @@ AS_IF([test "$enable_fapi" = yes -o "$enable_fapi" = check],
       ])
 AM_CONDITIONAL([HAVE_FAPI], [test "$enable_fapi" = yes])
 
-PKG_CHECK_MODULES([TSS2_ESYS_3_0], [tss2-esys >= 3.0.0],
-                  [AC_DEFINE([ESYS_3_0], [1], [Esys3.0])]
-                  [AC_SUBST([TSS2_ESYS_CFLAGS], [$TSS2_ESYS_3_0_CFLAGS])
-                   AC_SUBST([TSS2_ESYS_LIBS], [$TSS2_ESYS_3_0_LIBS])],
-                  [PKG_CHECK_MODULES([TSS2_ESYS_2_3], [tss2-esys >= 2.4.0],
-                  [AC_DEFINE([ESYS_2_3], [1], [Esys2.3])]
-                  [AC_SUBST([TSS2_ESYS_CFLAGS], [$TSS2_ESYS_2_3_CFLAGS])
-                   AC_SUBST([TSS2_ESYS_LIBS], [$TSS2_ESYS_2_3_LIBS])])])
+PKG_CHECK_MODULES(
+    [TSS2_ESYS_4_0],
+    [tss2-esys >= 4.0.0],
+    [AC_DEFINE([ESYS_4_0], [1], [Esys4.0])]
+    [AC_SUBST([TSS2_ESYS_CFLAGS], [$TSS2_ESYS_4_0_CFLAGS])
+     AC_SUBST([TSS2_ESYS_LIBS], [$TSS2_ESYS_4_0_LIBS])
+     have_esys_4_0="yes"],
+    [PKG_CHECK_MODULES(
+        [TSS2_ESYS_3_0],
+        [tss2-esys >= 3.0.0],
+        [AC_DEFINE([ESYS_3_0], [1], [Esys3.0])]
+        [AC_SUBST([TSS2_ESYS_CFLAGS], [$TSS2_ESYS_3_0_CFLAGS])
+         AC_SUBST([TSS2_ESYS_LIBS], [$TSS2_ESYS_3_0_LIBS])],
+        [PKG_CHECK_MODULES([TSS2_ESYS_2_3], [tss2-esys >= 2.4.0],
+            [AC_DEFINE([ESYS_2_3], [1], [Esys2.3])]
+            [AC_SUBST([TSS2_ESYS_CFLAGS], [$TSS2_ESYS_2_3_CFLAGS])
+            AC_SUBST([TSS2_ESYS_LIBS], [$TSS2_ESYS_2_3_LIBS])
+        ])
+    ])
+])
+
+AM_CONDITIONAL([HAVE_ESYS_4_0], [test "x${have_esys_4_0}" = "xyes"])
+
 PKG_CHECK_MODULES([TSS2_TCTILDR], [tss2-tctildr])
 PKG_CHECK_MODULES([TSS2_MU], [tss2-mu])
 PKG_CHECK_MODULES([TSS2_RC], [tss2-rc])
@@ -80,6 +95,13 @@ AS_IF([test "x$with_efivar" == "xauto"],
   [PKG_CHECK_MODULES([EFIVAR], [efivar],,[true])],
   [test "x$with_efivar" == "xyes"],
   [PKG_CHECK_MODULES([EFIVAR], [efivar])],
+)
+
+# Check if tss has the intelPtt
+AC_CHECK_MEMBER([union TPMU_CAPABILITIES.intelPttProperty],
+	[AC_DEFINE([HAVE_OLD_TPMU_CAPABILITIES], [1], [tss2 pre 4.0])],
+    [],
+    [[#include <tss2/tss2_tpm2_types.h>]]
 )
 
 # backwards compat with older pkg-config
