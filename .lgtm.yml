@@ -8,6 +8,7 @@ extraction:
       - libssl-dev
       - acl
       - git
+      - uuid-dev
     after_prepare:
     - cd "$LGTM_WORKSPACE"
     - mkdir installdir
