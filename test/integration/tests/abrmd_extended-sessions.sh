@@ -132,4 +132,34 @@ tpm2 sessionconfig session.ctx --enable-encrypt --enable-decrypt
 tpm2 getrandom 8 -S session.ctx
 tpm2 flushcontext session.ctx
 
+# test that name verification works
+tpm2 evictcontrol -c prim.ctx 0x81000000
+tpm2 readpublic -c prim.ctx -n name.bin
+tpm2 startauthsession -S session.ctx --policy-session \
+  --tpmkey-context 0x81000000 -n name.bin
+# verify -c works
+tpm2 startauthsession -S session.ctx --policy-session \
+  -c 0x81000000 -n name.bin
+
+# test if name is bad, generate a random name of of the same size
+# Note FreeBSD stat has no printf and wc prints spaces hence the sed.
+size=$(wc -c < name.bin | sed 's/ //g')
+dd if=/dev/urandom bs=${size} count=1 of=name2.bin
+
+if tpm2 startauthsession -S session.ctx --policy-session \
+  --tpmkey-context 0x81000000 -n name2.bin 2>/dev/null; then
+    echo "Expected tpm2 startauthsession to fail with bad name"
+    exit 1
+else
+    true
+fi
+
+if tpm2 startauthsession -S session.ctx --policy-session \
+  -c 0x81000000 -n name2.bin 2>/dev/null; then
+    echo "Expected tpm2 startauthsession to fail with bad name"
+    exit 1
+else
+    true
+fi
+
 exit 0

@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdbool.h>
+#include <string.h>
 
+#include "files.h"
 #include "log.h"
 #include "object.h"
 #include "tpm2.h"
@@ -50,6 +52,9 @@ struct tpm2_startauthsession_ctx {
     bool is_salted;
     bool is_bounded;
     bool is_salt_and_bind_obj_same;
+
+    const char *name_path;
+    TPM2B_NAME name;
 };
 
 static tpm2_startauthsession_ctx ctx = {
@@ -62,7 +67,10 @@ static tpm2_startauthsession_ctx ctx = {
             .keyBits = { .aes = 128 },
             .mode = { .aes = TPM2_ALG_CFB }
         },
-    }
+    },
+    .name = {
+        .size = BUFFER_SIZE(TPM2B_NAME, name)
+    },
 };
 
 static bool on_option(char key, char *value) {
@@ -102,6 +110,9 @@ static bool on_option(char key, char *value) {
         ctx.is_session_encryption_possibly_needed = true;
         ctx.attrs |= (TPMA_SESSION_DECRYPT | TPMA_SESSION_ENCRYPT);
         break;
+    case 'n':
+        ctx.name_path = value;
+        break;
     case 2:
         ctx.is_bounded = true;
         ctx.session.bind.bind_context_arg_str = value;
@@ -137,9 +148,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "key-algorithm",  required_argument, NULL, 'G'},
         { "session",        required_argument, NULL, 'S'},
         { "key-context",    required_argument, NULL, 'c'},
+        { "name",           required_argument, NULL, 'n'},
     };
 
-    *opts = tpm2_options_new("g:G:S:c:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("g:G:S:c:n:", ARRAY_LEN(topts), topts, on_option,
     NULL, 0);
 
     return *opts != NULL;
@@ -245,6 +257,14 @@ static tool_rc setup_session_data(void) {
 
 static tool_rc process_input_data(ESYS_CONTEXT *ectx) {
 
+    if (ctx.name_path) {
+        bool ret = files_load_bytes_from_path(ctx.name_path, ctx.name.name, &ctx.name.size);
+        if (!ret) {
+            LOG_ERR("Could load name from path: \"%s\"", ctx.name_path);
+            return tool_rc_general_error;
+        }
+    }
+
     /*
      * Backwards compatibility behavior/ side-effect:
      *
@@ -272,8 +292,30 @@ static tool_rc process_input_data(ESYS_CONTEXT *ectx) {
 
             bool is_transient = (ctx.session.tpmkey.key_context_object.handle
                     >> TPM2_HR_SHIFT) == TPM2_HT_TRANSIENT;
-            if (!is_transient) {
+            if (!is_transient && !ctx.name_path) {
                 LOG_WARN("check public portion of the tpmkey manually");
+            }
+
+            /*
+             * ESAPI performs this check when an ESYS_TR or Context file is used, so we
+             * could only run the check on the case where a raw TPM handle is provided,
+             * however, it seems prudent that if the user specifies a name, we always
+             * just check it.
+             */
+            if (ctx.name_path) {
+                TPM2B_NAME *got_name = NULL;
+                rc = tpm2_tr_get_name(ectx, ctx.session.tpmkey.key_context_object.tr_handle,
+                        &got_name);
+                if (rc != tool_rc_success) {
+                    return rc;
+                }
+
+                bool is_expected = cmp_tpm2b(name, &ctx.name, got_name);
+                Esys_Free(got_name);
+                if (!is_expected) {
+                    LOG_ERR("Expected name does not match");
+                    return tool_rc_general_error;
+                }
             }
         }
     }
