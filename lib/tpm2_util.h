@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <tss2/tss2_esys.h>
 
@@ -229,6 +230,39 @@ static inline void _tpm2_util_print_tpm2b(TPM2B *buffer) {
 
     return tpm2_util_hexdump(buffer->buffer, buffer->size);
 }
+
+static inline bool _cmp_tpm2b(UINT16 size_a, const BYTE *buf_a, UINT16 size_b, const BYTE *buf_b,
+        size_t max_a, size_t max_b) {
+
+    /*
+     * overall buffers should be the same size (same object kind of check and to ensure we don't
+     * overflow a buffer
+     */
+    return max_a == max_b &&
+            /* size should be the same */
+            size_a == size_b &&
+            /* memory should be the same */
+            !memcmp(buf_a, buf_b, size_a);
+}
+
+/**
+ * Compare imple TPM2B a with b
+ *
+ * Compares simple TPM2B structures, which are structures
+ * that only have a size and buffer contents with eachother.
+ * Examples of simple TPM2B's are TPM2B_AUTH, TPM2B_DIGEST, etc.
+ *
+ * @param a
+ *  A simple TPM2B to compare
+ * @param b
+ *  A simple TPM2B to compare
+ * @returns
+ *  true if they are the same, false otherwise.
+ */
+#define cmp_tpm2b(field, a, b) \
+    _cmp_tpm2b((a)->size, (a)->field, (b)->size, (b)->field, \
+        sizeof((a)->field), \
+        sizeof((b)->field))
 
 /**
  * Prints a TPM2B as a hex dump to the FILE specified. Does NOT
