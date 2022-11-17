@@ -30,7 +30,7 @@ with open("$1") as f:
 pyscript
 }
 
-tpm2 getcap -l > $out
+tpm2 getcap -l | grep -v 'vendor' > $out
 
 caplist=$(yaml_to_list $out)
 

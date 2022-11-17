@@ -53,6 +53,17 @@ argument to the tool. Currently supported capability groups are:
 - **handles-saved-session**:
   Display handles about saved sessions.
 
+- **vendor[:num]**:
+  Displays the vendor properties as a hex buffer output. The string "vendor"
+  can be suffixed with a colon followed by a number as understood by strtoul(3)
+  with a 0 base. That value is used as the property value within the\
+  TPM2\_GetCapability command, and defaults to 1. An example to call it with a
+  property value of 2 is:
+    tpm2\_getcap vendor:2
+
+  NOTE: if vendor requests hang, try the "-i" option to ignore the moreData field and
+  only read once.
+
 # OPTIONS
 
   * **-l**, **\--list**:
@@ -68,6 +79,10 @@ argument to the tool. Currently supported capability groups are:
       - properties-fixed
       ...
     ```
+
+  * **\--ignore-moredata**
+
+  Ignores the moreData field when dealing with buggy TPM responses.
 
 [common options](common/options.md)
 

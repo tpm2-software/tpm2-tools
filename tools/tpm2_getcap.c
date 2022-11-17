@@ -123,6 +123,14 @@ capability_map_entry_t capability_map[] = {
         .property          = TPM2_ACTIVE_SESSION_FIRST,
         .count             = TPM2_MAX_CAP_HANDLES,
     },
+#if defined(ESYS_4_0)
+    {
+        .capability_string = "vendor",
+        .capability        = TPM2_CAP_VENDOR_PROPERTY,
+        .property          = 1,
+        .count             = TPM2_MAX_CAP_BUFFER,
+    },
+#endif
 };
 /*
  * Structure to hold options for this tool.
@@ -133,6 +141,7 @@ typedef struct capability_opts {
     UINT32 property;
     UINT32 count;
     bool list;
+    bool ignore_moredata;
 } capability_opts_t;
 
 static capability_opts_t options;
@@ -154,12 +163,38 @@ bool sanity_check_capability_opts(void) {
     }
 
     size_t i;
+
     for (i = 0; i < CAPABILITY_MAP_COUNT; ++i) {
-        int cmp = strcmp(capability_map[i].capability_string,
-                options.capability_string);
+
+        int cmp = strncmp(capability_map[i].capability_string,
+                options.capability_string,
+                strlen(capability_map[i].capability_string));
         if (cmp == 0) {
+
+            UINT32 property = capability_map[i].property;
+
+            char *colon = strchr(options.capability_string, ':');
+            if (colon && capability_map[i].capability != TPM2_CAP_VENDOR_PROPERTY) {
+                LOG_ERR("capability string: \"%s\" does not support a property suffix,"
+                        "see --help",
+                        options.capability_string);
+                return false;
+            } else if (colon && capability_map[i].capability == TPM2_CAP_VENDOR_PROPERTY) {
+                char *value_str = &colon[1];
+                if (value_str[0] != '\0') {
+                    char *tail = NULL;
+                    errno = 0;
+                    property = strtoul(value_str, &tail, 0);
+                    if (errno || tail == value_str) {
+                        LOG_ERR("Could not convert vendor specific property, got: \"%s\"",
+                                value_str);
+                        return false;
+                    }
+                }
+            }
+
             options.capability = capability_map[i].capability;
-            options.property = capability_map[i].property;
+            options.property = property;
             options.count = capability_map[i].count;
             return true;
         }
@@ -182,12 +217,11 @@ static void print_cap_map() {
 
 /*
  * There are a number of fixed TPM properties (tagged properties) that are
- * characters (8bit chars) packed into 32bit integers, trim leading and trailing
- * spaces.
- * Also add the escape characters when necessary.
+ * characters (8bit chars) packed into 32bit integers, trim leading and trailing spaces
  */
 static char *
 get_uint32_as_chars(UINT32 value) {
+    static char buf[5];
 
     value = tpm2_util_ntoh_32(value);
     UINT8 *bytes = (UINT8 *) &value;
@@ -216,18 +250,8 @@ get_uint32_as_chars(UINT32 value) {
         }
     }
 
-    static char buf[10] = { 0 };
-    unsigned k = 0;
-    for(i = 0; i < j; i++) {
-        if (bytes[i] == '"') {  // Characters that must be escaped
-            buf[k] = '\\';      // The escape character
-            k+=1;
-        }
-        buf[k] = bytes[i];
-        k++;
-    }
-    buf[k] = '\0';
-
+    memcpy(buf, bytes, j);
+    buf[j] = '\0';
     return buf;
 }
 /*
@@ -726,8 +750,8 @@ static void dump_handles(TPM2_HANDLE handles[], UINT32 count) {
  */
 static tool_rc get_tpm_capability_all(ESYS_CONTEXT *context,
         TPMS_CAPABILITY_DATA **capability_data) {
-    return tpm2_capability_get(context, options.capability, options.property,
-            options.count, capability_data);
+    return tpm2_capability_get_ex(context, options.capability, options.property,
+            options.count, options.ignore_moredata, capability_data);
 }
 
 /*
@@ -788,7 +812,16 @@ static bool dump_tpm_capability(TPMU_CAPABILITIES *capabilities) {
     case TPM2_CAP_PCRS:
         pcr_print_pcr_selections(&capabilities->assignedPCR);
         break;
+#if defined(ESYS_4_0)
+    case TPM2_CAP_VENDOR_PROPERTY: {
+
+        TPM2B_MAX_CAP_BUFFER *buffer = &capabilities->vendor;
+        tpm2_util_hexdump(buffer->buffer, buffer->size);
+        tpm2_tool_output("\n");
+    } break;
+#endif
     default:
+        LOG_ERR("Capability 0x%x not supported", options.capability);
         return false;
     }
     return result;
@@ -801,6 +834,9 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'l':
         options.list = true;
+        break;
+    case 1:
+        options.ignore_moredata = true;
     }
 
     return true;
@@ -820,8 +856,9 @@ static bool on_arg(int argc, char *argv[]) {
 
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    const struct option topts[] = { { "list", no_argument, NULL, 'l' },
-
+    const struct option topts[] = {
+        { "list",            no_argument, NULL, 'l' },
+        { "ignore-moredata", no_argument, NULL,  1 },
     };
 
     *opts = tpm2_options_new("l", ARRAY_LEN(topts), topts, on_option, on_arg,

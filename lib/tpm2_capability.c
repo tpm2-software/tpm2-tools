@@ -26,10 +26,11 @@
         more_data = false; \
     }
 
-tool_rc tpm2_capability_get(ESYS_CONTEXT *ectx, TPM2_CAP capability,
-        UINT32 property, UINT32 count, TPMS_CAPABILITY_DATA **capability_data) {
+tool_rc tpm2_capability_get_ex(ESYS_CONTEXT *ectx, TPM2_CAP capability,
+        UINT32 property, UINT32 count, bool ignore_more_data,
+        TPMS_CAPABILITY_DATA **capability_data) {
 
-    TPMI_YES_NO more_data;
+    TPMI_YES_NO more_data = 0;
     UINT32 property_count = 0;
     *capability_data = NULL;
 
@@ -66,7 +67,7 @@ tool_rc tpm2_capability_get(ESYS_CONTEXT *ectx, TPM2_CAP capability,
             /* reuse the TPM's result structure */
             *capability_data = fetched_data;
 
-            if (!more_data) {
+            if (!more_data || ignore_more_data) {
                 /* there won't be another iteration of the loop, just return the result unmodified */
                 return tool_rc_success;
             }
@@ -112,12 +113,9 @@ tool_rc tpm2_capability_get(ESYS_CONTEXT *ectx, TPM2_CAP capability,
             APPEND_CAPABILITY_INFORMATION(eccCurves, eccCurves,,
                     TPM2_MAX_ECC_CURVES);
             break;
-        case TPM2_CAP_VENDOR_PROPERTY:
-            APPEND_CAPABILITY_INFORMATION(intelPttProperty, property,,
-                    TPM2_MAX_PTT_PROPERTIES);
-            break;
         default:
-            LOG_ERR("Unsupported capability: 0x%x\n", capability);
+            LOG_ERR("Unsupported capability with moreData True,"
+                    "try with option -i, got: 0x%x\n", capability);
             if (fetched_data != *capability_data) {
                 free(fetched_data);
             }
@@ -132,6 +130,14 @@ tool_rc tpm2_capability_get(ESYS_CONTEXT *ectx, TPM2_CAP capability,
     } while (more_data);
 
     return tool_rc_success;
+}
+
+tool_rc tpm2_capability_get(ESYS_CONTEXT *ectx, TPM2_CAP capability,
+        UINT32 property, UINT32 count,
+        TPMS_CAPABILITY_DATA **capability_data) {
+
+    return tpm2_capability_get_ex(ectx, capability,
+            property, count, false, capability_data);
 }
 
 tool_rc tpm2_capability_find_vacant_persistent_handle(ESYS_CONTEXT *ctx,
