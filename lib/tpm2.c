@@ -1737,7 +1737,7 @@ tpm2_evictcontrol_skip_esapi_call:
  */
 TSS2_RC fix_esys_hierarchy(uint32_t in, uint32_t *out)
 {
-#if defined(ESYS_3_0)
+#if !defined(ESYS_2_3)
     switch (in) {
         case ESYS_TR_RH_NULL:
             /* FALLTHRU */
@@ -1769,12 +1769,10 @@ TSS2_RC fix_esys_hierarchy(uint32_t in, uint32_t *out)
             LOG_ERR("An unknown hierarchy handle was passed: 0x%08x", in);
             return TSS2_ESYS_RC_BAD_VALUE;
     }
-#elif defined(ESYS_2_3)
-    *out = in;
-    return TSS2_RC_SUCCESS;
 #else
-#error "Need to define either ESYS_3_0 or ESYS_2_3"
+    *out = in;
 #endif
+    return TSS2_RC_SUCCESS;
 }
 
 tool_rc tpm2_hash(ESYS_CONTEXT *esys_context, ESYS_TR shandle1, ESYS_TR shandle2,
