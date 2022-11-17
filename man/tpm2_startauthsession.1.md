@@ -101,6 +101,15 @@ This will work with direct TPM access, but note that internally this calls a
     Session parameter decryption is off. Use **tpm2_sessionconfig** to turn on.
     Parameter encryption/decryption symmetric-key set to AES-CFB.
 
+  * **-n**, **\--name**=_FILE_
+
+    A name file as output from a tool like tpm2\_readpublic(1) `-n` option.
+    The name file can be used to **verify** a persistent handle input for
+    the `--tpmkey-context`, `-c`, and `--key-context` options. Verification
+    that the object referenced by a peristent handle, e.g 0x81000000, is
+    the key expected prevents attackers from performing a man-in-the-middle
+    attack on session traffic.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying

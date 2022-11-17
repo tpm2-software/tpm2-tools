@@ -222,6 +222,10 @@ AS_IF([test "x$enable_unit" != xno], [
     AS_IF([test $OPENSSL = no],
           [AC_MSG_ERROR([Required executable openssl not found, some system tests will fail!])])
 
+    AC_CHECK_PROG([WC], [wc], yes, no)
+    AS_IF([test $WC = no],
+          [AC_MSG_ERROR([Required executable wc not found, some system tests will fail!])])
+
     unit_test_tool_report="- tpm2_abrmd: $tpm2_abrmd
     - TPM simulator: $TPM2_SIM
     - bash: $BASH_SHELL
