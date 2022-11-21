@@ -97,13 +97,6 @@ AS_IF([test "x$with_efivar" == "xauto"],
   [PKG_CHECK_MODULES([EFIVAR], [efivar])],
 )
 
-# Check if tss has the intelPtt
-AC_CHECK_MEMBER([union TPMU_CAPABILITIES.intelPttProperty],
-	[AC_DEFINE([HAVE_OLD_TPMU_CAPABILITIES], [1], [tss2 pre 4.0])],
-    [],
-    [[#include <tss2/tss2_tpm2_types.h>]]
-)
-
 # backwards compat with older pkg-config
 # - pull in AC_DEFUN from pkg.m4
 m4_ifndef([PKG_CHECK_VAR], [
