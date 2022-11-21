@@ -2,7 +2,7 @@
 
 #
 # This TCTI is designed to use with the subprocess TCTI and echo the contents
-# of arg1, formatted as a hex string, as a response to a single TPM command. 
+# of arg1, formatted as a hex string, as a response to a single TPM command.
 #
 # Example"
 # ./tools/tpm2 getcap --tcti='cmd:./test/scripts/echo_tcti.py 8001000000170000000001000001000000000100000003' -i vendor
@@ -14,9 +14,11 @@ import codecs
 import io
 import sys
 
+
 def from_bytes(b):
     # python2 and 3 compat int.from_bytes(byte_order='big')
-    return int(codecs.encode(b, 'hex'), 16)
+    return int(codecs.encode(b, "hex"), 16)
+
 
 class TPMCommand(object):
     def __init__(self, data):
@@ -69,11 +71,13 @@ def write_response(data):
 
 
 def main():
-    
-    if (len(sys.argv) < 2):
-        sys.stderr.write("Expected one argument of a hex string to use as a TPM response buffer.\n")
+
+    if len(sys.argv) < 2:
+        sys.stderr.write(
+            "Expected one argument of a hex string to use as a TPM response buffer.\n"
+        )
         sys.exit(1)
-    
+
     with io.open(sys.stdin.fileno(), "rb", closefd=False) as stdin:
         c = read_command(stdin)
         if c is None:
