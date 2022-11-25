@@ -112,6 +112,17 @@ static bool load_outside_info(TPM2B_DATA *outside_info) {
         &outside_info->size, outside_info->buffer);
 }
 
+static void print_help_message() {
+
+    static const char *msg =
+        "NOTE: The TPM does not support CreateLoaded command!\n"
+        "Use tpm2_create with the -u and -r options and then\n"
+        "call tpm2_load with -c and use the -u and -r outputs\n"
+        "of tpm2_create in tpm2_load.";
+
+    tpm2_tool_output("%s\n", msg);
+}
+
 static tool_rc create(ESYS_CONTEXT *ectx) {
 
     /*
@@ -137,6 +148,9 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
             &ctx.rp_hash, ctx.parameter_hash_algorithm,
             ctx.aux_session_handle[0], ctx.aux_session_handle[1]);
         if (tmp_rc != tool_rc_success) {
+            if (tmp_rc == tool_rc_unsupported) {
+                print_help_message();
+            }
             return tmp_rc;
         }
     }
