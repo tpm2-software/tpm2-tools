@@ -46,6 +46,10 @@ Starting with release 5.4, The format is based on [Keep a Changelog](http://keep
      - Add a clarifying message to usage of `-c` when TPM2_CreateLoaded
        is not supported.
 
+  * tpm2_getcap:
+     - Add support for vendor agnostic capabilites. Requires tpm2-tss version 4.0
+       and higher to enable.
+
   * Add a script, check_endorsement_cert.sh, to validate the endorsement
     certificate chain. It takes two inputs - A TPM2B_PUBLIC format EKpublic and
     a PEM format EKcertificate specified in that order as arguments.
