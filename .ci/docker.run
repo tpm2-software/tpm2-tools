@@ -109,6 +109,11 @@ if [[ "${TPM2_TSS_VERSION}" == "master" && "$CC" != clang* ]];then
   #
   git checkout HEAD test/integration/tests/getekcertificate.sh
   #
+  # tpm2_getcap had vendor option added, so older test fail by looping
+  # through the list output and tring them, but the simulator does not
+  # support reading a vendor command.
+  git checkout HEAD test/integration/tests/getcap.sh
+  #
   # symlink is an irrelevant test for 4.X branch
   #
   rm test/integration/tests/symlink.sh
