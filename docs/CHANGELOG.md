@@ -1,7 +1,12 @@
 ## Changelog
 
-### Next
+All notable changes to this project will be documented in this file.
 
+Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
+
+## 5.4-rc0 - 2022-11-28
+
+### Added:
   * tpm2_policyrestart:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PolicyRestart.
@@ -35,7 +40,11 @@
         TPM2_CC_PolicyAuthorize.
   
   * tpm2_print:
-     - tpm2_print: support printing serialized ESYS_TR's
+     - Support printing serialized ESYS_TR's
+
+  * tpm2_create:
+     - Add a clarifying message to usage of `-c` when TPM2_CreateLoaded
+       is not supported.
 
   * Add a script, check_endorsement_cert.sh, to validate the endorsement
     certificate chain. It takes two inputs - A TPM2B_PUBLIC format EKpublic and
