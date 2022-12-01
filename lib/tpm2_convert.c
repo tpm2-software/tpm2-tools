@@ -335,7 +335,11 @@ EVP_PKEY *convert_pubkey_ECC(TPMT_PUBLIC *public) {
         goto out;
     }
 
-    ctx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
+    if (nid == NID_sm2) {
+        ctx = EVP_PKEY_CTX_new_from_name(NULL, "SM2", NULL);
+    } else {
+        ctx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
+    }
     if (!ctx) {
         print_ssl_error("Failed to allocate EC key context");
         goto out;
