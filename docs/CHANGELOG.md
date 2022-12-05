@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## 5.4-rc0 - 2022-11-28
+## 5.4 - 2022-12-05
 
 ### Added:
   * tpm2_policyrestart:
