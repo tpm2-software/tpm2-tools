@@ -64,9 +64,6 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
     }
 
     tpm2_tool_output("Session-Handle: 0x%.8"PRIx32"\n", tpm_handle);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
 
     bool is_attr_set = false;
     tpm2_tool_output("Session-Attributes: ");
