@@ -8,6 +8,7 @@
 #include <cmocka.h>
 
 #include "tpm2_header.h"
+#include "tpm2_util.h"
 
 static void test_tpm_command_header(void **state) {
 
@@ -17,6 +18,10 @@ static void test_tpm_command_header(void **state) {
       0x80, 0x01, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x01, 0x7a, 0x00, 0x00,
       0x00, 0x06, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x7f
     };
+
+    /* the test can only be executed in little endian architectures */
+    if (tpm2_util_is_big_endian())
+      skip();
 
     tpm2_command_header *c = tpm2_command_header_from_bytes(command_bytes);
 
@@ -93,6 +98,10 @@ static void test_tpm_response_header(void **state) {
       0x00, 0x02, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x13, 0x00,
       0x00
     };
+
+    /* the test can only be executed in little endian architectures */
+    if (tpm2_util_is_big_endian())
+      skip();
 
     tpm2_response_header *r = tpm2_response_header_from_bytes(response_bytes);
 
