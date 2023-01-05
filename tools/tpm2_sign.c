@@ -140,20 +140,8 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
             return tool_rc_general_error;
         }
 
-        if (ctx.in_scheme.scheme == TPM2_ALG_SM2 && ctx.halg == TPM2_ALG_SM3_256) {
-            TPM2B_DIGEST z_digest;
-            rc = tpm2_alg_util_sm2_compute_id_digest(ectx, ctx.signing_key.object.tr_handle,
-                    SM2_DEFAULT_ID, SM2_DEFAULT_ID_LENGTH, &z_digest);
-            if (rc != tool_rc_success) {
-                LOG_ERR("Sign could not compute id digest");
-            } else {
-                rc = tpm2_sm2_compute_msg_digest_file(ectx, ctx.halg, TPM2_RH_OWNER, input, &z_digest,
-                        &ctx.digest, &temp_validation_ticket);
-            }
-        } else {
-            rc = tpm2_hash_file(ectx, ctx.halg, TPM2_RH_OWNER, input, &ctx.digest,
-                    &temp_validation_ticket);
-        }
+        rc = tpm2_hash_file(ectx, ctx.halg, TPM2_RH_OWNER, input, &ctx.digest,
+                &temp_validation_ticket);
         if (input != stdin) {
             fclose(input);
         }
