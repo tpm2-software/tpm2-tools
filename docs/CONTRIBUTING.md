@@ -5,7 +5,7 @@ All non security bugs can be filed on the Issues tracker:
 <https://github.com/tpm2-software/tpm2-tools/issues>
 
 Security sensitive bugs should be handled per the instructions in the
-[SECURITY.md](SECURITY.md) file.
+[docs/SECURITY.md](docs/SECURITY.md) file.
 
 ## Guidelines for submitting changes:
 

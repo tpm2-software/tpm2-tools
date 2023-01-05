@@ -202,7 +202,7 @@ static bool lookup_nt_friendly_name(const char *arg, uint16_t *type) {
 
 static bool nt(TPMA_NV *nv, char *arg) {
 
-    uint16_t value;
+    uint16_t value = 0;
     bool result = tpm2_util_string_to_uint16(arg, &value);
     if (!result) {
         result = lookup_nt_friendly_name(arg, &value);
