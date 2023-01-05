@@ -158,20 +158,8 @@ static tool_rc init(ESYS_CONTEXT *context) {
             goto err;
         }
 
-        if (ctx.signature.sigAlg == TPM2_ALG_SM2 && ctx.halg == TPM2_ALG_SM3_256) {
-            TPM2B_DIGEST z_digest;
-            tmp_rc = tpm2_alg_util_sm2_compute_id_digest(context, ctx.key_context_object.tr_handle,
-                    SM2_DEFAULT_ID, SM2_DEFAULT_ID_LENGTH, &z_digest);
-            if (tmp_rc != tool_rc_success) {
-                LOG_ERR("Verify could not compute id digest");
-            } else {
-                tmp_rc = tpm2_sm2_compute_msg_digest_data(context, ctx.halg, TPM2_RH_NULL,
-                        msg->buffer, msg->size, &z_digest, &ctx.msg_hash, NULL);
-            }
-        } else {
-            tmp_rc = tpm2_hash_compute_data(context, ctx.halg, TPM2_RH_NULL,
-                    msg->buffer, msg->size, &ctx.msg_hash, NULL);
-        }
+        tmp_rc = tpm2_hash_compute_data(context, ctx.halg, TPM2_RH_NULL,
+                msg->buffer, msg->size, &ctx.msg_hash, NULL);
         if (tmp_rc != tool_rc_success) {
             rc = tmp_rc;
             LOG_ERR("Compute message hash failed!");
