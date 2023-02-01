@@ -2537,7 +2537,7 @@ tpm2_load_free_name1:
             parent_object_session_handle, ESYS_TR_NONE, ESYS_TR_NONE, in_private,
             in_public, object_handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Eys_Load, rval);
+        LOG_PERR(Esys_Load, rval);
         return tool_rc_from_tpm(rval);
     }
 
