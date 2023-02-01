@@ -337,7 +337,7 @@ static tool_rc process_input_data(ESYS_CONTEXT *ectx) {
 
     if (ctx.session.bind.bind_context_auth_str) {
         TPM2B_AUTH authvalue = { 0 };
-        bool result = handle_str_password(
+        bool result = handle_password(
             ctx.session.bind.bind_context_auth_str, &authvalue);
         if (!result) {
             return tool_rc_general_error;

@@ -12,6 +12,11 @@ file_rsaencrypt_key_name=name.load.B1_B8
 file_rsa_en_output_data=rsa_en.out
 file_rsa_de_output_data=rsa_de.out
 file_input_data=secret.data
+secret1=secret1
+secret2=secret2
+cipher=cipher
+session_dat=session.dat
+policy_dat=policy.dat
 
 alg_hash=sha256
 alg_primary_key=rsa
@@ -21,7 +26,8 @@ cleanup() {
     rm -f $file_input_data $file_primary_key_ctx $file_rsaencrypt_key_pub \
     $file_rsaencrypt_key_priv $file_rsaencrypt_key_ctx \
     $file_rsaencrypt_key_name $file_output_data $file_rsa_en_output_data \
-    $file_rsa_de_output_data $file_rsadecrypt_key_ctx label.dat
+    $file_rsa_de_output_data $file_rsadecrypt_key_ctx label.dat \
+    $secret1 $secret2 $cipher $session.dat $policy.dat
 
     if [ "$1" != "no-shut-down" ]; then
         shut_down
@@ -96,5 +102,18 @@ tpm2 rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data \
 tpm2 rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o \
 $file_rsa_de_output_data -s oaep-sha1 $file_rsa_en_output_data
 
-
+# Test rasdecrypt with polic password session with file attribute
+tpm2 createprimary -Q -C e -g $alg_hash -G $alg_primary_key -c $file_primary_key_ctx
+tpm2 startauthsession -S $session_dat --policy-session
+tpm2 policypassword -S $session_dat -L $policy_dat
+tpm2 create -Q -g $alg_hash -p foo -G $alg_rsaencrypt_key -C $file_primary_key_ctx \
+     -L $policy_dat -c $file_rsaencrypt_key_pub
+echo $secret > $secret1
+tpm2 rsaencrypt -c $file_rsaencrypt_key_pub  -o $cipher $secret1
+tpm2 startauthsession -S $session_dat --policy-session
+tpm2 policypassword -S $session_dat -L $policy_dat
+tpm2 rsadecrypt -c $file_rsaencrypt_key_pub  -p session:${session_dat}+file:- -o $secret2 $cipher <<EOF
+foo
+EOF
+cmp $secret1 $secret2
 exit 0
