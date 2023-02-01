@@ -72,6 +72,6 @@ tool_rc tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR for_auth,
  * @return
  *   Boolean indicating the success of the operation.
  */
-bool handle_str_password(const char *password, TPM2B_AUTH *auth);
+bool handle_password(const char *password, TPM2B_AUTH *auth);
 
 #endif /* SRC_PASSWORD_UTIL_H_ */

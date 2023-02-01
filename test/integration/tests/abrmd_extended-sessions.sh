@@ -125,6 +125,14 @@ tpm2 startauthsession -S session.ctx --hmac-session \
 tpm2 sessionconfig session.ctx --enable-encrypt --enable-decrypt
 tpm2 getrandom 8 -S session.ctx
 tpm2 flushcontext session.ctx
+## Test with bounded only session (with file attribute)
+tpm2 startauthsession -S session.ctx --hmac-session \
+--bind-context prim.ctx  --bind-auth file:-<<EOF
+primepass
+EOF
+tpm2 sessionconfig session.ctx --enable-encrypt --enable-decrypt
+tpm2 getrandom 8 -S session.ctx
+tpm2 flushcontext session.ctx
 ## Test with salted only session
 tpm2 startauthsession -S session.ctx --hmac-session \
 --tpmkey-context prim.ctx

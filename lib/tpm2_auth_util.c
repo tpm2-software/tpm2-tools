@@ -7,6 +7,7 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "files.h"
 #include "log.h"
@@ -32,6 +33,14 @@
 #define PCR_PREFIX "pcr:"
 #define PCR_PREFIX_LEN sizeof(PCR_PREFIX) - 1
 
+static struct termios old;
+
+/* When the program is interrupted during callbacks,
+ * restore the old termios state (with ICANON and ECHO) */
+static void signal_termio_restore(__attribute__((unused)) int signumber) {
+    tcsetattr (STDIN_FILENO, TCSANOW, &old);
+}
+
 static bool handle_hex_password(const char *password, TPM2B_AUTH *auth) {
 
     /* if it is hex, then skip the prefix */
@@ -46,6 +55,86 @@ static bool handle_hex_password(const char *password, TPM2B_AUTH *auth) {
     }
 
     return true;
+}
+
+bool handle_password(const char *password, TPM2B_AUTH *auth);
+
+static tool_rc get_auth_for_file_param(const char* password, TPM2B_AUTH *auth) {
+    const char* path = password;
+    size_t size = (sizeof(auth->buffer) * 2) + HEX_PREFIX_LEN + 2;
+    bool is_a_tty = isatty(STDIN_FILENO);
+    UINT8 *buffer = calloc(1, size);
+
+    if (!buffer) {
+        LOG_ERR("oom");
+        return tool_rc_general_error;
+    }
+
+    if (path) {
+        path = strcmp("-", path) ? path : NULL;
+    }
+    if (!is_a_tty || path) {
+        UINT16 fsize = size - 1;
+        bool ret = files_load_bytes_from_buffer_or_file_or_stdin(NULL, path,
+                                                                 &fsize, buffer);
+        if (!ret) {
+            free(buffer);
+            return tool_rc_general_error;
+        }
+        size = fsize;
+
+    } else {
+        /*
+         * It is a TTY and we're reading from stdin.
+         * Prompt the user for the password with echoing
+         * disabled.
+         */
+        struct termios new;
+        tcgetattr (STDIN_FILENO, &old);
+        new = old;
+        new.c_lflag &= ~(ICANON | ECHO);
+        struct sigaction signal_action;
+        memset (&signal_action, 0, sizeof signal_action);
+        signal_action.sa_handler = signal_termio_restore;
+        sigaction (SIGTERM, &signal_action, NULL);
+        sigaction (SIGINT, &signal_action, NULL);
+        tcsetattr (STDIN_FILENO, TCSANOW, &new);
+
+        printf("Enter Password: ");
+        fflush(stdout);
+
+        ssize_t read = getline((char **)&buffer, &size, stdin);
+
+        tcsetattr (STDIN_FILENO, TCSANOW, &old);
+        signal_action.sa_handler = SIG_DFL;
+        sigaction (SIGTERM, &signal_action, NULL);
+        sigaction (SIGINT, &signal_action, NULL);
+
+        if (read < 0) {
+            LOG_ERR("Could not get stdin, error: \"%s\"", strerror(errno));
+            free(buffer);
+            return tool_rc_general_error;
+        }
+        size = read;
+    }
+
+    /* bash here strings and many commands add a trailing newline, if its stdin, kill the newline */
+    size_t i;
+    for (i = size; i >=  1; i -= 1) {
+        if (buffer[i - 1] == '\n' || buffer[i - 1] == '\r') {
+            buffer[i - 1] = '\0';
+        } else {
+            break;
+        }
+    }
+    /* from here the buffer has been populated with the password */
+    bool ret = handle_password((char *) buffer, auth);
+    if (!ret) {
+        free(buffer);
+        return tool_rc_general_error;
+    }
+    free(buffer);
+    return tool_rc_success;
 }
 
 bool handle_str_password(const char *password, TPM2B_AUTH *auth) {
@@ -72,7 +161,18 @@ bool handle_str_password(const char *password, TPM2B_AUTH *auth) {
     return true;
 }
 
-static bool handle_password(const char *password, TPM2B_AUTH *auth) {
+bool handle_password(const char *password, TPM2B_AUTH *auth) {
+
+    bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
+
+    if (is_file) {
+        tool_rc rc = get_auth_for_file_param(password + FILE_PREFIX_LEN, auth);
+        if (rc != tool_rc_success) {
+            LOG_ERR("get password");
+            return false;
+        }
+        return true;
+    }
 
     bool is_hex = !strncmp(password, HEX_PREFIX, HEX_PREFIX_LEN);
     if (is_hex) {
@@ -315,96 +415,19 @@ out:
     return rc;
 }
 
-static tool_rc console_display_echo_control(bool echo) {
-
-    struct termios console;
-    int rc = tcgetattr(STDIN_FILENO, &console);
-    if (rc) {
-        return tool_rc_general_error;
-    }
-
-    if (echo) {
-        console.c_lflag |= ECHO;
-    } else {
-        console.c_lflag &= ~((tcflag_t) ECHO);
-    }
-
-    rc = tcsetattr(STDIN_FILENO, TCSANOW, &console);
-    if (rc) {
-        return tool_rc_general_error;
-    }
-
-    return tool_rc_success;
-}
-
 static tool_rc handle_file(ESYS_CONTEXT *ectx, const char *path,
         tpm2_session **session) {
 
     path += FILE_PREFIX_LEN;
     path = strcmp("-", path) ? path : NULL;
-
     TPM2B_AUTH auth = { 0 };
 
-    UINT8 buffer[(sizeof(auth.buffer) * 2) + HEX_PREFIX_LEN + 1] = { 0 };
+    tool_rc rc = get_auth_for_file_param(path, &auth);
 
-    /*
-     * If path is set or stdin is not a TTY, then read
-     * from a path. Note: that "file:" will still go this
-     * path and fail as path "" is not valid.
-     */
-    bool is_a_tty = isatty(STDIN_FILENO);
-    if (!is_a_tty || path) {
-
-        UINT16 size = sizeof(buffer) - 1;
-
-        bool ret = files_load_bytes_from_buffer_or_file_or_stdin(NULL, path,
-                &size, buffer);
-        if (!ret) {
-            return tool_rc_general_error;
-        }
-
-        /* bash here strings and many commands add a trailing newline, if its stdin, kill the newline */
-        if (!path && buffer[size - 1] == '\n') {
-            buffer[size - 1] = '\0';
-        }
-
-        /*
-         * It is a TTY and we're reading from stdin.
-         * Prompt the user for the password with echoing
-         * disabled.
-         */
-    } else {
-
-        tool_rc rc = console_display_echo_control(false);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        printf("Enter Password: ");
-        fflush(stdout);
-
-        char *b = (char *) buffer;
-        size_t size = sizeof(buffer) - 1;
-
-        ssize_t read = getline(&b, &size, stdin);
-        if (read < 0) {
-            LOG_ERR("Could not get stdin, error: \"%s\"", strerror(errno));
-        }
-
-        b[read - 1] = '\0';
-
-        rc = console_display_echo_control(true);
-        if (rc != tool_rc_success || read < 0) {
-            return tool_rc_general_error;
-        }
+    if (rc != tool_rc_success) {
+        LOG_ERR("get password");
+        return rc;
     }
-
-    /* from here the buffer has been populated with the password */
-    bool ret = handle_password((char *) buffer, &auth);
-    if (!ret) {
-        return tool_rc_general_error;
-    }
-
     return start_hmac_session(ectx, &auth, session);
 }
 
