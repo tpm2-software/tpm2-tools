@@ -3,7 +3,7 @@
 
 function get_deps() {
 
-	export TSS_VERSION=${TPM2_TSS_VERSION:-3.2.0}
+	export TSS_VERSION=${TPM2_TSS_VERSION:-3.2.2}
 	ABRMD_VERSION=2.4.1
 	EXTRA_CONFIG_FLAGS=''
 
