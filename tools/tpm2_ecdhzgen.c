@@ -21,6 +21,7 @@ struct tpm_ecdhzgen_ctx {
 
     TPM2B_ECC_POINT Q;
     const char *ecdh_pub_path;
+    const char *ecdh_pub_key_path;
 
     /*
      * Outputs
@@ -114,11 +115,27 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 3. Command specific initializations
      */
-    bool is_file_op_success = true;
-    is_file_op_success = files_load_ecc_point(ctx.ecdh_pub_path, &ctx.Q);
-    if (!is_file_op_success) {
-        LOG_ERR("Failed to load public input ECC point Q");
-        return tool_rc_general_error;
+    if (ctx.ecdh_pub_key_path) {
+        TPM2B_PUBLIC public = { 0 };
+        bool is_file_op_success = true;
+        is_file_op_success = files_load_public(ctx.ecdh_pub_key_path, &public);
+        if (!is_file_op_success) {
+            LOG_ERR("Failed to load public input ECC public key");
+            return tool_rc_general_error;
+        }
+        if (public.publicArea.type != TPM2_ALG_ECC) {
+            LOG_ERR("Only ECC public keys can be used.");
+            return tool_rc_general_error;
+        }
+        ctx.Q.point = public.publicArea.unique.ecc;
+        ctx.Q.size = 0;
+    } else {
+        bool is_file_op_success = true;
+        is_file_op_success = files_load_ecc_point(ctx.ecdh_pub_path, &ctx.Q);
+        if (!is_file_op_success) {
+            LOG_ERR("Failed to load public input ECC point Q");
+            return tool_rc_general_error;
+        }
     }
     /*
      * 4. Configuration for calculating the pHash
@@ -156,6 +173,10 @@ static tool_rc check_options(void) {
         LOG_ERR("Specify path to save the ecdh secret or Z point");
         return tool_rc_option_error;
     }
+    if (ctx.ecdh_pub_path && ctx.ecdh_pub_key_path) {
+        LOG_ERR("Only pub key or pub point can be specified not both.");
+        return tool_rc_option_error;
+    }
 
     return tool_rc_success;
 }
@@ -172,6 +193,9 @@ static bool on_option(char key, char *value) {
             break;
         case 'u':
             ctx.ecdh_pub_path = value;
+            break;
+        case 'k':
+            ctx.ecdh_pub_key_path = value;
             break;
         case 'o':
             ctx.ecdh_Z_path = value;
@@ -190,12 +214,13 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "key-context", required_argument, 0, 'c' },
       { "key-auth",    required_argument, 0, 'p' },
       { "public",      required_argument, 0, 'u' },
+      { "public-key",  required_argument, 0, 'k' },
       { "output",      required_argument, 0, 'o' },
       { "cphash",      required_argument, 0,  0  },
 
     };
 
-    *opts = tpm2_options_new("c:p:u:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:p:u:k:o:", ARRAY_LEN(topts), topts,
             on_option, 0, 0);
 
     return *opts != 0;

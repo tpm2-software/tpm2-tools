@@ -136,4 +136,20 @@ openssl dgst -sha256 -binary -out test.bin
 
 cmp cp.hash test.bin 2
 
+# Test ecdhzgen with public keys instead of public points
+tpm2 createprimary -C o -c prim.ctx -Q
+
+# Create ECDH keypair A
+tpm2 create -C prim.ctx -c keyA.ctx -u ecdhA.pub -G ecc256:ecdh
+
+# Create ECDH keypair B
+tpm2 create -C prim.ctx -c keyB.ctx -u ecdhB.pub -G ecc256:ecdh
+
+# Derive ECDH secret 1 using private key A and public key B
+tpm2 ecdhzgen -c keyA.ctx -k ecdhB.pub -o secret1.dat
+
+# Derive ECDH secret 2 using private key B and public key A
+tpm2 ecdhzgen -c keyB.ctx -k ecdhA.pub -o secret2.dat
+diff secret1.dat secret2.dat
+
 exit 0

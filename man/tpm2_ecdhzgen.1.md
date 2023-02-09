@@ -29,7 +29,11 @@ resultant point (Z = (xZ , yZ) ≔ [hds]QB; where h is the cofactor of the curve
 
   * **-u**, **\--public**=_FILE_:
 
-    Output ECC point Q.
+    Input ECC point Q.
+
+  * **-k**, **\--public-key**=_FILE_:
+
+    Input ECC public key with point Q.
 
   * **-o**, **\--output**=_FILE_
 
