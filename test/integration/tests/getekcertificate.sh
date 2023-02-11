@@ -31,11 +31,12 @@ fi
 # Setup retries for when EK certificate cannot be retrieved on first try
 getekcert_with_retries() {
     trap - ERR
+    INTL_URL=https://ekop.intel.com/ekcertservice/
     cert_done=
     for i in 1 2 3;
         do
-        tpm2 getekcertificate -u $1 -x -X -o $2
-        tpm2 getekcertificate -u $1 -x -X > $3
+        tpm2 getekcertificate -u $1 -x -X -o $2 $INTL_URL
+        tpm2 getekcertificate -u $1 -x -X $INTL_URL > $3
         # Test that stdout output is the same as output to file
         cmp $2 $3
         if [ $? == 0 ]; then
