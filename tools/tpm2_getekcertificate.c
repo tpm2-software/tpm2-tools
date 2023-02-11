@@ -20,12 +20,52 @@
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 
+
+typedef enum tpm_manufacturer tpm_manufacturer;
+enum tpm_manufacturer {
+    VENDOR_AMD       = 0x414D4400,
+    VENDOR_ATMEL     = 0x41544D4C,
+    VENDOR_BROADCOM  = 0x4252434D,
+    VENDOR_CISCO     = 0x4353434F,
+    VENDOR_FLYSLICE  = 0x464C5953,
+    VENDOR_ROCKCHIP  = 0x524F4343,
+    VENDOR_GOOGLE    = 0x474F4F47,
+    VENDOR_HPE       = 0x48504500,
+    VENDOR_HUAWEI    = 0x48495349,
+    VENDOR_IBM       = 0x49424D00,
+    VENDOR_IBMSIM    = 0x49424D20, // Used only by mssim/ibmswtpm2
+    VENDOR_INFINEON  = 0x49465800,
+    VENDOR_INTEL     = 0x494E5443,
+    VENDOR_LENOVO    = 0x4C454E00,
+    VENDOR_MICROSOFT = 0x4D534654,
+    VENDOR_NSM       = 0x4E534D20,
+    VENDOR_NATIONZ   = 0x4E545A00,
+    VENDOR_NUVOTON   = 0x4E544300,
+    VENDOR_QUALCOMM  = 0x51434F4D,
+    VENDOR_SAMSUNG   = 0x534D534E,
+    VENDOR_SINOSUN   = 0x534E5300,
+    VENDOR_SMSC      = 0x534D5343,
+    VENDOR_STM       = 0x53544D20,
+    VENDOR_TXN       = 0x54584E00,
+    VENDOR_WINBOND   = 0x57454300,
+};
+
+typedef enum pubkey_enc_mode pubkey_enc_mode;
+enum pubkey_enc_mode {
+    ENC_AUTO = 0,
+    ENC_INTEL = 1,
+    ENC_AMD = 2,
+};
+
+#define EK_SERVER_INTEL "https://ekop.intel.com/ekcertservice/"
+#define EK_SERVER_AMD "https://ftpm.amd.com/pki/aia/"
+
 typedef struct tpm_getekcertificate_ctx tpm_getekcertificate_ctx;
 struct tpm_getekcertificate_ctx {
     // TPM Device properties
     bool is_tpm2_device_active;
     bool is_cert_on_nv;
-    bool is_intc_cert;
+    tpm_manufacturer manufacturer;
     bool is_rsa_ek_cert_nv_location_defined;
     bool is_ecc_ek_cert_nv_location_defined;
     bool is_tpmgeneratedeps;
@@ -36,24 +76,74 @@ struct tpm_getekcertificate_ctx {
     char *ec_cert_path_2;
     FILE *ec_cert_file_handle_2;
     unsigned char *rsa_cert_buffer;
-    uint16_t rsa_cert_buffer_size;
+    size_t rsa_cert_buffer_size;
     unsigned char *ecc_cert_buffer;
-    uint16_t ecc_cert_buffer_size;
+    size_t ecc_cert_buffer_size;
     bool is_cert_raw;
+    size_t curl_buffer_size;
     // EK certificate hosting particulars
     char *ek_server_addr;
     unsigned int SSL_NO_VERIFY;
     char *ek_path;
+    pubkey_enc_mode encoding;
     bool verbose;
     TPM2B_PUBLIC *out_public;
 };
 
+/*
+ * Sourced from TCG Vendor ID Registry v1.06:
+ * https://trustedcomputinggroup.org/resource/vendor-id-registry/
+ *
+ */
+
+typedef enum ek_nv_index ek_nv_index;
+enum ek_nv_index {
+    RSA_EK_CERT_NV_INDEX = 0x01C00002,
+    ECC_EK_CERT_NV_INDEX = 0x01C0000A
+};
+
 static tpm_getekcertificate_ctx ctx = {
     .is_tpm2_device_active = true,
-    .ek_server_addr = "https://ekop.intel.com/ekcertservice/",
     .is_cert_on_nv = true,
     .cert_count = 0,
+    .encoding = ENC_AUTO,
 };
+
+
+static char *get_ek_server_address(void) {
+    if (ctx.ek_server_addr) // set by CLI
+    {
+        return ctx.ek_server_addr;
+    }
+    switch (ctx.manufacturer) {
+        case VENDOR_INTEL:
+            return EK_SERVER_INTEL;
+        case VENDOR_AMD:
+            return EK_SERVER_AMD;
+        default:
+            LOG_ERR("No EK server address found for manufacturer.");
+            return NULL;
+    }
+}
+
+#define AMD_EK_URI_LEN 16 // AMD EK takes first 16 hex chars of hash
+
+static pubkey_enc_mode get_encoding(void) {
+    /*
+     * If one is explicitly set, use it.
+     */
+    if (ctx.encoding != ENC_AUTO) {
+        return ctx.encoding;
+    }
+    /*
+     * Currently it's assumed AMD is the only one with a different encoding.
+     */
+    if (ctx.manufacturer == VENDOR_AMD) {
+        return ENC_AMD;
+    } else {
+        return ENC_INTEL;
+    }
+}
 
 static unsigned char *hash_ek_public(void) {
 
@@ -64,55 +154,130 @@ static unsigned char *hash_ek_public(void) {
     }
 
     EVP_MD_CTX *sha256 = EVP_MD_CTX_new();
+    if (!hash) {
+        LOG_ERR("OOM");
+        goto evperr;
+    }
     int is_success = EVP_DigestInit(sha256, EVP_sha256());
     if (!is_success) {
         LOG_ERR("EVP_DigestInit failed");
         goto err;
     }
 
-    switch (ctx.out_public->publicArea.type) {
-    case TPM2_ALG_RSA:
-        is_success = EVP_DigestUpdate(sha256,
-                ctx.out_public->publicArea.unique.rsa.buffer,
-                ctx.out_public->publicArea.unique.rsa.size);
-        if (!is_success) {
-            LOG_ERR("EVP_DigestUpdate failed");
-            goto err;
-        }
+    if (ctx.encoding == ENC_AMD) {
+        switch (ctx.out_public->publicArea.type) {
+        case TPM2_ALG_RSA: {
+            /*
+             * hash = sha256(00 00 22 22 || (uint32_t) exp || modulus)
+             */
+            BYTE buf[4] = { 0x00, 0x00, 0x22, 0x22 }; // Prefix
+            is_success = EVP_DigestUpdate(sha256, buf, sizeof(buf));
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
 
-        if (ctx.out_public->publicArea.parameters.rsaDetail.exponent != 0) {
-            LOG_ERR("non-default exponents unsupported");
-            goto err;
-        }
-        BYTE buf[3] = { 0x1, 0x00, 0x01 }; // Exponent
-        is_success = EVP_DigestUpdate(sha256, buf, sizeof(buf));
-        if (!is_success) {
-            LOG_ERR("EVP_DigestUpdate failed");
-            goto err;
-        }
-        break;
+            uint32_t exp = ctx.out_public->publicArea.parameters.rsaDetail.exponent;
+            if (exp == 0) {
+                exp = 0x00010001; // 0 indicates default
+            } else {
+                LOG_WARN("non-default exponent used");
+            }
+            buf[3] = (BYTE)exp;
+            buf[2] = (BYTE)(exp>>=8);
+            buf[1] = (BYTE)(exp>>=8);
+            buf[0] = (BYTE)(exp>>=8);
+            is_success = EVP_DigestUpdate(sha256, buf, sizeof(buf));
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
 
-    case TPM2_ALG_ECC:
-        is_success = EVP_DigestUpdate(sha256,
-                ctx.out_public->publicArea.unique.ecc.x.buffer,
-                ctx.out_public->publicArea.unique.ecc.x.size);
-        if (!is_success) {
-            LOG_ERR("EVP_DigestUpdate failed");
+            is_success = EVP_DigestUpdate(sha256,
+                    ctx.out_public->publicArea.unique.rsa.buffer,
+                    ctx.out_public->publicArea.unique.rsa.size);
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
+            break;
+        }
+        case TPM2_ALG_ECC: {
+            /*
+             * hash = sha256(00 00 44 44 || (uint32_t) exp || modulus)
+             */
+            BYTE buf[4] = { 0x00, 0x00, 0x44, 0x44 }; // Prefix
+            is_success = EVP_DigestUpdate(sha256, buf, sizeof(buf));
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
+            is_success = EVP_DigestUpdate(sha256,
+                    ctx.out_public->publicArea.unique.ecc.x.buffer,
+                    ctx.out_public->publicArea.unique.ecc.x.size);
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
+
+            is_success = EVP_DigestUpdate(sha256,
+                    ctx.out_public->publicArea.unique.ecc.y.buffer,
+                    ctx.out_public->publicArea.unique.ecc.y.size);
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
+            break;
+        }
+        default:
+            LOG_ERR("unsupported EK algorithm");
             goto err;
         }
+    } else {
+        switch (ctx.out_public->publicArea.type) {
+        case TPM2_ALG_RSA:
+            is_success = EVP_DigestUpdate(sha256,
+                    ctx.out_public->publicArea.unique.rsa.buffer,
+                    ctx.out_public->publicArea.unique.rsa.size);
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
 
-        is_success = EVP_DigestUpdate(sha256,
-                ctx.out_public->publicArea.unique.ecc.y.buffer,
-                ctx.out_public->publicArea.unique.ecc.y.size);
-        if (!is_success) {
-            LOG_ERR("EVP_DigestUpdate failed");
+            if (ctx.out_public->publicArea.parameters.rsaDetail.exponent != 0) {
+                LOG_ERR("non-default exponents unsupported");
+                goto err;
+            }
+            BYTE buf[3] = { 0x1, 0x00, 0x01 }; // Exponent
+            is_success = EVP_DigestUpdate(sha256, buf, sizeof(buf));
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
+            break;
+
+        case TPM2_ALG_ECC:
+            is_success = EVP_DigestUpdate(sha256,
+                    ctx.out_public->publicArea.unique.ecc.x.buffer,
+                    ctx.out_public->publicArea.unique.ecc.x.size);
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
+
+            is_success = EVP_DigestUpdate(sha256,
+                    ctx.out_public->publicArea.unique.ecc.y.buffer,
+                    ctx.out_public->publicArea.unique.ecc.y.size);
+            if (!is_success) {
+                LOG_ERR("EVP_DigestUpdate failed");
+                goto err;
+            }
+            break;
+
+        default:
+            LOG_ERR("unsupported EK algorithm");
             goto err;
         }
-        break;
-
-    default:
-        LOG_ERR("unsupported EK algorithm");
-        goto err;
     }
 
     is_success = EVP_DigestFinal_ex(sha256, hash, NULL);
@@ -134,8 +299,9 @@ static unsigned char *hash_ek_public(void) {
 
     return hash;
 err:
-    free(hash);
     EVP_MD_CTX_free(sha256);
+evperr:
+    free(hash);
     return NULL;
 }
 
@@ -192,20 +358,74 @@ static char *base64_encode(const unsigned char* buffer)
     return final_string;
 }
 
-static size_t writecallback(char *contents, size_t size, size_t nitems,
-    void *CERT_BUFFER) {
+#define NULL_TERM_LEN 1 // '\0'
 
-    strncpy(CERT_BUFFER, (const char *)contents, nitems * size);
-    ctx.rsa_cert_buffer_size = nitems * size;
-
-    return ctx.rsa_cert_buffer_size;
+static char *encode_ek_public_amd(void) {
+    unsigned char *hash = hash_ek_public();
+    if (!hash) {
+        LOG_ERR("EK hash is null");
+        return NULL;
+    }
+    char *hash_str = malloc(AMD_EK_URI_LEN * 2 + NULL_TERM_LEN);
+    for (size_t i = 0; i < AMD_EK_URI_LEN; i++)
+    {
+        sprintf((char*)(hash_str + (i*2)), "%02x", hash[i]);
+    }
+    hash_str[AMD_EK_URI_LEN * 2] = '\0';
+    return hash_str;
 }
 
-static bool retrieve_web_endorsement_certificate(char *b64h) {
+static char *encode_ek_public_intel(void) {
+    unsigned char *hash = hash_ek_public();
+    char *b64 = base64_encode(hash);
+    free(hash);
+    if (!b64) {
+        LOG_ERR("base64_encode returned null");
+    }
+    return b64;
+}
 
-    #define NULL_TERM_LEN 1                 // '\0'
+static char *encode_ek_public(void) {
+    if (ctx.encoding == ENC_AMD) {
+        return encode_ek_public_amd();
+    } else {
+        return encode_ek_public_intel();
+    }
+}
+/*
+ * As only one cert is downloaded at a time, we can simply use
+ * rsa_cert_buffer for either RSA EK cert or ECC EK cert.
+ */
+static size_t writecallback(char *contents, size_t size, size_t nitems,
+    void *userdata) {
+    UNUSED(userdata);
+    const size_t chunk_size = size * nitems;
+
+    if (!chunk_size) {
+      return 0;
+    }
+
+    const size_t new_used_size = ctx.rsa_cert_buffer_size + chunk_size;
+    if (ctx.curl_buffer_size < new_used_size) {
+        const size_t new_buf_size = ctx.curl_buffer_size + CURL_MAX_WRITE_SIZE;
+        void *new_buf = realloc(ctx.rsa_cert_buffer, new_buf_size);
+        if (!new_buf) {
+            LOG_ERR("OOM when downloading EK cert");
+            return 0;
+        }
+        ctx.rsa_cert_buffer = new_buf;
+        ctx.curl_buffer_size = new_buf_size;
+    }
+
+    memcpy(ctx.rsa_cert_buffer + ctx.rsa_cert_buffer_size, contents, chunk_size);
+    ctx.rsa_cert_buffer_size += chunk_size;
+    return chunk_size;
+}
+
+static bool retrieve_web_endorsement_certificate(char *uri) {
+
     #define PATH_JOIN_CHAR_LEN 1            // '/'
-    size_t len = strlen(ctx.ek_server_addr) + strlen(b64h) + NULL_TERM_LEN +
+    size_t len = strlen(ctx.ek_server_addr) + strlen(uri) + NULL_TERM_LEN +
         PATH_JOIN_CHAR_LEN;
     char *weblink = (char *) malloc(len);
     if (!weblink) {
@@ -214,6 +434,14 @@ static bool retrieve_web_endorsement_certificate(char *b64h) {
     }
 
     bool ret = true;
+    ctx.rsa_cert_buffer = malloc(CURL_MAX_WRITE_SIZE);
+    if (!ctx.rsa_cert_buffer) {
+        LOG_ERR("OOM");
+        ret = false;
+        goto out_memory;
+    }
+    ctx.curl_buffer_size = CURL_MAX_WRITE_SIZE;
+
     CURLcode rc = curl_global_init(CURL_GLOBAL_DEFAULT);
     if (rc != CURLE_OK) {
         LOG_ERR("curl_global_init failed: %s", curl_easy_strerror(rc));
@@ -244,9 +472,9 @@ static bool retrieve_web_endorsement_certificate(char *b64h) {
     bool is_slash_append_required =
         strncmp((ctx.ek_server_addr + strlen(ctx.ek_server_addr) - 1), "/", 1);
     if (is_slash_append_required) {
-        snprintf(weblink, len, "%s%s%s", ctx.ek_server_addr, "/", b64h);
+        snprintf(weblink, len, "%s%s%s", ctx.ek_server_addr, "/", uri);
     } else {
-        snprintf(weblink, len, "%s%s", ctx.ek_server_addr, b64h);
+        snprintf(weblink, len, "%s%s", ctx.ek_server_addr, uri);
     }
 
     rc = curl_easy_setopt(curl, CURLOPT_URL, weblink);
@@ -276,18 +504,6 @@ static bool retrieve_web_endorsement_certificate(char *b64h) {
         ret = false;
         goto out_easy_cleanup;
     }
-    /*
-     * As only one cert is downloaded at a time, we can simply use
-     * rsa_cert_buffer for either RSA EK cert or ECC EK cert.
-     */
-    ctx.rsa_cert_buffer = malloc(CURL_MAX_WRITE_SIZE);
-    rc = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)ctx.rsa_cert_buffer);
-    if (rc != CURLE_OK) {
-        LOG_ERR("curl_easy_setopt for CURLOPT_WRITEDATA failed: %s",
-                curl_easy_strerror(rc));
-        ret = false;
-        goto out_easy_cleanup;
-    }
 
     rc = curl_easy_setopt(curl, CURLOPT_FAILONERROR, true);
     if (rc != CURLE_OK) {
@@ -308,6 +524,12 @@ out_easy_cleanup:
 out_global_cleanup:
     curl_global_cleanup();
 out_memory:
+    if (!ret && ctx.rsa_cert_buffer) {
+      free(ctx.rsa_cert_buffer);
+      ctx.rsa_cert_buffer = NULL;
+      ctx.rsa_cert_buffer_size = 0;
+      ctx.curl_buffer_size = 0;
+    }
     free(weblink);
 
     return ret;
@@ -321,28 +543,29 @@ static bool get_web_ek_certificate(void) {
     }
 
     bool ret = true;
-    unsigned char *hash = hash_ek_public();
-    char *b64 = base64_encode(hash);
-    if (!b64) {
-        LOG_ERR("base64_encode returned null");
+    char *ek_uri = encode_ek_public();
+    if (!ek_uri) {
+        LOG_ERR("Failed to encode EK.");
         ret = false;
         goto out;
     }
 
-    LOG_INFO("%s", b64);
+    LOG_INFO("%s", ek_uri);
 
-    ret = retrieve_web_endorsement_certificate(b64);
+    ctx.ek_server_addr = get_ek_server_address();
+    if (!ctx.ek_server_addr) {
+        LOG_ERR("Please specify an EK server address on the command line.");
+        ret = false;
+        goto out;
+    }
 
-    free(b64);
+    ret = retrieve_web_endorsement_certificate(ek_uri);
+
+    free(ek_uri);
 out:
-    free(hash);
     return ret;
 }
 
-#define INTC 0x494E5443
-#define IBM  0x49424D20
-#define RSA_EK_CERT_NV_INDEX 0x01C00002
-#define ECC_EK_CERT_NV_INDEX 0x01C0000A
 tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
 
     TPMI_YES_NO more_data;
@@ -355,12 +578,10 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
         goto get_tpm_properties_out;
     }
 
-    if (capability_data->data.tpmProperties.tpmProperty[0].value == IBM) {
-        LOG_WARN("The TPM device is a simulator —— Inspect the certficate chain and root certificate");
-    }
+    ctx.manufacturer = capability_data->data.tpmProperties.tpmProperty[0].value;
 
-    if (capability_data->data.tpmProperties.tpmProperty[0].value == INTC) {
-        ctx.is_intc_cert = true;
+    if (ctx.manufacturer == VENDOR_IBMSIM) {
+        LOG_WARN("The TPM device is a simulator —— Inspect the certficate chain and root certificate");
     }
 
     free(capability_data);
@@ -419,8 +640,9 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
      * with attributes:
      * ppwrite|ppread|ownerread|authread|no_da|written|platformcreate
      */
+    const bool is_rsa = nv_index == RSA_EK_CERT_NV_INDEX;
     char index_string[11];
-    if (nv_index == RSA_EK_CERT_NV_INDEX) {
+    if (is_rsa) {
         strcpy(index_string, "0x01C00002");
     } else {
         strcpy(index_string, "0x01C0000A");
@@ -435,15 +657,20 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
 
     TPM2B_DIGEST cp_hash = { 0 };
     TPM2B_DIGEST rp_hash = { 0 };
-    rc = nv_index == RSA_EK_CERT_NV_INDEX ?
-
+    uint16_t nv_buf_size;
+    rc = is_rsa ?
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.rsa_cert_buffer,
-            &ctx.rsa_cert_buffer_size, &cp_hash, &rp_hash, TPM2_ALG_SHA256, 0,
+            &nv_buf_size, &cp_hash, &rp_hash, TPM2_ALG_SHA256, 0,
             ESYS_TR_NONE, ESYS_TR_NONE, NULL) :
 
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.ecc_cert_buffer,
-            &ctx.ecc_cert_buffer_size, &cp_hash, &rp_hash, TPM2_ALG_SHA256, 0,
+            &nv_buf_size, &cp_hash, &rp_hash, TPM2_ALG_SHA256, 0,
             ESYS_TR_NONE, ESYS_TR_NONE, NULL);
+    if (is_rsa) {
+        ctx.rsa_cert_buffer_size = nv_buf_size;
+    } else {
+        ctx.ecc_cert_buffer_size = nv_buf_size;
+    }
 
 nv_read_out:
     tmp_rc = tpm2_session_close(&object.session);
@@ -497,7 +724,8 @@ static tool_rc get_nv_ek_certificate(ESYS_CONTEXT *ectx) {
 
 static tool_rc print_intel_ek_certificate_warning(void) {
 
-    if (ctx.is_intc_cert && ctx.is_tpmgeneratedeps && !ctx.is_cert_on_nv) {
+    if (ctx.manufacturer == VENDOR_INTEL &&
+    ctx.is_tpmgeneratedeps && !ctx.is_cert_on_nv) {
 
         LOG_ERR("Cannot proceed. For further information please refer to: "
                 "https://www.intel.com/content/www/us/en/security-center/"
@@ -605,22 +833,21 @@ static tool_rc process_output(void) {
      * the EK public hash in addition to the certificate data.
      * If so set the flag.
      */
-    if (ctx.rsa_cert_buffer) {
-        ctx.is_intc_cert = ctx.is_intc_cert ? ctx.is_intc_cert :
-        !(strncmp((const char *)ctx.rsa_cert_buffer,
+    bool is_intel_cert = ctx.manufacturer == VENDOR_INTEL;
+    if (!is_intel_cert && ctx.rsa_cert_buffer) {
+        is_intel_cert = !(strncmp((const char *)ctx.rsa_cert_buffer,
             "{\"pubhash", strlen("{\"pubhash")));
     }
 
-    if (ctx.ecc_cert_buffer) {
-        ctx.is_intc_cert = ctx.is_intc_cert ? ctx.is_intc_cert :
-        !(strncmp((const char *)ctx.ecc_cert_buffer,
+    if (!is_intel_cert && ctx.ecc_cert_buffer) {
+        is_intel_cert = !(strncmp((const char *)ctx.ecc_cert_buffer,
             "{\"pubhash", strlen("{\"pubhash")));
     }
 
     /*
      * Intel EK certificates on the NV-index are already in standard DER format.
      */
-    if (ctx.is_intc_cert && ctx.is_cert_on_nv) {
+    if (is_intel_cert && !ctx.is_cert_on_nv) {
         ctx.is_cert_raw = true;
     }
 
@@ -628,7 +855,7 @@ static tool_rc process_output(void) {
      *  Convert Intel EK certificates as received in the URL safe variant of
      *  Base 64: https://tools.ietf.org/html/rfc4648#section-5 to PEM
      */
-    if (ctx.rsa_cert_buffer && ctx.is_intc_cert && !ctx.is_cert_raw) {
+    if (ctx.rsa_cert_buffer && is_intel_cert && !ctx.is_cert_raw) {
         char *split = strstr((const char *)ctx.rsa_cert_buffer, "certificate");
         char *copy_buffer = base64_decode(&split, ctx.rsa_cert_buffer_size);
         ctx.rsa_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
@@ -641,7 +868,7 @@ static tool_rc process_output(void) {
         free(copy_buffer);
     }
 
-    if (ctx.ecc_cert_buffer && ctx.is_intc_cert && !ctx.is_cert_raw) {
+    if (ctx.ecc_cert_buffer && is_intel_cert && !ctx.is_cert_raw) {
         char *split = strstr((const char *)ctx.ecc_cert_buffer, "certificate");
         char *copy_buffer = base64_decode(&split, ctx.ecc_cert_buffer_size);
         ctx.ecc_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
@@ -750,6 +977,23 @@ static bool on_option(char key, char *value) {
         ctx.is_tpm2_device_active = false;
         ctx.is_cert_on_nv = false;
         break;
+    case 'E':
+        if (!value || !value[0]) {
+            LOG_ERR("No encoding given.");
+            return false;
+        } 
+        switch (value[0]) {
+            case 'a':
+                ctx.encoding = ENC_AMD;
+                break;
+            case 'i':
+                ctx.encoding = ENC_INTEL;
+                break;
+            default:
+                LOG_ERR("Must specify a (AMD) or i (Intel) for encoding.");
+                return false;
+        }
+        break;
     case 0:
         ctx.is_cert_raw = true;
         break;
@@ -765,10 +1009,11 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "allow-unverified", no_argument,       NULL, 'X' },
         { "ek-public",        required_argument, NULL, 'u' },
         { "offline",          no_argument,       NULL, 'x' },
+        { "encoding",         required_argument, NULL, 'E' },
         { "raw",              no_argument,       NULL,  0  },
     };
 
-    *opts = tpm2_options_new("o:u:Xx", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("o:u:XxE:", ARRAY_LEN(topts), topts, on_option,
             on_args, 0);
 
     return *opts != NULL;
@@ -789,6 +1034,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     ctx.verbose = flags.verbose;
+    ctx.encoding = get_encoding();
 
     rc = get_ek_certificates(ectx);
     if (rc != tool_rc_success) {

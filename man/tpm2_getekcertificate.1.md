@@ -84,6 +84,12 @@ conditions dictating the certificate location lookup.
     This flags the tool to output the EK certificate as is received from the
     source: NV/ Web-Hosting.
 
+  * **-E**, **\--encoding**=_ENCODING_:
+
+    Specifies the encoding format to use explicitly. Normally, the default
+    method is the one used by Intel unless an AMD fTPM is detected, in which
+    case the AMD-specific encoding is used. Use 'a' for AMD and 'i' for Intel.
+
   * **ARGUMENT** the command line argument specifies the URL address for the EK
     certificate portal. This forces the tool to not look for the EK certificates
     on the NV indices.
