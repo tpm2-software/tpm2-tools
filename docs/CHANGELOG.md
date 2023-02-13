@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## 5.5-rc1 - 2022-12-12
+## 5.5 - 2022-02-13
 
 ### Added
   * tpm2_createek:
