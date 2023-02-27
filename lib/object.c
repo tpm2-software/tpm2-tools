@@ -336,7 +336,18 @@ static tool_rc tpm2_util_object_do_ctx_file(ESYS_CONTEXT *ctx,
     /* assign a dummy transient handle */
     outobject->handle = TPM2_TRANSIENT_FIRST;
     outobject->path = objectstr;
-    return files_load_tpm_context_from_file(ctx, &outobject->tr_handle, f);
+    tool_rc rc = files_load_tpm_context_from_file(ctx, &outobject->tr_handle, f);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_TR_GetTpmHandle(ctx, outobject->tr_handle, &outobject->handle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Failed to acquire SAPI handle");
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
 }
 
 static tool_rc tpm2_util_object_load2(ESYS_CONTEXT *ctx, const char *objectstr,
