@@ -108,6 +108,7 @@ tpm2_tools = \
     tools/misc/tpm2_eventlog.c \
     tools/misc/tpm2_print.c \
     tools/misc/tpm2_rc_decode.c \
+    tools/misc/tpm2_tr_encode.c \
     tools/tpm2_activatecredential.c \
     tools/tpm2_certify.c \
     tools/tpm2_changeauth.c \
@@ -461,6 +462,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_startup.1 \
     man/man1/tpm2_stirrandom.1 \
     man/man1/tpm2_testparms.1 \
+    man/man1/tpm2_tr_encode.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1 \
     man/man1/tpm2_setcommandauditstatus.1 \
