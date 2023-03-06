@@ -13,6 +13,15 @@
 #include "tpm2_kdfa.h"
 #include "tpm2_openssl.h"
 
+/*
+ * Disable optimization because of an error in FORTIFY_SOURCE
+ */
+ 
+#ifdef _FORTIFY_SOURCE
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+#endif
+
 TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
         TPM2B *context_u, TPM2B *context_v, UINT16 bits,
         TPM2B_MAX_BUFFER *result_key) {
@@ -139,3 +148,13 @@ err:
 
     return rval;
 }
+#ifdef _FORTIFY_SOURCE
+
+#endif
+
+#ifdef _FORTIFY_SOURCE
+#pragma GCC pop_options
+#endif
+
+
+
