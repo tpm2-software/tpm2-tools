@@ -116,12 +116,14 @@ static char *get_ek_server_address(void) {
         return ctx.ek_server_addr;
     }
     switch (ctx.manufacturer) {
-        case VENDOR_INTEL:
-            return EK_SERVER_INTEL;
         case VENDOR_AMD:
+            ctx.ek_server_addr = EK_SERVER_AMD;
             return EK_SERVER_AMD;
         default:
-            LOG_ERR("No EK server address found for manufacturer.");
+            /* Intel will be used as default to ensure
+               backward compatibility withe the integration tests. */
+            ctx.ek_server_addr = EK_SERVER_INTEL;
+            return EK_SERVER_INTEL;
             return NULL;
     }
 }
@@ -186,7 +188,7 @@ static unsigned char *hash_ek_public(void) {
             buf[3] = (BYTE)exp;
             buf[2] = (BYTE)(exp>>=8);
             buf[1] = (BYTE)(exp>>=8);
-            buf[0] = (BYTE)(exp>>=8);
+            buf[0] = (BYTE)(exp);
             is_success = EVP_DigestUpdate(sha256, buf, sizeof(buf));
             if (!is_success) {
                 LOG_ERR("EVP_DigestUpdate failed");
@@ -657,7 +659,7 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
 
     TPM2B_DIGEST cp_hash = { 0 };
     TPM2B_DIGEST rp_hash = { 0 };
-    uint16_t nv_buf_size;
+    uint16_t nv_buf_size = 0;
     rc = is_rsa ?
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.rsa_cert_buffer,
             &nv_buf_size, &cp_hash, &rp_hash, TPM2_ALG_SHA256, 0,
