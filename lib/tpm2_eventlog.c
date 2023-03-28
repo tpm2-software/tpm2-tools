@@ -30,7 +30,8 @@ bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
  * hold the digest. The size of the digest is passed to the callback in the
  * 'size' parameter.
  */
-bool foreach_digest2(tpm2_eventlog_context *ctx, unsigned pcr_index, TCG_DIGEST2 const *digest, size_t count, size_t size) {
+bool foreach_digest2(tpm2_eventlog_context *ctx, UINT32 eventType, unsigned pcr_index,
+                     TCG_DIGEST2 const *digest, size_t count, size_t size) {
 
     if (digest == NULL) {
         LOG_ERR("digest cannot be NULL");
@@ -80,7 +81,8 @@ bool foreach_digest2(tpm2_eventlog_context *ctx, unsigned pcr_index, TCG_DIGEST2
             LOG_WARN("PCR%d algorithm %d unsupported", pcr_index, alg);
         }
 
-        if (pcr && !tpm2_openssl_pcr_extend(alg, pcr, digest->Digest, alg_size)) {
+        if (eventType != EV_NO_ACTION && pcr &&
+            !tpm2_openssl_pcr_extend(alg, pcr, digest->Digest, alg_size)) {
             LOG_ERR("PCR%d extend failed", pcr_index);
             return false;
         }
@@ -179,7 +181,8 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
         .data = digests_size,
         .digest2_cb = digest2_accumulator_callback,
     };
-    ret = foreach_digest2(&ctx, eventhdr->PCRIndex,
+    ret = foreach_digest2(&ctx, eventhdr->EventType,
+                          eventhdr->PCRIndex, 
                           eventhdr->Digests, eventhdr->DigestCount,
                           buf_size - sizeof(*eventhdr));
     if (ret != true) {
@@ -216,7 +219,7 @@ bool parse_sha1_log_event(tpm2_eventlog_context *ctx, TCG_EVENT const *event, si
     *event_size = sizeof(*event);
 
     pcr = ctx->sha1_pcrs[ event->pcrIndex];
-    if (pcr) {
+    if (event->eventType != EV_NO_ACTION && pcr) {
         tpm2_openssl_pcr_extend(TPM2_ALG_SHA1, pcr, &event->digest[0], 20);
         ctx->sha1_used |= (1 << event->pcrIndex);
     }
@@ -451,7 +454,8 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
         }
 
         /* digest callback foreach digest */
-        ret = foreach_digest2(ctx, eventhdr->PCRIndex, eventhdr->Digests, eventhdr->DigestCount, digests_size);
+        ret = foreach_digest2(ctx, eventhdr->EventType, eventhdr->PCRIndex,
+                              eventhdr->Digests, eventhdr->DigestCount, digests_size);
         if (ret != true) {
             return false;
         }
