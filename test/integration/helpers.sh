@@ -5,7 +5,7 @@ shopt -s expand_aliases
 
 # We get what python interpreter to run from configure, so alias python here
 # to make subordiante scripts work.
-alias python=${PYTHON:-python}
+alias python=${PYTHON:-python3}
 
 # Return 0 if run by a TPM simulator, return 1 otherwise
 is_simulator() {
@@ -236,7 +236,7 @@ function recreate_info() {
     echo "#!/usr/bin/env bash"
     echo -e "$a"
     local script="$tpm2_test_original_cwd""/""$0"
-    echo $(realpath "$script")
+    echo "dbus-run-session $(realpath "$script")"
     echo "--- EOF ---"
     echo
 }
