@@ -18,13 +18,14 @@ cleanup() {
 }
 
 # Data written to NV index --> 129 or -127
-operandA=0x81
+operandA=81
 # Data specified in command line options for comparison
-operandB=0
+operandB=00
 
 evaluate_failing_test_case() {
   tpm2 startauthsession -S session.ctx --policy-session
   trap - ERR
+TSS2_LOG=tcti+trace \
   echo $operandA | xxd -r -p | \
   tpm2 policynv -S session.ctx -i- -P nvpass $nv_test_index eq
   if [ $? != 1 ];then
@@ -38,6 +39,7 @@ evaluate_failing_test_case() {
 evaluate_passing_test_case() {
   tpm2 startauthsession -S session.ctx --policy-session
   echo $operandB | xxd -r -p | \
+TSS2_LOG=tcti+trace \
   tpm2 policynv -S session.ctx -i- -P nvpass $nv_test_index $1
   tpm2 flushcontext session.ctx
 }
@@ -50,16 +52,20 @@ cleanup "no-shut-down"
 
 tpm2 clear
 
+set -x
+
 # Perform any comparison operation on an undefined NV index --> Should fail
 evaluate_failing_test_case
 
 # Define an NV index
+TSS2_LOG=tcti+trace \
 tpm2 nvdefine -C o -p nvpass $nv_test_index -a "authread|authwrite" -s 2
 
 # Perform any comparison operation on an unwritten NV index --> Should fail
 evaluate_failing_test_case
 
 # Write data to NV index --> This is operandA
+TSS2_LOG=tcti+trace \
 echo $operandA | xxd -r -p | tpm2 nvwrite -P nvpass -i- $nv_test_index
 
 # Perform comparison operation "eq"
