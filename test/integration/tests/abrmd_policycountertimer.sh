@@ -11,6 +11,27 @@ cleanup() {
   fi
 }
 
+call_policy_countertimer () {
+    trap - ERR
+    output=$(tpm2 policycountertimer $@ 2>&1)
+    result=$?
+
+    if [ $result != 0 ] && echo $output | grep "ErrorCode.*0126" > /dev/null
+    then
+        echo "This test failed due to a TPM bug regarding signed comparison as described"
+        echo "in TCG's Errata for TCG Trusted Platform Module Library Revision 1.59 Version 1.4,"
+        echo "Section 2.5 TPM_EO – two’s complement"
+        tpm2 flushcontext session.ctx
+        skip_test
+    else
+        if [ $result != 0 ]; then
+            tpm2 flushcontext session.ctx
+            exit 1
+        fi
+    fi
+    trap onerror ERR
+}
+
 trap cleanup EXIT
 
 start_up
@@ -19,8 +40,7 @@ cleanup "no-shut-down"
 
 ## Check cpHash output for TPM2_PolicyCounterTimer
 tpm2 startauthsession -S session.ctx
-tpm2 policycountertimer -S session.ctx -L policy.countertimer.minute --ult \
-  60000 --cphash cp.hash
+call_policy_countertimer -S session.ctx -L policy.countertimer.minute --ult 60000 --cphash cp.hash
 TPM2_CC_PolicyCounterTimer="0000016d"
 operandB="0008000000000000ea60"
 offset="0000"
@@ -30,6 +50,8 @@ policySession=$(tpm2 sessionconfig session.ctx | grep Session-Handle | \
 
 echo -ne $TPM2_CC_PolicyCounterTimer$policySession$operandB$offset$operation \
   | xxd -r -p | openssl dgst -sha256 -binary -out test.bin
+xxd cp.hash
+xxd test.bin
 cmp cp.hash test.bin 2
 tpm2 flushcontext session.ctx
 
@@ -41,8 +63,7 @@ tpm2 clear
 #
 tpm2 startauthsession -S session.ctx
 
-tpm2 policycountertimer -S session.ctx -L policy.countertimer.minute --ult \
-60000
+call_policy_countertimer -S session.ctx -L policy.countertimer.minute --ult 60000
 
 tpm2 flushcontext session.ctx
 
@@ -58,8 +79,7 @@ tpm2 create -Q -u key.pub -r key.priv -i- -C prim.ctx \
 #
 tpm2 startauthsession -S session.ctx --policy-session
 
-tpm2 policycountertimer -S session.ctx -L policy.countertimer.minute --ult \
-60000
+call_policy_countertimer -S session.ctx -L policy.countertimer.minute --ult 60000
 
 tpm2 unseal -c key.ctx -p session:session.ctx
 
@@ -70,7 +90,7 @@ tpm2 flushcontext session.ctx
 #
 tpm2 clear
 tpm2 startauthsession -S session.ctx --policy-session
-tpm2 policycountertimer -S session.ctx --ult clock=60000
+call_policy_countertimer -S session.ctx --ult clock=60000
 tpm2 flushcontext session.ctx
 
 #
@@ -79,7 +99,7 @@ tpm2 flushcontext session.ctx
 #
 tpm2 clear
 tpm2 startauthsession -S session.ctx --policy-session
-tpm2 policycountertimer -S session.ctx safe
+call_policy_countertimer -S session.ctx safe
 tpm2 flushcontext session.ctx
 
 #
@@ -88,7 +108,7 @@ tpm2 flushcontext session.ctx
 #
 tpm2 clear
 tpm2 startauthsession -S session.ctx --policy-session
-tpm2 policycountertimer -S session.ctx resets=0
+call_policy_countertimer -S session.ctx resets=0
 tpm2 flushcontext session.ctx
 
 #
@@ -97,7 +117,7 @@ tpm2 flushcontext session.ctx
 #
 tpm2 clear
 tpm2 startauthsession -S session.ctx --policy-session
-tpm2 policycountertimer -S session.ctx restarts=0
+call_policy_countertimer -S session.ctx restarts=0
 tpm2 flushcontext session.ctx
 
 exit 0
