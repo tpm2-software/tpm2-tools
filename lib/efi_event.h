@@ -45,6 +45,7 @@
 #define EV_EFI_HANDOFF_TABLES2           EV_EFI_EVENT_BASE + 0xb
 #define EV_EFI_VARIABLE_BOOT2            EV_EFI_EVENT_BASE + 0xc
 
+#define EV_EFI_HCRTM_EVENT               EV_EFI_EVENT_BASE + 0x10
 #define EV_EFI_VARIABLE_AUTHORITY        EV_EFI_EVENT_BASE + 0xe0
 
 #ifndef PACKED
