@@ -31,7 +31,7 @@ bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
  * 'size' parameter.
  */
 bool foreach_digest2(tpm2_eventlog_context *ctx, UINT32 eventType, unsigned pcr_index,
-                     TCG_DIGEST2 const *digest, size_t count, size_t size) {
+                     TCG_DIGEST2 const *digest, size_t count, size_t size, uint8_t locality) {
 
     if (digest == NULL) {
         LOG_ERR("digest cannot be NULL");
@@ -79,6 +79,10 @@ bool foreach_digest2(tpm2_eventlog_context *ctx, UINT32 eventType, unsigned pcr_
             ctx->sm3_256_used |= (1 << pcr_index);
         } else {
             LOG_WARN("PCR%d algorithm %d unsupported", pcr_index, alg);
+        }
+
+        if (eventType == EV_NO_ACTION && pcr && pcr_index == 0 && locality > 0 ){
+            pcr[alg_size -1] = locality;
         }
 
         if (eventType != EV_NO_ACTION && pcr &&
@@ -184,7 +188,7 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
     ret = foreach_digest2(&ctx, eventhdr->EventType,
                           eventhdr->PCRIndex, 
                           eventhdr->Digests, eventhdr->DigestCount,
-                          buf_size - sizeof(*eventhdr));
+                          buf_size - sizeof(*eventhdr), 0);
     if (ret != true) {
         return false;
     }
@@ -430,6 +434,7 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
     TCG_EVENT_HEADER2 const *eventhdr;
     size_t event_size;
     bool ret;
+    bool found_hcrtm = false;
 
     for (eventhdr = eventhdr_start, event_size = 0;
          size > 0;
@@ -437,6 +442,7 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
          size -= event_size) {
 
         size_t digests_size = 0;
+        uint8_t locality = 0;
 
         ret = parse_event2(eventhdr, size, &event_size, &digests_size);
         if (!ret) {
@@ -444,6 +450,25 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
         }
 
         TCG_EVENT2 *event = (TCG_EVENT2*)((uintptr_t)eventhdr->Digests + digests_size);
+
+        if (eventhdr->EventType == EV_EFI_HCRTM_EVENT && eventhdr->PCRIndex == 0) {
+            found_hcrtm = true;
+        }
+
+        /* Handle StartupLocality in replay for PCR0 */
+        if (!found_hcrtm && eventhdr->EventType == EV_NO_ACTION && eventhdr->PCRIndex == 0) {
+            if (event_size < sizeof(EV_NO_ACTION_STRUCT)){
+                LOG_ERR("EventSize is too small\n");
+                return false;
+            }
+
+            EV_NO_ACTION_STRUCT *locality_event = (EV_NO_ACTION_STRUCT*)event->Event;
+
+            if (memcmp(locality_event->Signature, STARTUP_LOCALITY_SIGNATURE, sizeof(STARTUP_LOCALITY_SIGNATURE)) == 0){
+                locality = locality_event->Cases.StartupLocality;
+            }
+        }
+
 
         /* event header callback */
         if (ctx->event2hdr_cb != NULL) {
@@ -455,7 +480,7 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
 
         /* digest callback foreach digest */
         ret = foreach_digest2(ctx, eventhdr->EventType, eventhdr->PCRIndex,
-                              eventhdr->Digests, eventhdr->DigestCount, digests_size);
+                              eventhdr->Digests, eventhdr->DigestCount, digests_size, locality);
         if (ret != true) {
             return false;
         }

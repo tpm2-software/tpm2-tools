@@ -27,7 +27,7 @@ static void test_foreach_digest2_null(void **state){
     (void)state;
     tpm2_eventlog_context ctx = {0};
 
-    assert_false(foreach_digest2(&ctx, 0, 0, NULL, 0, sizeof(TCG_DIGEST2)));
+    assert_false(foreach_digest2(&ctx, 0, 0, NULL, 0, sizeof(TCG_DIGEST2), 0));
 }
 static void test_foreach_digest2_size(void **state) {
 
@@ -36,7 +36,7 @@ static void test_foreach_digest2_size(void **state) {
     TCG_DIGEST2 *digest = (TCG_DIGEST2*)buf;
     tpm2_eventlog_context ctx = { .digest2_cb = foreach_digest2_test_callback };
 
-    assert_false(foreach_digest2(&ctx, 0, 0, digest, 1, sizeof(TCG_DIGEST2) - 1));
+    assert_false(foreach_digest2(&ctx, 0, 0, digest, 1, sizeof(TCG_DIGEST2) - 1, 0));
 }
 static void test_foreach_digest2(void **state) {
 
@@ -47,7 +47,7 @@ static void test_foreach_digest2(void **state) {
     will_return(foreach_digest2_test_callback, true);
 
     tpm2_eventlog_context ctx = { .digest2_cb = foreach_digest2_test_callback };
-    assert_true(foreach_digest2(&ctx, 0, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE));
+    assert_true(foreach_digest2(&ctx, 0, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE, 0));
 }
 static void test_foreach_digest2_cbnull(void **state){
 
@@ -56,7 +56,7 @@ static void test_foreach_digest2_cbnull(void **state){
     TCG_DIGEST2* digest = (TCG_DIGEST2*)buf;
 
     tpm2_eventlog_context ctx = {0};
-    assert_true(foreach_digest2(&ctx, 0, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE));
+    assert_true(foreach_digest2(&ctx, 0, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE, 0));
 }
 static void test_sha1(void **state){
 
@@ -73,7 +73,7 @@ static void test_sha1(void **state){
     memcpy(digest->Digest, "the magic words are:", TPM2_SHA1_DIGEST_SIZE);
 
     tpm2_eventlog_context ctx = {0};
-    assert_true(foreach_digest2(&ctx, 0, pcr_index, digest, 1, TCG_DIGEST2_SHA1_SIZE));
+    assert_true(foreach_digest2(&ctx, 0, pcr_index, digest, 1, TCG_DIGEST2_SHA1_SIZE, 0));
     assert_memory_equal(ctx.sha1_pcrs[pcr_index], sha1sum, sizeof(sha1sum));
 }
 static void test_sha256(void **state){
@@ -93,7 +93,7 @@ static void test_sha256(void **state){
     memcpy(digest->Digest, "The Magic Words are Squeamish Ossifrage, for RSA-129 (from 1977)", TPM2_SHA256_DIGEST_SIZE);
 
     tpm2_eventlog_context ctx = {0};
-    assert_true(foreach_digest2(&ctx, 0, pcr_index, digest, 1, TCG_DIGEST2_SHA256_SIZE));
+    assert_true(foreach_digest2(&ctx, 0, pcr_index, digest, 1, TCG_DIGEST2_SHA256_SIZE, 0));
     assert_memory_equal(ctx.sha256_pcrs[pcr_index], sha256sum, sizeof(sha256sum));
 }
 static void test_foreach_digest2_cbfail(void **state){
@@ -105,7 +105,7 @@ static void test_foreach_digest2_cbfail(void **state){
     will_return(foreach_digest2_test_callback, false);
 
     tpm2_eventlog_context ctx = { .digest2_cb = foreach_digest2_test_callback };
-    assert_false(foreach_digest2(&ctx, 0, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE));
+    assert_false(foreach_digest2(&ctx, 0, 0, digest, 1, TCG_DIGEST2_SHA1_SIZE, 0));
 }
 static void test_digest2_accumulator_callback(void **state) {
 

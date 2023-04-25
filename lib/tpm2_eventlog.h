@@ -45,7 +45,7 @@ bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
 
 bool parse_event2body(TCG_EVENT2 const *event, UINT32 type);
 bool foreach_digest2(tpm2_eventlog_context *ctx, UINT32 eventType, unsigned pcr_index,
-                     TCG_DIGEST2 const *event_hdr, size_t count, size_t size);
+                     TCG_DIGEST2 const *event_hdr, size_t count, size_t size, uint8_t locality);
 bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
                   size_t *event_size, size_t *digests_size);
 bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhdr_start, size_t size);
