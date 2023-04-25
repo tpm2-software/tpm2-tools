@@ -3,7 +3,7 @@
 # NAME
 
 **tpm2_clear**(1) - Clears lockout, endorsement and owner hierarchy
-authorization values.
+authorization values and other TPM data.
 
 # SYNOPSIS
 
@@ -13,7 +13,13 @@ authorization values.
 
 **tpm2_clear**(1) - Send a clear command to the TPM to clear the 3 hierarchy
 authorization values. As an argument takes the auth value for either platform or
-lockout hierarchy
+lockout hierarchy. Details of the changes performed to the TPM can be found
+in Part 3, "Commands", section of the TPM Library spec located at the URL below.
+  - https://trustedcomputinggroup.org/resource/tpm-library-specification
+
+Please look for the version coresponding to your TPM support specification version
+and the TPM2_Clear command. The TPM's supported spec version can be found by
+issuing a `tpm2_getcap properties-fixed` in the `TPM_PT_REVISION` property.
 
 **NOTE**: All objects created under the respective hierarchies are lost.
 
