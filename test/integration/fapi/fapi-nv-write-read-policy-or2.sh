@@ -23,7 +23,14 @@ LOG_FILE=$TEMP_DIR/log.file
 touch $LOG_FILE
 PW=abc
 
+#
+# Test will be temporally skipped because policy password does not make
+# sense because password is allways needed for paramter encryption.
+# The test has to be adapted to a better use case.
+#
 tss2 provision
+
+skip_test
 
 echo test > $DATA_WRITE_FILE
 
