@@ -11,7 +11,7 @@
 #include "tpm2_openssl.h"
 
 bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
-                                  void *data){
+                                  void *data) {
 
     if (digest == NULL || data == NULL) {
         LOG_ERR("neither parameter may be NULL");
@@ -81,7 +81,7 @@ bool foreach_digest2(tpm2_eventlog_context *ctx, UINT32 eventType, unsigned pcr_
             LOG_WARN("PCR%d algorithm %d unsupported", pcr_index, alg);
         }
 
-        if (eventType == EV_NO_ACTION && pcr && pcr_index == 0 && locality > 0 ){
+        if (eventType == EV_NO_ACTION && pcr && pcr_index == 0 && locality > 0 ) {
             pcr[alg_size -1] = locality;
         }
 
@@ -457,14 +457,15 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
 
         /* Handle StartupLocality in replay for PCR0 */
         if (!found_hcrtm && eventhdr->EventType == EV_NO_ACTION && eventhdr->PCRIndex == 0) {
-            if (event_size < sizeof(EV_NO_ACTION_STRUCT)){
+            if (event_size < sizeof(EV_NO_ACTION_STRUCT)) {
                 LOG_ERR("EventSize is too small\n");
                 return false;
             }
 
             EV_NO_ACTION_STRUCT *locality_event = (EV_NO_ACTION_STRUCT*)event->Event;
 
-            if (memcmp(locality_event->Signature, STARTUP_LOCALITY_SIGNATURE, sizeof(STARTUP_LOCALITY_SIGNATURE)) == 0){
+            if (memcmp(locality_event->Signature, STARTUP_LOCALITY_SIGNATURE,
+                       sizeof(STARTUP_LOCALITY_SIGNATURE)) == 0) {
                 locality = locality_event->Cases.StartupLocality;
             }
         }
