@@ -92,9 +92,9 @@ AC_ARG_WITH([efivar],
 
 # use the true program to avoid failing hard
 AS_IF([test "x$with_efivar" == "xauto"],
-  [PKG_CHECK_MODULES([EFIVAR], [efivar],,[true])],
+  [PKG_CHECK_MODULES([EFIVAR], [efivar], [AC_CHECK_HEADERS([efivar/efivar.h], , [true])], [true])],
   [test "x$with_efivar" == "xyes"],
-  [PKG_CHECK_MODULES([EFIVAR], [efivar])],
+  [PKG_CHECK_MODULES([EFIVAR], [efivar], [AC_CHECK_HEADERS([efivar/efivar.h])])],
 )
 
 # backwards compat with older pkg-config
