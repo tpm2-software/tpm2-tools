@@ -277,7 +277,8 @@ char *yaml_devicepath(BYTE* dp, UINT64 dp_len) {
         return NULL;
     }
   
-    ret = efidp_format_device_path((unsigned char *)text_path,
+    /* The void* cast is a hack to support efivar versions < 38 */
+    ret = efidp_format_device_path((void *)text_path,
             text_path_len, (const_efidp)dp, dp_len);
     if (ret < 0) {
         free(text_path);
