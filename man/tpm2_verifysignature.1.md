@@ -92,7 +92,7 @@ tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -c rsa.ctx
 
 echo "my message > message.dat
 
-tpm2_sign -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
+tpm2_sign -c rsa.ctx -g sha256 -s sig.rssa message.dat
 
 tpm2_verifysignature -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
 ```
