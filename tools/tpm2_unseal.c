@@ -51,7 +51,7 @@ static tpm_unseal_ctx ctx = {
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
-tool_rc unseal(ESYS_CONTEXT *ectx) {
+static tool_rc unseal(ESYS_CONTEXT *ectx) {
 
     /*
      * 1. TPM2_CC_<command> OR Retrieve cpHash
