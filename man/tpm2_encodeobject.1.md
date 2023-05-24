@@ -86,7 +86,7 @@ The final step, is encoding the public and private portions of the object into a
 PEM format.
 
 ```bash
-tpm2_encodeobject -C primary.ctx -u key.pub -r key.priv -c priv.pem
+tpm2_encodeobject -C primary.ctx -u key.pub -r key.priv -o priv.pem
 ```
 
 The generated `priv.pem` can be used together with `pub.pem` created in the
