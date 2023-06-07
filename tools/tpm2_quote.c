@@ -309,7 +309,7 @@ static bool on_option(char key, char *value) {
         ctx.key.auth_str = value;
         break;
     case 'l':
-        result = pcr_parse_selections(value, &ctx.pcr_selections);
+        result = pcr_parse_selections(value, &ctx.pcr_selections, NULL);
         if (!result) {
             LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
             return false;

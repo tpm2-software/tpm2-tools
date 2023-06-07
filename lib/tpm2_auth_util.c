@@ -346,7 +346,7 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
         goto out;
     }
 
-    ret = pcr_parse_selections(pcr_str, &pcrs);
+    ret = pcr_parse_selections(pcr_str, &pcrs, NULL);
     if (!ret) {
         goto out;
     }

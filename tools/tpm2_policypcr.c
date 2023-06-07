@@ -14,6 +14,7 @@ struct tpm2_policypcr_ctx {
     const char *session_path;
     const char *raw_pcrs_file;
     TPML_PCR_SELECTION pcr_selection;
+    struct tpm2_forwards forwards;
     const char *policy_out_path;
     TPM2B_DIGEST *raw_pcr_digest;
     tpm2_session *session;
@@ -55,7 +56,8 @@ static bool on_option(char key, char *value) {
         ctx.raw_pcrs_file = value;
         break;
     case 'l': {
-        bool result = pcr_parse_selections(value, &ctx.pcr_selection);
+        bool result = pcr_parse_selections(value, &ctx.pcr_selection,
+                                           &ctx.forwards);
         if (!result) {
             LOG_ERR("Could not parse PCR selections");
             return false;

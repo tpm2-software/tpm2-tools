@@ -34,7 +34,8 @@ usages. The PCR data factored into the policy can be specified in one of 3 ways:
 
   * **-l**, **\--pcr-list**=_PCR_:
 
-    The list of PCR banks and selected PCRs' ids for each bank.
+    The list of PCR banks and selected PCRs' ids for each bank.  Forward
+    sealing values can be specified.
 
   * **-S**, **\--session**=_FILE_:
 

@@ -331,7 +331,8 @@ static bool on_option(char key, char *value) {
         ctx.outside_info_data = value;
         break;
     case 'l':
-        result = pcr_parse_selections(value, &ctx.objdata.in.creation_pcr);
+        result = pcr_parse_selections(value, &ctx.objdata.in.creation_pcr,
+                                      NULL);
         if (!result) {
             LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
             return result;

@@ -118,7 +118,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'l':
         result = pcr_parse_selections(value,
-            &pctx.pcr_policy_options.pcr_selections);
+            &pctx.pcr_policy_options.pcr_selections, NULL);
         if (!result) {
             LOG_ERR("Failed to parse PCR string %s", value);
             return false;

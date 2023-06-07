@@ -33,7 +33,7 @@ bool pcr_get_id(const char *arg, UINT32 *pcr_id) {
 }
 
 static bool pcr_parse_list(const char *str, size_t len,
-        TPMS_PCR_SELECTION *pcr_select) {
+        TPMS_PCR_SELECTION *pcr_select, tpm2_forward *forward) {
     char buf[4];
     const char *current_string;
     int current_length;
@@ -63,6 +63,12 @@ static bool pcr_parse_list(const char *str, size_t len,
     }
 
     do {
+        char dgst_buf[sizeof(TPMU_HA) * 2 + 1];
+        const char *dgst;;
+        int dgst_len;
+        UINT16 dgst_size;
+        int pcr_len;
+
         current_string = str;
         str = memchr(current_string, ',', len);
         if (str) {
@@ -74,24 +80,60 @@ static bool pcr_parse_list(const char *str, size_t len,
             len = 0;
         }
 
-        if ((size_t) current_length > sizeof(buf) - 1) {
+        dgst = memchr(current_string, '=', current_length);
+        if (dgst && ((str == NULL) || (str && dgst < str))) {
+            pcr_len = dgst - current_string;
+            dgst++;
+            if (str) {
+                dgst_len = str - dgst - 1;
+            } else {
+                dgst_len = current_length - pcr_len - 1;
+            }
+        } else {
+            dgst = NULL;
+            pcr_len = current_length;
+        }
+
+        if ((size_t) pcr_len > sizeof(buf) - 1) {
             return false;
         }
 
-        snprintf(buf, current_length + 1, "%s", current_string);
+        snprintf(buf, pcr_len + 1, "%s", current_string);
 
         if (!pcr_get_id(buf, &pcr)) {
             return false;
         }
 
         pcr_select->pcrSelect[pcr / 8] |= (1 << (pcr % 8));
+        if (dgst && !forward) {
+            return false;
+        }
+
+        if (dgst) {
+            if (strncmp(dgst, "0x", 2) == 0) {
+                dgst += 2;
+                dgst_len -= 2;
+            }
+
+            dgst_size = tpm2_alg_util_get_hash_size(pcr_select->hash);
+            if (dgst_size * 2 != dgst_len) {
+                return false;
+            }
+
+            snprintf(dgst_buf, sizeof(dgst_buf), "%.*s", dgst_len, dgst);
+            if (tpm2_util_hex_to_byte_structure(dgst_buf, &dgst_size,
+                        (BYTE *)&forward->pcrs[pcr]) != 0) {
+                return false;
+            }
+            forward->pcr_selection.pcrSelect[pcr / 8] |= (1 << (pcr % 8));
+        }
     } while (str);
 
     return true;
 }
 
 static bool pcr_parse_selection(const char *str, size_t len,
-        TPMS_PCR_SELECTION *pcr_select) {
+        TPMS_PCR_SELECTION *pcr_select, tpm2_forward *forward) {
     const char *left_string;
     char buf[9];
 
@@ -116,13 +158,18 @@ static bool pcr_parse_selection(const char *str, size_t len,
         return false;
     }
 
+    if (forward) {
+        forward->pcr_selection.hash = pcr_select->hash;
+    }
+
     left_string++;
 
     if ((size_t) (left_string - str) >= len) {
         return false;
     }
 
-    if (!pcr_parse_list(left_string, str + len - left_string, pcr_select)) {
+    if (!pcr_parse_list(left_string, str + len - left_string, pcr_select,
+            forward)) {
         return false;
     }
 
@@ -418,7 +465,8 @@ bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections) {
     return true;
 }
 
-bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcr_select) {
+bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcr_select,
+        tpm2_forwards *forwards) {
     const char *left_string = arg;
     const char *current_string = arg;
     int current_length = 0;
@@ -428,6 +476,9 @@ bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcr_select) {
     }
 
     pcr_select->count = 0;
+    if (forwards) {
+        forwards->count = 0;
+    }
 
     do {
         current_string = left_string;
@@ -440,10 +491,14 @@ bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcr_select) {
             current_length = strlen(current_string);
 
         if (!pcr_parse_selection(current_string, current_length,
-                &pcr_select->pcrSelections[pcr_select->count]))
+                &pcr_select->pcrSelections[pcr_select->count],
+                forwards ? &forwards->bank[forwards->count] : NULL))
             return false;
 
         pcr_select->count++;
+        if (forwards) {
+            forwards->count++;
+        }
     } while (left_string);
 
     if (pcr_select->count == 0) {

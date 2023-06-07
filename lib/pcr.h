@@ -23,6 +23,16 @@ struct tpm2_pcrs {
     TPML_DIGEST pcr_values[TPM2_MAX_PCRS];
 };
 
+typedef struct tpm2_forward {
+    TPMS_PCR_SELECTION pcr_selection;
+    TPMU_HA pcrs[TPM2_MAX_PCRS];
+} tpm2_forward;
+
+typedef struct tpm2_forwards {
+    size_t count;
+    struct tpm2_forward bank[TPM2_NUM_PCR_BANKS];
+} tpm2_forwards;
+
 /**
  * Echo out all PCR banks according to g_pcrSelection & g_pcrs->.
  * @param pcrSelect
@@ -90,7 +100,8 @@ bool pcr_fwrite_values(const TPML_PCR_SELECTION *pcr_select,
 bool pcr_fwrite_serialized(const TPML_PCR_SELECTION *pcr_select,
     const tpm2_pcrs *pcrs, FILE *output_file);
 
-bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcr_selections);
+bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcr_selections,
+                          tpm2_forwards *forwards);
 
 tool_rc pcr_get_banks(ESYS_CONTEXT *esys_context,
         TPMS_CAPABILITY_DATA *capability_data, tpm2_algorithm *algs);
