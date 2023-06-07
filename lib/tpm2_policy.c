@@ -80,9 +80,58 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
     return true;
 }
 
+static bool tpm2_apply_forward_seals(
+        TPML_PCR_SELECTION *pcr_selection,
+        TPML_DIGEST *pcr_values,
+        tpm2_forwards *forwards) {
+    unsigned int i;
+    unsigned int idx = 0;
+
+    if (pcr_selection->count != forwards->count) {
+        LOG_ERR("mismatch between pcr count (%d) and forward count (%lu)",
+                pcr_selection->count, forwards->count);
+
+        return false;
+    }
+
+    for (i = 0 ; i < pcr_selection->count; i++) {
+        TPMS_PCR_SELECTION *pcr_select =
+            &pcr_selection->pcrSelections[i];
+        tpm2_forward *forward = &forwards->bank[i];
+
+        if (pcr_select->hash != forward->pcr_selection.hash) {
+            LOG_ERR("mismatch between pcr hash (%x) and forward hash (%x)",
+                    pcr_select->hash, forwards->bank[i].pcr_selection.hash);
+            return false;
+        }
+
+        UINT16 dgst_size = tpm2_alg_util_get_hash_size(pcr_select->hash);
+
+        for (int pcr = 0; pcr < pcr_select->sizeofSelect * 8; pcr++) {
+            if (!tpm2_util_is_pcr_select_bit_set(pcr_select, pcr))
+                continue;
+
+            if (tpm2_util_is_pcr_select_bit_set(&forward->pcr_selection, pcr)) {
+                memcpy(pcr_values->digests[idx].buffer,
+                       forward->pcrs[pcr].sha512,
+                       dgst_size);
+            }
+            idx++;
+            if (idx == ARRAY_LEN(pcrs->pcr_values) *
+                           ARRAY_LEN(pcrs->pcr_values[0].digests)) {
+                LOG_ERR("Too many PCRs specified (%u > %lu max)",
+                        idx, ARRAY_LEN(pcrs->pcr_values) *
+                                ARRAY_LEN(pcrs->pcr_values[0].digests));
+            }
+        }
+    }
+
+    return true;
+}
+
 tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
         const char *raw_pcrs_file, TPML_PCR_SELECTION *pcr_selections,
-        TPM2B_DIGEST *raw_pcr_digest) {
+        TPM2B_DIGEST *raw_pcr_digest, tpm2_forwards *forwards) {
 
     TPML_DIGEST pcr_values = { .count = 0 };
 
@@ -158,6 +207,13 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
             pcr_values.digests[i].size = pcr_val->digests[i].size;
         }
         free(pcr_val);
+    }
+
+    if (forwards) {
+        if (!tpm2_apply_forward_seals(pcr_selections, &pcr_values, forwards)) {
+            LOG_ERR("Could not apply forward seal values");
+            return tool_rc_general_error;
+        }
     }
 
     // Calculate hashes

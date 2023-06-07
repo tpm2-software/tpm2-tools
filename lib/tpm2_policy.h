@@ -8,6 +8,7 @@
 #include <tss2/tss2_esys.h>
 
 #include "object.h"
+#include "pcr.h"
 #include "tpm2_session.h"
 
 /**
@@ -28,7 +29,8 @@
  */
 tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *context,
         tpm2_session *policy_session, const char *raw_pcrs_file,
-        TPML_PCR_SELECTION *pcr_selections, TPM2B_DIGEST *raw_pcr_digest);
+        TPML_PCR_SELECTION *pcr_selections, TPM2B_DIGEST *raw_pcr_digest,
+        tpm2_forwards *forwards);
 
 /**
  * Enables a signing authority to authorize policies

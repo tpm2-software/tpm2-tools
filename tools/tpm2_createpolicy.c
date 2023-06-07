@@ -78,7 +78,7 @@ static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
 
     rc = tpm2_policy_build_pcr(ectx, pctx.common_policy_options.policy_session,
             pctx.pcr_policy_options.raw_pcrs_file,
-            &pctx.pcr_policy_options.pcr_selections, NULL);
+            &pctx.pcr_policy_options.pcr_selections, NULL, NULL);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build pcr policy");
         return rc;
