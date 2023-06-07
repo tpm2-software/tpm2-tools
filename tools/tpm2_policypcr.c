@@ -112,7 +112,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = tpm2_policy_build_pcr(ectx, ctx.session, ctx.raw_pcrs_file,
-            &ctx.pcr_selection, ctx.raw_pcr_digest);
+            &ctx.pcr_selection, ctx.raw_pcr_digest, &ctx.forwards);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build pcr policy");
         return rc;

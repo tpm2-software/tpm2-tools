@@ -26,6 +26,7 @@ struct test_file {
 
 /* Passing tests and static data are hardcoded around this sel spec */
 #define PCR_SEL_SPEC "sha256:0,1,2,3"
+#define PCR_SEL_SPEC_FWD "sha256:0,1=96a7faaf1609b650a4f288c0904f04836ecada2f4978069486a2bb02f2f043ea,2,3=96a7faaf1609b650a4f288c0904f04836ecada2f4978069486a2bb02f2f043ea"
 
 /*
  * Dummy value for the session handle read by the wrapped version of:
@@ -36,7 +37,7 @@ struct test_file {
 /* dummy handle for esys context */
 #define ESAPI_CONTEXT ((ESYS_CONTEXT *)0xDEADBEEF)
 
-/* Any PCR read returns this value */
+/* PCR read returns this value - except for forward seal. */
 static TPM2B_DIGEST pcr_value = {
         .size = 32,
         .buffer = {
@@ -44,6 +45,18 @@ static TPM2B_DIGEST pcr_value = {
             0x88, 0xc0, 0x90, 0x4f, 0x04, 0x83, 0x6e, 0xca, 0xda, 0x2f,
             0x49, 0x78, 0x06, 0x94, 0x86, 0xa2, 0xbb, 0x02, 0xf2, 0xf0,
             0x43, 0xea
+        }
+};
+
+/* Forward seal value to read for odd-numbered PCRs.  These need to be
+ * overridden with forward seal values matchin pcr_value above. */
+static TPM2B_DIGEST pcr_value_odd = {
+        .size = 32,
+        .buffer = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00
         }
 };
 
@@ -216,7 +229,8 @@ static void test_tpm2_policy_build_pcr_good(void **state) {
     bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections, NULL);
     assert_true(res);
 
-    rc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, NULL, &pcr_selections, NULL);
+    rc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, NULL, &pcr_selections, NULL,
+        NULL);
     assert_int_equal(rc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
@@ -331,7 +345,7 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     assert_non_null(s);
 
     trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path, &pcr_selections,
-        NULL);
+        NULL, NULL);
     assert_int_equal(trc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
@@ -390,10 +404,82 @@ static void test_tpm2_policy_build_pcr_file_bad_size(void **state) {
     assert_non_null(s);
 
     trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path, &pcr_selections,
-        NULL);
+        NULL, NULL);
     tpm2_session_close(&s);
     assert_null(s);
     assert_int_equal(trc, tool_rc_general_error);
+}
+
+/*
+ * Test forward sealing.  The idea is here to re-use the existing expected test
+ * results.  To test the forward sealing, pcr_value_odd is written for the
+ * odd-numbered PCRs and this must be overridden with the expected pcr_value by
+ * the forward sealing value.
+ */
+static void test_tpm2_policy_build_pcr_forward_good(void **state) {
+
+    test_file *tf = test_file_from_state(state);
+    assert_non_null(tf);
+
+    tpm2_forwards forwards = {};
+
+    /*
+     * This PCR selection must not be to big too fit in the selection
+     * array at index 0 byte index 0.
+     *
+     * If it is, the file generation below needs to change.
+     */
+    TPML_PCR_SELECTION pcr_selections;
+    bool res = pcr_parse_selections(PCR_SEL_SPEC_FWD, &pcr_selections,
+                                    &forwards);
+    assert_true(res);
+
+    /*
+     * Create a file with the expected PCR hashes based on the number of pcr
+     * selections. We know that the PCR selection above will always be in the
+     * first selection array in the first byte.
+     */
+    UINT32 i;
+    UINT32 cnt = tpm2_util_pop_count(
+            pcr_selections.pcrSelections[0].pcrSelect[0]);
+
+    for (i = 0; i < cnt; i++) {
+        TPM2B_DIGEST *d;
+        if (i & 1)
+            d = &pcr_value_odd;
+        else
+            d = &pcr_value;
+
+        size_t num = fwrite(d->buffer, d->size, 1, tf->file);
+        assert_int_equal(num, 1);
+    }
+
+    int rc = fflush(tf->file);
+    assert_int_equal(rc, 0);
+
+    tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
+    assert_non_null(d);
+
+    tpm2_session *s = NULL;
+    tool_rc trc = tpm2_session_open(ESAPI_CONTEXT, d, &s);
+    assert_int_equal(trc, tool_rc_success);
+    assert_non_null(s);
+
+    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path, &pcr_selections,
+        NULL, &forwards);
+    assert_int_equal(trc, tool_rc_success);
+
+    TPM2B_DIGEST *policy_digest;
+    trc = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest, 0,
+        TPM2_ALG_ERROR);
+    assert_int_equal(rc, tool_rc_success);
+
+    assert_int_equal(policy_digest->size, expected_policy_digest.size);
+    assert_memory_equal(policy_digest->buffer, expected_policy_digest.buffer,
+            expected_policy_digest.size);
+
+    tpm2_session_close(&s);
+    assert_null(s);
 }
 
 static void tpm2_policy_parse_policy_list_good(void **state) {
@@ -462,6 +548,8 @@ int main(int argc, char *argv[]) {
         cmocka_unit_test_setup_teardown(test_tpm2_policy_build_pcr_file_good,
                 test_setup, test_teardown),
         cmocka_unit_test_setup_teardown(test_tpm2_policy_build_pcr_file_bad_size,
+                test_setup, test_teardown),
+        cmocka_unit_test_setup_teardown(test_tpm2_policy_build_pcr_forward_good,
                 test_setup, test_teardown)
     };
 
