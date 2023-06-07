@@ -128,7 +128,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
     if (ctx.user_pcr_alloc_str) {
         bool result = pcr_parse_selections(ctx.user_pcr_alloc_str,
-            &ctx.pcr_selection);
+            &ctx.pcr_selection, NULL);
         if (!result) {
             LOG_ERR("Could not parse pcr selections");
             return tool_rc_general_error;

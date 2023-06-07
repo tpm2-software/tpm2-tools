@@ -213,7 +213,7 @@ static void test_tpm2_policy_build_pcr_good(void **state) {
     assert_non_null(s);
 
     TPML_PCR_SELECTION pcr_selections;
-    bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections);
+    bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections, NULL);
     assert_true(res);
 
     rc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, NULL, &pcr_selections, NULL);
@@ -301,7 +301,7 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
      * If it is, the file generation below needs to change.
      */
     TPML_PCR_SELECTION pcr_selections;
-    bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections);
+    bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections, NULL);
     assert_true(res);
 
     /*
@@ -359,7 +359,7 @@ static void test_tpm2_policy_build_pcr_file_bad_size(void **state) {
      * If it is, the file generation below needs to change.
      */
     TPML_PCR_SELECTION pcr_selections;
-    bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections);
+    bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections, NULL);
     assert_true(res);
 
     /*

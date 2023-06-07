@@ -202,7 +202,7 @@ static bool on_arg(int argc, char *argv[]) {
     ctx.selected_algorithm = tpm2_alg_util_from_optarg(argv[0],
         tpm2_alg_util_flags_hash);
     if (ctx.selected_algorithm == TPM2_ALG_ERROR) {
-        bool res = pcr_parse_selections(argv[0], &ctx.pcr_selections);
+        bool res = pcr_parse_selections(argv[0], &ctx.pcr_selections, NULL);
         if (!res) {
             LOG_ERR("Neither algorithm nor pcr list, got: \"%s\"", argv[0]);
             return false;

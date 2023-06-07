@@ -179,7 +179,8 @@ static TPM2B_ATTEST *message_from_file(const char *msg_file_path) {
 static bool parse_selection_data_from_selection_string(FILE *pcr_input,
     TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
 
-    bool result = pcr_parse_selections(ctx.pcr_selection_string, pcr_select);
+    bool result = pcr_parse_selections(ctx.pcr_selection_string, pcr_select,
+                                       NULL);
     if (!result) {
         LOG_ERR("Could not parse PCR selections");
         return false;

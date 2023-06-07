@@ -529,7 +529,7 @@ static bool on_option(char key, char *value) {
         ctx.object.outside_info_data = value;
         break;
     case 'l':
-        if (!pcr_parse_selections(value, &ctx.object.creation_pcr)) {
+        if (!pcr_parse_selections(value, &ctx.object.creation_pcr, NULL)) {
             LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
             return false;
         }
