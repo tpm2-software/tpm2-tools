@@ -15,10 +15,12 @@
 #include "tpm2_util.h"
 
 static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
-        const char *raw_pcrs_file, TPML_DIGEST *pcr_values) {
+        const char *raw_pcrs_file, tpm2_pcrs *pcrs) {
 
     unsigned expected_pcr_input_file_size = 0;
-    unsigned dgst_cnt = 0;
+    TPML_DIGEST *pcr_values = &pcrs->pcr_values[pcrs->count];
+    // If pcr_selections is empty, this need to be reset to 0.
+    pcrs->count++;
 
     //Iterating the number of pcr banks selected
     UINT32 i;
@@ -33,35 +35,35 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
         UINT8 total_indices_for_this_alg = 0;
 
         //Looping to check total pcr select bits in the pcr-select-octets for a bank
-        UINT32 j;
-        for (j = 0; j < pcr_selections->pcrSelections[i].sizeofSelect; j++) {
-            UINT8 group_val = pcr_selections->pcrSelections[i].pcrSelect[j];
-            total_indices_for_this_alg += tpm2_util_pop_count(group_val);
-        }
+        UINT32 pcr;
+        for (pcr = 0;
+             pcr < pcr_selections->pcrSelections[i].sizeofSelect * 8;
+             pcr++) {
+            if (!tpm2_util_is_pcr_select_bit_set(
+                    &pcr_selections->pcrSelections[i], pcr))
+                continue;
 
-        if (pcr_values->count
-                + total_indices_for_this_alg> ARRAY_LEN(pcr_values->digests)) {
-            LOG_ERR("Number of PCR is limited to %zu",
-                    ARRAY_LEN(pcr_values->digests));
-            return false;
+            pcr_values->digests[pcr_values->count].size = dgst_size;
+            pcr_values->count++;
+            total_indices_for_this_alg++;
+
+            if (pcr_values->count == ARRAY_LEN(pcr_values->digests)) {
+                pcrs->count++;
+                if (pcrs->count == ARRAY_LEN(pcrs->pcr_values)) {
+                    return false;
+                }
+
+                pcr_values = &pcrs->pcr_values[pcrs->count];
+            }
         }
 
         expected_pcr_input_file_size +=
                 (total_indices_for_this_alg * dgst_size);
-
-        //Cumulative total of all the pcr indices across banks selected in setlist
-        pcr_values->count += total_indices_for_this_alg;
-
-        /*
-         * Populating the digest sizes in the PCR digest list per algorithm bank
-         * Once iterated through all banks, creates an file offsets map for all pcr indices
-         */
-        UINT8 k;
-        for (k = 0; k < total_indices_for_this_alg; k++) {
-            pcr_values->digests[dgst_cnt].size = dgst_size;
-            dgst_cnt++;
-        }
     }
+
+    // If the selection was totally empty, we reset to zero.
+    if (expected_pcr_input_file_size == 0)
+        pcrs->count = 0;
 
     //Check if the input pcrs file size is the same size as the pcr selection setlist
     if (raw_pcrs_file) {
@@ -82,8 +84,9 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
 
 static bool tpm2_apply_forward_seals(
         TPML_PCR_SELECTION *pcr_selection,
-        TPML_DIGEST *pcr_values,
+        tpm2_pcrs *pcrs,
         tpm2_forwards *forwards) {
+    TPML_DIGEST *pcr_values;
     unsigned int i;
     unsigned int idx = 0;
 
@@ -112,7 +115,9 @@ static bool tpm2_apply_forward_seals(
                 continue;
 
             if (tpm2_util_is_pcr_select_bit_set(&forward->pcr_selection, pcr)) {
-                memcpy(pcr_values->digests[idx].buffer,
+                const unsigned int lim = ARRAY_LEN(pcrs->pcr_values[0].digests);
+                pcr_values = &pcrs->pcr_values[idx / lim];
+                memcpy(pcr_values->digests[idx % lim].buffer,
                        forward->pcrs[pcr].sha512,
                        dgst_size);
             }
@@ -133,7 +138,7 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
         const char *raw_pcrs_file, TPML_PCR_SELECTION *pcr_selections,
         TPM2B_DIGEST *raw_pcr_digest, tpm2_forwards *forwards) {
 
-    TPML_DIGEST pcr_values = { .count = 0 };
+    tpm2_pcrs pcrs = { .count = 0 };
 
     if (!pcr_selections->count) {
         LOG_ERR("No pcr selection data specified!");
@@ -161,7 +166,7 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
 
 
     bool result = evaluate_populate_pcr_digests(pcr_selections, raw_pcrs_file,
-            &pcr_values);
+            &pcrs);
     if (!result) {
         return tool_rc_general_error;
     }
@@ -174,50 +179,44 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
             return tool_rc_general_error;
         }
         // Bank hashAlg values dictates the order of the list of digests
-        unsigned i;
-        for (i = 0; i < pcr_values.count; i++) {
-            size_t sz = fread(&pcr_values.digests[i].buffer, 1,
-                    pcr_values.digests[i].size, fp);
-            if (sz != pcr_values.digests[i].size) {
-                const char *msg =
-                        ferror(fp) ? strerror(errno) : "end of file reached";
-                LOG_ERR("Reading from file \"%s\" failed: %s", raw_pcrs_file,
-                        msg);
-                fclose(fp);
-                return tool_rc_general_error;
+        unsigned j;
+
+        for (j = 0; j < pcrs.count; j++) {
+            TPML_DIGEST *pcr_values = &pcrs.pcr_values[j];
+            unsigned int i;
+
+            for (i = 0; i < pcr_values->count; i++) {
+                size_t sz = fread(&pcr_values->digests[i].buffer, 1,
+                        pcr_values->digests[i].size, fp);
+                if (sz != pcr_values->digests[i].size) {
+                    const char *msg =
+                            ferror(fp) ? strerror(errno) : "end of file reached";
+                    LOG_ERR("Reading from file \"%s\" failed: %s", raw_pcrs_file,
+                            msg);
+                    fclose(fp);
+                    return tool_rc_general_error;
+                }
             }
         }
         fclose(fp);
     } else {
-        UINT32 pcr_update_counter;
-        TPML_DIGEST *pcr_val = NULL;
         // Read PCRs
-        tool_rc rc = tpm2_pcr_read(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-                ESYS_TR_NONE, pcr_selections, &pcr_update_counter,
-                NULL, &pcr_val, NULL, TPM2_ALG_ERROR);
+        tool_rc rc = pcr_read_pcr_values(ectx, pcr_selections, &pcrs,
+                                         NULL, TPM2_ALG_ERROR);
         if (rc != tool_rc_success) {
             return rc;
         }
-
-        UINT32 i;
-        pcr_val->count = pcr_values.count;
-        for (i = 0; i < pcr_val->count; i++) {
-            memcpy(pcr_values.digests[i].buffer, pcr_val->digests[i].buffer,
-                    pcr_val->digests[i].size);
-            pcr_values.digests[i].size = pcr_val->digests[i].size;
-        }
-        free(pcr_val);
     }
 
     if (forwards) {
-        if (!tpm2_apply_forward_seals(pcr_selections, &pcr_values, forwards)) {
+        if (!tpm2_apply_forward_seals(pcr_selections, &pcrs, forwards)) {
             LOG_ERR("Could not apply forward seal values");
             return tool_rc_general_error;
         }
     }
 
     // Calculate hashes
-    result = tpm2_openssl_hash_pcr_values(auth_hash, &pcr_values, &pcr_digest);
+    result = tpm2_openssl_hash_pcr_banks(auth_hash, pcr_selections, &pcrs, &pcr_digest);
     if (!result) {
         LOG_ERR("Could not hash pcr values");
         return tool_rc_general_error;

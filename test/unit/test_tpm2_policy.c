@@ -157,13 +157,19 @@ TSS2_RC __wrap_Esys_PCR_Read(ESYS_CONTEXT *esysContext, ESYS_TR shandle1,
     UNUSED(shandle1);
     UNUSED(shandle2);
     UNUSED(shandle3);
-    UNUSED(pcrSelectionIn);
     UNUSED(pcrUpdateCounter);
-    UNUSED(pcrSelectionOut);
 
     *pcrValues = calloc(1, sizeof(TPML_DIGEST));
     if (*pcrValues == NULL) {
         return TPM2_RC_FAILURE;
+    }
+
+    if (pcrSelectionOut) {
+        *pcrSelectionOut = calloc(1, sizeof(**pcrSelectionOut));
+        if (*pcrSelectionOut == NULL) {
+            return TPM2_RC_FAILURE;
+        }
+        memcpy(*pcrSelectionOut, pcrSelectionIn, sizeof(**pcrSelectionOut));
     }
 
     UINT32 i;
@@ -176,6 +182,7 @@ TSS2_RC __wrap_Esys_PCR_Read(ESYS_CONTEXT *esysContext, ESYS_TR shandle1,
      */
     for (i = 0; i < 4; i++) {
         (*pcrValues)->digests[i] = pcr_value;
+        (*pcrValues)->count++;
     }
 
     return TPM2_RC_SUCCESS;
