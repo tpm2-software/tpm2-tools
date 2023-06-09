@@ -169,10 +169,16 @@ TSS2_RC __wrap_Esys_PCR_Read(ESYS_CONTEXT *esysContext, ESYS_TR shandle1,
         if (*pcrSelectionOut == NULL) {
             return TPM2_RC_FAILURE;
         }
-        memcpy(*pcrSelectionOut, pcrSelectionIn, sizeof(**pcrSelectionOut));
+        //memcpy(*pcrSelectionOut, pcrSelectionIn, sizeof(**pcrSelectionOut));
+        (*pcrSelectionOut)->pcrSelections[0].sizeofSelect =
+            pcrSelectionIn->pcrSelections[0].sizeofSelect;
+        (*pcrSelectionOut)->pcrSelections[0].hash =
+            pcrSelectionIn->pcrSelections[0].hash;
+        (*pcrSelectionOut)->count = 1;
     }
 
     UINT32 i;
+    UINT32 pcr;
     /* NOTE: magic number of 4... The prior (SAPI) implementation had a
      * semi-populated pcrValues with an appropriate count value set.
      * This ESAPI call allocates the pcrValues out-value and thus we don't have
@@ -180,9 +186,23 @@ TSS2_RC __wrap_Esys_PCR_Read(ESYS_CONTEXT *esysContext, ESYS_TR shandle1,
      * expected value for the *one* call we're currently making in this unit
      * test.
      */
-    for (i = 0; i < 4; i++) {
+    for (i = 0, pcr = 0;
+         pcr < pcrSelectionIn->pcrSelections[0].sizeofSelect * 8;
+         pcr++) {
+        if (!tpm2_util_is_pcr_select_bit_set(&pcrSelectionIn->pcrSelections[0],
+                                             pcr))
+            continue;
+
         (*pcrValues)->digests[i] = pcr_value;
         (*pcrValues)->count++;
+        i++;
+        if (pcrSelectionOut) {
+            (*pcrSelectionOut)->pcrSelections[0].pcrSelect[pcr / 8] |=
+                (1 << (pcr % 8));
+        }
+
+        if (i == ARRAY_LEN((*pcrValues)->digests))
+            break;
     }
 
     return TPM2_RC_SUCCESS;
