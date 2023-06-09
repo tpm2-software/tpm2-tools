@@ -23,6 +23,12 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
     //Iterating the number of pcr banks selected
     UINT32 i;
     for (i = 0; i < pcr_selections->count; i++) {
+        //digest size returned per the hashAlg type
+        unsigned dgst_size = tpm2_alg_util_get_hash_size(
+                pcr_selections->pcrSelections[i].hash);
+        if (!dgst_size) {
+            return false;
+        }
 
         UINT8 total_indices_for_this_alg = 0;
 
@@ -40,12 +46,6 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
             return false;
         }
 
-        //digest size returned per the hashAlg type
-        unsigned dgst_size = tpm2_alg_util_get_hash_size(
-                pcr_selections->pcrSelections[i].hash);
-        if (!dgst_size) {
-            return false;
-        }
         expected_pcr_input_file_size +=
                 (total_indices_for_this_alg * dgst_size);
 
