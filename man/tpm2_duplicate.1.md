@@ -77,6 +77,15 @@ These options control the key importation process:
 
     The object to be duplicated.
 
+  * **-a**, **\--attributes**=_ATTRIBUTES_:
+
+    The object attributes, optional. The default for created objects is:
+
+    `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_USERWITHAUTH`
+
+    Note: If a policy is specified without an auth value then `TPMA_OBJECT_USERWITHAUTH`
+    is turned down.
+
   * **\--cphash**=_FILE_
 
     File path to record the hash of the command parameters. This is commonly

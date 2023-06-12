@@ -26,6 +26,7 @@ struct tpm_duplicate_ctx {
         const char *ctx_path;
         const char *auth_str;
         char *policy_str;
+        char *attr_str;
         tpm2_loaded_object object;
     } duplicable_key;
 
@@ -214,7 +215,7 @@ static tool_rc process_openssl_duplicate(void) {
     setup_default_attrs(&attrs, is_policy_specified, is_auth_specified);
 
     TPM2B_PUBLIC template = { 0 };
-    tool_rc rc = tpm2_alg_util_public_init(ctx.key_type, 0, 0,
+    tool_rc rc = tpm2_alg_util_public_init(ctx.key_type, 0, ctx.duplicable_key.attr_str,
         ctx.duplicable_key.policy_str, attrs, &template);
     if (rc != tool_rc_success) {
         return rc;
@@ -538,6 +539,9 @@ static bool on_option(char key, char *value) {
     case 'k':
         ctx.in_private_key_file = value;
         break;
+    case 'a':
+        ctx.duplicable_key.attr_str = value;
+        break;
     case 0:
         ctx.cp_hash_path = value;
         break;
@@ -564,10 +568,11 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "parent-context",    required_argument, 0, 'C'},
       { "parent-public",     required_argument, 0, 'U'},
       { "key-context",       required_argument, 0, 'c'},
+      { "attributes",        required_argument, 0, 'a'},
       { "cphash",            required_argument, 0,  0 },
     };
 
-    *opts = tpm2_options_new("p:L:G:i:C:o:s:r:c:U:k:u:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:L:G:i:C:o:s:r:c:U:k:u:a:", ARRAY_LEN(topts), topts,
             on_option, 0, TPM2_OPTIONS_OPTIONAL_SAPI);
 
     return *opts != 0;
