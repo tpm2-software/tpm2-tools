@@ -176,9 +176,9 @@ tool_rc tpm2_session_open(ESYS_CONTEXT *context, tpm2_session_data *data,
  *
  * @Note
  * This is accomplished by calling:
- *   - Eys_ContextSave - marks to some RMs like tpm2-abrmd not to flush this session
+ *   - Esys_ContextSave - marks to some RMs like tpm2-abrmd not to flush this session
  *                            handle on client disconnection.
- *   - Eys_ContextLoad - restores the session so it can be used.
+ *   - Esys_ContextLoad - restores the session so it can be used.
  *   - Saving a custom file format at path - records the handle and algorithm.
  * @param session
  *  The session context to save
