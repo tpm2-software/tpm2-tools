@@ -2395,7 +2395,7 @@ tpm2_certify_free_name1:
             signingkey_session_handle, shandle3, qualifying_data, scheme,
             certify_info, signature);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Eys_Certify, rval);
+        LOG_PERR(Esys_Certify, rval);
         rc = tool_rc_from_tpm(rval);
 
         return rc;
@@ -4445,7 +4445,7 @@ tpm2_sign_free_name1:
             signingkey_obj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE, digest,
             in_scheme, validation, signature);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Eys_Sign, rval);
+        LOG_PERR(Esys_Sign, rval);
         rc = tool_rc_from_tpm(rval);
         return rc;
     }
