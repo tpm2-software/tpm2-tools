@@ -70,8 +70,8 @@ static int read_command_from_file(FILE *f, tpm2_command_header **c,
     LOG_INFO("command code: 0x%08x", tpm2_command_header_get_code(command));
 
     ret = fread(command->data, data_size, 1, f);
-    if (ret != 1 && ferror(f)) {
-        LOG_ERR("Failed to read command body: %s", strerror (errno));
+    if (ret != 1) {
+        LOG_ERR("Failed to read command body: %s", feof(f) ? "EOF" : strerror (errno));
         free(command);
         return -1;
     }
