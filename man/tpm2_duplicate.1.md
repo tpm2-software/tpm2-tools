@@ -21,9 +21,15 @@ These options control the key importation process:
 
   * **-G**, **\--wrapper-algorithm**=_ALGORITHM_:
 
-    The symmetric algorithm to be used for the inner wrapper. Supports:
+    The symmetric algorithm to be used for the inner wrapper if -U is not used.
+    Supports:
     * aes - AES 128 in CFB mode.
     * null - none
+    The key algorithm associated with the public parent if -U is used.
+
+  * **-G**, **\--key-algorithm**=_ALGORITHM_:
+
+    The key algorithm associated with the public parent if -U is used.
 
   * **-i**, **\--encryptionkey-in**=_FILE_:
 
@@ -45,6 +51,8 @@ These options control the key importation process:
 
     Specifies the file path to the public key of the parent object on the
     destination TPM.  This should be a `TPM2B_PUBLIC` formatted file.
+    This public key is used for the wrapping of a PEM or DER key
+    which will be exported for a remote TPM.
 
   * **-k**, **\--private-key**=_FILE_:
 
