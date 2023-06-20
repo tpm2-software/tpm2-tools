@@ -559,6 +559,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth",              required_argument, 0, 'p'},
       { "policy",            required_argument, 0, 'L'},
       { "wrapper-algorithm", required_argument, 0, 'G'},
+      { "key-algorithm",     required_argument, 0, 'G'},
       { "private",           required_argument, 0, 'r'},
       { "public",            required_argument, 0, 'u'},
       { "private-key",       required_argument, 0, 'k'},
