@@ -100,7 +100,7 @@ cmp secret2.dat decrypt.out
 dd if=/dev/zero bs=1 count=2048 status=none of=secret2.dat
 cat secret2.dat | tpm2 encryptdecrypt -Q -c decrypt.ctx -o encrypt.out -e
 tpm2 encryptdecrypt -Q -c decrypt.ctx -d -o decrypt.out encrypt.out
-## Last block is short 14 or hex 0E trailing bytes
+## Last block is short 16 or hex 10 trailing bytes
 echo 10101010101010101010101010101010 | xxd -r -p >> secret2.dat
 cmp secret2.dat decrypt.out
 
@@ -110,9 +110,29 @@ cat secret2.dat | tpm2 encryptdecrypt -Q -c decrypt.ctx -o encrypt.out -e
 tpm2 encryptdecrypt -Q -c decrypt.ctx -d -o decrypt.out -e encrypt.out
 cmp secret2.dat decrypt.out
 
+# Test pkcs7 padding is stripped after few blocks within the buffer.
+dd if=/dev/zero bs=1 count=2114 status=none of=secret2.dat
+cat secret2.dat | tpm2 encryptdecrypt -Q -c decrypt.ctx -o encrypt.out -e
+tpm2 encryptdecrypt -Q -c decrypt.ctx -d -o decrypt.out -e encrypt.out
+cmp secret2.dat decrypt.out
+
 # Test that pkcs7 pad is stripped off last block for block length aligned inputs
 dd if=/dev/zero bs=1 count=2048 status=none of=secret2.dat
 cat secret2.dat | tpm2 encryptdecrypt -Q -c decrypt.ctx -o encrypt.out -e
+tpm2 encryptdecrypt -Q -c decrypt.ctx -d -o decrypt.out -e encrypt.out
+cmp secret2.dat decrypt.out
+
+# Test pkcs7 padding larger than block size is ignored
+dd if=/dev/zero bs=1 count=48 status=none of=secret2.dat
+echo ffffffffffffffffffffffffffffffff | xxd -r -p >> secret2.dat
+cat secret2.dat | tpm2 encryptdecrypt -Q -c decrypt.ctx -o encrypt.out
+tpm2 encryptdecrypt -Q -c decrypt.ctx -d -o decrypt.out -e encrypt.out
+cmp secret2.dat decrypt.out
+
+# Test inconsistent pkcs7 padding is ignored
+dd if=/dev/zero bs=1 count=48 status=none of=secret2.dat
+echo 0102030405060708090a0b0c0d0e0f10 | xxd -r -p >> secret2.dat
+cat secret2.dat | tpm2 encryptdecrypt -Q -c decrypt.ctx -o encrypt.out
 tpm2 encryptdecrypt -Q -c decrypt.ctx -d -o decrypt.out -e encrypt.out
 cmp secret2.dat decrypt.out
 

@@ -105,7 +105,7 @@ static bool evaluate_pkcs7_padding_requirements(uint16_t remaining_bytes,
     }
 
     /*
-     * Only apply/ strip padding to the last block.
+     * Only apply / strip padding to the last block.
      */
     bool is_last_block = (remaining_bytes <= TPM2_MAX_DIGEST_BUFFER &&
         remaining_bytes > 0);
@@ -155,7 +155,19 @@ static void strip_pkcs7_padding_data_from_output(uint8_t *pad_data,
         LOG_WARN("Encrypted input is not block length aligned.");
     }
 
-    *pad_data = out_data->buffer[last_block_length - 1];
+    *pad_data = out_data->buffer[out_data->size - 1];
+
+    if (*pad_data > ctx.padded_block_len) {
+      LOG_WARN("Padding data is larger than block length: %d", *pad_data);
+      return;
+    }
+
+    for (uint8_t offset = *pad_data; offset > 1; --offset) {
+      if (out_data->buffer[out_data->size - offset] != *pad_data) {
+        LOG_WARN("Inconsistent padding within decrypted input");
+        return;
+      }
+    }
 
     out_data->size -= *pad_data;
 }
