@@ -420,6 +420,27 @@ char **yaml_split_escape_string(UINT8 const *description, size_t size)
     return NULL;
 }
 
+static bool yaml_split_print_string(const char *indent,
+                                    const char *field,
+                                    UINT8 const *description, size_t size)
+{
+    char **lines = NULL;
+    size_t i;
+    tpm2_tool_output("%s%s: |-\n", indent, field);
+
+    lines = yaml_split_escape_string(description, size);
+    if (!lines) {
+        return false;
+    }
+
+    for (i = 0; lines[i] != NULL; i++) {
+        tpm2_tool_output("%s  %s\n", indent, lines[i]);
+        free(lines[i]);
+    }
+    free(lines);
+    return true;
+}
+
 /*
  * TCG PC Client FPF section 9.2.6
  * The tpm2_eventlog module validates the event structure but nothing within
@@ -619,24 +640,12 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 return true;
             } else if (strlen(ret) == NAME_SBATLEVEL_LEN && strncmp(ret, NAME_SBATLEVEL, NAME_SBATLEVEL_LEN) == 0)  {
                 free(ret);
-                tpm2_tool_output("    VariableData:\n"
-                                 "      String: |-\n");
+                tpm2_tool_output("    VariableData:\n");
 
                 UINT8 *description = (UINT8 *)&data->UnicodeName[
                     data->UnicodeNameLength];
-                char **lines = NULL;
-                lines = yaml_split_escape_string(description, data->VariableDataLength);
-                if (!lines) {
-                    return false;
-                }
-
-                size_t i;
-                for (i = 0; lines[i] != NULL; i++) {
-                    tpm2_tool_output("        %s\n", lines[i]);
-                    free(lines[i]);
-                }
-                free(lines);
-                return true;
+                return yaml_split_print_string("      ", "String",
+                                               description, data->VariableDataLength);
             }
         } else if (type == EV_EFI_VARIABLE_BOOT || type == EV_EFI_VARIABLE_BOOT2) {
             if ((strlen(ret) == NAME_BOOTORDER_LEN && strncmp(ret, NAME_BOOTORDER, NAME_BOOTORDER_LEN) == 0)) {
@@ -778,23 +787,10 @@ bool yaml_uefi_action(UINT8 const *action, size_t size) {
  * the loading of grub, kernel, and initrd images.
  */
 bool yaml_ipl(UINT8 const *description, size_t size) {
-    char **lines = NULL;
-    size_t i;
-    tpm2_tool_output("  Event:\n"
-                     "    String: |-\n");
+    tpm2_tool_output("  Event:\n");
 
-    lines = yaml_split_escape_string(description, size);
-    if (!lines) {
-        return false;
-    }
-
-    for (i = 0; lines[i] != NULL; i++) {
-        tpm2_tool_output("      %s\n", lines[i]);
-        free(lines[i]);
-    }
-    free(lines);
-
-    return true;
+    return yaml_split_print_string("    ", "String",
+                                   description, size);
 }
 /* TCG PC Client PFP section 9.2.3 */
 bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
