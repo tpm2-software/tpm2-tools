@@ -6,7 +6,14 @@ shopt -s expand_aliases
 alias python=${PYTHON-python}
 
 yaml_validate() {
-    python -c 'import yaml,sys; yaml.safe_load(sys.stdin)'
+    cmd=$1
+
+    if test -z "$cmd"
+    then
+	python -c "import yaml,sys; yaml.safe_load(sys.stdin)"
+    else
+	python -c "import yaml,sys; y=yaml.safe_load(sys.stdin); $cmd"
+    fi
 }
 
 expect_fail() {
@@ -32,10 +39,9 @@ expect_pass() {
         ret=1
     fi
 
-    diff $evlog.yaml $base.out
+    diff -u $evlog.yaml $base.out
     if [ $? -ne 0 ]; then
-        echo "YAML output changed"
-
+        echo "YAML output matching $evlog.yaml changed, set TEST_REGENERATE_OUTPUT=1 to re-create"
         if test "$TEST_REGENERATE_OUTPUT" = "1"
         then
             cp $base.out $evlog.yaml
@@ -48,7 +54,7 @@ expect_pass() {
     then
         diff $evlog.warn $base.err
         if [ $? -ne 0 ]; then
-            echo "WARNING output changed"
+            echo "WARNING output matching $evlog.warn changed, set TEST_REGENERATE_OUTPUT=1 to re-create"
 
             if test "$TEST_REGENERATE_OUTPUT" = "1"
             then
@@ -61,7 +67,7 @@ expect_pass() {
         if test -s $base.err
         then
             cat $base.err
-            echo "WARNING output unexpected"
+            echo "WARNING output for $evlog.warn unexpected, set TEST_REGENERATE_OUTPUT=1 to re-create"
 
             if test "$TEST_REGENERATE_OUTPUT" = "1"
             then
@@ -98,5 +104,16 @@ expect_pass ${srcdir}/test/integration/fixtures/event-arch-linux.bin --eventlog-
 expect_pass ${srcdir}/test/integration/fixtures/event-gce-ubuntu-2104-log.bin --eventlog-version=2
 expect_pass ${srcdir}/test/integration/fixtures/event-sd-boot-fedora37.bin --eventlog-version=2
 expect_pass ${srcdir}/test/integration/fixtures/event-moklisttrusted.bin --eventlog-version=2
+
+# Pick an event with leading whitespace and validate we have
+# preserved it correctly after parsing the YAML
+event=$(yaml_validate "print(y['events'][80]['Event']['String'])" < ${srcdir}/test/integration/fixtures/event-moklisttrusted.bin.yaml | tr -d '\0')
+expect=$(echo -e "grub_cmd: menuentry UEFI Firmware Settings --id uefi-firmware {\n\t\tfwsetup\n\t}")
+if test "$event" != "$expect"
+then
+    echo "Got $event"
+    echo "Want $expect"
+    exit 1
+fi
 
 exit $?

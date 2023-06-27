@@ -476,8 +476,7 @@ events:
     Digest: "053357ea65185f010b8caa1fc265cfd5e80c7cc781254fa3f1e5ea9d345a87003cf761472a2f0423f15297f55cfe248f"
   EventSize: 8
   Event:
-    String: |-
-      "MokList\0"
+    String: "MokList\0"
 - EventNum: 25
   PCRIndex: 14
   EventType: EV_IPL
@@ -491,8 +490,7 @@ events:
     Digest: "5978bf6aa483f562bf18f46e1e865e35f3b6f4284733c7444a060602c0e9910397f4d6dfcaf7082894ce849077f128c1"
   EventSize: 9
   Event:
-    String: |-
-      "MokListX\0"
+    String: "MokListX\0"
 - EventNum: 26
   PCRIndex: 7
   EventType: EV_EFI_VARIABLE_AUTHORITY
@@ -511,8 +509,7 @@ events:
     VariableDataLength: 18
     UnicodeName: SbatLevel
     VariableData:
-      String: |-
-        "sbat,1,2021030218"
+      String: "sbat,1,2021030218\n"
 - EventNum: 27
   PCRIndex: 4
   EventType: EV_EFI_BOOT_SERVICES_APPLICATION
@@ -544,8 +541,7 @@ events:
     Digest: "1ef3cc75a524bfb7ea72a5d7c139b75a3e8da87c724a2b54aff9122a9c4706ff0fc812af1bc2ea930fd238104d798325"
   EventSize: 32
   Event:
-    String: |-
-      "(hd0,gpt15)/EFI/ubuntu/grub.cfg\0"
+    String: "(hd0,gpt15)/EFI/ubuntu/grub.cfg\0"
 - EventNum: 29
   PCRIndex: 8
   EventType: EV_IPL
@@ -559,8 +555,7 @@ events:
     Digest: "ec7c3b4aae280d870cf4b970b521e3351f57b2cd69b5e6696cc3a6014b258692d330c6fec08298ab66adb3d386624803"
   EventSize: 67
   Event:
-    String: |-
-      "grub_cmd: search.fs_uuid c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a root\0"
+    String: "grub_cmd: search.fs_uuid c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a root\0"
 - EventNum: 30
   PCRIndex: 8
   EventType: EV_IPL
@@ -574,8 +569,7 @@ events:
     Digest: "c72923093dd8b083105397c639763c931800fe96d4e379d980d043c7f8aba3c8f60dada07d9b2a8cebd9762638211365"
   EventSize: 42
   Event:
-    String: |-
-      "grub_cmd: set prefix=(hd0,gpt1)/boot/grub\0"
+    String: "grub_cmd: set prefix=(hd0,gpt1)/boot/grub\0"
 - EventNum: 31
   PCRIndex: 9
   EventType: EV_IPL
@@ -589,8 +583,7 @@ events:
     Digest: "0ab1f13106b96ec5605b11e504cb8d3a597747f51fe0332a74408c7f9065cb6b654ef2a8c90afa6b8755bcfc5a1f1182"
   EventSize: 44
   Event:
-    String: |-
-      "(hd0,gpt1)/boot/grub/x86_64-efi/command.lst\0"
+    String: "(hd0,gpt1)/boot/grub/x86_64-efi/command.lst\0"
 - EventNum: 32
   PCRIndex: 9
   EventType: EV_IPL
@@ -604,8 +597,7 @@ events:
     Digest: "73e17c3ea36dea576f107728630b937f74006954f2be9143eb124b76706173d7d9a68c32e7c90f74b0ff5ced89603914"
   EventSize: 39
   Event:
-    String: |-
-      "(hd0,gpt1)/boot/grub/x86_64-efi/fs.lst\0"
+    String: "(hd0,gpt1)/boot/grub/x86_64-efi/fs.lst\0"
 - EventNum: 33
   PCRIndex: 9
   EventType: EV_IPL
@@ -619,8 +611,7 @@ events:
     Digest: "c7d01ae51404411a65b0d26a601a01d63b914e7477825d5ecd87840a36434c6bd956725441b82a66b6581c36bd38fad4"
   EventSize: 43
   Event:
-    String: |-
-      "(hd0,gpt1)/boot/grub/x86_64-efi/crypto.lst\0"
+    String: "(hd0,gpt1)/boot/grub/x86_64-efi/crypto.lst\0"
 - EventNum: 34
   PCRIndex: 9
   EventType: EV_IPL
@@ -634,8 +625,7 @@ events:
     Digest: "800824fd124df10eeafd6bba36c596c33afbb527e3006b58c19fadced47b03c8ae92f89ef3caef2346b3bd545cfdd8de"
   EventSize: 45
   Event:
-    String: |-
-      "(hd0,gpt1)/boot/grub/x86_64-efi/terminal.lst\0"
+    String: "(hd0,gpt1)/boot/grub/x86_64-efi/terminal.lst\0"
 - EventNum: 35
   PCRIndex: 8
   EventType: EV_IPL
@@ -649,8 +639,7 @@ events:
     Digest: "ab8c53accc47ffef55c4b607725b4bdac7eb63e4ed7ec2d56550eb0b974ae546b5dfb6b119b9c6569f4737ad9ad79dbb"
   EventSize: 51
   Event:
-    String: |-
-      "grub_cmd: configfile (hd0,gpt1)/boot/grub/grub.cfg\0"
+    String: "grub_cmd: configfile (hd0,gpt1)/boot/grub/grub.cfg\0"
 - EventNum: 36
   PCRIndex: 9
   EventType: EV_IPL
@@ -664,8 +653,7 @@ events:
     Digest: "b6530120db1db3760f49810e897b016f067d3452a74e6b83d3c059034884949fe1bcd3e8b99e25c5cda3a5d36909d9a1"
   EventSize: 30
   Event:
-    String: |-
-      "(hd0,gpt1)/boot/grub/grub.cfg\0"
+    String: "(hd0,gpt1)/boot/grub/grub.cfg\0"
 - EventNum: 37
   PCRIndex: 8
   EventType: EV_IPL
@@ -679,8 +667,7 @@ events:
     Digest: "56bbcd8647a6e5bfe7c8716f3610cefff4aca1b4c31def4ad9f47f7a6cee68bb831fe474026630bed7d053e12aa9751e"
   EventSize: 46
   Event:
-    String: |-
-      "grub_cmd: [ -s (hd0,gpt1)/boot/grub/grubenv ]\0"
+    String: "grub_cmd: [ -s (hd0,gpt1)/boot/grub/grubenv ]\0"
 - EventNum: 38
   PCRIndex: 9
   EventType: EV_IPL
@@ -694,8 +681,7 @@ events:
     Digest: "6c6e9ced736b9b1f2d98f0e00af20032817aa9f0eb92cc19ca6d8de7d76a2d612fcdd02e21cd9bd86a1c031be6378884"
   EventSize: 29
   Event:
-    String: |-
-      "(hd0,gpt1)/boot/grub/grubenv\0"
+    String: "(hd0,gpt1)/boot/grub/grubenv\0"
 - EventNum: 39
   PCRIndex: 8
   EventType: EV_IPL
@@ -709,8 +695,7 @@ events:
     Digest: "541c82f4046719d9bda2729278af735f44e40d779dc860b69b6fc9e4ddc3d1233830fb101dc487f9524ccf5aa152f5f5"
   EventSize: 32
   Event:
-    String: |-
-      "grub_cmd: set have_grubenv=true\0"
+    String: "grub_cmd: set have_grubenv=true\0"
 - EventNum: 40
   PCRIndex: 8
   EventType: EV_IPL
@@ -724,8 +709,7 @@ events:
     Digest: "b0f5c156e035813aeb78d5ec47d4a6c2d0651c884384987907340fd18b45384cdab8cb460b5475427c848868b132887b"
   EventSize: 19
   Event:
-    String: |-
-      "grub_cmd: load_env\0"
+    String: "grub_cmd: load_env\0"
 - EventNum: 41
   PCRIndex: 9
   EventType: EV_IPL
@@ -739,8 +723,7 @@ events:
     Digest: "6c6e9ced736b9b1f2d98f0e00af20032817aa9f0eb92cc19ca6d8de7d76a2d612fcdd02e21cd9bd86a1c031be6378884"
   EventSize: 29
   Event:
-    String: |-
-      "(hd0,gpt1)/boot/grub/grubenv\0"
+    String: "(hd0,gpt1)/boot/grub/grubenv\0"
 - EventNum: 42
   PCRIndex: 8
   EventType: EV_IPL
@@ -754,8 +737,7 @@ events:
     Digest: "1b2d9a89f98d0d60ee47648b016de86c2c7840b26bd31248be74c3146a07e0c83e889887fe212a121943ddbdab5d3246"
   EventSize: 19
   Event:
-    String: |-
-      "grub_cmd: [  = 2 ]\0"
+    String: "grub_cmd: [  = 2 ]\0"
 - EventNum: 43
   PCRIndex: 8
   EventType: EV_IPL
@@ -769,8 +751,7 @@ events:
     Digest: "ae1061c45b3c25c89cea3f7ddee4640f8e776086f7d62fb4b9c1d56148a1be04bf11de6a395344567b538c6df06d079e"
   EventSize: 19
   Event:
-    String: |-
-      "grub_cmd: [  = 1 ]\0"
+    String: "grub_cmd: [  = 1 ]\0"
 - EventNum: 44
   PCRIndex: 8
   EventType: EV_IPL
@@ -784,8 +765,7 @@ events:
     Digest: "222e2570e52f72bb99f3ef97cb751dd4de0f3a545583ea4d66015680673f74bb27031bd0ca5cb3b58a25ec78ce8f4851"
   EventSize: 15
   Event:
-    String: |-
-      "grub_cmd: [  ]\0"
+    String: "grub_cmd: [  ]\0"
 - EventNum: 45
   PCRIndex: 8
   EventType: EV_IPL
@@ -799,8 +779,7 @@ events:
     Digest: "6bf6242f8eb0ca7217c6e3a5d4c6a62e5858440264e84696cd67306ef2db8cf625952d5fd9061daadefd181039479740"
   EventSize: 24
   Event:
-    String: |-
-      "grub_cmd: set default=0\0"
+    String: "grub_cmd: set default=0\0"
 - EventNum: 46
   PCRIndex: 8
   EventType: EV_IPL
@@ -814,8 +793,7 @@ events:
     Digest: "10b1f8d036aefd32ce770311ea00426e147b3daee378dd0679aeda81963b2c5389178787962ce9ea08e5571701cce94a"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ xy = xy ]\0"
+    String: "grub_cmd: [ xy = xy ]\0"
 - EventNum: 47
   PCRIndex: 8
   EventType: EV_IPL
@@ -829,8 +807,7 @@ events:
     Digest: "8661953f518c898cb9407c831fa60654fdaf9804d25d99cbc31fd15255b532bad044c390b7a63b2961eed1e9beac6603"
   EventSize: 35
   Event:
-    String: |-
-      "grub_cmd: menuentry_id_option=--id\0"
+    String: "grub_cmd: menuentry_id_option=--id\0"
 - EventNum: 48
   PCRIndex: 8
   EventType: EV_IPL
@@ -844,8 +821,7 @@ events:
     Digest: "952dce390ea9e283ee7b3defb664fc8d7f942a9598bd8b6d20a9843b28786ec7c27f6bafa28c0c16013cfb88dbb7b568"
   EventSize: 37
   Event:
-    String: |-
-      "grub_cmd: export menuentry_id_option\0"
+    String: "grub_cmd: export menuentry_id_option\0"
 - EventNum: 49
   PCRIndex: 8
   EventType: EV_IPL
@@ -859,8 +835,7 @@ events:
     Digest: "222e2570e52f72bb99f3ef97cb751dd4de0f3a545583ea4d66015680673f74bb27031bd0ca5cb3b58a25ec78ce8f4851"
   EventSize: 15
   Event:
-    String: |-
-      "grub_cmd: [  ]\0"
+    String: "grub_cmd: [  ]\0"
 - EventNum: 50
   PCRIndex: 8
   EventType: EV_IPL
@@ -874,8 +849,7 @@ events:
     Digest: "5cd34cee9ce24ca6e401a80ecb4654031bfbcfe5c5b21c19f2d990676f8453e89a69ecf4a153c2b025ff7ba4b03a2e2a"
   EventSize: 33
   Event:
-    String: |-
-      "grub_cmd: terminal_input console\0"
+    String: "grub_cmd: terminal_input console\0"
 - EventNum: 51
   PCRIndex: 8
   EventType: EV_IPL
@@ -889,8 +863,7 @@ events:
     Digest: "a47d5422ef1405120a2246a55bc4e6f60de6f4aa0410dc205d5e80ba9dce7ab480ac93a026d1751202b2e68ba3a0694c"
   EventSize: 34
   Event:
-    String: |-
-      "grub_cmd: terminal_output console\0"
+    String: "grub_cmd: terminal_output console\0"
 - EventNum: 52
   PCRIndex: 8
   EventType: EV_IPL
@@ -904,8 +877,7 @@ events:
     Digest: "ae1061c45b3c25c89cea3f7ddee4640f8e776086f7d62fb4b9c1d56148a1be04bf11de6a395344567b538c6df06d079e"
   EventSize: 19
   Event:
-    String: |-
-      "grub_cmd: [  = 1 ]\0"
+    String: "grub_cmd: [  = 1 ]\0"
 - EventNum: 53
   PCRIndex: 8
   EventType: EV_IPL
@@ -919,8 +891,7 @@ events:
     Digest: "10b1f8d036aefd32ce770311ea00426e147b3daee378dd0679aeda81963b2c5389178787962ce9ea08e5571701cce94a"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ xy = xy ]\0"
+    String: "grub_cmd: [ xy = xy ]\0"
 - EventNum: 54
   PCRIndex: 8
   EventType: EV_IPL
@@ -934,8 +905,7 @@ events:
     Digest: "9f76cda76fd82e4b45a00f258357a71046172ea7dee437017ad0d94b489f7d8b021f121044e7886542f5dc8a1cf15617"
   EventSize: 35
   Event:
-    String: |-
-      "grub_cmd: set timeout_style=hidden\0"
+    String: "grub_cmd: set timeout_style=hidden\0"
 - EventNum: 55
   PCRIndex: 8
   EventType: EV_IPL
@@ -949,8 +919,7 @@ events:
     Digest: "9c452ba5b9a6104c8ed813cc0692b7e69c76c0ff1ce99fc0f38940f540b465b86b1e8f556885eb5acce9f10e6cef1b0d"
   EventSize: 26
   Event:
-    String: |-
-      "grub_cmd: set timeout=0.1\0"
+    String: "grub_cmd: set timeout=0.1\0"
 - EventNum: 56
   PCRIndex: 8
   EventType: EV_IPL
@@ -964,8 +933,7 @@ events:
     Digest: "934aafc99cb0a7cb1ef83c5a1eb01c31d60927f08b2ff72d2c05e0b4660ed1dd1e139738b3c5630502e629e8f593d7af"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ -n true ]\0"
+    String: "grub_cmd: [ -n true ]\0"
 - EventNum: 57
   PCRIndex: 8
   EventType: EV_IPL
@@ -979,8 +947,7 @@ events:
     Digest: "4cf726ecd422b56df71dca2f377cb2a4ee6d9ca1f5b44096f8fc6607b73b56d0effc393100c506a93327511a72cbf707"
   EventSize: 18
   Event:
-    String: |-
-      "grub_cmd: [ -n  ]\0"
+    String: "grub_cmd: [ -n  ]\0"
 - EventNum: 58
   PCRIndex: 8
   EventType: EV_IPL
@@ -994,8 +961,7 @@ events:
     Digest: "21140b393213229d532701ca514452dbb33a28d37d1a62f424aadf68d3b87817cebd7f6cd183ebc2191ff427a5cc11ef"
   EventSize: 51
   Event:
-    String: |-
-      "grub_cmd: set initrdless_boot_fallback_triggered=0\0"
+    String: "grub_cmd: set initrdless_boot_fallback_triggered=0\0"
 - EventNum: 59
   PCRIndex: 8
   EventType: EV_IPL
@@ -1009,8 +975,7 @@ events:
     Digest: "8e0666266caf626cedc801ac78249b0e70cca2936ae65826a8b0baaca9c6aa9bc84e1156b02b7749ac1e7ad797c6fe6a"
   EventSize: 54
   Event:
-    String: |-
-      "grub_cmd: save_env initrdless_boot_fallback_triggered\0"
+    String: "grub_cmd: save_env initrdless_boot_fallback_triggered\0"
 - EventNum: 60
   PCRIndex: 8
   EventType: EV_IPL
@@ -1024,8 +989,7 @@ events:
     Digest: "697c60cddf7d386b91a21c6bd5005181777d52d625ae27fd61036ef4424c57d4b2b97552b484177d628761a396148dac"
   EventSize: 44
   Event:
-    String: |-
-      "grub_cmd: set menu_color_normal=white/black\0"
+    String: "grub_cmd: set menu_color_normal=white/black\0"
 - EventNum: 61
   PCRIndex: 8
   EventType: EV_IPL
@@ -1039,8 +1003,7 @@ events:
     Digest: "4eeef8dcc4a61638868d1dca696cad45913d3922b90ea7f264ba78f02e1f80095c9b668229ecff972c4cc586b14d9870"
   EventSize: 52
   Event:
-    String: |-
-      "grub_cmd: set menu_color_highlight=black/light-gray\0"
+    String: "grub_cmd: set menu_color_highlight=black/light-gray\0"
 - EventNum: 62
   PCRIndex: 8
   EventType: EV_IPL
@@ -1054,8 +1017,7 @@ events:
     Digest: "d280f592667201a4b811f185cfab0e290407db1982f30ff5036aa124ca64e5710bd457864b3f40924afd53452ee37daf"
   EventSize: 60
   Event:
-    String: |-
-      "grub_cmd: set partuuid=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f\0"
+    String: "grub_cmd: set partuuid=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f\0"
 - EventNum: 63
   PCRIndex: 8
   EventType: EV_IPL
@@ -1069,8 +1031,7 @@ events:
     Digest: "7a5ac0796fa82f4efa88b6213985b213d878e64988066a9958760166cf85c5f4778a00a3cf84952c18a6cad3f38553cb"
   EventSize: 20
   Event:
-    String: |-
-      "grub_cmd: [  != 1 ]\0"
+    String: "grub_cmd: [  != 1 ]\0"
 - EventNum: 64
   PCRIndex: 8
   EventType: EV_IPL
@@ -1084,8 +1045,7 @@ events:
     Digest: "a5e07cfc9671766b7f9bb83873c6ff4bed7dfbb927d5b0273d2aebb930dba4630c372075a092dbd7c5495fafa7453ed0"
   EventSize: 55
   Event:
-    String: |-
-      "grub_cmd: [ -e (hd0,gpt1)/boot/grub/gfxblacklist.txt ]\0"
+    String: "grub_cmd: [ -e (hd0,gpt1)/boot/grub/gfxblacklist.txt ]\0"
 - EventNum: 65
   PCRIndex: 8
   EventType: EV_IPL
@@ -1099,8 +1059,7 @@ events:
     Digest: "1754fc7f385a671597fbf1a2ad0c93c6748d29da5eaee6f40f7b7c5a2611c990da2d88620ecd1a866d03f89ec82a556b"
   EventSize: 58
   Event:
-    String: |-
-      "grub_cmd: hwmatch (hd0,gpt1)/boot/grub/gfxblacklist.txt 3\0"
+    String: "grub_cmd: hwmatch (hd0,gpt1)/boot/grub/gfxblacklist.txt 3\0"
 - EventNum: 66
   PCRIndex: 8
   EventType: EV_IPL
@@ -1114,8 +1073,7 @@ events:
     Digest: "5270439d089d97e0a03b28b358a87c3929665c1b6c93daf7a8b71d8cd5a52952ba821a0c2d440038628cda61712de01d"
   EventSize: 18
   Event:
-    String: |-
-      "grub_cmd: [ = 0 ]\0"
+    String: "grub_cmd: [ = 0 ]\0"
 - EventNum: 67
   PCRIndex: 8
   EventType: EV_IPL
@@ -1129,8 +1087,7 @@ events:
     Digest: "e16fb8446b3d8cdc0e33185504b69e3d00d9646d5c71c42311c1dbaa996451a9f1910b70f8fa1d97e6a4ec3abe6bf48d"
   EventSize: 34
   Event:
-    String: |-
-      "grub_cmd: set linux_gfx_mode=keep\0"
+    String: "grub_cmd: set linux_gfx_mode=keep\0"
 - EventNum: 68
   PCRIndex: 8
   EventType: EV_IPL
@@ -1144,8 +1101,7 @@ events:
     Digest: "f5e5365d6e97649411362c83e2e8808f7c19efa11d4f16d4ac66093214510beed55448882cbbdda8f0164688465905b0"
   EventSize: 32
   Event:
-    String: |-
-      "grub_cmd: export linux_gfx_mode\0"
+    String: "grub_cmd: export linux_gfx_mode\0"
 - EventNum: 69
   PCRIndex: 8
   EventType: EV_IPL
@@ -1159,31 +1115,30 @@ events:
     Digest: "ba3e98910b1f1d534da9d112008728603800e461c7410065a7ff6107e22e9ef8ffdc16950932febd36922d6d1a1df8ed"
   EventSize: 1160
   Event:
-    String: |-
-      "grub_cmd: menuentry Ubuntu --class ubuntu --class gnu-linux --class gnu --class os --id gnulinux-simple-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a {"
-      "\trecordfail"
-      "\tload_video"
-      "\tgfxmode $linux_gfx_mode"
-      "\tinsmod gzio"
-      "\tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
-      "\tinsmod part_gpt"
-      "\tinsmod ext2"
-      "\tset root=\'hd0,gpt1\'"
-      "\tif [ x$feature_platform_search_hint = xy ]; then"
-      "\t  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\telse"
-      "\t  search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\tfi"
-      "\tif [ "${initrdfail}" = 1 ]; then"
-      "\t  echo\t\'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.\'"
-      "\t  linux\t/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0"
-      "\t  initrd\t/boot/initrd.img-5.11.0-1008-gcp"
-      "\telse"
-      "\t  echo\t\'GRUB_FORCE_PARTUUID set, attempting initrdless boot.\'"
-      "\t  linux\t/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1"
-      "\tfi"
-      "\tinitrdfail"
-      "}\0"
+    String: "grub_cmd: menuentry Ubuntu --class ubuntu --class gnu-linux --class gnu --class os --id gnulinux-simple-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a {\n\
+      \trecordfail\n\
+      \tload_video\n\
+      \tgfxmode $linux_gfx_mode\n\
+      \tinsmod gzio\n\
+      \tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi\n\
+      \tinsmod part_gpt\n\
+      \tinsmod ext2\n\
+      \tset root='hd0,gpt1'\n\
+      \tif [ x$feature_platform_search_hint = xy ]; then\n\
+      \t\x20\x20search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \telse\n\
+      \t\x20\x20search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \tfi\n\
+      \tif [ \"${initrdfail}\" = 1 ]; then\n\
+      \t\x20\x20echo	'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.'\n\
+      \t\x20\x20linux	/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0\n\
+      \t\x20\x20initrd	/boot/initrd.img-5.11.0-1008-gcp\n\
+      \telse\n\
+      \t\x20\x20echo	'GRUB_FORCE_PARTUUID set, attempting initrdless boot.'\n\
+      \t\x20\x20linux	/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\n\
+      \tfi\n\
+      \tinitrdfail\n\
+      }\0"
 - EventNum: 70
   PCRIndex: 8
   EventType: EV_IPL
@@ -1197,111 +1152,110 @@ events:
     Digest: "84dbd33027441f7e35b2aa4559eca8b55d59b4cbb8619c5e691dcb1b379784b1c7955823ea20cc61406b359f9f5db4ab"
   EventSize: 5454
   Event:
-    String: |-
-      "grub_cmd: submenu Advanced options for Ubuntu --id gnulinux-advanced-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a {"
-      "\tmenuentry \'Ubuntu, with Linux 5.11.0-1008-gcp\' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option \'gnulinux-5.11.0-1008-gcp-advanced-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\' {"
-      "\t\trecordfail"
-      "\t\tload_video"
-      "\t\tgfxmode $linux_gfx_mode"
-      "\t\tinsmod gzio"
-      "\t\tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
-      "\t\tinsmod part_gpt"
-      "\t\tinsmod ext2"
-      "\t\tset root=\'hd0,gpt1\'"
-      "\t\tif [ x$feature_platform_search_hint = xy ]; then"
-      "\t\t  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\telse"
-      "\t\t  search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\tfi"
-      "\t\techo\t\'Loading Linux 5.11.0-1008-gcp ...\'"
-      "\t\tif [ "${initrdfail}" = 1 ]; then"
-      "\t\t  echo\t\'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.\'"
-      "\t\t  linux\t/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0"
-      "\t\t  echo\t\'Loading initial ramdisk ...\'"
-      "\t\t  initrd\t/boot/initrd.img-5.11.0-1008-gcp"
-      "\t\telse"
-      "\t\t  echo\t\'GRUB_FORCE_PARTUUID set, attempting initrdless boot.\'"
-      "\t\t  linux\t/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1"
-      "\t\tfi"
-      "\t\tinitrdfail"
-      "\t}"
-      "\tmenuentry \'Ubuntu, with Linux 5.11.0-1008-gcp (recovery mode)\' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option \'gnulinux-5.11.0-1008-gcp-recovery-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\' {"
-      "\t\trecordfail"
-      "\t\tload_video"
-      "\t\tinsmod gzio"
-      "\t\tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
-      "\t\tinsmod part_gpt"
-      "\t\tinsmod ext2"
-      "\t\tset root=\'hd0,gpt1\'"
-      "\t\tif [ x$feature_platform_search_hint = xy ]; then"
-      "\t\t  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\telse"
-      "\t\t  search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\tfi"
-      "\t\techo\t\'Loading Linux 5.11.0-1008-gcp ...\'"
-      "\t\tif [ "${initrdfail}" = 1 ]; then"
-      "\t\t  echo\t\'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.\'"
-      "\t\t  linux\t/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256"
-      "\t\t  echo\t\'Loading initial ramdisk ...\'"
-      "\t\t  initrd\t/boot/initrd.img-5.11.0-1008-gcp"
-      "\t\telse"
-      "\t\t  echo\t\'GRUB_FORCE_PARTUUID set, attempting initrdless boot.\'"
-      "\t\t  linux\t/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256 panic=-1"
-      "\t\tfi"
-      "\t\tinitrdfail"
-      "\t}"
-      "\tmenuentry \'Ubuntu, with Linux 5.11.0-1007-gcp\' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option \'gnulinux-5.11.0-1007-gcp-advanced-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\' {"
-      "\t\trecordfail"
-      "\t\tload_video"
-      "\t\tgfxmode $linux_gfx_mode"
-      "\t\tinsmod gzio"
-      "\t\tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
-      "\t\tinsmod part_gpt"
-      "\t\tinsmod ext2"
-      "\t\tset root=\'hd0,gpt1\'"
-      "\t\tif [ x$feature_platform_search_hint = xy ]; then"
-      "\t\t  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\telse"
-      "\t\t  search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\tfi"
-      "\t\techo\t\'Loading Linux 5.11.0-1007-gcp ...\'"
-      "\t\tif [ "${initrdfail}" = 1 ]; then"
-      "\t\t  echo\t\'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.\'"
-      "\t\t  linux\t/boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0"
-      "\t\t  echo\t\'Loading initial ramdisk ...\'"
-      "\t\t  initrd\t/boot/initrd.img-5.11.0-1007-gcp"
-      "\t\telse"
-      "\t\t  echo\t\'GRUB_FORCE_PARTUUID set, attempting initrdless boot.\'"
-      "\t\t  linux\t/boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1"
-      "\t\tfi"
-      "\t\tinitrdfail"
-      "\t}"
-      "\tmenuentry \'Ubuntu, with Linux 5.11.0-1007-gcp (recovery mode)\' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option \'gnulinux-5.11.0-1007-gcp-recovery-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\' {"
-      "\t\trecordfail"
-      "\t\tload_video"
-      "\t\tinsmod gzio"
-      "\t\tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
-      "\t\tinsmod part_gpt"
-      "\t\tinsmod ext2"
-      "\t\tset root=\'hd0,gpt1\'"
-      "\t\tif [ x$feature_platform_search_hint = xy ]; then"
-      "\t\t  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\telse"
-      "\t\t  search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\tfi"
-      "\t\techo\t\'Loading Linux 5.11.0-1007-gcp ...\'"
-      "\t\tif [ "${initrdfail}" = 1 ]; then"
-      "\t\t  echo\t\'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.\'"
-      "\t\t  linux\t/boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256"
-      "\t\t  echo\t\'Loading initial ramdisk ...\'"
-      "\t\t  initrd\t/boot/initrd.img-5.11.0-1007-gcp"
-      "\t\telse"
-      "\t\t  echo\t\'GRUB_FORCE_PARTUUID set, attempting initrdless boot.\'"
-      "\t\t  linux\t/boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256 panic=-1"
-      "\t\tfi"
-      "\t\tinitrdfail"
-      "\t}"
-      "}\0"
+    String: "grub_cmd: submenu Advanced options for Ubuntu --id gnulinux-advanced-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a {\n\
+      \tmenuentry 'Ubuntu, with Linux 5.11.0-1008-gcp' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.11.0-1008-gcp-advanced-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a' {\n\
+      \t\trecordfail\n\
+      \t\tload_video\n\
+      \t\tgfxmode $linux_gfx_mode\n\
+      \t\tinsmod gzio\n\
+      \t\tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi\n\
+      \t\tinsmod part_gpt\n\
+      \t\tinsmod ext2\n\
+      \t\tset root='hd0,gpt1'\n\
+      \t\tif [ x$feature_platform_search_hint = xy ]; then\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\telse\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\tfi\n\
+      \t\techo	'Loading Linux 5.11.0-1008-gcp ...'\n\
+      \t\tif [ \"${initrdfail}\" = 1 ]; then\n\
+      \t\t\x20\x20echo	'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.'\n\
+      \t\t\x20\x20linux	/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0\n\
+      \t\t\x20\x20echo	'Loading initial ramdisk ...'\n\
+      \t\t\x20\x20initrd	/boot/initrd.img-5.11.0-1008-gcp\n\
+      \t\telse\n\
+      \t\t\x20\x20echo	'GRUB_FORCE_PARTUUID set, attempting initrdless boot.'\n\
+      \t\t\x20\x20linux	/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\n\
+      \t\tfi\n\
+      \t\tinitrdfail\n\
+      \t}\n\
+      \tmenuentry 'Ubuntu, with Linux 5.11.0-1008-gcp (recovery mode)' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.11.0-1008-gcp-recovery-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a' {\n\
+      \t\trecordfail\n\
+      \t\tload_video\n\
+      \t\tinsmod gzio\n\
+      \t\tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi\n\
+      \t\tinsmod part_gpt\n\
+      \t\tinsmod ext2\n\
+      \t\tset root='hd0,gpt1'\n\
+      \t\tif [ x$feature_platform_search_hint = xy ]; then\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\telse\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\tfi\n\
+      \t\techo	'Loading Linux 5.11.0-1008-gcp ...'\n\
+      \t\tif [ \"${initrdfail}\" = 1 ]; then\n\
+      \t\t\x20\x20echo	'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.'\n\
+      \t\t\x20\x20linux	/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256\n\
+      \t\t\x20\x20echo	'Loading initial ramdisk ...'\n\
+      \t\t\x20\x20initrd	/boot/initrd.img-5.11.0-1008-gcp\n\
+      \t\telse\n\
+      \t\t\x20\x20echo	'GRUB_FORCE_PARTUUID set, attempting initrdless boot.'\n\
+      \t\t\x20\x20linux	/boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256 panic=-1\n\
+      \t\tfi\n\
+      \t\tinitrdfail\n\
+      \t}\n\
+      \tmenuentry 'Ubuntu, with Linux 5.11.0-1007-gcp' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.11.0-1007-gcp-advanced-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a' {\n\
+      \t\trecordfail\n\
+      \t\tload_video\n\
+      \t\tgfxmode $linux_gfx_mode\n\
+      \t\tinsmod gzio\n\
+      \t\tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi\n\
+      \t\tinsmod part_gpt\n\
+      \t\tinsmod ext2\n\
+      \t\tset root='hd0,gpt1'\n\
+      \t\tif [ x$feature_platform_search_hint = xy ]; then\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\telse\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\tfi\n\
+      \t\techo	'Loading Linux 5.11.0-1007-gcp ...'\n\
+      \t\tif [ \"${initrdfail}\" = 1 ]; then\n\
+      \t\t\x20\x20echo	'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.'\n\
+      \t\t\x20\x20linux	/boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0\n\
+      \t\t\x20\x20echo	'Loading initial ramdisk ...'\n\
+      \t\t\x20\x20initrd	/boot/initrd.img-5.11.0-1007-gcp\n\
+      \t\telse\n\
+      \t\t\x20\x20echo	'GRUB_FORCE_PARTUUID set, attempting initrdless boot.'\n\
+      \t\t\x20\x20linux	/boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\n\
+      \t\tfi\n\
+      \t\tinitrdfail\n\
+      \t}\n\
+      \tmenuentry 'Ubuntu, with Linux 5.11.0-1007-gcp (recovery mode)' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.11.0-1007-gcp-recovery-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a' {\n\
+      \t\trecordfail\n\
+      \t\tload_video\n\
+      \t\tinsmod gzio\n\
+      \t\tif [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi\n\
+      \t\tinsmod part_gpt\n\
+      \t\tinsmod ext2\n\
+      \t\tset root='hd0,gpt1'\n\
+      \t\tif [ x$feature_platform_search_hint = xy ]; then\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\telse\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\tfi\n\
+      \t\techo	'Loading Linux 5.11.0-1007-gcp ...'\n\
+      \t\tif [ \"${initrdfail}\" = 1 ]; then\n\
+      \t\t\x20\x20echo	'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.'\n\
+      \t\t\x20\x20linux	/boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256\n\
+      \t\t\x20\x20echo	'Loading initial ramdisk ...'\n\
+      \t\t\x20\x20initrd	/boot/initrd.img-5.11.0-1007-gcp\n\
+      \t\telse\n\
+      \t\t\x20\x20echo	'GRUB_FORCE_PARTUUID set, attempting initrdless boot.'\n\
+      \t\t\x20\x20linux	/boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256 panic=-1\n\
+      \t\tfi\n\
+      \t\tinitrdfail\n\
+      \t}\n\
+      }\0"
 - EventNum: 71
   PCRIndex: 8
   EventType: EV_IPL
@@ -1315,19 +1269,18 @@ events:
     Digest: "08749dcd94ec0ed4f8558679a5ee41179ecf47a44ea00b49415d1f1ca584bc1bc1001ffecf8660303009ccb88278598b"
   EventSize: 717
   Event:
-    String: |-
-      "grub_cmd: menuentry Ubuntu 21.04 (21.04) (on /dev/sda1) --class ubuntu --class gnu-linux --class gnu --class os --id osprober-gnulinux-simple-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a {"
-      "\tinsmod part_gpt"
-      "\tinsmod ext2"
-      "\tset root=\'hd0,gpt1\'"
-      "\tif [ x$feature_platform_search_hint = xy ]; then"
-      "\t  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\telse"
-      "\t  search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\tfi"
-      "\tlinux /boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1"
-      "\tinitrd /boot/initrd.img-5.11.0-1007-gcp"
-      "}\0"
+    String: "grub_cmd: menuentry Ubuntu 21.04 (21.04) (on /dev/sda1) --class ubuntu --class gnu-linux --class gnu --class os --id osprober-gnulinux-simple-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a {\n\
+      \tinsmod part_gpt\n\
+      \tinsmod ext2\n\
+      \tset root='hd0,gpt1'\n\
+      \tif [ x$feature_platform_search_hint = xy ]; then\n\
+      \t\x20\x20search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \telse\n\
+      \t\x20\x20search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \tfi\n\
+      \tlinux /boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\n\
+      \tinitrd /boot/initrd.img-5.11.0-1007-gcp\n\
+      }\0"
 - EventNum: 72
   PCRIndex: 8
   EventType: EV_IPL
@@ -1341,45 +1294,44 @@ events:
     Digest: "4e2a4f1fd7f20ac2af06039252e8e2bdaa16b5129b0af865ae560e18bba9a28852efa6655423b6d6099c245384096047"
   EventSize: 2574
   Event:
-    String: |-
-      "grub_cmd: submenu Advanced options for Ubuntu 21.04 (21.04) (on /dev/sda1) --id osprober-gnulinux-advanced-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a {"
-      "\tmenuentry \'Ubuntu (on /dev/sda1)\' --class gnu-linux --class gnu --class os $menuentry_id_option \'osprober-gnulinux-/boot/vmlinuz-5.11.0-1007-gcp--c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\' {"
-      "\t\tinsmod part_gpt"
-      "\t\tinsmod ext2"
-      "\t\tset root=\'hd0,gpt1\'"
-      "\t\tif [ x$feature_platform_search_hint = xy ]; then"
-      "\t\t  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\telse"
-      "\t\t  search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\tfi"
-      "\t\tlinux /boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1"
-      "\t\tinitrd /boot/initrd.img-5.11.0-1007-gcp"
-      "\t}"
-      "\tmenuentry \'Ubuntu, with Linux 5.11.0-1007-gcp (on /dev/sda1)\' --class gnu-linux --class gnu --class os $menuentry_id_option \'osprober-gnulinux-/boot/vmlinuz-5.11.0-1007-gcp--c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\' {"
-      "\t\tinsmod part_gpt"
-      "\t\tinsmod ext2"
-      "\t\tset root=\'hd0,gpt1\'"
-      "\t\tif [ x$feature_platform_search_hint = xy ]; then"
-      "\t\t  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\telse"
-      "\t\t  search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\tfi"
-      "\t\tlinux /boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1"
-      "\t\tinitrd /boot/initrd.img-5.11.0-1007-gcp"
-      "\t}"
-      "\tmenuentry \'Ubuntu, with Linux 5.11.0-1007-gcp (recovery mode) (on /dev/sda1)\' --class gnu-linux --class gnu --class os $menuentry_id_option \'osprober-gnulinux-/boot/vmlinuz-5.11.0-1007-gcp-root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256 panic=-1-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\' {"
-      "\t\tinsmod part_gpt"
-      "\t\tinsmod ext2"
-      "\t\tset root=\'hd0,gpt1\'"
-      "\t\tif [ x$feature_platform_search_hint = xy ]; then"
-      "\t\t  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\telse"
-      "\t\t  search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a"
-      "\t\tfi"
-      "\t\tlinux /boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256 panic=-1"
-      "\t\tinitrd /boot/initrd.img-5.11.0-1007-gcp"
-      "\t}"
-      "}\0"
+    String: "grub_cmd: submenu Advanced options for Ubuntu 21.04 (21.04) (on /dev/sda1) --id osprober-gnulinux-advanced-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a {\n\
+      \tmenuentry 'Ubuntu (on /dev/sda1)' --class gnu-linux --class gnu --class os $menuentry_id_option 'osprober-gnulinux-/boot/vmlinuz-5.11.0-1007-gcp--c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a' {\n\
+      \t\tinsmod part_gpt\n\
+      \t\tinsmod ext2\n\
+      \t\tset root='hd0,gpt1'\n\
+      \t\tif [ x$feature_platform_search_hint = xy ]; then\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\telse\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\tfi\n\
+      \t\tlinux /boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\n\
+      \t\tinitrd /boot/initrd.img-5.11.0-1007-gcp\n\
+      \t}\n\
+      \tmenuentry 'Ubuntu, with Linux 5.11.0-1007-gcp (on /dev/sda1)' --class gnu-linux --class gnu --class os $menuentry_id_option 'osprober-gnulinux-/boot/vmlinuz-5.11.0-1007-gcp--c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a' {\n\
+      \t\tinsmod part_gpt\n\
+      \t\tinsmod ext2\n\
+      \t\tset root='hd0,gpt1'\n\
+      \t\tif [ x$feature_platform_search_hint = xy ]; then\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\telse\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\tfi\n\
+      \t\tlinux /boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\n\
+      \t\tinitrd /boot/initrd.img-5.11.0-1007-gcp\n\
+      \t}\n\
+      \tmenuentry 'Ubuntu, with Linux 5.11.0-1007-gcp (recovery mode) (on /dev/sda1)' --class gnu-linux --class gnu --class os $menuentry_id_option 'osprober-gnulinux-/boot/vmlinuz-5.11.0-1007-gcp-root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256 panic=-1-c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a' {\n\
+      \t\tinsmod part_gpt\n\
+      \t\tinsmod ext2\n\
+      \t\tset root='hd0,gpt1'\n\
+      \t\tif [ x$feature_platform_search_hint = xy ]; then\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\telse\n\
+      \t\t\x20\x20search --no-floppy --fs-uuid --set=root c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\n\
+      \t\tfi\n\
+      \t\tlinux /boot/vmlinuz-5.11.0-1007-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro recovery nomodeset dis_ucode_ldr scsi_mod.use_blk_mq=Y ima_hash=sha256 panic=-1\n\
+      \t\tinitrd /boot/initrd.img-5.11.0-1007-gcp\n\
+      \t}\n\
+      }\0"
 - EventNum: 73
   PCRIndex: 8
   EventType: EV_IPL
@@ -1393,8 +1345,7 @@ events:
     Digest: "25c0d8bcdfb40c73ce2820b8589c44b0b81b2501f7b7f9fd54585616b1b03adef28b6eb043e0ca69146a729ea029e626"
   EventSize: 33
   Event:
-    String: |-
-      "grub_cmd: set timeout_style=menu\0"
+    String: "grub_cmd: set timeout_style=menu\0"
 - EventNum: 74
   PCRIndex: 8
   EventType: EV_IPL
@@ -1408,8 +1359,7 @@ events:
     Digest: "f303694e244f1e2193c193b22f5d252aadf600802004d75a1e9920922a4927f6649e83cf34e4d4bb1916d7223ba59b3a"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ 0.1 = 0 ]\0"
+    String: "grub_cmd: [ 0.1 = 0 ]\0"
 - EventNum: 75
   PCRIndex: 8
   EventType: EV_IPL
@@ -1423,10 +1373,9 @@ events:
     Digest: "c30a0e3a9357f2867ae466fcf0d5023c62a237d41b125316aac3bf39d5f5229792d7da9b42602e4770453834fcc28bea"
   EventSize: 75
   Event:
-    String: |-
-      "grub_cmd: menuentry UEFI Firmware Settings --id uefi-firmware {"
-      "\tfwsetup"
-      "}\0"
+    String: "grub_cmd: menuentry UEFI Firmware Settings --id uefi-firmware {\n\
+      \tfwsetup\n\
+      }\0"
 - EventNum: 76
   PCRIndex: 8
   EventType: EV_IPL
@@ -1440,8 +1389,7 @@ events:
     Digest: "aed896a21fb16121568dd93ed2334c6a8415660b3495cd1ec9e8962e1f87639fd8cf41c94e8a48841be19a2bc103e100"
   EventSize: 49
   Event:
-    String: |-
-      "grub_cmd: [ -f (hd0,gpt1)/boot/grub/custom.cfg ]\0"
+    String: "grub_cmd: [ -f (hd0,gpt1)/boot/grub/custom.cfg ]\0"
 - EventNum: 77
   PCRIndex: 8
   EventType: EV_IPL
@@ -1455,8 +1403,7 @@ events:
     Digest: "fbb38645486103b1baa77a61576d342c27c0d02597649825cee44c16f658af2b0ad8aa4996e16b9b6c32b1e38f3bb41a"
   EventSize: 76
   Event:
-    String: |-
-      "grub_cmd: [ -z (hd0,gpt1)/boot/grub -a -f (hd0,gpt1)/boot/grub/custom.cfg ]\0"
+    String: "grub_cmd: [ -z (hd0,gpt1)/boot/grub -a -f (hd0,gpt1)/boot/grub/custom.cfg ]\0"
 - EventNum: 78
   PCRIndex: 8
   EventType: EV_IPL
@@ -1470,8 +1417,7 @@ events:
     Digest: "a30a7be4fb9beb8b2282ff1414d0a47eb11b36471a2628d4284bd9ae8e8a74a8e15f0a1e84b413636db7692a4a60cc1a"
   EventSize: 27
   Event:
-    String: |-
-      "grub_cmd: setparams Ubuntu\0"
+    String: "grub_cmd: setparams Ubuntu\0"
 - EventNum: 79
   PCRIndex: 8
   EventType: EV_IPL
@@ -1485,8 +1431,7 @@ events:
     Digest: "b0bb85ff789f25dd63e341736b94f4bf3acd1cff1c1df60bd3ffca5789eb737d2817a39af66de46640134bfbbb20dad7"
   EventSize: 21
   Event:
-    String: |-
-      "grub_cmd: recordfail\0"
+    String: "grub_cmd: recordfail\0"
 - EventNum: 80
   PCRIndex: 8
   EventType: EV_IPL
@@ -1500,8 +1445,7 @@ events:
     Digest: "b353cf9833059be9abadf180d83abeb5eeeec00843b3f22476bb5db0ba2f4361a0260af3460aecb3c124eda90b6ca7a2"
   EventSize: 27
   Event:
-    String: |-
-      "grub_cmd: set recordfail=1\0"
+    String: "grub_cmd: set recordfail=1\0"
 - EventNum: 81
   PCRIndex: 8
   EventType: EV_IPL
@@ -1515,8 +1459,7 @@ events:
     Digest: "934aafc99cb0a7cb1ef83c5a1eb01c31d60927f08b2ff72d2c05e0b4660ed1dd1e139738b3c5630502e629e8f593d7af"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ -n true ]\0"
+    String: "grub_cmd: [ -n true ]\0"
 - EventNum: 82
   PCRIndex: 8
   EventType: EV_IPL
@@ -1530,8 +1473,7 @@ events:
     Digest: "fef379383e771fed457fecfc7148e008c90234d0526b282690c57c93802cc9623c25923689de1c2fcb62669f10e3e1e1"
   EventSize: 18
   Event:
-    String: |-
-      "grub_cmd: [ -z  ]\0"
+    String: "grub_cmd: [ -z  ]\0"
 - EventNum: 83
   PCRIndex: 8
   EventType: EV_IPL
@@ -1545,8 +1487,7 @@ events:
     Digest: "022e47c5e49bf3c934f488fcc07318489550a64db62aa07ca044c9dd9c2a0ff90637641b7c87bd77e3383e70039ea0fa"
   EventSize: 30
   Event:
-    String: |-
-      "grub_cmd: save_env recordfail\0"
+    String: "grub_cmd: save_env recordfail\0"
 - EventNum: 84
   PCRIndex: 8
   EventType: EV_IPL
@@ -1560,8 +1501,7 @@ events:
     Digest: "cbb709d13faf7d16f191751ae275f22a003503389e2e490a60cff78beb3cd546222d591904d51987487f03cdbd41e479"
   EventSize: 21
   Event:
-    String: |-
-      "grub_cmd: load_video\0"
+    String: "grub_cmd: load_video\0"
 - EventNum: 85
   PCRIndex: 8
   EventType: EV_IPL
@@ -1575,8 +1515,7 @@ events:
     Digest: "10b1f8d036aefd32ce770311ea00426e147b3daee378dd0679aeda81963b2c5389178787962ce9ea08e5571701cce94a"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ xy = xy ]\0"
+    String: "grub_cmd: [ xy = xy ]\0"
 - EventNum: 86
   PCRIndex: 8
   EventType: EV_IPL
@@ -1590,8 +1529,7 @@ events:
     Digest: "147bbdcd0704d1942b2171a097e7b08384f106cac76f7d5737e5fee2bc2e38dedb821b91e09ac184b46bb4dc86b4a8af"
   EventSize: 27
   Event:
-    String: |-
-      "grub_cmd: insmod all_video\0"
+    String: "grub_cmd: insmod all_video\0"
 - EventNum: 87
   PCRIndex: 8
   EventType: EV_IPL
@@ -1605,8 +1543,7 @@ events:
     Digest: "f27a8ddb553135ee8002572775ae390b1bc7443ebbe11b863cd79ae66b2065cd02e98cfb170b897112986a88cd071ef8"
   EventSize: 23
   Event:
-    String: |-
-      "grub_cmd: gfxmode keep\0"
+    String: "grub_cmd: gfxmode keep\0"
 - EventNum: 88
   PCRIndex: 8
   EventType: EV_IPL
@@ -1620,8 +1557,7 @@ events:
     Digest: "7c5ea1b10ba69215090e2490e10f9d2db5f6a5b0eb6e08d366cceb8acb4478857242221cf56323a493d1b3a958fa137c"
   EventSize: 30
   Event:
-    String: |-
-      "grub_cmd: set gfxpayload=keep\0"
+    String: "grub_cmd: set gfxpayload=keep\0"
 - EventNum: 89
   PCRIndex: 8
   EventType: EV_IPL
@@ -1635,8 +1571,7 @@ events:
     Digest: "f7c74459bb0d16f8ae24911858879c7fcab3b8af909d811d945e09f7b16977bd65a819128d0b5c88ff29cb76f381bdd6"
   EventSize: 26
   Event:
-    String: |-
-      "grub_cmd: [ keep = keep ]\0"
+    String: "grub_cmd: [ keep = keep ]\0"
 - EventNum: 90
   PCRIndex: 8
   EventType: EV_IPL
@@ -1650,8 +1585,7 @@ events:
     Digest: "8bc8e8c561f27f5988be9e69da2a00f626c7d3c735f599abcf27f83c02530ca76847dc5e15007f490e2f417a24b2f457"
   EventSize: 38
   Event:
-    String: |-
-      "grub_cmd: set vt_handoff=vt.handoff=7\0"
+    String: "grub_cmd: set vt_handoff=vt.handoff=7\0"
 - EventNum: 91
   PCRIndex: 8
   EventType: EV_IPL
@@ -1665,8 +1599,7 @@ events:
     Digest: "862ae797615324fd5c153dfbfcb226391262855ed2db2969f98456f0da17b6aa1c8aa2e2fe90bc1567295786a83c5371"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: insmod gzio\0"
+    String: "grub_cmd: insmod gzio\0"
 - EventNum: 92
   PCRIndex: 8
   EventType: EV_IPL
@@ -1680,8 +1613,7 @@ events:
     Digest: "995dbf6286dc9d47f0eee049a465847bb1e4cb1fa91deffb00dde832d2e00b109049c0f2edd6ad66525227758138a601"
   EventSize: 26
   Event:
-    String: |-
-      "grub_cmd: [ xefi = xxen ]\0"
+    String: "grub_cmd: [ xefi = xxen ]\0"
 - EventNum: 93
   PCRIndex: 8
   EventType: EV_IPL
@@ -1695,8 +1627,7 @@ events:
     Digest: "cac0f0b93ee7eaa45e36cda3faf3d0a5f5fc92ec4d24c3af4ad9584669598f34b603c211b220e56be52bdbc3a2f74ffb"
   EventSize: 26
   Event:
-    String: |-
-      "grub_cmd: insmod part_gpt\0"
+    String: "grub_cmd: insmod part_gpt\0"
 - EventNum: 94
   PCRIndex: 8
   EventType: EV_IPL
@@ -1710,8 +1641,7 @@ events:
     Digest: "e142a594d988fda5a65b1424a4a48c2cf4b036dd779d4ae299af45b7d33b0bfe07a4a969d3c0da72c2ba53f9eeeaf7a6"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: insmod ext2\0"
+    String: "grub_cmd: insmod ext2\0"
 - EventNum: 95
   PCRIndex: 8
   EventType: EV_IPL
@@ -1725,8 +1655,7 @@ events:
     Digest: "fbcdbcd1cc73f5ff594f1c8b21ecd6f5d62a0fd2f217da2fb7bcc75887c14c1232d162c53c05c914a84152d52d9ff68e"
   EventSize: 28
   Event:
-    String: |-
-      "grub_cmd: set root=hd0,gpt1\0"
+    String: "grub_cmd: set root=hd0,gpt1\0"
 - EventNum: 96
   PCRIndex: 8
   EventType: EV_IPL
@@ -1740,8 +1669,7 @@ events:
     Digest: "10b1f8d036aefd32ce770311ea00426e147b3daee378dd0679aeda81963b2c5389178787962ce9ea08e5571701cce94a"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ xy = xy ]\0"
+    String: "grub_cmd: [ xy = xy ]\0"
 - EventNum: 97
   PCRIndex: 8
   EventType: EV_IPL
@@ -1755,8 +1683,7 @@ events:
     Digest: "44d9ad511c25d0f9cc6d5afd966a01ab022e2dc4999c56f110f26cdf5abcd369681618024ab313c886662e9db6915d96"
   EventSize: 156
   Event:
-    String: |-
-      "grub_cmd: search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1 c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\0"
+    String: "grub_cmd: search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1 c73d8355-1ac9-41b4-8edf-c1c1a9d5bd6a\0"
 - EventNum: 98
   PCRIndex: 8
   EventType: EV_IPL
@@ -1770,8 +1697,7 @@ events:
     Digest: "ae1061c45b3c25c89cea3f7ddee4640f8e776086f7d62fb4b9c1d56148a1be04bf11de6a395344567b538c6df06d079e"
   EventSize: 19
   Event:
-    String: |-
-      "grub_cmd: [  = 1 ]\0"
+    String: "grub_cmd: [  = 1 ]\0"
 - EventNum: 99
   PCRIndex: 8
   EventType: EV_IPL
@@ -1785,8 +1711,7 @@ events:
     Digest: "2164d946e27c14eed101898c7ed88f7699292963b92d40d8ea3085b43284a57b3f3dfb83ac0945eb28ae70dd5ffd5184"
   EventSize: 68
   Event:
-    String: |-
-      "grub_cmd: echo GRUB_FORCE_PARTUUID set, attempting initrdless boot.\0"
+    String: "grub_cmd: echo GRUB_FORCE_PARTUUID set, attempting initrdless boot.\0"
 - EventNum: 100
   PCRIndex: 8
   EventType: EV_IPL
@@ -1800,8 +1725,7 @@ events:
     Digest: "c35c072afd08eabbe3acf4deed5f758d64f0c63657340d2b11991d001c8c93ce675cc3e758f41505c8ab075ca4d4dff3"
   EventSize: 161
   Event:
-    String: |-
-      "grub_cmd: linux /boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\0"
+    String: "grub_cmd: linux /boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\0"
 - EventNum: 101
   PCRIndex: 9
   EventType: EV_IPL
@@ -1815,8 +1739,7 @@ events:
     Digest: "1a09841f50d46e01e34db7db403824d2e5792411949f2ada78681c4c9b2666ec4729c4c019e69840bad921df227ba143"
   EventSize: 30
   Event:
-    String: |-
-      "/boot/vmlinuz-5.11.0-1008-gcp\0"
+    String: "/boot/vmlinuz-5.11.0-1008-gcp\0"
 - EventNum: 102
   PCRIndex: 8
   EventType: EV_IPL
@@ -1830,8 +1753,7 @@ events:
     Digest: "1f192c54174eb7d21824179a6803e1cd0a0dacafe1cb8b6d885c2440141d5e3f39099c669e6c526dffc4a1d945988c4c"
   EventSize: 161
   Event:
-    String: |-
-      "kernel_cmdline: /boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\0"
+    String: "kernel_cmdline: /boot/vmlinuz-5.11.0-1008-gcp root=PARTUUID=bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ro scsi_mod.use_blk_mq=Y ima_hash=sha256 console=ttyS0 panic=-1\0"
 - EventNum: 103
   PCRIndex: 8
   EventType: EV_IPL
@@ -1845,8 +1767,7 @@ events:
     Digest: "73d5fcf7750e63d42ab36b31da800a479873e4383ec2d8428ed572fa08429eccfbd63ebf7d342ba19a7ee828ed33d395"
   EventSize: 21
   Event:
-    String: |-
-      "grub_cmd: initrdfail\0"
+    String: "grub_cmd: initrdfail\0"
 - EventNum: 104
   PCRIndex: 8
   EventType: EV_IPL
@@ -1860,8 +1781,7 @@ events:
     Digest: "934aafc99cb0a7cb1ef83c5a1eb01c31d60927f08b2ff72d2c05e0b4660ed1dd1e139738b3c5630502e629e8f593d7af"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ -n true ]\0"
+    String: "grub_cmd: [ -n true ]\0"
 - EventNum: 105
   PCRIndex: 8
   EventType: EV_IPL
@@ -1875,8 +1795,7 @@ events:
     Digest: "fa49d94c3497a24eeb1184b00c8aa69659132993997da06d35f349a246245a846436f4b1df9f1e9cdee9a02f40070dc8"
   EventSize: 54
   Event:
-    String: |-
-      "grub_cmd: [ -n bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ]\0"
+    String: "grub_cmd: [ -n bf817bdf-6a3a-4221-8edb-2c1ca7c5537f ]\0"
 - EventNum: 106
   PCRIndex: 8
   EventType: EV_IPL
@@ -1890,8 +1809,7 @@ events:
     Digest: "fef379383e771fed457fecfc7148e008c90234d0526b282690c57c93802cc9623c25923689de1c2fcb62669f10e3e1e1"
   EventSize: 18
   Event:
-    String: |-
-      "grub_cmd: [ -z  ]\0"
+    String: "grub_cmd: [ -z  ]\0"
 - EventNum: 107
   PCRIndex: 8
   EventType: EV_IPL
@@ -1905,8 +1823,7 @@ events:
     Digest: "c9320c7d11fa8ba02fbf8fe0e952e2bf0b98478bb278e78b32e8af5f2fcade0ef682e200818ff2e84f279bab4e22b207"
   EventSize: 27
   Event:
-    String: |-
-      "grub_cmd: set initrdfail=1\0"
+    String: "grub_cmd: set initrdfail=1\0"
 - EventNum: 108
   PCRIndex: 8
   EventType: EV_IPL
@@ -1920,8 +1837,7 @@ events:
     Digest: "4cf726ecd422b56df71dca2f377cb2a4ee6d9ca1f5b44096f8fc6607b73b56d0effc393100c506a93327511a72cbf707"
   EventSize: 18
   Event:
-    String: |-
-      "grub_cmd: [ -n  ]\0"
+    String: "grub_cmd: [ -n  ]\0"
 - EventNum: 109
   PCRIndex: 8
   EventType: EV_IPL
@@ -1935,8 +1851,7 @@ events:
     Digest: "902625d0fdf460a02c0c993eb960c9b8ad2acd3099ea2304eb3fea5816b3263dd98955f34aa8948e0234e864b7470cad"
   EventSize: 30
   Event:
-    String: |-
-      "grub_cmd: save_env initrdfail\0"
+    String: "grub_cmd: save_env initrdfail\0"
 - EventNum: 110
   PCRIndex: 5
   EventType: EV_EFI_ACTION

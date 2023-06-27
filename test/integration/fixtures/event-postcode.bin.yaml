@@ -625,8 +625,7 @@ events:
     Digest: "88f548359c31bb4694f1cc1adfab640b2029b6b0e36fb0f0dbd536f6a67d8303"
   EventSize: 63
   Event:
-    String: |-
-      "grub_cmd: [ -e (tftp,192.168.0.141)/grub/x86_64-efi/grub.cfg ]\0"
+    String: "grub_cmd: [ -e (tftp,192.168.0.141)/grub/x86_64-efi/grub.cfg ]\0"
 - EventNum: 42
   PCRIndex: 8
   EventType: EV_IPL
@@ -638,8 +637,7 @@ events:
     Digest: "6446c28b60e77f34a8179eb81c80f9f62e0f9715db2c5bcff0f17a6297d683e9"
   EventSize: 52
   Event:
-    String: |-
-      "grub_cmd: source (tftp,192.168.0.141)/grub/grub.cfg\0"
+    String: "grub_cmd: source (tftp,192.168.0.141)/grub/grub.cfg\0"
 - EventNum: 43
   PCRIndex: 9
   EventType: EV_IPL
@@ -651,8 +649,7 @@ events:
     Digest: "4bdd31ce57984441a126b501f74994482d7ad8929b7e2ed6c0371aeeca81ccd7"
   EventSize: 35
   Event:
-    String: |-
-      "(tftp,192.168.0.141)/grub/grub.cfg\0"
+    String: "(tftp,192.168.0.141)/grub/grub.cfg\0"
 - EventNum: 44
   PCRIndex: 8
   EventType: EV_IPL
@@ -664,8 +661,7 @@ events:
     Digest: "60415688e1c91b8b66b7453a895281506a1ff292093e4d3648fba6e7215d0e5b"
   EventSize: 63
   Event:
-    String: |-
-      "grub_cmd: configfile /boot/grub2/grub.cfg-01-0c:c4:7a:ff:60:1c\0"
+    String: "grub_cmd: configfile /boot/grub2/grub.cfg-01-0c:c4:7a:ff:60:1c\0"
 - EventNum: 45
   PCRIndex: 9
   EventType: EV_IPL
@@ -677,8 +673,7 @@ events:
     Digest: "befbf1d7af3da4279cafb9f5104ff24cb3f029c7401cd03d50549f24241d0649"
   EventSize: 42
   Event:
-    String: |-
-      "/boot/grub2/grub.cfg-01-0c:c4:7a:ff:60:1c\0"
+    String: "/boot/grub2/grub.cfg-01-0c:c4:7a:ff:60:1c\0"
 - EventNum: 46
   PCRIndex: 8
   EventType: EV_IPL
@@ -690,8 +685,7 @@ events:
     Digest: "71a5b3b21ac3862f40fabb745a9649c3a1d34249b9706524c90b2480c298beb0"
   EventSize: 24
   Event:
-    String: |-
-      "grub_cmd: set timeout=5\0"
+    String: "grub_cmd: set timeout=5\0"
 - EventNum: 47
   PCRIndex: 8
   EventType: EV_IPL
@@ -703,8 +697,7 @@ events:
     Digest: "428ed11d62fff908eb26e85f2f36e59afa4234021664362aab1e5cd4e47081a7"
   EventSize: 55
   Event:
-    String: |-
-      "grub_cmd: set default=xCAT OS Deployment, ugly GA hack\0"
+    String: "grub_cmd: set default=xCAT OS Deployment, ugly GA hack\0"
 - EventNum: 48
   PCRIndex: 8
   EventType: EV_IPL
@@ -716,13 +709,12 @@ events:
     Digest: "aa151571c8d7ca866db234cfa68de48ea496d7222eadefdd261a15d7a9bdb861"
   EventSize: 466
   Event:
-    String: |-
-      "grub_cmd: menuentry xCAT OS Deployment, ugly GA hack {"
-      "    echo "Loading VEHV kernel ...""
-      "    linux /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/kernel imgurl=http://192.168.0.141//install/netboot/ubuntu18.04/x86_64/vgen/rootimg.tar.gz XCAT=192.168.0.141:3001 console=tty0 console=ttyS0,115200 biosdevname=0 net.ifnames=0  BOOTIF=01-$net_default_mac"
-      "    echo "Loading VEHV ramdisk ...""
-      "    initrd /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/initrd-stateless.gz"
-      "}\0"
+    String: "grub_cmd: menuentry xCAT OS Deployment, ugly GA hack {\n\
+      \x20\x20\x20\x20echo \"Loading VEHV kernel ...\"\n\
+      \x20\x20\x20\x20linux /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/kernel imgurl=http://192.168.0.141//install/netboot/ubuntu18.04/x86_64/vgen/rootimg.tar.gz XCAT=192.168.0.141:3001 console=tty0 console=ttyS0,115200 biosdevname=0 net.ifnames=0  BOOTIF=01-$net_default_mac\n\
+      \x20\x20\x20\x20echo \"Loading VEHV ramdisk ...\"\n\
+      \x20\x20\x20\x20initrd /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/initrd-stateless.gz\n\
+      }\0"
 - EventNum: 49
   PCRIndex: 8
   EventType: EV_IPL
@@ -734,8 +726,7 @@ events:
     Digest: "78a5cbf6ecba75a2900414314c4e2f9e3fd584ea8adc3876bace146679a03e8e"
   EventSize: 53
   Event:
-    String: |-
-      "grub_cmd: setparams xCAT OS Deployment, ugly GA hack\0"
+    String: "grub_cmd: setparams xCAT OS Deployment, ugly GA hack\0"
 - EventNum: 50
   PCRIndex: 8
   EventType: EV_IPL
@@ -747,8 +738,7 @@ events:
     Digest: "bde7442e3918d9117eae0ebeab987d68b157f67b6ab47241651fe2d52db6fa1d"
   EventSize: 39
   Event:
-    String: |-
-      "grub_cmd: echo Loading VEHV kernel ...\0"
+    String: "grub_cmd: echo Loading VEHV kernel ...\0"
 - EventNum: 51
   PCRIndex: 8
   EventType: EV_IPL
@@ -760,8 +750,7 @@ events:
     Digest: "39b1815072ffc4dc737aa771781840f6534784a606de47026bbbb1e1283033e3"
   EventSize: 267
   Event:
-    String: |-
-      "grub_cmd: linux /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/kernel imgurl=http://192.168.0.141//install/netboot/ubuntu18.04/x86_64/vgen/rootimg.tar.gz XCAT=192.168.0.141:3001 console=tty0 console=ttyS0,115200 biosdevname=0 net.ifnames=0 BOOTIF=01-0c:c4:7a:ff:60:1c\0"
+    String: "grub_cmd: linux /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/kernel imgurl=http://192.168.0.141//install/netboot/ubuntu18.04/x86_64/vgen/rootimg.tar.gz XCAT=192.168.0.141:3001 console=tty0 console=ttyS0,115200 biosdevname=0 net.ifnames=0 BOOTIF=01-0c:c4:7a:ff:60:1c\0"
 - EventNum: 52
   PCRIndex: 9
   EventType: EV_IPL
@@ -773,8 +762,7 @@ events:
     Digest: "5d8a44f7a785a2cb018cdfa2d29a6952e64739b2436e1ca33871d2af6a66e49e"
   EventSize: 53
   Event:
-    String: |-
-      "/xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/kernel\0"
+    String: "/xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/kernel\0"
 - EventNum: 53
   PCRIndex: 4
   EventType: EV_EFI_BOOT_SERVICES_APPLICATION
@@ -818,8 +806,7 @@ events:
     Digest: "2a4dcb8a22ce5ce97d674fb86f7e94a3f8c71f264803edb6c871c8c675eb744b"
   EventSize: 267
   Event:
-    String: |-
-      "kernel_cmdline: /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/kernel imgurl=http://192.168.0.141//install/netboot/ubuntu18.04/x86_64/vgen/rootimg.tar.gz XCAT=192.168.0.141:3001 console=tty0 console=ttyS0,115200 biosdevname=0 net.ifnames=0 BOOTIF=01-0c:c4:7a:ff:60:1c\0"
+    String: "kernel_cmdline: /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/kernel imgurl=http://192.168.0.141//install/netboot/ubuntu18.04/x86_64/vgen/rootimg.tar.gz XCAT=192.168.0.141:3001 console=tty0 console=ttyS0,115200 biosdevname=0 net.ifnames=0 BOOTIF=01-0c:c4:7a:ff:60:1c\0"
 - EventNum: 56
   PCRIndex: 8
   EventType: EV_IPL
@@ -831,8 +818,7 @@ events:
     Digest: "bb67e049956aba1e2bdac24fe084d847cf6df4d0a83c04827cf7b0d7a6c41e3f"
   EventSize: 40
   Event:
-    String: |-
-      "grub_cmd: echo Loading VEHV ramdisk ...\0"
+    String: "grub_cmd: echo Loading VEHV ramdisk ...\0"
 - EventNum: 57
   PCRIndex: 8
   EventType: EV_IPL
@@ -844,8 +830,7 @@ events:
     Digest: "20171c421048f16cd0cf462605f3cfb4a7848ac7a17ff5e11edf2d36cc59bb5a"
   EventSize: 83
   Event:
-    String: |-
-      "grub_cmd: initrd /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/initrd-stateless.gz\0"
+    String: "grub_cmd: initrd /xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/initrd-stateless.gz\0"
 - EventNum: 58
   PCRIndex: 9
   EventType: EV_IPL
@@ -857,8 +842,7 @@ events:
     Digest: "2c9d05e2b84937893f7a6ea92446d1ca0b1619ef28118d218649e1421872c9eb"
   EventSize: 66
   Event:
-    String: |-
-      "/xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/initrd-stateless.gz\0"
+    String: "/xcat/osimage/ubuntu18.04-x86_64-netboot-vgen/initrd-stateless.gz\0"
 pcrs:
   sha1:
     0  : 0x60804a728ca0af13e14fea8e79effe33ea3eec7b

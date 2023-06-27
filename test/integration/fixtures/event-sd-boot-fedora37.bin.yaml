@@ -302,8 +302,7 @@ events:
     Digest: "62cc3c5f754ef8711f11140d0ed199e1b36b9bdac7df0c261498f2b07d0f91eb"
   EventSize: 78
   Event:
-    String: |-
-      " \0c\0o\0n\0s\0o\0l\0e\0=\0t\0t\0y\0S\00\0 \0c\0o\0n\0s\0o\0l\0e\0=\0t\0t\0y\00\0 \0e\0f\0i\0=\0d\0e\0b\0u\0g\0 \0\0\0"
+    String: "\x20\0c\0o\0n\0s\0o\0l\0e\0=\0t\0t\0y\0S\00\0 \0c\0o\0n\0s\0o\0l\0e\0=\0t\0t\0y\00\0 \0e\0f\0i\0=\0d\0e\0b\0u\0g\0 \0\0\0"
 - EventNum: 24
   PCRIndex: 12
   EventType: EV_IPL
@@ -313,8 +312,7 @@ events:
     Digest: "62cc3c5f754ef8711f11140d0ed199e1b36b9bdac7df0c261498f2b07d0f91eb"
   EventSize: 78
   Event:
-    String: |-
-      " \0c\0o\0n\0s\0o\0l\0e\0=\0t\0t\0y\0S\00\0 \0c\0o\0n\0s\0o\0l\0e\0=\0t\0t\0y\00\0 \0e\0f\0i\0=\0d\0e\0b\0u\0g\0 \0\0\0"
+    String: "\x20\0c\0o\0n\0s\0o\0l\0e\0=\0t\0t\0y\0S\00\0 \0c\0o\0n\0s\0o\0l\0e\0=\0t\0t\0y\00\0 \0e\0f\0i\0=\0d\0e\0b\0u\0g\0 \0\0\0"
 - EventNum: 25
   PCRIndex: 9
   EventType: EV_EVENT_TAG

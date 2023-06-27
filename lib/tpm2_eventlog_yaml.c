@@ -311,9 +311,9 @@ char *yaml_devicepath(BYTE* dp, UINT64 dp_len) {
  *
  * We need to emit YAML with some rules:
  *
- *  - No leading ' ' without quoting it
+ *  - No leading ' ' or \t without escaping it
  *  - Escape non-printable ascii chars
- *  - Double quotes if using escape sequences
+ *  - Double quotes to enable use of escape sequences
  *  - Valid UTF8 string
  *
  * This method will ignore the question of original data
@@ -339,8 +339,14 @@ char **yaml_split_escape_string(UINT8 const *description, size_t size)
 
     i = 0;
     do {
+        bool leadingSpace = true;
         nl = memchr(description + i, '\n', size - i);
-        len = nl ? (size_t)(nl - (description + i)) : size - i;
+        if (nl) {
+            nl++;
+            len = (size_t)(nl - (description + i));
+        } else {
+            len = size - i;
+        }
 
         tmp = realloc(lines, sizeof(char *) * (nlines + 2));
         if (!tmp) {
@@ -352,62 +358,77 @@ char **yaml_split_escape_string(UINT8 const *description, size_t size)
         lines[nlines + 1] = NULL;
         k = 0;
 
-        /* Worst case: every byte needs escaping, plus start/end quotes, plus nul */
-        lines[nlines] = calloc(1, (len * 2) + 2 + 1);
+        /* Worst case: every byte is a space that needs escaping to a 4 byte
+         * sequence, plus a line continuation, plus nul. We're overallocating
+         * here, but the caller is going to free all these strings immediately
+         * after printing, so this is fairly harmless */
+        lines[nlines] = calloc(1, (len * 4) + 1 + 1);
         if (!lines[nlines]) {
             LOG_ERR("failed to allocate memory for escaped string: %s\n",
                     strerror(errno));
             goto error;
         }
 
-        lines[nlines][k++] = '"';
         for (j = i; j < (i + len); j++) {
-            char escape = '\0';
+            const char *escape = NULL;
 
             switch (description[j]) {
             case '\0':
-              escape = '0';
+              escape = "\\0";
               break;
             case '\a':
-              escape = 'a';
+              escape = "\\a";
               break;
             case '\b':
-              escape = 'b';
+              escape = "\\b";
               break;
             case '\t':
-              escape = 't';
+              if (leadingSpace)
+                  escape = "\\t";
               break;
             case '\v':
-              escape = 'v';
+              escape = "\\v";
               break;
             case '\f':
-              escape = 'f';
+              escape = "\\f";
+              break;
+            case '\n':
+              escape = "\\n";
               break;
             case '\r':
-              escape = 'r';
+              escape = "\\r";
               break;
             case '\e':
-              escape = 'e';
-              break;
-            case '\'':
-              escape = '\'';
+              escape = "\\e";
               break;
             case '\\':
-              escape = '\\';
+              escape = "\\\\";
+              break;
+            case '"':
+              escape = "\\\"";
+              break;
+            case ' ':
+              if (leadingSpace)
+                  escape = "\\x20";
               break;
             }
 
-            if (escape == '\0') {
+            if (description[j] != ' ' &&
+                description[j] != '\t') {
+                leadingSpace = false;
+            }
+
+            if (escape == NULL) {
                 lines[nlines][k++] = description[j];
             } else {
-                lines[nlines][k++] = '\\';
-                lines[nlines][k++] = escape;
+                while (*escape) {
+                    lines[nlines][k++] = *escape;
+                    escape++;
+                }
             }
         }
-        lines[nlines][k++] = '"';
-
         nlines++;
-        i += len + 1;
+        i += len;
     } while (i < size);
 
     return lines;
@@ -426,7 +447,7 @@ static bool yaml_split_print_string(const char *indent,
 {
     char **lines = NULL;
     size_t i;
-    tpm2_tool_output("%s%s: |-\n", indent, field);
+    tpm2_tool_output("%s%s: \"", indent, field);
 
     lines = yaml_split_escape_string(description, size);
     if (!lines) {
@@ -434,7 +455,17 @@ static bool yaml_split_print_string(const char *indent,
     }
 
     for (i = 0; lines[i] != NULL; i++) {
-        tpm2_tool_output("%s  %s\n", indent, lines[i]);
+        if (i == 0)
+            tpm2_tool_output("%s", lines[i]);
+        else
+            tpm2_tool_output("%s  %s", indent, lines[i]);
+
+        if (lines[i+1] == NULL) {
+            tpm2_tool_output("\"\n");
+        } else {
+            tpm2_tool_output("\\\n");
+        }
+
         free(lines[i]);
     }
     free(lines);
