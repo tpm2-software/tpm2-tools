@@ -418,8 +418,7 @@ events:
     Digest: "69bbddbe5a4480b7ab2e5632638b978bba978e66d04b677b3fd4ad2e5c7e1c5b"
   EventSize: 8
   Event:
-    String: |-
-      "MokList\0"
+    String: "MokList\0"
 - EventNum: 27
   PCRIndex: 14
   EventType: EV_IPL
@@ -429,8 +428,7 @@ events:
     Digest: "8d8a3aae50d5d25838c95c034aadce7b548c9a952eb7925e366eda537c59c3b0"
   EventSize: 9
   Event:
-    String: |-
-      "MokListX\0"
+    String: "MokListX\0"
 - EventNum: 28
   PCRIndex: 7
   EventType: EV_EFI_VARIABLE_AUTHORITY
@@ -445,8 +443,7 @@ events:
     VariableDataLength: 18
     UnicodeName: SbatLevel
     VariableData:
-      String: |-
-        "sbat,1,2021030218"
+      String: "sbat,1,2021030218\n"
 - EventNum: 29
   PCRIndex: 7
   EventType: EV_EFI_VARIABLE_AUTHORITY
@@ -471,8 +468,7 @@ events:
     Digest: "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a"
   EventSize: 15
   Event:
-    String: |-
-      "MokListTrusted\0"
+    String: "MokListTrusted\0"
 - EventNum: 31
   PCRIndex: 7
   EventType: EV_EFI_VARIABLE_AUTHORITY
@@ -512,8 +508,7 @@ events:
     Digest: "1e9dc05f52ce1ee96bfbe2c8e4a5a650a8ca7564f5ec05258e8ac7a490e5c0d6"
   EventSize: 31
   Event:
-    String: |-
-      "(hd0,gpt1)/EFI/redhat/grub.cfg\0"
+    String: "(hd0,gpt1)/EFI/redhat/grub.cfg\0"
 - EventNum: 34
   PCRIndex: 9
   EventType: EV_IPL
@@ -523,8 +518,7 @@ events:
     Digest: "1e9dc05f52ce1ee96bfbe2c8e4a5a650a8ca7564f5ec05258e8ac7a490e5c0d6"
   EventSize: 31
   Event:
-    String: |-
-      "(hd0,gpt1)/EFI/redhat/grub.cfg\0"
+    String: "(hd0,gpt1)/EFI/redhat/grub.cfg\0"
 - EventNum: 35
   PCRIndex: 8
   EventType: EV_IPL
@@ -534,8 +528,7 @@ events:
     Digest: "a449b867e6234d067b572dd6d119d7a58e9792992a5f4c65fccfd9699a6128ac"
   EventSize: 86
   Event:
-    String: |-
-      "grub_cmd: search --no-floppy --fs-uuid --set=dev ed5e9398-1a8f-4ae2-a8b8-c4cd677a759f\0"
+    String: "grub_cmd: search --no-floppy --fs-uuid --set=dev ed5e9398-1a8f-4ae2-a8b8-c4cd677a759f\0"
 - EventNum: 36
   PCRIndex: 8
   EventType: EV_IPL
@@ -545,8 +538,7 @@ events:
     Digest: "8848d9559c4b88724d1ca23ace56550cf497428733fdc13462e1092e04f819b2"
   EventSize: 38
   Event:
-    String: |-
-      "grub_cmd: set prefix=(hd0,gpt2)/grub2\0"
+    String: "grub_cmd: set prefix=(hd0,gpt2)/grub2\0"
 - EventNum: 37
   PCRIndex: 8
   EventType: EV_IPL
@@ -556,8 +548,7 @@ events:
     Digest: "ff53bb1b64407630089072060dadd651c37b29fab7eafdb6c22212104101d616"
   EventSize: 34
   Event:
-    String: |-
-      "grub_cmd: export (hd0,gpt2)/grub2\0"
+    String: "grub_cmd: export (hd0,gpt2)/grub2\0"
 - EventNum: 38
   PCRIndex: 8
   EventType: EV_IPL
@@ -567,8 +558,7 @@ events:
     Digest: "6c37371ba140d53352f0a269edd9f4748964ffe8204f47d0155c082a0f214815"
   EventSize: 47
   Event:
-    String: |-
-      "grub_cmd: configfile (hd0,gpt2)/grub2/grub.cfg\0"
+    String: "grub_cmd: configfile (hd0,gpt2)/grub2/grub.cfg\0"
 - EventNum: 39
   PCRIndex: 9
   EventType: EV_IPL
@@ -578,8 +568,7 @@ events:
     Digest: "e406f33b6c2268c4b370a0f2445a61c40cff8f9496057056f2fe28d8bfb2a7e3"
   EventSize: 26
   Event:
-    String: |-
-      "(hd0,gpt2)/grub2/grub.cfg\0"
+    String: "(hd0,gpt2)/grub2/grub.cfg\0"
 - EventNum: 40
   PCRIndex: 8
   EventType: EV_IPL
@@ -589,8 +578,7 @@ events:
     Digest: "fc1ac040fc293ed95e4594b67c4378a832d67c8951a3a5e7032e919eb99c5f88"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: set pager=1\0"
+    String: "grub_cmd: set pager=1\0"
 - EventNum: 41
   PCRIndex: 8
   EventType: EV_IPL
@@ -600,8 +588,7 @@ events:
     Digest: "b3fa538baf79d1c124c21e7c4b7816563ad00e726d72bdf775d7d8c1171ebff2"
   EventSize: 42
   Event:
-    String: |-
-      "grub_cmd: [ -f (hd0,gpt2)/grub2/grubenv ]\0"
+    String: "grub_cmd: [ -f (hd0,gpt2)/grub2/grubenv ]\0"
 - EventNum: 42
   PCRIndex: 8
   EventType: EV_IPL
@@ -611,8 +598,7 @@ events:
     Digest: "06c0ff22313606eef3c6082214f8c0a2b813fb987dfd4c98033080276eb08745"
   EventSize: 47
   Event:
-    String: |-
-      "grub_cmd: load_env -f (hd0,gpt2)/grub2/grubenv\0"
+    String: "grub_cmd: load_env -f (hd0,gpt2)/grub2/grubenv\0"
 - EventNum: 43
   PCRIndex: 9
   EventType: EV_IPL
@@ -622,8 +608,7 @@ events:
     Digest: "b1ae111cb224346a7342648d107b5394ce808c7892c117a063a3a9a31c6ccd23"
   EventSize: 25
   Event:
-    String: |-
-      "(hd0,gpt2)/grub2/grubenv\0"
+    String: "(hd0,gpt2)/grub2/grubenv\0"
 - EventNum: 44
   PCRIndex: 8
   EventType: EV_IPL
@@ -633,8 +618,7 @@ events:
     Digest: "ce8124bc1b0fbc0cb5cd47338ca0c7d5f5446d79936e443a201d96b192a7bd65"
   EventSize: 15
   Event:
-    String: |-
-      "grub_cmd: [  ]\0"
+    String: "grub_cmd: [  ]\0"
 - EventNum: 45
   PCRIndex: 8
   EventType: EV_IPL
@@ -644,8 +628,7 @@ events:
     Digest: "9cda6c923e6ecc7a57f10f30168810e381695d20ef53f59c04d004aaa4e46237"
   EventSize: 77
   Event:
-    String: |-
-      "grub_cmd: set default=54e4e23536524c529b66e491dfc77274-5.14.0-130.el9.x86_64\0"
+    String: "grub_cmd: set default=54e4e23536524c529b66e491dfc77274-5.14.0-130.el9.x86_64\0"
 - EventNum: 46
   PCRIndex: 8
   EventType: EV_IPL
@@ -655,8 +638,7 @@ events:
     Digest: "4568361fb7581b31a42d645ab534302fb9f742adaa37b7fde152215d69e259fb"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ xy = xy ]\0"
+    String: "grub_cmd: [ xy = xy ]\0"
 - EventNum: 47
   PCRIndex: 8
   EventType: EV_IPL
@@ -666,8 +648,7 @@ events:
     Digest: "09f17d4dfb4b97f16246632c21b1ac2125c95c148899eee5069fbb1b34365513"
   EventSize: 35
   Event:
-    String: |-
-      "grub_cmd: menuentry_id_option=--id\0"
+    String: "grub_cmd: menuentry_id_option=--id\0"
 - EventNum: 48
   PCRIndex: 8
   EventType: EV_IPL
@@ -677,8 +658,7 @@ events:
     Digest: "4af0bb370c9e3b7982027d02e04c935e32d52b528007476bfc50d36d1b86815e"
   EventSize: 37
   Event:
-    String: |-
-      "grub_cmd: export menuentry_id_option\0"
+    String: "grub_cmd: export menuentry_id_option\0"
 - EventNum: 49
   PCRIndex: 8
   EventType: EV_IPL
@@ -688,8 +668,7 @@ events:
     Digest: "ce8124bc1b0fbc0cb5cd47338ca0c7d5f5446d79936e443a201d96b192a7bd65"
   EventSize: 15
   Event:
-    String: |-
-      "grub_cmd: [  ]\0"
+    String: "grub_cmd: [  ]\0"
 - EventNum: 50
   PCRIndex: 8
   EventType: EV_IPL
@@ -699,8 +678,7 @@ events:
     Digest: "1022afd472d62cf10a33afe3e9a3769af2334ada5f5ebd238b428f0d90a497aa"
   EventSize: 32
   Event:
-    String: |-
-      "grub_cmd: serial --speed=115200\0"
+    String: "grub_cmd: serial --speed=115200\0"
 - EventNum: 51
   PCRIndex: 8
   EventType: EV_IPL
@@ -710,8 +688,7 @@ events:
     Digest: "092ef58da5a532249d7ee58b0d6f0772b3cb39fb24b653ccafe3ddf50d9c49a8"
   EventSize: 40
   Event:
-    String: |-
-      "grub_cmd: terminal_input serial console\0"
+    String: "grub_cmd: terminal_input serial console\0"
 - EventNum: 52
   PCRIndex: 8
   EventType: EV_IPL
@@ -721,8 +698,7 @@ events:
     Digest: "c81593b0a6c83009cd0c757a681399d7dc491453e042b7b368b530074e5c39b9"
   EventSize: 41
   Event:
-    String: |-
-      "grub_cmd: terminal_output serial console\0"
+    String: "grub_cmd: terminal_output serial console\0"
 - EventNum: 53
   PCRIndex: 8
   EventType: EV_IPL
@@ -732,8 +708,7 @@ events:
     Digest: "4568361fb7581b31a42d645ab534302fb9f742adaa37b7fde152215d69e259fb"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ xy = xy ]\0"
+    String: "grub_cmd: [ xy = xy ]\0"
 - EventNum: 54
   PCRIndex: 8
   EventType: EV_IPL
@@ -743,8 +718,7 @@ events:
     Digest: "1c568398cf2e4a9df58875bbd79dffe058ec45be0b74512fa919a2fe7db4a609"
   EventSize: 33
   Event:
-    String: |-
-      "grub_cmd: set timeout_style=menu\0"
+    String: "grub_cmd: set timeout_style=menu\0"
 - EventNum: 55
   PCRIndex: 8
   EventType: EV_IPL
@@ -754,8 +728,7 @@ events:
     Digest: "71a5b3b21ac3862f40fabb745a9649c3a1d34249b9706524c90b2480c298beb0"
   EventSize: 24
   Event:
-    String: |-
-      "grub_cmd: set timeout=5\0"
+    String: "grub_cmd: set timeout=5\0"
 - EventNum: 56
   PCRIndex: 8
   EventType: EV_IPL
@@ -765,8 +738,7 @@ events:
     Digest: "e3b86ac73bb68db33745fd1cac2ca1d6bbbefb39ac1cca848bc9bc800114e7e5"
   EventSize: 43
   Event:
-    String: |-
-      "grub_cmd: [ -f (hd0,gpt2)/grub2/user.cfg ]\0"
+    String: "grub_cmd: [ -f (hd0,gpt2)/grub2/user.cfg ]\0"
 - EventNum: 57
   PCRIndex: 8
   EventType: EV_IPL
@@ -776,8 +748,7 @@ events:
     Digest: "29b7ae3acc4da64c4380feaea03c4a761c88bfbb74b3a79ac68a4e2822bbff2f"
   EventSize: 27
   Event:
-    String: |-
-      "grub_cmd: insmod increment\0"
+    String: "grub_cmd: insmod increment\0"
 - EventNum: 58
   PCRIndex: 8
   EventType: EV_IPL
@@ -787,8 +758,7 @@ events:
     Digest: "55cf6566869a451dbd91b65abbbd92b35b62e8009e9136e8df11846a287b93ae"
   EventSize: 27
   Event:
-    String: |-
-      "grub_cmd: [ -n  -a 0 = 0 ]\0"
+    String: "grub_cmd: [ -n  -a 0 = 0 ]\0"
 - EventNum: 59
   PCRIndex: 8
   EventType: EV_IPL
@@ -798,8 +768,7 @@ events:
     Digest: "62cd76d31ca3d10d742e46c6ff171046ce19dd90f361a827fec6571e59c24794"
   EventSize: 26
   Event:
-    String: |-
-      "grub_cmd: insmod part_gpt\0"
+    String: "grub_cmd: insmod part_gpt\0"
 - EventNum: 60
   PCRIndex: 8
   EventType: EV_IPL
@@ -809,8 +778,7 @@ events:
     Digest: "39c36226c5af91f9ee4969786436cc8ad87252b22b55c006bb8ef98a0eaef85d"
   EventSize: 21
   Event:
-    String: |-
-      "grub_cmd: insmod xfs\0"
+    String: "grub_cmd: insmod xfs\0"
 - EventNum: 61
   PCRIndex: 8
   EventType: EV_IPL
@@ -820,8 +788,7 @@ events:
     Digest: "96d10df2fba642d434781baf243b25e910759c649db2c81fce017759a2e733f3"
   EventSize: 87
   Event:
-    String: |-
-      "grub_cmd: search --no-floppy --fs-uuid --set=root ed5e9398-1a8f-4ae2-a8b8-c4cd677a759f\0"
+    String: "grub_cmd: search --no-floppy --fs-uuid --set=root ed5e9398-1a8f-4ae2-a8b8-c4cd677a759f\0"
 - EventNum: 62
   PCRIndex: 8
   EventType: EV_IPL
@@ -831,8 +798,7 @@ events:
     Digest: "62cd76d31ca3d10d742e46c6ff171046ce19dd90f361a827fec6571e59c24794"
   EventSize: 26
   Event:
-    String: |-
-      "grub_cmd: insmod part_gpt\0"
+    String: "grub_cmd: insmod part_gpt\0"
 - EventNum: 63
   PCRIndex: 8
   EventType: EV_IPL
@@ -842,8 +808,7 @@ events:
     Digest: "c8fabb4ae6637fa9a9037444c80a55b1a2d2da2c2b9b8842b7810379877955f6"
   EventSize: 21
   Event:
-    String: |-
-      "grub_cmd: insmod fat\0"
+    String: "grub_cmd: insmod fat\0"
 - EventNum: 64
   PCRIndex: 8
   EventType: EV_IPL
@@ -853,8 +818,7 @@ events:
     Digest: "839290aa76a4b0d6bfe0a8d3908116f4991e2e81c9f1ff0c395b907692944ffe"
   EventSize: 60
   Event:
-    String: |-
-      "grub_cmd: search --no-floppy --fs-uuid --set=boot EE2C-46E8\0"
+    String: "grub_cmd: search --no-floppy --fs-uuid --set=boot EE2C-46E8\0"
 - EventNum: 65
   PCRIndex: 8
   EventType: EV_IPL
@@ -864,8 +828,7 @@ events:
     Digest: "4e7a22f96bae467df0f26975e0bf7614d6b92993301c65bae6a85c6530e460bf"
   EventSize: 18
   Event:
-    String: |-
-      "grub_cmd: [ -z  ]\0"
+    String: "grub_cmd: [ -z  ]\0"
 - EventNum: 66
   PCRIndex: 8
   EventType: EV_IPL
@@ -875,8 +838,7 @@ events:
     Digest: "799852ff506d6ce018c30e57166e6e04f450a16f9df958737e1e1473046fb8e0"
   EventSize: 146
   Event:
-    String: |-
-      "grub_cmd: set kernelopts=root=UUID=10d7f09f-7852-4b75-a2b6-2355d99b4376 ro resume=UUID=c39a47a6-aaad-45f9-87f1-26be66fe2a24 console=ttyS0,115200 \0"
+    String: "grub_cmd: set kernelopts=root=UUID=10d7f09f-7852-4b75-a2b6-2355d99b4376 ro resume=UUID=c39a47a6-aaad-45f9-87f1-26be66fe2a24 console=ttyS0,115200 \0"
 - EventNum: 67
   PCRIndex: 8
   EventType: EV_IPL
@@ -886,8 +848,7 @@ events:
     Digest: "822e637a86c14c686c7beda98067089103cfb97984033b6d607d9feb82f0d234"
   EventSize: 24
   Event:
-    String: |-
-      "grub_cmd: insmod blscfg\0"
+    String: "grub_cmd: insmod blscfg\0"
 - EventNum: 68
   PCRIndex: 8
   EventType: EV_IPL
@@ -897,8 +858,7 @@ events:
     Digest: "05a5577cb6b242b7b5aff400fd90224598d1e354937fadc90f954cab3dc78519"
   EventSize: 17
   Event:
-    String: |-
-      "grub_cmd: blscfg\0"
+    String: "grub_cmd: blscfg\0"
 - EventNum: 69
   PCRIndex: 9
   EventType: EV_IPL
@@ -908,8 +868,7 @@ events:
     Digest: "ad40d8033aa535ebbb889e4cfc0b9330cb91333662df4faad83afb5a4679ff4b"
   EventSize: 87
   Event:
-    String: |-
-      "(hd0,gpt2)/loader/entries//54e4e23536524c529b66e491dfc77274-5.14.0-130.el9.x86_64.conf\0"
+    String: "(hd0,gpt2)/loader/entries//54e4e23536524c529b66e491dfc77274-5.14.0-130.el9.x86_64.conf\0"
 - EventNum: 70
   PCRIndex: 9
   EventType: EV_IPL
@@ -919,8 +878,7 @@ events:
     Digest: "0f091ad303dc1b251381cce9debaf422871c8f57aae37f4604fe11f1a7d043c8"
   EventSize: 74
   Event:
-    String: |-
-      "(hd0,gpt2)/loader/entries//54e4e23536524c529b66e491dfc77274-0-rescue.conf\0"
+    String: "(hd0,gpt2)/loader/entries//54e4e23536524c529b66e491dfc77274-0-rescue.conf\0"
 - EventNum: 71
   PCRIndex: 8
   EventType: EV_IPL
@@ -930,8 +888,7 @@ events:
     Digest: "eb866bcea8420a022810dd2c940e9647b149c7c4702755aa08dea821b5a67756"
   EventSize: 29
   Event:
-    String: |-
-      "grub_cmd: [ 0 = 1 -o 0 = 1 ]\0"
+    String: "grub_cmd: [ 0 = 1 -o 0 = 1 ]\0"
 - EventNum: 72
   PCRIndex: 8
   EventType: EV_IPL
@@ -941,8 +898,7 @@ events:
     Digest: "bc7b76a012f77212c24c2db187fb8474dbb2f6567186a64c3550b30f4ffc4363"
   EventSize: 29
   Event:
-    String: |-
-      "grub_cmd: set menu_hide_ok=0\0"
+    String: "grub_cmd: set menu_hide_ok=0\0"
 - EventNum: 73
   PCRIndex: 8
   EventType: EV_IPL
@@ -952,8 +908,7 @@ events:
     Digest: "73685e16907fb87cb70065627b206b7142631e929ac4285418fb56399b607079"
   EventSize: 20
   Event:
-    String: |-
-      "grub_cmd: [ 0 = 1 ]\0"
+    String: "grub_cmd: [ 0 = 1 ]\0"
 - EventNum: 74
   PCRIndex: 8
   EventType: EV_IPL
@@ -963,8 +918,7 @@ events:
     Digest: "73685e16907fb87cb70065627b206b7142631e929ac4285418fb56399b607079"
   EventSize: 20
   Event:
-    String: |-
-      "grub_cmd: [ 0 = 1 ]\0"
+    String: "grub_cmd: [ 0 = 1 ]\0"
 - EventNum: 75
   PCRIndex: 8
   EventType: EV_IPL
@@ -974,8 +928,7 @@ events:
     Digest: "d4468e9ea1b6827517d1f626f8c34b364007a3611c2a17fbf51bc7e7eaa49138"
   EventSize: 29
   Event:
-    String: |-
-      "grub_cmd: set boot_success=0\0"
+    String: "grub_cmd: set boot_success=0\0"
 - EventNum: 76
   PCRIndex: 8
   EventType: EV_IPL
@@ -985,8 +938,7 @@ events:
     Digest: "11ad30ffc650e4c3b13a3e434111a5bc12fb00699138c06e80d132124b61a86b"
   EventSize: 51
   Event:
-    String: |-
-      "grub_cmd: save_env boot_success boot_indeterminate\0"
+    String: "grub_cmd: save_env boot_success boot_indeterminate\0"
 - EventNum: 77
   PCRIndex: 8
   EventType: EV_IPL
@@ -996,8 +948,7 @@ events:
     Digest: "4568361fb7581b31a42d645ab534302fb9f742adaa37b7fde152215d69e259fb"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ xy = xy ]\0"
+    String: "grub_cmd: [ xy = xy ]\0"
 - EventNum: 78
   PCRIndex: 8
   EventType: EV_IPL
@@ -1007,8 +958,7 @@ events:
     Digest: "ce8124bc1b0fbc0cb5cd47338ca0c7d5f5446d79936e443a201d96b192a7bd65"
   EventSize: 15
   Event:
-    String: |-
-      "grub_cmd: [  ]\0"
+    String: "grub_cmd: [  ]\0"
 - EventNum: 79
   PCRIndex: 8
   EventType: EV_IPL
@@ -1018,8 +968,7 @@ events:
     Digest: "5d487e285706b36d48eff03e56383e4692de24b867b38fcb3c5896fd222a5957"
   EventSize: 24
   Event:
-    String: |-
-      "grub_cmd: [ efi = efi ]\0"
+    String: "grub_cmd: [ efi = efi ]\0"
 - EventNum: 80
   PCRIndex: 8
   EventType: EV_IPL
@@ -1029,10 +978,9 @@ events:
     Digest: "fb84aff84de5bcc528ede92bec117fa8cea46362c5d2ea946e44299a968ffac7"
   EventSize: 77
   Event:
-    String: |-
-      "grub_cmd: menuentry UEFI Firmware Settings --id uefi-firmware {"
-      "\t\tfwsetup"
-      "\t}\0"
+    String: "grub_cmd: menuentry UEFI Firmware Settings --id uefi-firmware {\n\
+      \t\tfwsetup\n\
+      \t}\0"
 - EventNum: 81
   PCRIndex: 8
   EventType: EV_IPL
@@ -1042,8 +990,7 @@ events:
     Digest: "2772cd3a066fe5a53ee59546d123304f52ede2f0225dfbe9e14d7d1b33f732a5"
   EventSize: 45
   Event:
-    String: |-
-      "grub_cmd: [ -f (hd0,gpt2)/grub2/custom.cfg ]\0"
+    String: "grub_cmd: [ -f (hd0,gpt2)/grub2/custom.cfg ]\0"
 - EventNum: 82
   PCRIndex: 8
   EventType: EV_IPL
@@ -1053,8 +1000,7 @@ events:
     Digest: "8b9a38d95384b44889dbcbcdb5fa13679511d4b0f69078d554e7a95ba78dcd5c"
   EventSize: 68
   Event:
-    String: |-
-      "grub_cmd: [ -z (hd0,gpt2)/grub2 -a -f (hd0,gpt2)/grub2/custom.cfg ]\0"
+    String: "grub_cmd: [ -z (hd0,gpt2)/grub2 -a -f (hd0,gpt2)/grub2/custom.cfg ]\0"
 - EventNum: 83
   PCRIndex: 8
   EventType: EV_IPL
@@ -1064,8 +1010,7 @@ events:
     Digest: "7626abd8be7442c2e575364a3e95cb3a3b533c58afbba402d2bdabdff85d29c7"
   EventSize: 21
   Event:
-    String: |-
-      "grub_cmd: load_video\0"
+    String: "grub_cmd: load_video\0"
 - EventNum: 84
   PCRIndex: 8
   EventType: EV_IPL
@@ -1075,8 +1020,7 @@ events:
     Digest: "4568361fb7581b31a42d645ab534302fb9f742adaa37b7fde152215d69e259fb"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: [ xy = xy ]\0"
+    String: "grub_cmd: [ xy = xy ]\0"
 - EventNum: 85
   PCRIndex: 8
   EventType: EV_IPL
@@ -1086,8 +1030,7 @@ events:
     Digest: "d71353f5368eb2c1280590928128979bd96ea8db1e8c81493f7878383b76ab3b"
   EventSize: 27
   Event:
-    String: |-
-      "grub_cmd: insmod all_video\0"
+    String: "grub_cmd: insmod all_video\0"
 - EventNum: 86
   PCRIndex: 8
   EventType: EV_IPL
@@ -1097,8 +1040,7 @@ events:
     Digest: "15a5018b0177cf9c49c0b97911df67e7f2c193d3613e3fc4c9eb98a2b5d06fcc"
   EventSize: 30
   Event:
-    String: |-
-      "grub_cmd: set gfxpayload=keep\0"
+    String: "grub_cmd: set gfxpayload=keep\0"
 - EventNum: 87
   PCRIndex: 8
   EventType: EV_IPL
@@ -1108,8 +1050,7 @@ events:
     Digest: "6c4674d4c652ee67b98a6206d7541ccbf2d5dc0a18dae31ad66e82c794c49784"
   EventSize: 22
   Event:
-    String: |-
-      "grub_cmd: insmod gzio\0"
+    String: "grub_cmd: insmod gzio\0"
 - EventNum: 88
   PCRIndex: 8
   EventType: EV_IPL
@@ -1119,8 +1060,7 @@ events:
     Digest: "753adbf2c98996166c82e7834c1f7af48987739bec81e3948b2017955c50705c"
   EventSize: 247
   Event:
-    String: |-
-      "grub_cmd: linux (hd0,gpt2)/vmlinuz-5.14.0-130.el9.x86_64 root=UUID=10d7f09f-7852-4b75-a2b6-2355d99b4376 ro resume=UUID=c39a47a6-aaad-45f9-87f1-26be66fe2a24 console=ttyS0,115200 ima_appraise=fix ima_canonical_fmt ima_policy=tcb ima_template=ima-ng\0"
+    String: "grub_cmd: linux (hd0,gpt2)/vmlinuz-5.14.0-130.el9.x86_64 root=UUID=10d7f09f-7852-4b75-a2b6-2355d99b4376 ro resume=UUID=c39a47a6-aaad-45f9-87f1-26be66fe2a24 console=ttyS0,115200 ima_appraise=fix ima_canonical_fmt ima_policy=tcb ima_template=ima-ng\0"
 - EventNum: 89
   PCRIndex: 9
   EventType: EV_IPL
@@ -1130,8 +1070,7 @@ events:
     Digest: "0114cf38d49a529321c6dc4cef08424418efe3384494ff0a8fde04eee9a608bd"
   EventSize: 41
   Event:
-    String: |-
-      "(hd0,gpt2)/vmlinuz-5.14.0-130.el9.x86_64\0"
+    String: "(hd0,gpt2)/vmlinuz-5.14.0-130.el9.x86_64\0"
 - EventNum: 90
   PCRIndex: 4
   EventType: EV_EFI_BOOT_SERVICES_APPLICATION
@@ -1169,8 +1108,7 @@ events:
     Digest: "6fed7c51f16551db907d6ac192194735c33cd2aad9e80b7124dbae6c49e92fe3"
   EventSize: 247
   Event:
-    String: |-
-      "kernel_cmdline: (hd0,gpt2)/vmlinuz-5.14.0-130.el9.x86_64 root=UUID=10d7f09f-7852-4b75-a2b6-2355d99b4376 ro resume=UUID=c39a47a6-aaad-45f9-87f1-26be66fe2a24 console=ttyS0,115200 ima_appraise=fix ima_canonical_fmt ima_policy=tcb ima_template=ima-ng\0"
+    String: "kernel_cmdline: (hd0,gpt2)/vmlinuz-5.14.0-130.el9.x86_64 root=UUID=10d7f09f-7852-4b75-a2b6-2355d99b4376 ro resume=UUID=c39a47a6-aaad-45f9-87f1-26be66fe2a24 console=ttyS0,115200 ima_appraise=fix ima_canonical_fmt ima_policy=tcb ima_template=ima-ng\0"
 - EventNum: 93
   PCRIndex: 8
   EventType: EV_IPL
@@ -1180,8 +1118,7 @@ events:
     Digest: "4284fb7e9806b80b5ffd8ac0db1b55806ad915e08830c08423f1dc79857ad230"
   EventSize: 64
   Event:
-    String: |-
-      "grub_cmd: initrd (hd0,gpt2)/initramfs-5.14.0-130.el9.x86_64.img\0"
+    String: "grub_cmd: initrd (hd0,gpt2)/initramfs-5.14.0-130.el9.x86_64.img\0"
 - EventNum: 94
   PCRIndex: 9
   EventType: EV_IPL
@@ -1191,8 +1128,7 @@ events:
     Digest: "3b88d84f382249264ef0e9c6baeed69484b163b913db7a127dd7775be146225d"
   EventSize: 47
   Event:
-    String: |-
-      "(hd0,gpt2)/initramfs-5.14.0-130.el9.x86_64.img\0"
+    String: "(hd0,gpt2)/initramfs-5.14.0-130.el9.x86_64.img\0"
 - EventNum: 95
   PCRIndex: 5
   EventType: EV_EFI_ACTION
