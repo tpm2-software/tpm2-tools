@@ -116,6 +116,8 @@ char const *eventtype_to_string (UINT32 event_type) {
         return "EV_EFI_HANDOFF_TABLES2";
     case EV_EFI_VARIABLE_BOOT2:
         return "EV_EFI_VARIABLE_BOOT2";
+    case EV_EFI_HCRTM_EVENT:
+        return "EV_EFI_HCRTM_EVENT";
     case EV_EFI_VARIABLE_AUTHORITY:
         return "EV_EFI_VARIABLE_AUTHORITY";
     default:
@@ -255,6 +257,18 @@ static bool yaml_uefi_post_code(const TCG_EVENT2* const event) {
     }
     return true;
 }
+
+static bool yaml_uefi_hcrtm(const TCG_EVENT2* const event) {
+
+    const size_t len = event->EventSize;
+
+    const char* const data = (const char *) event->Event;
+    tpm2_tool_output("  Event: |-\n"
+                     "    %.*s\n", (int) len, data);
+
+    return true;
+}
+
 /*
  * Parses Device Path field using the efivar library if present, otherwise,
  * print the field in raw byte format
@@ -961,6 +975,8 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, uint32_t eventlog_ver
                         event->EventSize, eventlog_version);
     case EV_NO_ACTION:
         return yaml_no_action((EV_NO_ACTION_STRUCT*)event->Event, event->EventSize, eventlog_version);
+    case EV_EFI_HCRTM_EVENT:
+        return yaml_uefi_hcrtm(event);
     default:
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
         tpm2_tool_output("  Event: \"%s\"\n", hexstr);
