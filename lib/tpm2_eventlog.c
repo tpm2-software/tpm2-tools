@@ -81,8 +81,11 @@ bool foreach_digest2(tpm2_eventlog_context *ctx, UINT32 eventType, unsigned pcr_
             LOG_WARN("PCR%d algorithm %d unsupported", pcr_index, alg);
         }
 
-        if (eventType == EV_NO_ACTION && pcr && pcr_index == 0 && locality > 0 ) {
-            pcr[alg_size -1] = locality;
+        if (eventType == EV_EFI_HCRTM_EVENT && pcr && pcr_index == 0) {
+            /* Trusted Platform Module Library Part 1 section 34.3 */
+            pcr[alg_size - 1] = 0x04;
+        } else if (eventType == EV_NO_ACTION && pcr && pcr_index == 0 && locality > 0 ) {
+            pcr[alg_size - 1] = locality;
         }
 
         if (eventType != EV_NO_ACTION && pcr &&
@@ -160,6 +163,19 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
                 return false;
             }
             /* what about the device path? */
+        }
+        break;
+    /* TCG PC Client Platform Firmware Profile Specification Level 00 Version 1.05 Revision 23 section 10.4.1 */
+    case EV_EFI_HCRTM_EVENT:
+        {
+            const char hcrtm_data[] = "HCRTM";
+            size_t len = strlen(hcrtm_data);
+            BYTE *data = (BYTE *)event->Event;
+            if (event->EventSize != len ||
+                    strncmp((const char *)data, hcrtm_data, len)) {
+                LOG_ERR("HCRTM Event Data MUST be the string: \"%s\"", hcrtm_data);
+                return false;
+            }
         }
         break;
     }
