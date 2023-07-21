@@ -802,19 +802,18 @@ tool_rc files_tpm2b_attest_to_tpms_attest(TPM2B_ATTEST *quoted, TPMS_ATTEST *att
     return tool_rc_success;
 }
 
-tool_rc files_load_unique_data(const char *file_path,
-TPM2B_PUBLIC *public_data) {
-
+tool_rc files_load_unique_data(const char *file_path, TPM2B_PUBLIC *public_data) {
     /*
-     * TPM2_MAX_RSA_KEY_BYTES which expands to 512 bytes is the maximum unique
-     * size for RSA and other key types.
+     * When loading from a file_path (as opposed to stdin), we are
+     * reading the raw TPMU_PUBLIC_ID union contents, aka the
+     * whole publicArea.unique field.
      *
-     * Additionally this may still prove to be a bigger value than what has been
-     * implemented in a TPM. For example the value of MAX_RSA_KEY_BYTES is 256
-     * for ibmSimulator as specified in implementation.h
+     * When loading from stdin, we're reading a subset of the
+     * TPMU_PUBLIC_ID union fields, varying according to the
+     * key type.
      */
-    UINT16 unique_size = TPM2_MAX_RSA_KEY_BYTES;
-    uint8_t file_data[TPM2_MAX_RSA_KEY_BYTES];
+    UINT16 unique_size = sizeof(public_data->publicArea.unique);
+    uint8_t file_data[sizeof(public_data->publicArea.unique)];
     bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
     file_path, &unique_size, file_data);
     if (!result) {
@@ -833,6 +832,10 @@ TPM2B_PUBLIC *public_data) {
 
     /* Unstructured stdin unique data paired with a RSA object */
     if (public_data->publicArea.type == TPM2_ALG_RSA) {
+        if (unique_size > TPM2_MAX_RSA_KEY_BYTES) {
+            LOG_ERR("Unique data too big for RSA object's allowed unique size");
+            return tool_rc_general_error;
+        }
         public_data->publicArea.unique.rsa.size = unique_size;
         memcpy(&public_data->publicArea.unique.rsa.buffer, file_data,
         unique_size);
