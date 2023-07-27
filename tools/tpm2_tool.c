@@ -149,7 +149,8 @@ int main(int argc, char **argv) {
      */
     umask(0117);
 
-    bool is_str_tpm2 = (strcmp(argv[0], "tpm2") == 0);
+    char *argv0 = basename(argv[0]);
+    bool is_str_tpm2 = (strcmp(argv0, "tpm2") == 0);
 
     bool is_one_opt_specified = (argc == 2 && is_str_tpm2);
 
