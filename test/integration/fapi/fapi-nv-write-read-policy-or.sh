@@ -21,7 +21,7 @@ POLICY_NV_DATA=$TEMP_DIR/pol_nv_read_write.json
 POLICY_NV=/policy/nv_read_write
 LOG_FILE=$TEMP_DIR/log.file
 touch $LOG_FILE
-PW=""
+PW=abc
 
 tss2 provision
 
