@@ -237,20 +237,42 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
         goto out;
     }
 
-    // Read EK nonce
-    UINT16 nonce_size = 0;
+    // Check whether nonce exists
     if (nonce_nv_index) {
-        rc = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0,
-                &ctx.auth_owner_hierarchy.object, &nonce, &nonce_size, &cp_hash,
-                &rp_hash, TPM2_ALG_SHA256, 0, ESYS_TR_NONE, ESYS_TR_NONE, NULL);
+        TPMS_CAPABILITY_DATA *capabilities = NULL;
+
+        rc = tpm2_getcap(ectx, TPM2_CAP_HANDLES, nonce_nv_index,
+                         1, NULL, &capabilities);
         if (rc != tool_rc_success) {
             goto out;
         }
+
+        if (capabilities->data.tpmProperties.count == 0 ||
+            capabilities->data.handles.handle[0] != nonce_nv_index) {
+            free(capabilities);
+            // The EK Template is used unmodified
+            goto out;
+        }
+        free(capabilities);
+    } else {
+        // The EK Template is used unmodified
+        goto out;
+    }
+
+    // Read EK nonce
+    UINT16 nonce_size = 0;
+    rc = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0,
+                &ctx.auth_owner_hierarchy.object, &nonce, &nonce_size, &cp_hash,
+                &rp_hash, TPM2_ALG_SHA256, 0, ESYS_TR_NONE, ESYS_TR_NONE, NULL);
+    if (rc != tool_rc_success) {
+        goto out;
     }
 
     if (input_public->publicArea.type == TPM2_ALG_RSA) {
-        memcpy(&input_public->publicArea.unique.rsa.buffer, &nonce, nonce_size);
-        input_public->publicArea.unique.rsa.size = 256;
+        if (nonce_size) {
+            memcpy(&input_public->publicArea.unique.rsa.buffer, &nonce, nonce_size);
+            input_public->publicArea.unique.rsa.size = 256;
+        }
     } else {
         // ECC is only other supported algorithm
         if (nonce_size) {
