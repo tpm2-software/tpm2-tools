@@ -270,13 +270,13 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
 
     if (input_public->publicArea.type == TPM2_ALG_RSA) {
         if (nonce_size) {
-            memcpy(&input_public->publicArea.unique.rsa.buffer, &nonce, nonce_size);
+            memcpy(&input_public->publicArea.unique.rsa.buffer, nonce, nonce_size);
             input_public->publicArea.unique.rsa.size = 256;
         }
     } else {
         // ECC is only other supported algorithm
         if (nonce_size) {
-            memcpy(&input_public->publicArea.unique.ecc.x.buffer, &nonce, nonce_size);
+            memcpy(&input_public->publicArea.unique.ecc.x.buffer, nonce, nonce_size);
             input_public->publicArea.unique.ecc.x.size = 32;
             input_public->publicArea.unique.ecc.y.size = 32;
         }
