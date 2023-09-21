@@ -94,7 +94,7 @@ tpm2_createek -G ecc384 -c 0x81010002
 
 ### Create a transient Endorsement Key, flush it, and reload it.
 ```bash
-tpm2_createek -G rsa -u ek.pub
+tpm2_createek -c ek.ctx -G rsa -u ek.pub
 
 # Check that it is loaded in transient memory
 tpm2_getcap handles-transient
