@@ -4,6 +4,83 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 5.6-rc0 - 2023-09-26
+
+  *  tpm2_eventlog:
+       - add H-CRTM event support
+       - add support of efivar versions less than 38
+       - Add support to check for efivar/efivar.h manually
+       - Minor formatting fixes
+       - tpm2_eventlog: add support for replay with different StartupLocality
+       - Fix pcr extension for EV_NO_ACTION
+       - Extend test of yaml string representation
+       - Use helper for printing a string dump
+       - Fix upper bound on unique data size
+       - Fix YAML string formatting
+
+  *  tpm2_policy:
+       - Add support for parsing forward seal TPM values
+       - Use forward seal values in creating policies
+       - Move dgst_size in evaluate_populate_pcr_digests()
+       - Allow more than 8 PCRs for sealing
+       - Move dgst_size in evaluate_populate_pcr_digests
+       - Allow more than 8 PCRs for sealing
+       - Make __wrap_Esys_PCR_Read() more dynamic to enable testing more PCRs
+
+  *  tpm2_encryptdecrypt: Fix pkcs7 padding stripping
+
+  *  tpm2_duplicate:
+       - Support -a option for attributes
+       - Add --key-algorithm option
+
+  *  tpm2_encodeobject:  Use the correct -O option instead of -C
+
+  *  tpm2_unseal:   Add qualifier static to enhance the privacy of unseal function
+
+  *  tpm2_sign:
+       - Remove -m option which was added mistakenly
+       - Revert sm2 sign and verifysignature
+
+  *  tpm2_createek:
+	- Correct man page example
+       - Fix usage of nonce
+       - Fix integrating nonce
+
+  *  tpm2_clear: add more details about the action
+
+  *  tpm2_startauthsession:  allow the file attribute for policy authorization.
+
+  *  tpm2_getekcertificate:  Add AMD EK support
+
+  *  tpm2_ecdhzgen: Add public-key parameter
+
+  *  tpm2_nvreadpublic: Prevent free of unallocated pointers on failure
+
+  *  Bug-fixes:
+
+     * The readthedocs build failed with module 'jinja2' has no attribute 'contextfilter'
+       a requirement file was added to fix this problem
+
+     * An error caused by the flags -flto -_FORTIFY_SOURCE=3 in kdfa implementation.
+       This error can be avoided by switching off the optimization with pragma
+
+     * Changed wrong function name of "Esys_Load" to  "Esys_Load"
+
+     * Function names beginning with Esys_ are wrongly written as Eys_
+
+     * Reading and writing a serialized persistent ESYS_TR handles
+
+     * cirrus-ci update image-family to freebsd-13-2 from 13-1
+
+  *  misc:
+     - Change the default Python version to Python3 in the helper's code
+
+     - Skip test which uses the sign operator for comparison in abrmd_policynv.sh
+
+     - tools/tr_encode: Add a tool that can encode serialized ESYS_TR for persistent handles
+       from the TPM2B_PUBLIC and the raw persistent TPM2_HANDLE
+
+
 ## 5.5 - 2022-02-13
 
 ### Added
