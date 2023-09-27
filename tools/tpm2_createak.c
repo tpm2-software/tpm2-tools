@@ -112,6 +112,7 @@ struct createak_context {
     struct {
         UINT8 f :1;
     } flags;
+    bool autoflush;
 };
 
 static createak_context ctx = {
@@ -128,6 +129,7 @@ static createak_context ctx = {
         },
     },
     .flags = { 0 },
+    .autoflush = false
 };
 
 static tool_rc init_ak_public(TPMI_ALG_HASH name_alg, TPM2B_PUBLIC *public) {
@@ -367,7 +369,7 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
     // If the AK isn't persisted we always save a context file of the
     // transient AK handle for future tool interactions.
     tmp_rc = files_save_tpm_context_to_path(ectx, loaded_sha1_key_handle,
-            ctx.ak.out.ctx_file);
+             ctx.ak.out.ctx_file, false);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         LOG_ERR("Error saving tpm context for handle");
@@ -459,6 +461,9 @@ static bool on_option(char key, char *value) {
     case 'q':
         ctx.ak.out.qname_file = value;
         break;
+    case 'R':
+        ctx.autoflush = true;
+        break;
     }
 
     return true;
@@ -479,9 +484,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "public",            required_argument, NULL, 'u' },
         { "private",           required_argument, NULL, 'r' },
         { "ak-qualified-name", required_argument, NULL, 'q' },
+        { "autoflush",         no_argument,       NULL, 'R' },
     };
 
-    *opts = tpm2_options_new("P:p:C:c:n:G:g:s:f:u:r:q:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:C:c:n:G:g:s:f:u:r:q:R", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

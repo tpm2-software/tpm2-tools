@@ -39,9 +39,12 @@ struct tpm_encodeobject_ctx {
     } object;
 
     char *output_path;
+    bool autoflush;
 };
 
-static tpm_encodeobject_ctx ctx;
+static tpm_encodeobject_ctx ctx = {
+   .autoflush = false,
+};
 
 static bool on_option(char key, char *value) {
     switch (key) {
@@ -76,9 +79,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "parent-context", required_argument, NULL, 'C' },
       { "output",         required_argument, NULL, 'o' },
       { "key-auth",       no_argument,       NULL, 'p' },
+      { "autoflush",      no_argument,       NULL, 'R' },
     };
 
-    *opts = tpm2_options_new("P:u:r:C:o:p", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:u:r:C:o:pR", ARRAY_LEN(topts), topts, on_option,
             NULL, 0);
 
     return *opts != NULL;
@@ -125,7 +129,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
             TPM2_HANDLE_ALL_W_NV);
 }
 
-static int encode(void) {
+static int encode(ESYS_CONTEXT *ectx) {
 
     uint8_t private_buf[sizeof(ctx.object.private)];
     size_t private_len = 0;
@@ -186,6 +190,16 @@ static int encode(void) {
     }
 
     PEM_write_bio_TSSPRIVKEY_OBJ(bio, tpk);
+
+    if ((ctx.autoflush || tpm2_util_env_yes(TPM2TOOLS_ENV_AUTOFLUSH)) &&
+        ctx.parent.object.path &&
+        (ctx.parent.object.handle & TPM2_HR_RANGE_MASK) == TPM2_HR_TRANSIENT) {
+        rval = Esys_FlushContext(ectx, ctx.parent.object.tr_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            return tool_rc_general_error;
+        }
+    }
+
     rc = tool_rc_success;
 
  error:
@@ -210,7 +224,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return encode();
+    return encode(ectx);
 }
 
 // Register this tool with tpm2_tool.c

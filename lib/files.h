@@ -84,12 +84,14 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size);
  *  The object handle for the object to save.
  * @param path
  *  The output path of the file.
+ * @param autoflush
+ *  Flush the tpm object after context save.
  *
  * @return
  *  tool_rc indicating status.
  */
 tool_rc files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
-        const char *path);
+        const char *pathm, bool autoflush);
 
 /**
  * Like files_save_tpm_context_to_path() but saves a tpm session to a FILE stream.
@@ -99,11 +101,13 @@ tool_rc files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
  *  The object handle for the object to save.
  * @param stream
  *  The FILE stream to save too.
+ * @param autoflush
+ *  Flush the tpm object after context save.
  * @return
  *  tool_rc indicating status.
  */
 tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *context, ESYS_TR handle,
-        FILE *stream);
+        FILE *stream, bool autoflush);
 
 /**
  * Loads a ESAPI TPM object context from disk or an ESAPI serialized ESYS_TR object.

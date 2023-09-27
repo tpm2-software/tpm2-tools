@@ -41,7 +41,7 @@ tool_rc tpm2_nv_read(ESYS_CONTEXT *esys_context,
     TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2, ESYS_TR shandle3);
 
 tool_rc tpm2_context_save(ESYS_CONTEXT *esys_context, ESYS_TR save_handle,
-        TPMS_CONTEXT **context);
+        bool autoflush, TPMS_CONTEXT **context);
 
 tool_rc tpm2_context_load(ESYS_CONTEXT *esys_context,
         const TPMS_CONTEXT *context, ESYS_TR *loaded_handle);

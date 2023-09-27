@@ -433,6 +433,8 @@ ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh);
 
 char *tpm2_util_getenv(const char *name);
 
+bool tpm2_util_env_yes(const char *name);
+
 typedef enum tpm2_handle_flags tpm2_handle_flags;
 enum tpm2_handle_flags {
     TPM2_HANDLE_FLAGS_NONE = 0,

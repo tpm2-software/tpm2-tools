@@ -127,7 +127,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
              LOG_PERR("Esys_ContextLoad", e_rc);
              goto error;
          }
-         t_rc = files_save_tpm_context_to_file(esys_ctx, esys_handle, stream);
+         t_rc = files_save_tpm_context_to_file(esys_ctx, esys_handle, stream, false);
          if (t_rc != tool_rc_success) {
              goto error;
          }

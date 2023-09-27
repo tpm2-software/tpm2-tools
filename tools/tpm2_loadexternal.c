@@ -37,6 +37,7 @@ struct tpm_loadexternal_ctx {
     char *passin; /* an optional auth string for the input key file for OSSL */
     TPM2B_SENSITIVE priv; /* Set the AUTH value for sensitive portion */
     TPM2B_PUBLIC pub; /* Load the users specified public object if specified via -u*/
+    bool autoflush; /* Flush the object after creation of the ctx file */
     /*
      * TSS Privkey related
      */
@@ -64,6 +65,7 @@ static tpm_loadexternal_ctx ctx = {
      */
     .hierarchy_value = TPM2_RH_NULL,
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
+    .autoflush = false,
 };
 
 static tool_rc load_external(ESYS_CONTEXT *ectx) {
@@ -104,7 +106,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     assert(ctx.name);
 
     rc = files_save_tpm_context_to_path(ectx, ctx.handle,
-            ctx.context_file_path);
+         ctx.context_file_path, ctx.autoflush);
     if (rc != tool_rc_success) {
         goto out;
     }
@@ -406,6 +408,9 @@ static bool on_option(char key, char *value) {
     case 1:
         ctx.cp_hash_path = value;
         break;
+    case 'R':
+        ctx.autoflush = true;
+        break; 
     }
 
     return true;
@@ -426,9 +431,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "name",           required_argument, 0, 'n'},
       { "passin",         required_argument, 0,  0 },
       { "cphash",         required_argument, 0,  1 },
+      { "autoflush",      no_argument,       0, 'R' },
     };
 
-    *opts = tpm2_options_new("C:u:r:c:a:p:L:g:G:n:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:u:r:c:a:p:L:g:G:n:R", ARRAY_LEN(topts), topts,
         on_option, 0, 0);
 
     return *opts != 0;

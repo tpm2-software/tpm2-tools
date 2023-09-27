@@ -632,6 +632,14 @@ char *tpm2_util_getenv(const char *name) {
     return getenv(name);
 }
 
+bool tpm2_util_env_yes(const char *name) {
+
+    char *value = getenv(name);
+    return (value && (strcasecmp(name, "yes") == 0 ||
+                      strcasecmp(name, "1") == 0 ||
+                      strcasecmp(name, "true") == 0));
+}
+
 /**
  * Parses a hierarchy value from an option argument.
  * @param value
