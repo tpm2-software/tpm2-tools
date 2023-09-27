@@ -79,6 +79,7 @@ struct tpm_import_ctx {
     TPM2B_PUBLIC public;
     char *private_key_file;
     TPM2B_PRIVATE *imported_private;
+    bool autoflush;
 
     /*
      * Parameter hashes
@@ -96,13 +97,28 @@ static tpm_import_ctx ctx = {
     .encrypted_seed = TPM2B_EMPTY_INIT,
     .duplicate = TPM2B_EMPTY_INIT,
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
+    .autoflush = false,
 };
 
 static tool_rc import(ESYS_CONTEXT *ectx) {
 
-    return tpm2_import(ectx, &ctx.parent.object, &ctx.enc_sensitive_key,
+    TSS2_RC rval;
+
+    tool_rc rc = tpm2_import(ectx, &ctx.parent.object, &ctx.enc_sensitive_key,
         &ctx.public, &ctx.duplicate, &ctx.encrypted_seed, &ctx.sym_alg,
         &ctx.imported_private, &ctx.cp_hash, ctx.parameter_hash_algorithm);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+    if ((ctx.autoflush || tpm2_util_env_yes(TPM2TOOLS_ENV_AUTOFLUSH)) &&
+        ctx.parent.object.path &&
+        (ctx.parent.object.handle & TPM2_HR_RANGE_MASK) == TPM2_HR_TRANSIENT) {
+        rval = Esys_FlushContext(ectx, ctx.parent.object.tr_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            return tool_rc_general_error;
+        }
+    }
+    return tool_rc_success;
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -626,6 +642,9 @@ static bool on_option(char key, char *value) {
     case 1:
         ctx.cp_hash_path = value;
         break;
+    case 'R':
+        ctx.autoflush = true;
+        break;
     default:
         LOG_ERR("Invalid option");
         return false;
@@ -652,9 +671,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "encryption-key",     required_argument, 0, 'k'},
       { "passin",             required_argument, 0,  0 },
       { "cphash",             required_argument, 0,  1 },
+      { "autoflush",          no_argument,       0, 'R' },
     };
 
-    *opts = tpm2_options_new("P:p:G:i:C:U:u:r:a:g:s:L:k:", ARRAY_LEN(topts),
+    *opts = tpm2_options_new("P:p:G:i:C:U:u:r:a:g:s:L:k:R", ARRAY_LEN(topts),
         topts, on_option, 0, 0);
 
     return *opts != 0;

@@ -411,7 +411,7 @@ tool_rc tpm2_session_close(tpm2_session **s) {
     ESYS_TR handle = tpm2_session_get_handle(session);
     LOG_INFO("Saved session: ESYS_TR(0x%x)", handle);
     rc = files_save_tpm_context_to_file(session->internal.ectx, handle,
-    session_file);
+         session_file, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not write session context");
         /* done, free session resources and use rc to indicate status */

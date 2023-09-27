@@ -51,13 +51,13 @@ tpm2 clear
 
 #####file test
 
-tpm2 createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
+tpm2 createprimary -R -Q -C e -g $alg_primary_obj -G $alg_primary_key \
 -c $file_primary_key_ctx
 
-tpm2 create -Q -g $alg_create_obj -G $alg_create_key -u $file_load_key_pub \
+tpm2 create -R -Q -g $alg_create_obj -G $alg_create_key -u $file_load_key_pub \
 -r $file_load_key_priv -C $file_primary_key_ctx
 
-tpm2 load -Q -C $file_primary_key_ctx -u $file_load_key_pub \
+tpm2 load -R -Q -C $file_primary_key_ctx -u $file_load_key_pub \
 -r $file_load_key_priv -n $file_load_key_name -c $file_load_key_ctx
 
 #####handle test

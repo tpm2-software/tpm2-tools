@@ -313,12 +313,28 @@ tpm2_nvread_skip_esapi_call:
 }
 
 tool_rc tpm2_context_save(ESYS_CONTEXT *esys_context, ESYS_TR save_handle,
-        TPMS_CONTEXT **context) {
+        bool autoflush, TPMS_CONTEXT **context) {
 
     TSS2_RC rval = Esys_ContextSave(esys_context, save_handle, context);
+    TPM2_HANDLE tpm_handle;
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_ContextSave, rval);
         return tool_rc_from_tpm(rval);
+    }
+
+    if (autoflush || tpm2_util_env_yes(TPM2TOOLS_ENV_AUTOFLUSH)) {
+        rval = Esys_TR_GetTpmHandle(esys_context, save_handle, &tpm_handle);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Esys_TR_GetTpmHandle, rval);
+            return tool_rc_from_tpm(rval);
+        }
+        if ((tpm_handle & TPM2_HR_RANGE_MASK) == TPM2_HR_TRANSIENT) {
+            TSS2_RC rval = Esys_FlushContext(esys_context, save_handle);
+            if (rval != TPM2_RC_SUCCESS) {
+                LOG_PERR(Eys_ContextFlush, rval);
+                return false;
+            }
+        }
     }
 
     return tool_rc_success;
