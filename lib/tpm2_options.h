@@ -8,10 +8,10 @@
 #include <stdio.h>
 
 #include <getopt.h>
-
 #include <tss2/tss2_sys.h>
 
 #define TPM2TOOLS_ENV_TCTI      "TPM2TOOLS_TCTI"
+#define TPM2TOOLS_ENV_AUTOFLUSH "TPM2TOOLS_AUTOFLUSH"
 
 #define TPM2TOOLS_ENV_ENABLE_ERRATA  "TPM2TOOLS_ENABLE_ERRATA"
 

@@ -273,11 +273,11 @@ out:
 }
 
 tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *ectx, ESYS_TR handle,
-        FILE *stream) {
+        FILE *stream, bool autoflush) {
 
     TPMS_CONTEXT *context = NULL;
 
-    tool_rc rc = tpm2_context_save(ectx, handle, &context);
+    tool_rc rc = tpm2_context_save(ectx, handle, autoflush, &context);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -288,7 +288,7 @@ tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *ectx, ESYS_TR handle,
 }
 
 tool_rc files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
-        const char *path) {
+        const char *path, bool autoflush) {
 
     FILE *f = fopen(path, "w+b");
     if (!f) {
@@ -297,7 +297,7 @@ tool_rc files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
         return tool_rc_general_error;
     }
 
-    tool_rc rc = files_save_tpm_context_to_file(context, handle, f);
+    tool_rc rc = files_save_tpm_context_to_file(context, handle, f, autoflush);
     fclose(f);
     return rc;
 }
