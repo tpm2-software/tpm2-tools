@@ -546,8 +546,7 @@ static bool get_web_ek_certificate(void) {
     char *ek_uri = encode_ek_public();
     if (!ek_uri) {
         LOG_ERR("Failed to encode EK.");
-        ret = false;
-        goto out;
+        return false;
     }
 
     LOG_INFO("%s", ek_uri);
@@ -560,9 +559,8 @@ static bool get_web_ek_certificate(void) {
     }
 
     ret = retrieve_web_endorsement_certificate(ek_uri);
-
+ out:
     free(ek_uri);
-out:
     return ret;
 }
 
