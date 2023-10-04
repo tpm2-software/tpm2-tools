@@ -61,6 +61,7 @@ echo "Which cov-build: $(which cov-build)"
 
 pushd "$DOCKER_BUILD_DIR"
 
+git config --global --add safe.directory "$DOCKER_BUILD_DIR"
 source ".ci/docker-prelude.sh"
 
 echo "Performing build with Coverity Scan"
