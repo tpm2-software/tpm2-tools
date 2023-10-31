@@ -159,6 +159,13 @@ static bool verify(void) {
         goto err;
     }
 
+    // check magic
+    if (ctx.attest.magic != TPM2_GENERATED_VALUE) {
+        LOG_ERR("Bad magic, got: 0x%x, expected: 0x%x",
+                ctx.attest.magic, TPM2_GENERATED_VALUE);
+        return false;
+    }
+
     // Also ensure digest from quote matches PCR digest
     if (ctx.flags.pcr) {
         if (!tpm2_util_verify_digests(&ctx.attest.attested.quote.pcrDigest,
