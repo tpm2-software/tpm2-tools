@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 5.6 - 2023-11-08
+
+       - Add safe directory in config
+
 ## 5.6-rc0 - 2023-09-26
 
   *  tpm2_eventlog:
