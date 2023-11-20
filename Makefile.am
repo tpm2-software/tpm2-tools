@@ -352,6 +352,7 @@ TEST_EXTENSIONS = .sh
 
 check-hook:
 	rm -rf .lock_file
+	rm -f  $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml
 
 EXTRA_DIST_IGNORE = \
     .gitignore \
@@ -647,6 +648,18 @@ dist-hook:
 	for f in $(EXTRA_DIST_IGNORE); do \
 		rm -rf `find $(distdir) -name $$f`; \
 	done;
+
+prepare-check:
+if HAVE_EFIVAR_H
+	cp  $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml.pretty \
+	    $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml
+else
+	cp  $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml.raw \
+	    $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml
+endif
+
+check: prepare-check
+
 if !HAVE_PANDOC
 # If pandoc is not enabled, we want to complain that you need pandoc for make dist,
 # so hook the target and complain.
