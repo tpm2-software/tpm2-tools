@@ -97,6 +97,9 @@ AS_IF([test "x$with_efivar" == "xauto"],
   [PKG_CHECK_MODULES([EFIVAR], [efivar], [AC_CHECK_HEADERS([efivar/efivar.h])])],
 )
 
+AC_CHECK_HEADERS([efivar/efivar.h],[efivar_h=yes ], [efivar = no ])
+AM_CONDITIONAL([HAVE_EFIVAR_H], [test "$efivar_h" = yes])
+
 # backwards compat with older pkg-config
 # - pull in AC_DEFUN from pkg.m4
 m4_ifndef([PKG_CHECK_VAR], [
