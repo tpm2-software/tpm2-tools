@@ -73,6 +73,7 @@ PKG_CHECK_MODULES([TSS2_TCTILDR], [tss2-tctildr])
 PKG_CHECK_MODULES([TSS2_MU], [tss2-mu])
 PKG_CHECK_MODULES([TSS2_RC], [tss2-rc])
 PKG_CHECK_MODULES([TSS2_SYS], [tss2-sys])
+PKG_CHECK_MODULES([TSS2_POLICY], [tss2-policy])
 PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.1.0])
 AC_CHECK_LIB(crypto, [EVP_sm3], [
         AC_DEFINE([HAVE_EVP_SM3], [1], [Support EVP_sm3 in openssl])],
