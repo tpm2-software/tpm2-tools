@@ -81,6 +81,7 @@ AC_CHECK_LIB(crypto, [EVP_sm4_cfb128], [
         AC_DEFINE([HAVE_EVP_SM4_CFB], [1], [Support EVP_sm4_cfb in openssl])],
         [])
 PKG_CHECK_MODULES([CURL], [libcurl])
+PKG_CHECK_MODULES([YAML], [yaml-0.1])
 
 # pretty print of devicepath if efivar library is present
 # auto detect if not specified via the --with-efivar option.

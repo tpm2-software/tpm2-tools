@@ -132,12 +132,50 @@ static const tpm2_tool *tpm2_tool_lookup(int *argc, char ***argv)
 static struct tool_context {
     ESYS_CONTEXT *ectx;
     tpm2_options *tool_opts;
+    yaml_document_t doc;
+    bool doc_init;
 } ctx;
 
 static void main_onexit(void) {
 
+    if (ctx.doc_init) {
+        yaml_document_delete(&ctx.doc);
+    }
     teardown_full(&ctx.ectx);
     tpm2_options_free(ctx.tool_opts);
+}
+
+static tool_rc yaml_dump(yaml_document_t *doc) {
+
+    tool_rc rc = tool_rc_general_error;
+
+    yaml_emitter_t emitter = { 0 };
+    int r = yaml_emitter_initialize(&emitter);
+    if (!r) {
+        LOG_ERR("Could not initialize YAML emitter");
+        return tool_rc_general_error;
+    }
+
+    yaml_emitter_set_output_file(&emitter, stdout);
+    yaml_emitter_set_canonical(&emitter, 1);
+
+    r = yaml_emitter_dump(&emitter, doc);
+    if (!r) {
+        LOG_ERR("Could not dump YAML");
+        goto err;
+    }
+
+    r = yaml_emitter_close(&emitter);
+    if (!r) {
+        LOG_ERR("Could not close YAML emitter");
+        goto err;
+    }
+
+    rc = tool_rc_success;
+err:
+
+    yaml_emitter_delete(&emitter);
+    return rc;
 }
 
 int main(int argc, char **argv) {
@@ -254,10 +292,29 @@ int main(int argc, char **argv) {
     }
 
     /*
+     * It seems like you would want to add quiet flag to this, but callers expect the yaml
+     * doc to be non-null, just use quiet to not emit it at the end for simplicity.
+     */
+    if (!flags.no_output) {
+    	int rc = yaml_document_initialize(
+    			&ctx.doc,
+    			NULL, /* version */
+				NULL, /* start */
+				NULL, /* end */
+				0, /* implicit start */
+				0 /* implicit end */);
+    	if (!rc) {
+    		LOG_ERR("Could not initialize YAML document");
+    		exit(tool_rc_general_error);
+    	}
+    	ctx.doc_init = true;
+    }
+
+    /*
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */
-    ret = tool->onrun(ctx.ectx, flags);
+    ret = tool->onrun(ctx.ectx, &ctx.doc, flags);
     if (tool->onstop) {
         tool_rc tmp_rc = tool->onstop(ctx.ectx);
         /* if onrun() passed, the error code should come from onstop() */
@@ -272,6 +329,11 @@ int main(int argc, char **argv) {
         break;
     default:
         LOG_ERR("Unable to run %s", argv[0]);
+    }
+
+    /* if the tool needs output OR we were told to be quiet don't dump YAML to stdout */
+    if (!(flags.no_output && flags.quiet)) {
+    	ret = yaml_dump(&ctx.doc);
     }
 
     exit(ret);
