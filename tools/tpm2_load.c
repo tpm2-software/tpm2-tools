@@ -66,7 +66,7 @@ static tool_rc load(ESYS_CONTEXT *ectx) {
         &ctx.object.handle, &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
-static tool_rc process_output(ESYS_CONTEXT *ectx, yaml_document_t *doc) {
+static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     UNUSED(ectx);
     /*
@@ -104,14 +104,11 @@ static tool_rc process_output(ESYS_CONTEXT *ectx, yaml_document_t *doc) {
         }
     } else {
         int key = tpm2_yaml_add(doc, "name");
-        int value = tpm2_yaml_add(doc, (TPM2B *)name);
-
-        yaml_document_append_mapping_pair(doc, root, key, value);
-
-        tpm2_tool_output("name: ");
-        tpm2_util_print_tpm2b(name);
-        tpm2_tool_output("\n");
-        free(name);
+        int value = tpm2_yaml_add_tpm2b(doc, (TPM2B *)name);
+        int rc = tpm2_yaml_append_map_pair(doc, key, value);
+        if (!rc) {
+            return tool_rc_general_error;
+        }
     }
 
     return files_save_tpm_context_to_path(ectx, ctx.object.handle,
@@ -309,7 +306,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != 0;
 }
 
-static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, yaml_document_t *doc, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_flags flags) {
 
     UNUSED(flags);
 

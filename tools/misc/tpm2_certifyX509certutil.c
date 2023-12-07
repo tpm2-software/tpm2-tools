@@ -266,7 +266,7 @@ out_err:
 }
 
 
-static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, yaml_document_t *doc, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_flags flags) {
 
     UNUSED(flags);
     UNUSED(ectx);

@@ -207,7 +207,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context,
-        yaml_document_t *doc,
+        tpm2_yaml *doc,
         tpm2_option_flags flags) {
 
     UNUSED(flags);

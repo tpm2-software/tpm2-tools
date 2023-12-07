@@ -166,7 +166,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
  * in network byte order (big-endian). We output the response in the same
  * form.
  */
-static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, yaml_document_t *doc, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_yaml *doc, tpm2_option_flags flags) {
 
     UNUSED(flags);
 

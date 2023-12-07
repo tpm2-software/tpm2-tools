@@ -3,6 +3,8 @@
 #ifndef LIB_TOOL_RC_H_
 #define LIB_TOOL_RC_H_
 
+#include <tss2/tss2_common.h>
+
 /* do not port to TSS below here */
 typedef enum tool_rc tool_rc;
 enum tool_rc {
