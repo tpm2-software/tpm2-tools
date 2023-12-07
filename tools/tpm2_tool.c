@@ -257,10 +257,6 @@ int main(int argc, char **argv) {
         tpm2_errata_init(ctx.ectx);
     }
 
-    /*
-     * It seems like you would want to add quiet flag to this, but callers expect the yaml
-     * doc to be non-null, just use quiet to not emit it at the end for simplicity.
-     */
     bool output = !((ctx.tool_opts->flags & TPM2_OPTIONS_NO_OUTPUT) || flags.quiet);
     if (output) {
         ctx.doc = tpm2_yaml_new();
