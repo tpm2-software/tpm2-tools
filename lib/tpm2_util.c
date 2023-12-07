@@ -239,6 +239,20 @@ void tpm2_util_hexdump2(FILE *f, const BYTE *data, size_t len) {
     }
 }
 
+char *tpm2_util_bin2hex(const BYTE *data, size_t len) {
+
+    char *c = calloc(1, len * 2 + 1);
+    if (!c) {
+        return NULL;
+    }
+    size_t i, j;
+    for (i = 0, j = 0; i < len && j < len * 2 + 1; i++, j+=2) {
+        sprintf(&c[j], "%02x", data[i]);
+    }
+
+    return c;
+}
+
 void tpm2_util_hexdump(const BYTE *data, size_t len) {
 
     if (!output_enabled) {

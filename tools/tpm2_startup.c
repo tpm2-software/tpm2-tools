@@ -40,13 +40,15 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("c", ARRAY_LEN(topts), topts, on_option, NULL, 0);
+    (*opts)->flags = TPM2_OPTIONS_NO_OUTPUT;
 
     return *opts != NULL;
 }
 
-static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, yaml_document_t *doc, tpm2_option_flags flags) {
 
     UNUSED(flags);
+    UNUSED(doc);
 
     TPM2_SU startup_type = ctx.clear ? TPM2_SU_CLEAR : TPM2_SU_STATE;
 

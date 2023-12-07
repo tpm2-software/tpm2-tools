@@ -157,7 +157,7 @@ static tool_rc yaml_dump(yaml_document_t *doc) {
     }
 
     yaml_emitter_set_output_file(&emitter, stdout);
-    yaml_emitter_set_canonical(&emitter, 1);
+    //yaml_emitter_set_canonical(&emitter, 1);
 
     r = yaml_emitter_dump(&emitter, doc);
     if (!r) {
@@ -295,14 +295,15 @@ int main(int argc, char **argv) {
      * It seems like you would want to add quiet flag to this, but callers expect the yaml
      * doc to be non-null, just use quiet to not emit it at the end for simplicity.
      */
-    if (!flags.no_output) {
+    bool output = !((ctx.tool_opts->flags & TPM2_OPTIONS_NO_OUTPUT) || flags.quiet);
+    if (output) {
     	int rc = yaml_document_initialize(
     			&ctx.doc,
     			NULL, /* version */
 				NULL, /* start */
 				NULL, /* end */
-				0, /* implicit start */
-				0 /* implicit end */);
+				1, /* implicit start */
+				1 /* implicit end */);
     	if (!rc) {
     		LOG_ERR("Could not initialize YAML document");
     		exit(tool_rc_general_error);
@@ -331,8 +332,7 @@ int main(int argc, char **argv) {
         LOG_ERR("Unable to run %s", argv[0]);
     }
 
-    /* if the tool needs output OR we were told to be quiet don't dump YAML to stdout */
-    if (!(flags.no_output && flags.quiet)) {
+    if (output) {
     	ret = yaml_dump(&ctx.doc);
     }
 

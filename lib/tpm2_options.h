@@ -22,7 +22,7 @@ union tpm2_option_flags {
         uint8_t quiet :1;
         uint8_t enable_errata :1;
         uint8_t tcti_none :1;
-        uint8_t no_output :1;
+        //uint8_t no_output :1;
     };
     uint8_t all;
 };
@@ -66,9 +66,11 @@ typedef bool (*tpm2_arg_handler)(int argc, char **argv);
  * TPM2_OPTIONS_NO_SAPI:
  *  Skip SAPI initialization. Removes the "-T" common option.
  */
-#define TPM2_OPTIONS_NO_SAPI 0x1
-#define TPM2_OPTIONS_OPTIONAL_SAPI 0x2
-#define TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI 0x4
+#define TPM2_OPTIONS_NO_SAPI       (1 << 0)
+#define TPM2_OPTIONS_OPTIONAL_SAPI (1 << 1)
+#define TPM2_OPTIONS_NO_OUTPUT     (1 << 2)
+
+#define TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI (TPM2_OPTIONS_NO_SAPI | TPM2_OPTIONS_OPTIONAL_SAPI)
 
 struct tpm2_options {
     struct {

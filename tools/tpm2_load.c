@@ -66,7 +66,7 @@ static tool_rc load(ESYS_CONTEXT *ectx) {
         &ctx.object.handle, &ctx.cp_hash, ctx.parameter_hash_algorithm);
 }
 
-static tool_rc process_output(ESYS_CONTEXT *ectx) {
+static tool_rc process_output(ESYS_CONTEXT *ectx, yaml_document_t *doc) {
 
     UNUSED(ectx);
     /*
@@ -103,6 +103,13 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
             return tool_rc_general_error;
         }
     } else {
+        int root = yaml_document_add_mapping(doc, NULL, YAML_ANY_MAPPING_STYLE);
+        char *h = tpm2_util_bin2hex(name->name, name->size);
+        int key = yaml_document_add_scalar(doc, (yaml_char_t *)YAML_STR_TAG, "name", -1, YAML_ANY_SCALAR_STYLE);
+        int value = yaml_document_add_scalar(doc, (yaml_char_t *)YAML_STR_TAG, h, -1, YAML_ANY_SCALAR_STYLE);
+
+        yaml_document_append_mapping_pair(doc, root, key, value);
+
         tpm2_tool_output("name: ");
         tpm2_util_print_tpm2b(name);
         tpm2_tool_output("\n");
@@ -304,7 +311,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != 0;
 }
 
-static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, yaml_document_t *doc, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -335,7 +342,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 4. Process outputs
      */
-    return process_output(ectx);
+    return process_output(ectx, doc);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

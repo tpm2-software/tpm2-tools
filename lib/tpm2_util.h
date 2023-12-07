@@ -206,6 +206,20 @@ void tpm2_util_hexdump(const BYTE *data, size_t len);
 void tpm2_util_hexdump2(FILE *f, const BYTE *data, size_t len);
 
 /**
+ * Converts a binary string of bytes into a hex string.
+ *
+ * @param data
+ *  The data to convert to hex
+ *
+ * @param len
+ *   The length of the data in bytes.
+ *
+ * @returns
+ *   A null terminated hex string on sucess or NULL on error (oom).
+ */
+char *tpm2_util_bin2hex(const BYTE *data, size_t len);
+
+/**
  * Read a hex string converting it to binary or a binary file and
  * store into a binary buffer.
  * @param input
