@@ -145,39 +145,6 @@ static void main_onexit(void) {
     tpm2_options_free(ctx.tool_opts);
 }
 
-static tool_rc yaml_dump(yaml_document_t *doc) {
-
-    tool_rc rc = tool_rc_general_error;
-
-    yaml_emitter_t emitter = { 0 };
-    int r = yaml_emitter_initialize(&emitter);
-    if (!r) {
-        LOG_ERR("Could not initialize YAML emitter");
-        return tool_rc_general_error;
-    }
-
-    yaml_emitter_set_output_file(&emitter, stdout);
-    //yaml_emitter_set_canonical(&emitter, 1);
-
-    r = yaml_emitter_dump(&emitter, doc);
-    if (!r) {
-        LOG_ERR("Could not dump YAML");
-        goto err;
-    }
-
-    r = yaml_emitter_close(&emitter);
-    if (!r) {
-        LOG_ERR("Could not close YAML emitter");
-        goto err;
-    }
-
-    rc = tool_rc_success;
-err:
-
-    yaml_emitter_delete(&emitter);
-    return rc;
-}
-
 int main(int argc, char **argv) {
 
     /* get rid of:

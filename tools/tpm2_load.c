@@ -103,10 +103,8 @@ static tool_rc process_output(ESYS_CONTEXT *ectx, yaml_document_t *doc) {
             return tool_rc_general_error;
         }
     } else {
-        int root = yaml_document_add_mapping(doc, NULL, YAML_ANY_MAPPING_STYLE);
-        char *h = tpm2_util_bin2hex(name->name, name->size);
-        int key = yaml_document_add_scalar(doc, (yaml_char_t *)YAML_STR_TAG, "name", -1, YAML_ANY_SCALAR_STYLE);
-        int value = yaml_document_add_scalar(doc, (yaml_char_t *)YAML_STR_TAG, h, -1, YAML_ANY_SCALAR_STYLE);
+        int key = tpm2_yaml_add(doc, "name");
+        int value = tpm2_yaml_add(doc, (TPM2B *)name);
 
         yaml_document_append_mapping_pair(doc, root, key, value);
 
