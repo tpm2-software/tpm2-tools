@@ -159,13 +159,17 @@ static int add_mapping_root_with_items(yaml_document_t *doc, int root,
     return yaml_document_append_mapping_pair(doc, root, sub_root_key, sub_root);
 }
 
-static int tpmt_sym_def_object_to_yaml(yaml_document_t *t,
+static int tpmt_sym_def_object_to_yaml(yaml_document_t *doc,
         int root, const TPMS_SYMCIPHER_PARMS *params) {
 
-    key_value kvs[] = {
+    key_value sym_alg_kvs[] = {
             KVP_ADD_STR("value", params->sym.algorithm),
             KVP_ADD_INT("raw", params->sym.algorithm),
     };
+
+    int rc = add_mapping_root_with_items(doc, root, "sym-alg",
+            sym_alg_kvs, ARRAY_LEN(sym_alg_kvs));
+    return_rc(rc);
 
     print_alg_raw("sym-alg", sym->algorithm, indent);
     print_alg_raw("sym-mode", sym->mode.sym, indent);
