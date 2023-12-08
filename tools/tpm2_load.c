@@ -103,11 +103,9 @@ static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
             return tool_rc_general_error;
         }
     } else {
-        int key = tpm2_yaml_add(doc, "name");
-        int value = tpm2_yaml_add_tpm2b(doc, (TPM2B *)name);
-        int rc = tpm2_yaml_append_map_pair(doc, key, value);
-        if (!rc) {
-            return tool_rc_general_error;
+        rc = tpm2_yaml_tpm2b_name(name, doc);
+        if (rc != tool_rc_success) {
+            return rc;
         }
     }
 

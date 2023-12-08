@@ -27,7 +27,7 @@ static tpm_readpub_ctx ctx = {
     .format = pubkey_format_tss,
 };
 
-static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
+static tool_rc read_public_and_save(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     TPM2B_PUBLIC *public;
     TPM2B_NAME *name;
@@ -41,12 +41,13 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
         return tmp_rc;
     }
 
-    tpm2_tool_output("name: ");
-    UINT16 i;
-    for (i = 0; i < name->size; i++) {
-        tpm2_tool_output("%02x", name->name[i]);
-    }
-    tpm2_tool_output("\n");
+// TODO BILL
+//    tpm2_tool_output("name: ");
+//    UINT16 i;
+//    for (i = 0; i < name->size; i++) {
+//        tpm2_tool_output("%02x", name->name[i]);
+//    }
+//    tpm2_tool_output("\n");
 
     bool ret = true;
     if (ctx.out_name_file) {
@@ -58,13 +59,18 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
         }
     }
 
-    tpm2_tool_output("qualified name: ");
-    for (i = 0; i < qualified_name->size; i++) {
-        tpm2_tool_output("%02x", qualified_name->name[i]);
-    }
-    tpm2_tool_output("\n");
+ // TODO BILL
+//    tpm2_tool_output("qualified name: ");
+//    for (i = 0; i < qualified_name->size; i++) {
+//        tpm2_tool_output("%02x", qualified_name->name[i]);
+//    }
+//    tpm2_tool_output("\n");
 
-    tpm2_util_public_to_yaml(public, NULL);
+    //TODO tpm2_util_public_to_yaml(public, NULL);
+    rc = tpm2_yaml_tpmt_public(doc, &public->publicArea);
+    if (rc != tool_rc_success) {
+        goto out;
+    }
 
     ret = ctx.output_path ?
             tpm2_convert_pubkey_save(public, ctx.format, ctx.output_path) :
@@ -172,7 +178,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_yaml *doc, tpm2_optio
         return rc;
     }
 
-    return read_public_and_save(context);
+    return read_public_and_save(context, doc);
 }
 
 // Register this tool with tpm2_tool.c
