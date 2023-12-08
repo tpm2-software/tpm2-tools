@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
         LOG_ERR("Unable to run %s", argv[0]);
     }
 
-    if (output) {
+    if (ret == tool_rc_success && output) {
     	ret = tpm2_yaml_dump(ctx.doc, stdout);
     }
 
