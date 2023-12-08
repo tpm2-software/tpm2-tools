@@ -288,6 +288,7 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
         { "quiet",         no_argument,       NULL, 'Q' },
         { "version",       no_argument,       NULL, 'v' },
         { "enable-errata", no_argument,       NULL, 'Z' },
+        { "canonical",     no_argument,       NULL,  42 }
     };
 
 
@@ -387,6 +388,8 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
         case '?':
             rc = tpm2_option_code_err;
             goto out;
+        case 42:
+            flags->canonical = 1;
         default:
             /* NULL on_opt handler and unknown option specified is an error */
             if (!tool_opts || !tool_opts->callbacks.on_opt) {

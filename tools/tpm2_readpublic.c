@@ -41,13 +41,10 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
         return tmp_rc;
     }
 
-// TODO BILL
-//    tpm2_tool_output("name: ");
-//    UINT16 i;
-//    for (i = 0; i < name->size; i++) {
-//        tpm2_tool_output("%02x", name->name[i]);
-//    }
-//    tpm2_tool_output("\n");
+    rc = tpm2_yaml_tpm2b_name(name, doc);
+    if (rc != tool_rc_success) {
+        goto out;
+    }
 
     bool ret = true;
     if (ctx.out_name_file) {
@@ -59,14 +56,11 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
         }
     }
 
- // TODO BILL
-//    tpm2_tool_output("qualified name: ");
-//    for (i = 0; i < qualified_name->size; i++) {
-//        tpm2_tool_output("%02x", qualified_name->name[i]);
-//    }
-//    tpm2_tool_output("\n");
+    rc = tpm2_yaml_qualified_name(qualified_name, doc);
+    if (rc != tool_rc_success) {
+        goto out;
+    }
 
-    //TODO tpm2_util_public_to_yaml(public, NULL);
     rc = tpm2_yaml_tpmt_public(doc, &public->publicArea);
     if (rc != tool_rc_success) {
         goto out;

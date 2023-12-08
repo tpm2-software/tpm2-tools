@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
 
     bool output = !((ctx.tool_opts->flags & TPM2_OPTIONS_NO_OUTPUT) || flags.quiet);
     if (output) {
-        ctx.doc = tpm2_yaml_new();
+        ctx.doc = tpm2_yaml_new(flags.canonical);
         if (!ctx.doc) {
             exit(tool_rc_general_error);
         }
