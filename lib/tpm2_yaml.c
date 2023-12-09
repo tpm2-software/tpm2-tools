@@ -45,6 +45,17 @@ struct key_value {
 #define KVP_ADD_INT(k, v) {.key = k, .tag = YAML_INT_TAG, .value = { .as_int = v}, .base = 10}
 #define KVP_ADD_TPM2B(k, v) {.key = k, .tag = TPM2B_TAG, .value = { .as_tpm2b = (TPM2B *)v}}
 
+typedef struct list list;
+struct list {
+    union {
+        const char *as_str;
+        const TPM2B *as_tpm2b;
+        uint64_t as_int;
+    } value;
+    unsigned base;
+    const yaml_char_t *tag;
+};
+
 tpm2_yaml *tpm2_yaml_new(int canonical) {
 
     tpm2_yaml *t = calloc(1, sizeof(*t));
@@ -96,10 +107,11 @@ void tpm2_yaml_free(tpm2_yaml *y) {
  * IMPORTANT All base add functions for types MUST set the written flag
  * or output will be an empty document of {}.
  */
-#define yaml_add_str(y, str) \
-        y->written = 1; \
-        yaml_document_add_scalar(&y->doc, (yaml_char_t *)YAML_STR_TAG, \
-                    (yaml_char_t *)str ? str : NULL_STR, -1, YAML_ANY_SCALAR_STYLE);
+static int yaml_add_str(tpm2_yaml *y, const char *str) {
+    y->written = 1;
+    return yaml_document_add_scalar(&y->doc, (yaml_char_t *)YAML_STR_TAG,
+            (yaml_char_t *)str ? str : NULL_STR, -1, YAML_ANY_SCALAR_STYLE);
+}
 
 static int yaml_add_int(tpm2_yaml *y, uint64_t data, unsigned base) {
 
@@ -184,6 +196,49 @@ static int add_kvp_list(tpm2_yaml *y, int root, const key_value *kvs, size_t len
 
     return 1;
 }
+
+static int add_lst(tpm2_yaml *y, int root, const list *l) {
+
+    if (strcmp(l->tag, TPM2B_TAG) == 0 && l->value.as_tpm2b->size == 0) {
+        return 1;
+    }
+
+    int value = 0;
+    if (strcmp(l->tag, YAML_STR_TAG) == 0) {
+        value = yaml_add_str(y, l->value.as_str);
+    } else if (strcmp(l->tag, YAML_INT_TAG) == 0) {
+        value = yaml_add_int(y, l->value.as_int, l->base);
+    } else if (strcmp(l->tag, TPM2B_TAG) == 0) {
+        value = yaml_add_tpm2b(y, l->value.as_tpm2b);
+    } else {
+        LOG_ERR("Unknown tag type: %s", l->tag ? (char *)l->tag : "(null)");
+        return 0;
+    }
+    return_rc(value);
+
+    int rc = yaml_document_append_sequence_item(&y->doc, root, value);
+    return_rc(rc);
+}
+
+static int add_sequence_root_with_items(tpm2_yaml *y, int root,
+        const char *mapkey, const list *lst, size_t len) {
+
+    int sub_root = yaml_document_add_sequence(&y->doc,
+            YAML_SEQ_TAG, YAML_ANY_SEQUENCE_STYLE);
+    return_rc(sub_root);
+
+    size_t i;
+    for(i=0; i < len; i++) {
+        const list *x = &lst[i];
+        return_rc(add_lst(y, sub_root, x));
+    }
+
+    int sub_root_key = yaml_add_str(y, mapkey);
+    return_rc(sub_root_key);
+
+    return yaml_document_append_mapping_pair(&y->doc, root, sub_root_key, sub_root);
+}
+
 
 static int add_mapping_root_with_items(tpm2_yaml *y, int root,
         const char *mapkey, const key_value *kvs, size_t len) {
@@ -341,7 +396,9 @@ static int tpmt_scheme_to_yaml(tpm2_yaml *y, int root, const TPMT_ECC_SCHEME *sc
      *   raw:
      * scheme-halg:
      *   value:
-     *   raw:
+     *   raw:    struct key_value key_bits = KVP_ADD_TPM2B(key, name);
+    int rc = add_kvp(y, root, &key_bits);
+    return rc ? tool_rc_success : tool_rc_general_error;
      * scheme-count<optional>: 2
      */
 
@@ -502,6 +559,72 @@ tool_rc tpm2_yaml_tpmt_public(tpm2_yaml *y, const TPMT_PUBLIC *public) {
     int r = tpmt_public_to_yaml(public,
             y, y->root);
     return  r ? tool_rc_success: tool_rc_general_error;
+}
+
+static int add_tpml_algs(tpm2_yaml *y, const char *seqkey, const TPML_ALG *alg_list) {
+
+    if (alg_list->count == 0 ||
+            alg_list->count > ARRAY_LEN(alg_list->algorithms)) {
+        return 0;
+    }
+
+    size_t cnt = alg_list->count;
+    list *lst = calloc(alg_list->count, sizeof(*lst));
+    if (!lst) {
+        return 0;
+    }
+
+    /* convert to friendly names */
+    size_t i;
+    for (i=0; i < cnt; i++) {
+        lst[i].tag = YAML_STR_TAG;
+        lst[i].value.as_str = tpm2_alg_util_algtostr(alg_list->algorithms[i],
+                tpm2_alg_util_flags_any);
+    }
+
+    int r = add_sequence_root_with_items(y, y->root, seqkey, lst, cnt);
+    free(lst);
+    return r;
+}
+
+/* XXX guess on scalar name, might be a candiate for removal */
+tool_rc tpm2_yaml_tpml_alg(tpm2_yaml *y, const TPML_ALG *alg_list) {
+    null_ret(y, 1);
+    assert(alg_list);
+
+    return add_tpml_algs(y, "algorithms", alg_list) ?
+            tool_rc_general_error : tool_rc_success;
+}
+
+tool_rc tpm2_yaml_tpm_alg_todo(tpm2_yaml *y, const TPML_ALG *to_do_list) {
+    null_ret(y, 1);
+    assert(to_do_list);
+
+    /*
+     * status: success
+     * remaining:
+     * - tdes
+     * - sha384
+     * - rsassa
+     * --- OR ---
+     * status: complete
+     */
+
+    const char *value = to_do_list->count == 0 ? "complete" : "success";
+
+    struct key_value status = KVP_ADD_STR("status", value);
+    int r = add_kvp(y, y->root, &status);
+    if (!r) {
+        return tool_rc_general_error;
+    }
+
+    if (to_do_list->count == 0) {
+        return tool_rc_success;
+    }
+
+    return add_tpml_algs(y, "remaining", to_do_list) ?
+            tool_rc_success : tool_rc_general_error;
+
 }
 
 tool_rc tpm2_yaml_dump(tpm2_yaml *y, FILE *f) {

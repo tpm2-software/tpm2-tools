@@ -15,7 +15,7 @@ struct tpm_incrementalselftest_ctx {
 
 static tpm_incrementalselftest_ctx ctx;
 
-static tool_rc do_tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
+static tool_rc do_tpm_incrementalselftest(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     TPML_ALG *to_do_list = NULL;
     tool_rc rc = tpm2_incrementalselftest(ectx, &(ctx.inputalgs), &to_do_list);
@@ -23,28 +23,9 @@ static tool_rc do_tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    tpm2_tool_output("status: ");
-    print_yaml_indent(1);
-
-    if (to_do_list->count == 0) {
-        tpm2_tool_output("complete\n");
-    } else {
-        tpm2_tool_output("success\n");
-
-        tpm2_tool_output("remaining:\n");
-
-        uint32_t i;
-        for (i = 0; i < to_do_list->count; i++) {
-            print_yaml_indent(1);
-            tpm2_tool_output("%s",
-                    tpm2_alg_util_algtostr(to_do_list->algorithms[i],
-                            tpm2_alg_util_flags_any));
-            tpm2_tool_output("\n");
-        }
-    }
-
+    rc = tpm2_yaml_tpm_alg_todo(doc, to_do_list);
     free(to_do_list);
-    return tool_rc_success;
+    return rc;
 }
 
 static bool on_arg(int argc, char **argv) {
@@ -81,7 +62,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
 
     UNUSED(flags);
 
-    return do_tpm_incrementalselftest(ectx);
+    return do_tpm_incrementalselftest(ectx, doc);
 }
 
 // Register this tool with tpm2_tool.c
