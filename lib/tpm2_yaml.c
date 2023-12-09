@@ -16,6 +16,7 @@ struct tpm2_yaml {
     yaml_document_t doc;
     int root;
     int canonical;
+    int written;
 };
 
 #define null_ret(ptr, val) \
@@ -91,7 +92,12 @@ void tpm2_yaml_free(tpm2_yaml *y) {
 
 #define NULL_STR "(null)"
 
+/*
+ * IMPORTANT All base add functions for types MUST set the written flag
+ * or output will be an empty document of {}.
+ */
 #define yaml_add_str(y, str) \
+        y->written = 1; \
         yaml_document_add_scalar(&y->doc, (yaml_char_t *)YAML_STR_TAG, \
                     (yaml_char_t *)str ? str : NULL_STR, -1, YAML_ANY_SCALAR_STYLE);
 
@@ -121,6 +127,7 @@ static int yaml_add_int(tpm2_yaml *y, uint64_t data, unsigned base) {
     /* prevents something like !!int always being tagged on ints unless canonical is set */
     yaml_char_t *tag = y->canonical ? YAML_INT_TAG : YAML_STR_TAG;
 
+    y->written = 1;
     return yaml_document_add_scalar(&y->doc, (yaml_char_t *)tag, \
                         (yaml_char_t *)buf, -1, YAML_ANY_SCALAR_STYLE);
 }
@@ -132,6 +139,7 @@ static int yaml_add_tpm2b(tpm2_yaml *y, const TPM2B *data) {
         LOG_ERR("oom");
         return 0;
     }
+    y->written = 1;
     int node = yaml_document_add_scalar(&y->doc, (yaml_char_t *)YAML_STR_TAG,
             h, -1, YAML_ANY_SCALAR_STYLE);
     free(h);
@@ -499,6 +507,10 @@ tool_rc tpm2_yaml_tpmt_public(tpm2_yaml *y, const TPMT_PUBLIC *public) {
 tool_rc tpm2_yaml_dump(tpm2_yaml *y, FILE *f) {
 
     tool_rc rc = tool_rc_general_error;
+
+    if (!y->written) {
+        return tool_rc_success;
+    }
 
     yaml_emitter_t emitter = { 0 };
     int r = yaml_emitter_initialize(&emitter);
