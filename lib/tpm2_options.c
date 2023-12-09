@@ -437,15 +437,13 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
          * SAPI
          */
         bool is_sapi =
-            (!tool_opts || !tool_opts->flags);
+            (!tool_opts || (tool_opts->flags & ~TPM2_OPTIONS_NO_SAPI));
 
         /*
          * NO_SAPI
          */
-        bool is_no_sapi =
-            (tool_opts && tool_opts->flags & TPM2_OPTIONS_NO_SAPI);
         /* tool doesn't use sapi, skip tcti checks and continue */
-        if (is_no_sapi) {
+        if (!is_sapi) {
             if (flags->tcti_none && !flags->quiet) {
                 LOG_WARN("Tool does not use SAPI. Continuing with tcti=none");
             }
@@ -456,25 +454,32 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
          * OPTIONAL_SAPI
          */
         bool is_optional_sapi =
-            (tool_opts && tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI);
+            (tool_opts && (tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI));
+
+        bool is_fake_tcti = (flags->tcti_none && tool_opts &&
+            (tool_opts->flags & TPM2_OPTIONS_FAKE_TCTI));
 
         /*
-         * Actions when tcti is "none"
+         * get the TCTI variable from the env if user didn't specify
+         * on command line. We cant' use flags->tcti_none until we
+         * check the env!
          */
         bool is_tcti_from_env =
-            (!is_no_sapi && tcti_conf_option == 0);
+            (is_sapi && !tcti_conf_option);
         if (is_tcti_from_env) {
             tcti_conf_option = tpm2_util_getenv(TPM2TOOLS_ENV_TCTI);
+            flags->tcti_none = !strcmp(tcti_conf_option, "none");
         }
 
-        if (flags->tcti_none && is_sapi) {
+        /* A tool the needs a SAPI (and not a fake one) should fail */
+        if (flags->tcti_none && !is_fake_tcti && is_sapi) {
             LOG_ERR("Requested no tcti, but tool requires TCTI.");
             rc = tpm2_option_code_err;
             goto out;
         }
 
         /* tool doesn't request a sapi, don't initialize one */
-        if (flags->tcti_none && is_optional_sapi) {
+        if (flags->tcti_none && is_optional_sapi && !is_fake_tcti) {
             if (!flags->quiet) {
                 LOG_WARN("Tool optionally uses SAPI. Continuing with tcti=none");
             }
@@ -494,9 +499,7 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
             .finalize = tcti_fake_finalize
         };
 
-        bool is_optional_fake_tcti = (flags->tcti_none && tool_opts &&
-            tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
-        if (is_optional_fake_tcti) {
+        if (is_fake_tcti) {
             if (!flags->quiet) {
                 LOG_WARN("Tool optionally uses SAPI. Continuing with tcti=fake");
             }
