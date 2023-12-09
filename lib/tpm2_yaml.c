@@ -627,8 +627,16 @@ tool_rc tpm2_yaml_tpm_alg_todo(tpm2_yaml *y, const TPML_ALG *to_do_list) {
 
 }
 
-tool_rc tpm2_yaml_dump(tpm2_yaml *y, FILE *f) {
+tool_rc tpm2_yaml_tpm2_nv_index(tpm2_yaml *y, TPM2_NV_INDEX index) {
 
+    struct key_value kvp = KVP_ADD_HEX("nv-index", index);
+    return add_kvp(y, y->root, &kvp)  ?
+            tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_dump(tpm2_yaml *y, FILE *f) {
+    assert(y);
+    assert(f);
     tool_rc rc = tool_rc_general_error;
 
     if (!y->written) {

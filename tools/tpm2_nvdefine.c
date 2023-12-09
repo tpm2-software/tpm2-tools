@@ -74,7 +74,7 @@ static tpm_nvdefine_ctx ctx = {
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
 };
 
-static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
+static tool_rc nv_space_define(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     tool_rc rc = tpm2_nv_definespace(ectx, &ctx.auth_hierarchy.object,
         &ctx.nv_auth, &ctx.public_info, &ctx.cp_hash, &ctx.rp_hash,
@@ -88,7 +88,7 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.is_command_dispatch) {
-        tpm2_tool_output("nv-index: 0x%x\n", ctx.nv_index);
+       rc = tpm2_yaml_tpm2_nv_index(doc, ctx.nv_index);
     }
 
     return rc;
@@ -522,7 +522,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
     /*
      * 3. TPM2_CC_<command> call
      */
-    rc = nv_space_define(ectx);
+    rc = nv_space_define(ectx, doc);
     if (rc != tool_rc_success) {
         return rc;
     }

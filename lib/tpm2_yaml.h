@@ -21,6 +21,8 @@ tool_rc tpm2_yaml_tpm_alg_todo(tpm2_yaml *y, const TPML_ALG *to_do_list);
 
 tool_rc tpm2_yaml_tpml_alg(tpm2_yaml *y, const TPML_ALG *alg_list);
 
+tool_rc tpm2_yaml_tpm2_nv_index(tpm2_yaml *y, TPM2_NV_INDEX index);
+
 tool_rc tpm2_yaml_dump(tpm2_yaml *y, FILE *f);
 
 #endif /* LIB_TPM2_YAML_H_ */
