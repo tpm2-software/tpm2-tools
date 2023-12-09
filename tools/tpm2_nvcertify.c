@@ -535,7 +535,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("C:P:c:p:g:s:f:o:q:S:n:", ARRAY_LEN(topts), topts,
-        on_option, on_arg, TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
+        on_option, on_arg, TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI|TPM2_OPTIONS_NO_OUTPUT);
 
     return *opts != NULL;
 }
