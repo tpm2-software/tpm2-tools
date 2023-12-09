@@ -74,7 +74,7 @@ static tool_rc load_external(ESYS_CONTEXT *ectx) {
         ctx.parameter_hash_algorithm);
 }
 
-static tool_rc process_output(ESYS_CONTEXT *ectx) {
+static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     UNUSED(ectx);
     /*
@@ -109,9 +109,10 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
-    tpm2_tool_output("name: ");
-    tpm2_util_hexdump(ctx.name->name, ctx.name->size);
-    tpm2_tool_output("\n");
+    rc = tpm2_yaml_tpm2b_name(ctx.name, doc);
+    if (rc != tool_rc_success) {
+        goto out;
+    }
 
     if (ctx.name_path) {
         bool result = files_save_bytes_to_file(ctx.name_path, ctx.name->name,
@@ -465,7 +466,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
     /*
      * 4. Process outputs
      */
-    return process_output(ectx);
+    return process_output(ectx, doc);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
