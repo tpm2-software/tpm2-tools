@@ -258,7 +258,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("G:u:e:s:n:o:", ARRAY_LEN(topts), topts, on_option,
-        NULL, TPM2_OPTIONS_OPTIONAL_SAPI);
+        NULL, TPM2_OPTIONS_OPTIONAL_SAPI|TPM2_OPTIONS_NO_OUTPUT);
 
     return *opts != NULL;
 }
