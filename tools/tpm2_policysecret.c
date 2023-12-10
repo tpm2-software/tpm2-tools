@@ -58,7 +58,7 @@ static tool_rc policysecret(ESYS_CONTEXT *ectx) {
         ctx.parameter_hash_algorithm);
 }
 
-static tool_rc process_output(ESYS_CONTEXT *ectx) {
+static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     UNUSED(ectx);
     /*
@@ -81,7 +81,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
-    rc = tpm2_policy_tool_finish(ectx, ctx.extended_session,
+    rc = tpm2_policy_tool_finish(ectx, doc, ctx.extended_session,
         ctx.policy_digest_path);
     if (rc != tool_rc_success) {
         return rc;
@@ -317,7 +317,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
     /*
      * 4. Process outputs
      */
-    return process_output(ectx);
+    return process_output(ectx, doc);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

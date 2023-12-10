@@ -716,7 +716,7 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list) {
     return true;
 }
 
-tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_session *session,
+tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_yaml *y, tpm2_session *session,
         const char *save_path) {
 
     TPM2B_DIGEST *policy_digest = 0;
@@ -727,8 +727,18 @@ tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_session *session,
         return rc;
     }
 
-    tpm2_util_hexdump(policy_digest->buffer, policy_digest->size);
-    tpm2_tool_output("\n");
+    char *h = tpm2_util_bin2hex(policy_digest->buffer, policy_digest->size);
+    if (!h) {
+        LOG_ERR("oom");
+        return tool_rc_general_error;
+    }
+    rc = tpm2_yaml_hex_string(h, y);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Could not create yaml string");
+        free(h);
+        return rc;
+    }
+    free(h);
 
     rc = tool_rc_general_error;
 

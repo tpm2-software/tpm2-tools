@@ -52,7 +52,7 @@ static create_policy_ctx pctx = {
     .common_policy_options = TPM2_COMMON_POLICY_INIT
 };
 
-static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
+static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     if (!pctx.common_policy_options.policy_type.policy_pcr) {
         LOG_ERR("Only PCR policy is currently supported!");
@@ -91,7 +91,7 @@ static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    return tpm2_policy_tool_finish(ectx,
+    return tpm2_policy_tool_finish(ectx, doc,
             pctx.common_policy_options.policy_session,
             pctx.common_policy_options.policy_file);
 }
@@ -164,7 +164,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
         return tool_rc_option_error;
     }
 
-    return parse_policy_type_specific_command(ectx);
+    return parse_policy_type_specific_command(ectx, doc);
 }
 
 static void tpm2_tool_onexit(void) {

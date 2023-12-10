@@ -10,6 +10,7 @@
 #include "object.h"
 #include "pcr.h"
 #include "tpm2_session.h"
+#include "tpm2_yaml.h"
 
 /**
  * Build a PCR policy via PolicyPCR.
@@ -325,7 +326,7 @@ tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
  * @return
  *  A tool_rc indicating status.
  */
-tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_session *session,
+tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_session *session,
         const char *save_path);
 
 /** Sets a TPM2B_DIGEST from a file if present or a hex string.
