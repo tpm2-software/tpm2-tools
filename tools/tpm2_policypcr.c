@@ -118,7 +118,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
         return rc;
     }
 
-    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.policy_out_path);
+    return tpm2_policy_tool_finish(ectx, doc, ctx.session, ctx.policy_out_path);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

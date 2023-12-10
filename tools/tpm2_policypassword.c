@@ -45,7 +45,7 @@ static tool_rc tpm2_policypassword_build(ESYS_CONTEXT *ectx) {
     return rc;
 }
 
-static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_outputs(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     UNUSED(ectx);
 
@@ -69,7 +69,7 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
-    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.out_policy_dgst_path);
+    return tpm2_policy_tool_finish(ectx, doc, ctx.session, ctx.out_policy_dgst_path);
 }
 
 static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
@@ -199,7 +199,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
     /*
      * 4. Process outputs
      */
-    return process_outputs(ectx);
+    return process_outputs(ectx, doc);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

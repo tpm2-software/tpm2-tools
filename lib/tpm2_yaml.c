@@ -280,6 +280,12 @@ tool_rc tpm2_yaml_tpm2b_name(const TPM2B_NAME *name, tpm2_yaml *y) {
     return tpm2b_to_yaml(y, y->root, "name", name);
 }
 
+tool_rc tpm2_yaml_hex_string(const char *hex, tpm2_yaml *y) {
+    null_ret(y, 1);
+    assert(hex);
+    return yaml_add_str(y, hex);
+}
+
 tool_rc tpm2_yaml_qualified_name(const TPM2B_NAME *qname, tpm2_yaml *y) {
     null_ret(y, 1);
     assert(qname);
