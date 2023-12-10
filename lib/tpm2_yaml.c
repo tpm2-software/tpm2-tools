@@ -6,6 +6,8 @@
 
 #include <yaml.h>
 
+#include <tss2/tss2_mu.h>
+
 #include "log.h"
 #include "tool_rc.h"
 #include "tpm2_alg_util.h"
@@ -117,9 +119,9 @@ static int yaml_add_int(tpm2_yaml *y, uint64_t data, unsigned base) {
 
     /*
      * 8 bytes for 64 bit nums, times two for 2 chars per byte in hex,
-     * and a nul byte
+     * and a nul byte and extra bytes for the fmt string
      */
-    char buf[8 * 2 + 1] = { 0 };
+    char buf[128] = { 0 };
 
     const char *fmt = NULL;
     switch(base) {
@@ -151,10 +153,21 @@ static int yaml_add_tpm2b(tpm2_yaml *y, const TPM2B *data) {
         LOG_ERR("oom");
         return 0;
     }
+
+    /* prefix bytes of 0x and nul byte */
+    size_t len = strlen(h) + 2 + 1;
+    char *prefixed = calloc(1, len);
+    if (!prefixed) {
+        free(h);
+        return 0;
+    }
+    snprintf(prefixed, len, "0x%s", h);
+    free(h);
+
     y->written = 1;
     int node = yaml_document_add_scalar(&y->doc, (yaml_char_t *)YAML_STR_TAG,
-            h, -1, YAML_ANY_SCALAR_STYLE);
-    free(h);
+            prefixed, -1, YAML_ANY_SCALAR_STYLE);
+    free(prefixed);
 
     return node;
 }
@@ -182,8 +195,7 @@ static int add_kvp(tpm2_yaml *y, int root, const key_value *k) {
     }
     return_rc(value);
 
-    int rc = yaml_document_append_mapping_pair(&y->doc, root, key, value);
-    return_rc(rc);
+    return yaml_document_append_mapping_pair(&y->doc, root, key, value);
 }
 
 static int add_kvp_list(tpm2_yaml *y, int root, const key_value *kvs, size_t len) {
@@ -628,10 +640,125 @@ tool_rc tpm2_yaml_tpm_alg_todo(tpm2_yaml *y, const TPML_ALG *to_do_list) {
 }
 
 tool_rc tpm2_yaml_tpm2_nv_index(tpm2_yaml *y, TPM2_NV_INDEX index) {
+    null_ret(y, 1);
+    assert(index);
 
     struct key_value kvp = KVP_ADD_HEX("nv-index", index);
     return add_kvp(y, y->root, &kvp)  ?
             tool_rc_success : tool_rc_general_error;
+}
+
+static int tpms_nv_pin_counter_parameters_to_yaml_raw(tpm2_yaml *y,
+        int root, const char *key, const uint8_t *data, size_t data_len) {
+    /*
+     * <key>:
+     *   pinCount: 1
+     *   pinLimit: 3
+     */
+    TPMS_NV_PIN_COUNTER_PARAMETERS pin_params = { 0 };
+    TSS2_RC rc = Tss2_MU_TPMS_NV_PIN_COUNTER_PARAMETERS_Unmarshal(data, data_len,
+            NULL, &pin_params);
+    if (rc != TSS2_RC_SUCCESS) {
+        return 0;
+    }
+
+    key_value scheme_kvs[] = {
+        KVP_ADD_INT("pinCount", pin_params.pinCount),
+        KVP_ADD_INT("pinLimit", pin_params.pinLimit),
+    };
+
+    return add_mapping_root_with_items(y, root, key,
+            scheme_kvs, ARRAY_LEN(scheme_kvs));}
+
+static int tpm2_nv_read_to_yaml(tpm2_yaml *y, const TPMS_NV_PUBLIC *pub, const uint8_t *data,
+        size_t data_len) {
+
+    TPM2_NT nt = (pub->attributes & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT;
+    switch (nt) {
+    case TPM2_NT_COUNTER: {
+        if (data_len != sizeof(UINT64)) {
+            LOG_ERR("Unexpected size for TPM2_NV_COUNTER of %u bytes, expected %u",
+                    data_len, sizeof(UINT64));
+            return 0;
+        }
+        UINT64 v = 0;
+        memcpy(&v, data, sizeof(UINT64));
+        v = be64toh(v);
+        struct key_value kvp = KVP_ADD_INT("counter", v);
+        return add_kvp(y, y->root, &kvp);
+    }
+    case TPM2_NT_BITS: {
+        if (data_len != sizeof(UINT64)) {
+            LOG_ERR("Unexpected size for TPM2_NV_BITS of %u bytes, expected %u",
+                    data_len, sizeof(UINT64));
+            return 0;
+        }
+
+        UINT64 v = 0;
+        memcpy(&v, data, sizeof(UINT64));
+        v = be64toh(v);
+        struct key_value kvp = KVP_ADD_HEX("bits", v);
+        return add_kvp(y, y->root, &kvp);
+    }
+    case TPM2_NT_EXTEND: {
+
+        /*
+         * 8 bytes for 64 bit nums, times two for 2 chars per byte in hex,
+         * and a nul byte and extra for the format
+         */
+        char buf[128] = { 0 };
+
+        /* plop data into a TPM2B structure to make outputiting to hex easier */
+        TPM2B_DIGEST d = {
+            .size = data_len,
+        };
+        if (data_len > sizeof(d.buffer)) {
+            LOG_ERR("Read data is larger than buffer, got %u expected less than %zu",
+                    data_len, sizeof(d.buffer));
+            return 0;
+        }
+        memcpy(d.buffer, data, data_len);
+
+        /* convert index to 0x<index> */
+        snprintf(buf, sizeof(buf), "0x%"PRIx64, pub->nvIndex);
+
+        const char *algstr = tpm2_alg_util_algtostr(pub->nameAlg, tpm2_alg_util_flags_any);
+        struct key_value kvp = KVP_ADD_TPM2B(algstr, &d);
+        return add_kvp(y, y->root, &kvp);
+    }
+    break;
+    case TPM2_NT_PIN_FAIL:
+        return tpms_nv_pin_counter_parameters_to_yaml_raw(y, y->root, "pinfail", data, data_len);
+    case TPM2_NT_PIN_PASS:
+        return tpms_nv_pin_counter_parameters_to_yaml_raw(y, y->root, "pinpass", data, data_len);
+        /* no default - keep compilers happy */
+    default:
+        break;
+    }
+
+    /* copy data to a simple TPM2B to make outputting easier */
+    TPM2B_MAX_NV_BUFFER b = {
+        .size = data_len
+    };
+
+    if (data_len > sizeof(b.buffer)) {
+        LOG_ERR("Read data is larger than buffer, got %u expected less than %zu",
+                data_len, sizeof(b.buffer));
+        return 0;
+    }
+    memcpy(b.buffer, data, data_len);
+    struct key_value kvp = KVP_ADD_TPM2B("data", &b);
+    return add_kvp(y, y->root, &kvp);
+}
+
+tool_rc tpm2_yaml_nv_read(const char *data, size_t data_len, const TPM2B_NV_PUBLIC *nv_public,
+        tpm2_yaml *y) {
+    null_ret(y, 1);
+    assert(data);
+    assert(nv_public);
+
+    return tpm2_nv_read_to_yaml(y, &nv_public->nvPublic, data, data_len) ?
+           tool_rc_success : tool_rc_general_error;
 }
 
 tool_rc tpm2_yaml_dump(tpm2_yaml *y, FILE *f) {

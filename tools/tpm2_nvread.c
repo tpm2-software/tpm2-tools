@@ -69,7 +69,7 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx) {
         ctx.aux_session_handle[0], ctx.aux_session_handle[1], &ctx.nv_public);
 }
 
-static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags, tpm2_yaml *doc) {
 
     UNUSED(ectx);
     /*
@@ -95,7 +95,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /* dump ctx.data_buffer to output file, if specified */
     tool_rc rc = tool_rc_success;
     if (ctx.is_yaml) {
-        tpm2_util_tpm2_nv_to_yaml(ctx.nv_public, ctx.data_buffer, ctx.bytes_written, 0);
+        return tpm2_yaml_nv_read(ctx.data_buffer, ctx.bytes_written, ctx.nv_public, doc);
     } else if (ctx.output_file) {
         if (!files_save_bytes_to_file(ctx.output_file, ctx.data_buffer,
                 ctx.bytes_written)) {
@@ -407,7 +407,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
     /*
      * 4. Process outputs
      */
-    return process_output(ectx, flags);
+    return process_output(ectx, flags, doc);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
