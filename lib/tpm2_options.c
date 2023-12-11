@@ -437,7 +437,7 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
          * SAPI
          */
         bool is_sapi =
-            (!tool_opts || (tool_opts->flags & ~TPM2_OPTIONS_NO_SAPI));
+            !tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI);
 
         /*
          * NO_SAPI
