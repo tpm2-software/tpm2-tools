@@ -98,12 +98,13 @@ static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
     if (ctx.namepath) {
         bool result = files_save_bytes_to_file(ctx.namepath, name->name,
                 name->size);
-        free(name);
+        Esys_Free(name);
         if (!result) {
             return tool_rc_general_error;
         }
     } else {
         rc = tpm2_yaml_tpm2b_name(name, doc);
+        Esys_Free(name);
         if (rc != tool_rc_success) {
             return rc;
         }
