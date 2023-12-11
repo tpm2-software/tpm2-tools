@@ -111,7 +111,7 @@ static tool_rc write_output_files(void) {
     return is_file_op_success ? tool_rc_success : tool_rc_general_error;
 }
 
-static tool_rc process_output(ESYS_CONTEXT *ectx) {
+static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     UNUSED(ectx);
     /*
@@ -415,7 +415,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
     /*
      * 4. Process outputs
      */
-    return process_output(ectx);
+    return process_output(ectx, doc);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
