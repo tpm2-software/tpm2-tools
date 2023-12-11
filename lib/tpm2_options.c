@@ -439,16 +439,22 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
         bool is_sapi =
             !tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI);
 
-       bool is_optional_sapi =
-           (tool_opts && (tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI));
-
-        /* tool doesn't REQUIRE the use sapi, skip tcti checks and continue */
-        if (!is_sapi && !is_optional_sapi) {
+        /*
+         * NO_SAPI
+         */
+        /* tool doesn't use sapi, skip tcti checks and continue */
+        if (!is_sapi) {
             if (flags->tcti_none && !flags->quiet) {
                 LOG_WARN("Tool does not use SAPI. Continuing with tcti=none");
             }
             goto out;
         }
+
+        /*
+         * OPTIONAL_SAPI
+         */
+        bool is_optional_sapi =
+            (tool_opts && (tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI));
 
         bool is_fake_tcti = (flags->tcti_none && tool_opts &&
             (tool_opts->flags & TPM2_OPTIONS_FAKE_TCTI));
@@ -459,14 +465,14 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
          * check the env!
          */
         bool is_tcti_from_env =
-            ((is_sapi || is_optional_sapi) && !tcti_conf_option);
+            (is_sapi && !tcti_conf_option);
         if (is_tcti_from_env) {
             tcti_conf_option = tpm2_util_getenv(TPM2TOOLS_ENV_TCTI);
             flags->tcti_none = !strcmp(tcti_conf_option, "none");
         }
 
         /* A tool the needs a SAPI (and not a fake one) should fail */
-        if (flags->tcti_none && !is_fake_tcti && !is_optional_sapi && is_sapi) {
+        if (flags->tcti_none && !is_fake_tcti && is_sapi) {
             LOG_ERR("Requested no tcti, but tool requires TCTI.");
             rc = tpm2_option_code_err;
             goto out;
