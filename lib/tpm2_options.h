@@ -69,7 +69,8 @@ typedef bool (*tpm2_arg_handler)(int argc, char **argv);
 #define TPM2_OPTIONS_NO_SAPI       (1 << 0)
 #define TPM2_OPTIONS_OPTIONAL_SAPI (1 << 1)
 #define TPM2_OPTIONS_NO_OUTPUT     (1 << 2)
-#define TPM2_OPTIONS_FAKE_TCTI     (1 << 3)
+
+#define TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI (TPM2_OPTIONS_NO_SAPI | TPM2_OPTIONS_OPTIONAL_SAPI)
 
 struct tpm2_options {
     struct {
