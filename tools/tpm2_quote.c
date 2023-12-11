@@ -134,21 +134,15 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     /*
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
-    tpm2_tool_output("quoted: ");
-    tpm2_util_print_tpm2b(ctx.quoted);
-    tpm2_tool_output("\nsignature:\n");
-    tpm2_tool_output("  alg: %s\n", tpm2_alg_util_algtostr(
-        ctx.signature->sigAlg, tpm2_alg_util_flags_sig));
 
-    UINT16 size;
-    BYTE *sig = tpm2_convert_sig(&size, ctx.signature);
-    if (!sig) {
+    rc = tpm2_yaml_named_tpm2b("quoted", ctx.quoted, doc);
+    if (rc != tool_rc_success) {
         return tool_rc_general_error;
     }
-    tpm2_tool_output("  sig: ");
-    tpm2_util_hexdump(sig, size);
-    tpm2_tool_output("\n");
-    free(sig);
+    rc = tpm2_yaml_tpmt_signature_hex(&ctx.signature, doc);
+    if (rc != tool_rc_success) {
+        return tool_rc_success;
+    }
 
     if (ctx.pcr_output) {
         // Filter out invalid/unavailable PCR selections

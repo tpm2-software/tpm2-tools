@@ -19,6 +19,8 @@ tool_rc tpm2_yaml_qualified_name(const TPM2B_NAME *qname, tpm2_yaml *y);
 
 tool_rc tpm2_yaml_tpmt_public(tpm2_yaml *y, const TPMT_PUBLIC *public);
 
+tool_rc tpm2_yaml_named_tpm2b(const char *name, const TPM2B_NAME *tpb2b, tpm2_yaml *y);
+
 tool_rc tpm2_yaml_tpm_alg_todo(tpm2_yaml *y, const TPML_ALG *to_do_list);
 
 tool_rc tpm2_yaml_tpml_alg(tpm2_yaml *y, const TPML_ALG *alg_list);

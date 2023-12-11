@@ -279,6 +279,28 @@ static int add_alg(tpm2_yaml *y, int root, const char *key, TPM2_ALG_ID alg) {
             scheme_kvs, ARRAY_LEN(scheme_kvs));
 }
 
+static int add_sig_hex(tpm2_yaml *y, int root, const char *key, TPMT_SIGNATURE *sig) {
+
+    BYTE *sig_hex = tpm2_convert_sig(&size, ctx.signature);
+    if (!sig_hex) {
+        return tool_rc_general_error;
+    }
+    char *sig_hex_char = tpm2_util_bin2hex(sig_hex, size);
+    if (!sig_hex_char) {
+        free(sig_hex)
+        return tool_rc_general_error;
+    }
+
+    key_value sig_kvs[] =
+        {
+         KVP_ADD_STR("alg", tpm2_alg_util_algtostr(sig->sigAlg, tpm2_alg_util_flags_sig)),
+         KVP_ADD_HEX("sig", sig_hex_char),
+        };
+
+    return add_mapping_root_with_items(y, root, key,
+            sig_kvs, ARRAY_LEN(sig_kvs));
+}
+
 static tool_rc tpm2b_to_yaml(tpm2_yaml *y, int root, const char *key, const TPM2B_NAME *name) {
 
     struct key_value key_bits = KVP_ADD_TPM2B(key, name);
@@ -303,6 +325,13 @@ tool_rc tpm2_yaml_qualified_name(const TPM2B_NAME *qname, tpm2_yaml *y) {
     assert(qname);
     return tpm2b_to_yaml(y, y->root, "qualified name", qname);
 }
+
+tool_rc tpm2_yaml_named_tpm2b(const char *name, const TPM2B_NAME *tpb2b, tpm2_yaml *y) {
+    null_ret(y, 1);
+    assert(qname);
+    return tpm2b_to_yaml(y, y->root, name, tpm2b);
+}
+
 
 static int tpmt_sym_def_object_to_yaml(tpm2_yaml *y,
         int root, const TPMT_SYM_DEF_OBJECT *sym) {
@@ -477,6 +506,16 @@ static int tpms_ecc_parms_to_yaml(tpm2_yaml *y, int root, const TPMS_ECC_PARMS *
     return tpmt_sym_def_object_to_yaml(y, root, &e->symmetric);
 }
 
+static int tpmt_signature_hex_to_yaml(const TPMT_SIGNATUR *sig,
+        tpm2_yaml *y, int root) {
+
+    /* signature:
+     *   alg: rsassa
+     *   sig: 26daf030...
+     */
+    return add_sig_hex(y, root, "signature", sig);
+}
+
 static int tpmt_public_to_yaml(const TPMT_PUBLIC *public,
         tpm2_yaml *y, int root) {
 
@@ -575,6 +614,15 @@ tool_rc tpm2_yaml_tpmt_public(tpm2_yaml *y, const TPMT_PUBLIC *public) {
     assert(public);
 
     int r = tpmt_public_to_yaml(public,
+            y, y->root);
+    return  r ? tool_rc_success: tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_tpmt_signature_hex(tpm2_yaml *y, const TPMT_PUBLIC *public) {
+    null_ret(y, 1);
+    assert(public);
+
+    int r = tpmt_signature_hex_to_yaml(public,
             y, y->root);
     return  r ? tool_rc_success: tool_rc_general_error;
 }
