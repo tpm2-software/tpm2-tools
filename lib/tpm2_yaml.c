@@ -12,6 +12,7 @@
 #include "tool_rc.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_yaml.h"
 
 struct tpm2_yaml {
@@ -281,20 +282,18 @@ static int add_alg(tpm2_yaml *y, int root, const char *key, TPM2_ALG_ID alg) {
 
 static int add_sig_hex(tpm2_yaml *y, int root, const char *key, TPMT_SIGNATURE *sig) {
 
-    BYTE *sig_hex = tpm2_convert_sig(&size, ctx.signature);
-    if (!sig_hex) {
+
+    TPM2B_MAX_BUFFER tmp = { 0 };
+    BYTE *sig_bin = tpm2_convert_sig(&tmp.size, sig);
+    if (!sig_bin) {
         return tool_rc_general_error;
     }
-    char *sig_hex_char = tpm2_util_bin2hex(sig_hex, size);
-    if (!sig_hex_char) {
-        free(sig_hex)
-        return tool_rc_general_error;
-    }
+    memcpy(tmp.buffer, sig_bin, tmp.size);
 
     key_value sig_kvs[] =
         {
          KVP_ADD_STR("alg", tpm2_alg_util_algtostr(sig->sigAlg, tpm2_alg_util_flags_sig)),
-         KVP_ADD_HEX("sig", sig_hex_char),
+         KVP_ADD_TPM2B("sig", sig_bin),
         };
 
     return add_mapping_root_with_items(y, root, key,
@@ -334,7 +333,7 @@ tool_rc tpm2_yaml_attest2b(const TPM2B_ATTEST *attest, tpm2_yaml *y) {
 
 tool_rc tpm2_yaml_named_tpm2b(const char *name, const TPM2B_NAME *tpb2b, tpm2_yaml *y) {
     null_ret(y, 1);
-    assert(qname);
+    assert(name);
     return tpm2b_to_yaml(y, y->root, name, tpm2b);
 }
 
