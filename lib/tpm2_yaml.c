@@ -327,8 +327,7 @@ tool_rc tpm2_yaml_qualified_name(const TPM2B_NAME *qname, tpm2_yaml *y) {
 
 tool_rc tpm2_yaml_attest2b(const TPM2B_ATTEST *attest, tpm2_yaml *y) {
     null_ret(y, 1);
-    assert(qname);
-    return tpm2b_to_yaml(y, y->root, "quoted", attest);
+    return tpm2b_to_yaml(y, y->root, "quoted", (TPM2B_NAME *)attest);
 }
 
 tool_rc tpm2_yaml_named_tpm2b(const char *name, const TPM2B_NAME *tpb2b, tpm2_yaml *y) {
