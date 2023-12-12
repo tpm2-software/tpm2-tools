@@ -135,11 +135,11 @@ static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
 
-    rc = tpm2_yaml_named_tpm2b("quoted", ctx.quoted, doc);
+    rc = tpm2_yaml_attest2b(ctx.quoted, doc);
     if (rc != tool_rc_success) {
         return tool_rc_general_error;
     }
-    rc = tpm2_yaml_tpmt_signature_hex(&ctx.signature, doc);
+    rc = tpm2_yaml_tpmt_signature_hex(doc, ctx.signature);
     if (rc != tool_rc_success) {
         return tool_rc_success;
     }
