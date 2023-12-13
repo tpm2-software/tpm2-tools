@@ -166,7 +166,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
         if (!is_file_op_success) {
             return tool_rc_general_error;
         }
-    
+
         is_file_op_success = files_load_private(ctx.object.privpath,
             &ctx.object.private);
         if (!is_file_op_success) {

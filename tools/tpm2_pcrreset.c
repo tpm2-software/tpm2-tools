@@ -175,7 +175,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "cphash", required_argument, 0, 0},
 
     };
-    
+
     *opts = tpm2_options_new(NULL, ARRAY_LEN(topts), topts, on_option, on_arg,
         0);
     return *opts != NULL;

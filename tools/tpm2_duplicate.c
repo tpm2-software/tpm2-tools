@@ -244,7 +244,7 @@ static bool set_key_algorithm(const char *algstr, TPMT_SYM_DEF_OBJECT * obj) {
         obj->algorithm = TPM2_ALG_NULL;
         return true;
     }
-    
+
     bool is_algstr_aes = (strcmp(algstr, "aes") == 0);
     if (is_algstr_aes) {
         obj->algorithm = TPM2_ALG_AES;

@@ -209,7 +209,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     if (ctx.is_createloaded && ctx.object.template_data_path) {
         is_file_op_success = files_save_template(
             &ctx.object.in_public.publicArea, ctx.object.template_data_path);
-        
+
         if (!is_file_op_success) {
             LOG_ERR("Could not save public template to file.");
             return tool_rc_general_error;
@@ -312,7 +312,7 @@ create_out:
     if (ctx.object.ctx_path) {
         rc = files_save_tpm_context_to_path(ectx, ctx.object.object_handle,
             ctx.object.ctx_path);
-        
+
         if (rc != tool_rc_success) {
             goto out;
         }

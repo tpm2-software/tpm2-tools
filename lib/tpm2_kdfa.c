@@ -16,7 +16,7 @@
 /*
  * Disable optimization because of an error in FORTIFY_SOURCE
  */
- 
+
 #ifdef _FORTIFY_SOURCE
 #pragma GCC push_options
 #pragma GCC optimize ("O0")

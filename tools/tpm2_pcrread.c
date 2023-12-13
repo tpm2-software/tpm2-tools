@@ -84,7 +84,7 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
             success = pcr_fwrite_values(&ctx.pcr_selections, &ctx.pcrs,
                 ctx.output_file);
         }
-        
+
         if (ctx.format == pcrs_output_format_serialized) {
             success = pcr_fwrite_serialized(&ctx.pcr_selections, &ctx.pcrs,
                 ctx.output_file);
