@@ -292,7 +292,7 @@ static int add_sig_hex(tpm2_yaml *y, int root, const char *key, TPMT_SIGNATURE *
     key_value sig_kvs[] =
         {
          KVP_ADD_STR("alg", tpm2_alg_util_algtostr(sig->sigAlg, tpm2_alg_util_flags_sig)),
-         KVP_ADD_TPM2B("sig", sig_bin),
+         KVP_ADD_TPM2B("sig", &tmp),
         };
 
     return add_mapping_root_with_items(y, root, key,
