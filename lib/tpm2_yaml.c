@@ -229,8 +229,7 @@ static int add_lst(tpm2_yaml *y, int root, const list *l) {
     }
     return_rc(value);
 
-    int rc = yaml_document_append_sequence_item(&y->doc, root, value);
-    return_rc(rc);
+    return yaml_document_append_sequence_item(&y->doc, root, value);
 }
 
 static int add_sequence_root_with_items(tpm2_yaml *y, int root,
@@ -330,7 +329,7 @@ tool_rc tpm2_yaml_attest2b(const TPM2B_ATTEST *attest, tpm2_yaml *y) {
     return tpm2b_to_yaml(y, y->root, "quoted", (TPM2B_NAME *)attest);
 }
 
-tool_rc tpm2_yaml_named_tpm2b(const char *name, const TPM2B_NAME *tpb2b, tpm2_yaml *y) {
+tool_rc tpm2_yaml_named_tpm2b(const char *name, const TPM2B_NAME *tpm2b, tpm2_yaml *y) {
     null_ret(y, 1);
     assert(name);
     return tpm2b_to_yaml(y, y->root, name, tpm2b);
@@ -734,7 +733,7 @@ static int tpm2_nv_read_to_yaml(tpm2_yaml *y, const TPMS_NV_PUBLIC *pub, const u
     switch (nt) {
     case TPM2_NT_COUNTER: {
         if (data_len != sizeof(UINT64)) {
-            LOG_ERR("Unexpected size for TPM2_NV_COUNTER of %u bytes, expected %u",
+            LOG_ERR("Unexpected size for TPM2_NV_COUNTER of %zu bytes, expected %zu",
                     data_len, sizeof(UINT64));
             return 0;
         }
@@ -746,7 +745,7 @@ static int tpm2_nv_read_to_yaml(tpm2_yaml *y, const TPMS_NV_PUBLIC *pub, const u
     }
     case TPM2_NT_BITS: {
         if (data_len != sizeof(UINT64)) {
-            LOG_ERR("Unexpected size for TPM2_NV_BITS of %u bytes, expected %u",
+            LOG_ERR("Unexpected size for TPM2_NV_BITS of %zu bytes, expected %zu",
                     data_len, sizeof(UINT64));
             return 0;
         }
@@ -770,14 +769,14 @@ static int tpm2_nv_read_to_yaml(tpm2_yaml *y, const TPMS_NV_PUBLIC *pub, const u
             .size = data_len,
         };
         if (data_len > sizeof(d.buffer)) {
-            LOG_ERR("Read data is larger than buffer, got %u expected less than %zu",
+            LOG_ERR("Read data is larger than buffer, got %zu expected less than %zu",
                     data_len, sizeof(d.buffer));
             return 0;
         }
         memcpy(d.buffer, data, data_len);
 
         /* convert index to 0x<index> */
-        snprintf(buf, sizeof(buf), "0x%"PRIx64, pub->nvIndex);
+        snprintf(buf, sizeof(buf), "0x%"PRIx32, pub->nvIndex);
 
         const char *algstr = tpm2_alg_util_algtostr(pub->nameAlg, tpm2_alg_util_flags_any);
         struct key_value kvp = KVP_ADD_TPM2B(algstr, &d);
@@ -799,7 +798,7 @@ static int tpm2_nv_read_to_yaml(tpm2_yaml *y, const TPMS_NV_PUBLIC *pub, const u
     };
 
     if (data_len > sizeof(b.buffer)) {
-        LOG_ERR("Read data is larger than buffer, got %u expected less than %zu",
+        LOG_ERR("Read data is larger than buffer, got %zu expected less than %zu",
                 data_len, sizeof(b.buffer));
         return 0;
     }
