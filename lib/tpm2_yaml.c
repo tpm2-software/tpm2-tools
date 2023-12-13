@@ -299,6 +299,32 @@ static int add_sig_hex(tpm2_yaml *y, int root, const char *key, TPMT_SIGNATURE *
             sig_kvs, ARRAY_LEN(sig_kvs));
 }
 
+static int tpms_time_info_to_yaml(tpm2_yaml *y, int root,
+                                  const TPMS_TIME_INFO *time_info) {
+    /* time: 105594980
+     */
+    struct key_value key_time = KVP_ADD_INT("time", time_info->time);
+    int rc = add_kvp(y, root, &key_time);
+    return_rc(rc);
+
+    /* clock_info:
+     *   clock: 128285828
+     *   reset_count: 1
+     *   restart_count: 0
+     *   safe: yes
+     */
+
+    key_value clock_info[] = {
+        KVP_ADD_INT("clock", time_info->clockInfo.clock),
+        KVP_ADD_INT("reset_count", time_info->clockInfo.resetCount),
+        KVP_ADD_INT("restartcount", time_info->clockInfo.restartCount),
+        KVP_ADD_STR("safe", time_info->clockInfo.safe == TPM2_YES ? "yes" : "no"),
+    };
+
+    return add_mapping_root_with_items(y, root, "clock_info",
+                                       clock_info, ARRAY_LEN(clock_info));
+}
+
 static tool_rc tpm2b_to_yaml(tpm2_yaml *y, int root, const char *key, const TPM2B_NAME *name) {
 
     struct key_value key_bits = KVP_ADD_TPM2B(key, name);
@@ -328,6 +354,12 @@ tool_rc tpm2_yaml_qualified_name(const TPM2B_NAME *qname, tpm2_yaml *y) {
 tool_rc tpm2_yaml_attest2b(const TPM2B_ATTEST *attest, tpm2_yaml *y) {
     null_ret(y, 1);
     return tpm2b_to_yaml(y, y->root, "quoted", (TPM2B_NAME *)attest);
+}
+
+tool_rc tpm2_yaml_tpms_time_info(const TPMS_TIME_INFO *time_info, tpm2_yaml *y) {
+    null_ret(y, 1);
+    return tpms_time_info_to_yaml(y, y->root, time_info) ?  tool_rc_success
+        : tool_rc_general_error;
 }
 
 tool_rc tpm2_yaml_named_tpm2b(const char *name, const TPM2B_NAME *tpm2b, tpm2_yaml *y) {

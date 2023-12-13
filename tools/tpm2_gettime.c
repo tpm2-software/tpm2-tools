@@ -73,7 +73,7 @@ static tool_rc gettime(ESYS_CONTEXT *ectx) {
         ctx.parameter_hash_algorithm);
 }
 
-static tool_rc process_output(ESYS_CONTEXT *ectx) {
+static tool_rc process_output(ESYS_CONTEXT *ectx, tpm2_yaml *doc) {
 
     UNUSED(ectx);
     /*
@@ -117,9 +117,8 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     TPMS_ATTEST attest;
     rc = files_tpm2b_attest_to_tpms_attest(ctx.time_info, &attest);
     if (rc == tool_rc_success) {
-        tpm2_util_print_time(&attest.attested.time.time);
+        rc = tpm2_yaml_tpms_time_info(&attest.attested.time.time, doc);
     }
-
     return rc;
 }
 
@@ -325,7 +324,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
     /*
      * 4. Process outputs
      */
-    return process_output(ectx);
+    return process_output(ectx, doc);
 }
 
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

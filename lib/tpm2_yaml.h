@@ -34,6 +34,8 @@ tool_rc tpm2_yaml_tpm2_nv_index(tpm2_yaml *y, TPM2_NV_INDEX index);
 tool_rc tpm2_yaml_nv_read(const char *data, size_t data_len, const TPM2B_NV_PUBLIC *nv_public,
         tpm2_yaml *y);
 
+tool_rc tpm2_yaml_tpms_time_info(const TPMS_TIME_INFO *time_info, tpm2_yaml *y);
+
 tool_rc tpm2_yaml_dump(tpm2_yaml *y, FILE *f);
 
 #endif /* LIB_TPM2_YAML_H_ */
