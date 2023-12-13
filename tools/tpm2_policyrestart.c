@@ -108,7 +108,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
     ctx.parameter_hash_algorithm = tpm2_util_calculate_phash_algorithm(ectx,
         cphash_path, &ctx.cp_hash, 0, 0, all_sessions);
-        
+
     /*
      * 4.b Determine if TPM2_CC_<command> is to be dispatched
      */

@@ -30,7 +30,7 @@ conditions dictating the certificate location lookup.
     tpmEPSgenerated bit is SET AND manufacturer is INTC.
 
     Note:
-    
+
     In this operation information is provided regarding additional software to
     be run as part of the re-provisioning/ re-certification service.
 

@@ -132,7 +132,7 @@ Starting with release 5.4, The format is based on [Keep a Changelog](http://keep
   * tpm2_policyauthorize:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PolicyAuthorize.
-  
+
   * tpm2_print:
      - Support printing serialized ESYS_TR's
 
@@ -187,18 +187,18 @@ Starting with release 5.4, The format is based on [Keep a Changelog](http://keep
 
   * tpm2_import: fix an issue where openssl load function resets a specified
     scheme with TPM2_ALG_NULL.
-  
+
   * tpm2_sign, tpm2_verifysignature: fixes for sm2 signing and verification.
-  
+
   * Support alternative ECC curves for which default EK templates exist
     (NIST_P256, NIST_P384, NIST_P521, and SM2_P256).
-    
+
   * tools/misc/tpm2_checkquote: add sm2 verification of signature.
 
   * tpm2_startauthsession:
     - Added option **-G**, **--key-algorithm=ALGORITHM** to specify the
       symmetric algorithm used in parameter encryption/decryption.
-  
+
   * tpm2_certify:
     - Added option **\--scheme**=_ALGORITHM_ for supporting signature schemes.
      Signing schemes should follow the "formatting standards", see section
@@ -345,7 +345,7 @@ Starting with release 5.4, The format is based on [Keep a Changelog](http://keep
   * tpm2_pcrreset:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PCR_Reset.
-        
+
   * tpm2_pcrread:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PCR_Read.
@@ -353,7 +353,7 @@ Starting with release 5.4, The format is based on [Keep a Changelog](http://keep
   * tpm2_pcrevent:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PCR_Event.
-        
+
   * tpm2_pcrallocate:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_PCR_Allocate.
@@ -380,11 +380,11 @@ Starting with release 5.4, The format is based on [Keep a Changelog](http://keep
   * tpm2_ecephemeral:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_EC_Ephemeral.
-        
+
   * tpm2_ecdhzgen:
       - Added option **--cphash** to output the cpHash for the command
         TPM2_CC_ECDH_ZGen.
-      
+
   * tpm2_load:
       - Added capability to load pem files in TSS2-Private-Key format for
         interoperability with tpm2-tss-engine, tpm2-openssl provider,
@@ -421,7 +421,7 @@ Starting with release 5.4, The format is based on [Keep a Changelog](http://keep
       - Added option **\--with-policydelete** when calculating cpHash with
         **\--tcti=none** there is no way to know if the attribute
         TPMA_NV_POLICYDELETE has been set from the NV index name alone.
-    
+
   * tpm2_nvreadlock:
       - Added option **\--rphash**=_FILE_ to specify file path to record the
         hash of the response parameters. This is commonly termed as rpHash.
@@ -933,7 +933,7 @@ Starting with release 5.4, The format is based on [Keep a Changelog](http://keep
   * Default hash algorithm is now sha256. Prior versions claimed sha1, but were
     inconsistent in choice. Best practice is to specify the hash algorithm to
     avoid suprises.
-   
+
   * tpm2_tools and tss2_tools are now a busybox style commandlet. Ie
     tpm2\_getrandom becomes tpm2 getrandom. make install will install symlinks
     to the old tool names and the tpm2 commandlet will interogate argv[0] for

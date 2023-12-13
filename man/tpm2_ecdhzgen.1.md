@@ -44,7 +44,7 @@ resultant point (Z = (xZ , yZ) ≔ [hds]QB; where h is the cofactor of the curve
     File path to record the hash of the command parameters. This is commonly
     termed as cpHash. NOTE: When this option is selected, The tool will not
     actually execute the command, it simply returns a cpHash.
-    
+
 ## References
 
 [algorithm specifiers](common/alg.md) details the options for specifying
