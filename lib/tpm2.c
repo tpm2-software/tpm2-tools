@@ -500,7 +500,7 @@ tool_rc tpm2_policy_restart(ESYS_CONTEXT *esys_context, ESYS_TR session_handle,
             LOG_ERR("Failed to acquire SAPI handle");
             return tool_rc_general_error;
         }
-              
+
         TPM2B_NAME name1 = { 0 };
         name1.size = sizeof(TPM2_HANDLE);
         rval = Tss2_MU_TPM2_HANDLE_Marshal(sapi_policy_session, name1.name,
@@ -641,7 +641,7 @@ tool_rc tpm2_pcr_read(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
 
         goto tpm2_pcrread_skip_esapi_call;
     }
-    
+
     rval = Esys_PCR_Read(esys_context, shandle1, shandle2, shandle3,
             pcr_selection_in, pcr_update_counter, pcr_selection_out, pcr_values);
     if (rval != TSS2_RC_SUCCESS) {
@@ -5609,7 +5609,7 @@ tool_rc tpm2_ecephemeral(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
             LOG_PERR(Tss2_Sys_EC_Ephemeral_Prepare, rval);
             return tool_rc_general_error;
         }
-       
+
         rc = tpm2_sapi_getcphash(sys_context, NULL, NULL, NULL,
             parameter_hash_algorithm, cp_hash);
         /*
@@ -5617,8 +5617,8 @@ tool_rc tpm2_ecephemeral(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
          */
         goto tpm2_ecephemeral_skip_esapi_call;
     }
-    
-    
+
+
     rval = Esys_EC_Ephemeral(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
         ESYS_TR_NONE, curve_id, Q, counter);
     if (rval != TSS2_RC_SUCCESS) {

@@ -41,7 +41,7 @@ These options control extending the pcr:
     File path to record the hash of the command parameters. This is commonly
     termed as cpHash. NOTE: When this option is selected, The tool will not
     actually execute the command, it simply returns a cpHash.
-    
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)

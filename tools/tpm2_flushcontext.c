@@ -144,7 +144,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
         ctx.context_handle_count++;
     }
-    
+
     if (!ctx.is_t_l_s_specified && !ctx.is_arg_transient) {
         rc = tpm2_session_restore(ectx, ctx.context_arg, true,
             &ctx.arg_session);
@@ -195,7 +195,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
             LOG_ERR("Error reading handle info from TPM.");
             return tool_rc_general_error;
         }
-    
+
         unsigned j = 0; //Iterates through all available handles in t/l/s
         for (j = 0; j < capability_data->data.handles.count; j++) {
             rc = tpm2_util_sys_handle_to_esys_handle(ectx,

@@ -23,7 +23,7 @@ struct tpm2_nvreadpublic_ctx {
      * Outputs
      */
     TPM2B_NV_PUBLIC **nv_public_list;
-  
+
     /*
      * Parameter hashes
      */
@@ -216,7 +216,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
             return rc;
         }
     }
-    
+
     if (ctx.nv_index != 0 || !ctx.is_command_dispatch) {
         /*
          * This path is taken for calculating cpHash as NV index cannot be 0

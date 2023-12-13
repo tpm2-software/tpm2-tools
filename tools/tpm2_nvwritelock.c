@@ -59,7 +59,7 @@ static tpm_nvwritelock_ctx ctx = {
 static tool_rc nv_writelock(ESYS_CONTEXT *ectx) {
 
     return ctx.global_writelock ?
-    
+
         tpm2_nvglobalwritelock(ectx, &ctx.auth_hierarchy.object, &ctx.cp_hash,
             &ctx.rp_hash, ctx.parameter_hash_algorithm,
             ctx.aux_session_handle[0], ctx.aux_session_handle[1]) :

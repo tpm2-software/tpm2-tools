@@ -28,7 +28,7 @@ struct tpm_ecdhzgen_ctx {
      */
     const char *ecdh_Z_path;
     TPM2B_ECC_POINT *Z;
-    
+
     /*
      * Parameter hashes
      */

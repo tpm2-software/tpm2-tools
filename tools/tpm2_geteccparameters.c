@@ -37,7 +37,7 @@ static tpm_geteccparameters_ctx ctx = {
 };
 
 static tool_rc geteccparameters(ESYS_CONTEXT *ectx) {
-   
+
     tool_rc rc = tpm2_geteccparameters(ectx, ctx.curve_id, &ctx.parameters,
         &ctx.cp_hash, ctx.parameter_hash_algorithm);
     if (rc != tool_rc_success) {

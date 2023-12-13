@@ -108,11 +108,11 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     }
 
     e_rc = Esys_Initialize(&esys_ctx, tcti, NULL);
-  
+
     if (blob_type == FAPI_ESYSBLOB_CONTEXTLOAD) {
         size_t offset = 0;
         TPMS_CONTEXT context;
-      
+
         if (e_rc != TPM2_RC_SUCCESS) {
             LOG_PERR("Esys_Initialize", e_rc);
             goto error;
@@ -148,7 +148,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
             LOG_ERR("IO error for path \"%s\"", ctx.data);
             goto error;
         }
-                
+
         Esys_TR_Close(esys_ctx, &esys_handle_deser);
         Esys_Finalize(&esys_ctx);
     }
