@@ -390,6 +390,7 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
             goto out;
         case 42:
             flags->canonical = 1;
+            break;
         default:
             /* NULL on_opt handler and unknown option specified is an error */
             if (!tool_opts || !tool_opts->callbacks.on_opt) {

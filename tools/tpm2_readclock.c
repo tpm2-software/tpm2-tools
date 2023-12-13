@@ -10,7 +10,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_yaml *doc, tpm2_option_f
     TPMS_TIME_INFO *current_time = NULL;
     tool_rc rc = tpm2_readclock(ectx, &current_time);
     if (rc == tool_rc_success) {
-        tpm2_util_print_time(current_time);
+        rc = tpm2_yaml_tpms_time_info(current_time, doc);
         Esys_Free(current_time);
     }
 

@@ -487,7 +487,6 @@ bool tpm2_util_get_label(const char *value, TPM2B_DATA *label);
  * @param current_time
  *  The time structure to print
  */
-void tpm2_util_print_time(const TPMS_TIME_INFO *current_time);
 
 /**
  * Given the parent qualified name and the name of an object, computes
