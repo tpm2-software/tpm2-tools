@@ -362,7 +362,7 @@ tool_rc tpm2_yaml_tpms_time_info(const TPMS_TIME_INFO *time_info, tpm2_yaml *y) 
         : tool_rc_general_error;
 }
 
-tool_rc tpm2_yaml_named_tpm2b(const char *name, const TPM2B_NAME *tpm2b, tpm2_yaml *y) {
+tool_rc tpm2_yaml_tpm2b_digest(const char *name, const TPM2B_DIGEST *tpm2b, tpm2_yaml *y) {
     null_ret(y, 1);
     assert(name);
     return tpm2b_to_yaml(y, y->root, name, tpm2b);

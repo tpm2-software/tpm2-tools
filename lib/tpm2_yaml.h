@@ -21,7 +21,7 @@ tool_rc tpm2_yaml_tpmt_public(tpm2_yaml *y, const TPMT_PUBLIC *public);
 
 tool_rc tpm2_yaml_tpmt_signature_hex(tpm2_yaml *y, const TPMT_SIGNATURE *signature);
 
-tool_rc tpm2_yaml_named_tpm2b(const char *name, const TPM2B_NAME *tpb2b, tpm2_yaml *y);
+tool_rc tpm2_yaml_tpm2b_digest(const char *name, const TPM2B_DIGEST *tpb2b, tpm2_yaml *y);
 
 tool_rc tpm2_yaml_attest2b(const TPM2B_ATTEST *attest, tpm2_yaml *y);
 

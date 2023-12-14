@@ -727,18 +727,11 @@ tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_yaml *y, tpm2_session *
         return rc;
     }
 
-    char *h = tpm2_util_bin2hex(policy_digest->buffer, policy_digest->size);
-    if (!h) {
-        LOG_ERR("oom");
-        return tool_rc_general_error;
-    }
-    rc = tpm2_yaml_hex_string(h, y);
+    rc = tpm2_yaml_tpm2b_digest("digest", (TPM2B_NAME *)policy_digest, y);
     if (rc != tool_rc_success) {
-        LOG_ERR("Could not create yaml string");
-        free(h);
+        LOG_ERR("Could not create yaml policy digest.");
         return rc;
     }
-    free(h);
 
     rc = tool_rc_general_error;
 
