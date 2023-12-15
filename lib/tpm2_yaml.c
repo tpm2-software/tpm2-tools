@@ -15,11 +15,21 @@
 #include "tpm2_convert.h"
 #include "tpm2_yaml.h"
 
+#define MAX_YAML_STACK 5
+
+typedef struct tpm2_yaml_stack_object tpm2_yaml_stack_object;
+struct tpm2_yaml_stack_object {
+    int index;
+    tpm2_yaml_stack_object_t type;
+};
+
 struct tpm2_yaml {
     yaml_document_t doc;
     int root;
     int canonical;
     int written;
+    tpm2_yaml_stack_object object_stack[MAX_YAML_STACK];
+    int stack_idx;
 };
 
 #define null_ret(ptr, val) \
@@ -85,6 +95,9 @@ tpm2_yaml *tpm2_yaml_new(int canonical) {
     }
 
     t->root = yaml_document_add_mapping(&t->doc, NULL, YAML_ANY_MAPPING_STYLE);
+    t->stack_idx = 0;
+    t->object_stack[0].index = t->root;
+    t->object_stack[0].type = yaml_mapping;
     if (!t->root) {
         LOG_ERR("Could not add YAML root node");
         free(t);
@@ -848,6 +861,132 @@ tool_rc tpm2_yaml_nv_read(const char *data, size_t data_len, const TPM2B_NV_PUBL
 
     return tpm2_nv_read_to_yaml(y, &nv_public->nvPublic, data, data_len) ?
            tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_sequence(char *name, tpm2_yaml *y) {
+    if (y->stack_idx == MAX_YAML_STACK - 1) {
+        LOG_ERR("Yaml stack overflow");
+        return tool_rc_general_error;
+    }
+
+    int key = yaml_document_add_scalar(&y->doc, YAML_STR_TAG,       \
+                                       (yaml_char_t *)name, -1, YAML_ANY_SCALAR_STYLE);
+    if (!key) {
+        LOG_ERR("Yaml key can't be created");
+        return tool_rc_general_error;
+    }
+    int sequence = yaml_document_add_sequence(&y->doc,
+                                              NULL,
+                                              YAML_ANY_SEQUENCE_STYLE);
+    if (!sequence) {
+        LOG_ERR("Yaml sequence can't be added");
+        return tool_rc_general_error;
+    }
+    y->stack_idx++;
+    y->object_stack[y->stack_idx].index = sequence;
+    y->object_stack[y->stack_idx].type = yaml_sequence;
+
+    yaml_document_append_mapping_pair(&y->doc,
+                                      y->object_stack[y->stack_idx - 1].index, key, sequence);
+    return tool_rc_success;
+}
+
+tool_rc tpm2_yaml_add_mapping(tpm2_yaml *y) {
+    if (y->stack_idx == MAX_YAML_STACK - 1) {
+        LOG_ERR("Yaml stack overflow");
+        return tool_rc_general_error;
+    }
+    y->stack_idx++;
+    int mapping = yaml_document_add_mapping(&y->doc, NULL, YAML_ANY_MAPPING_STYLE);
+
+    y->object_stack[y->stack_idx].index = mapping;
+    y->object_stack[y->stack_idx].type = yaml_mapping;
+
+    yaml_document_append_sequence_item(&y->doc, y->object_stack[y->stack_idx - 1].index, mapping);
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_yaml_close_mapping(tpm2_yaml *y) {
+    assert(y->stack_idx > 0);
+    y->stack_idx--;
+    return tool_rc_success;
+}
+
+tool_rc tpm2_yaml_close_sequence(tpm2_yaml *y) {
+    assert(y->stack_idx > 0);
+    y->stack_idx--;
+    return tool_rc_success;
+}
+
+tool_rc tpm2_yaml_add_kv_tpm2b(const char *key, const TPM2B *tpm2b, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_TPM2B(key, tpm2b);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_kv_str(const char *key, const char *str, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_STR(key, str);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_kv_uint64(const char *key, const uint64_t n, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_INT(key, n);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_kv_uint32(const char *key, const uint32_t n, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_INT(key, n);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_kv_uint16(const char *key, const uint16_t n, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_INT(key, n);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_kv_uint8(const char *key, const uint8_t n, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_INT(key, n);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_kv_uintx64(const char *key, const uint64_t n, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_HEX(key, n);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_kv_uintx32(const char *key, const uint32_t n, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_HEX(key, n);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_kv_uintx16(const char *key, const uint16_t n, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_HEX(key, n);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_yaml_add_kv_uintx8(const char *key, const uint8_t n, tpm2_yaml *y) {
+    assert(y->object_stack[y->stack_idx].type == yaml_mapping);
+    struct key_value kv = KVP_ADD_HEX(key, n);
+    int rc = add_kvp(y, y->object_stack[y->stack_idx].index, &kv);
+    return rc ? tool_rc_success : tool_rc_general_error;
 }
 
 tool_rc tpm2_yaml_dump(tpm2_yaml *y, FILE *f) {

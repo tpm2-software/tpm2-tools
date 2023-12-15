@@ -727,7 +727,7 @@ tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_yaml *y, tpm2_session *
         return rc;
     }
 
-    rc = tpm2_yaml_tpm2b_digest("digest", (TPM2B_NAME *)policy_digest, y);
+    rc = tpm2_yaml_add_kv_tpm2b("digest", (TPM2B *)policy_digest, y);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not create yaml policy digest.");
         return rc;
