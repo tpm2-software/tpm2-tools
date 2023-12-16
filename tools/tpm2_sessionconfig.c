@@ -85,8 +85,17 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context, tpm2_yaml *y) {
     }
 
     rc = tpm2_yaml_add_kv_uintx32("Session-Handle", tpm_handle, y);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Could not create yaml session handle digest.");
+        return rc;
+    }
+
     get_session_attr_str(attrs, session_attr_str, MAX_ATTR_STR_LEN);
     rc = tpm2_yaml_add_kv_str("Session-Attributes" , session_attr_str, y);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Could not create yaml session attributes digest.");
+        return rc;
+    }
 
     if (ctx.is_policy_session) {
         TPM2B_DIGEST *digest = NULL;
