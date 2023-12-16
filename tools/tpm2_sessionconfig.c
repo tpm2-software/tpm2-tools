@@ -10,6 +10,7 @@
 #include "tpm2.h"
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"
+#include "tpm2_yaml.h"
 
 typedef struct tpm_sessionconfig_ctx tpm_sessionconfig_ctx;
 struct tpm_sessionconfig_ctx {
@@ -22,20 +23,40 @@ struct tpm_sessionconfig_ctx {
 
 static tpm_sessionconfig_ctx ctx;
 
-#define PRINT_SESSION_ATTRIBUTE(ATTR, attr) \
-do { \
-    if (attrs & ATTR) { \
-        if (is_attr_set) { \
-            tpm2_tool_output("|"); \
-        } else { \
-            is_attr_set = true; \
-        } \
-        tpm2_tool_output(attr); \
-    } \
-} while(false)
+struct {
+    TPMA_SESSION attr;
+    char *attr_string;
+} session_attr_tab[6] =
+    { { TPMA_SESSION_CONTINUESESSION, "continuesession" },
+      { TPMA_SESSION_AUDITEXCLUSIVE, "auditexclusive" },
+      { TPMA_SESSION_AUDITRESET, "auditreset" },
+      { TPMA_SESSION_DECRYPT, "decrypt" },
+      { TPMA_SESSION_ENCRYPT, "encrypt" },
+      { TPMA_SESSION_AUDIT, "audit" }
+    };
 
-static tool_rc process_output(ESYS_CONTEXT *esys_context) {
+#define MAX_ATTR_STR_LEN 80
 
+void get_session_attr_str(TPMA_SESSION attrs, char *attr_str, size_t attr_str_size) {
+    attr_str[0] = '\0';
+    
+    for (size_t i = 0; i < ARRAY_LEN(session_attr_tab); i++) {
+        if (attrs & session_attr_tab[i].attr) {
+            int size = strlen(attr_str);
+            if (size == 0) {
+                snprintf(attr_str, attr_str_size, "%s",
+                          &session_attr_tab[i].attr_string[0]);
+            } else {
+                snprintf(attr_str + size, attr_str_size - size, "|%s",
+                          &session_attr_tab[i].attr_string[0]);
+            }
+        }
+    }
+}
+
+static tool_rc process_output(ESYS_CONTEXT *esys_context, tpm2_yaml *y) {
+
+    char session_attr_str[MAX_ATTR_STR_LEN];
     ESYS_TR sessionhandle = tpm2_session_get_handle(ctx.session);
     if (!sessionhandle) {
         LOG_ERR("Session handle cannot be null");
@@ -63,17 +84,9 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
         return rc;
     }
 
-    tpm2_tool_output("Session-Handle: 0x%.8"PRIx32"\n", tpm_handle);
-
-    bool is_attr_set = false;
-    tpm2_tool_output("Session-Attributes: ");
-    PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_CONTINUESESSION, "continuesession");
-    PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_AUDITEXCLUSIVE, "auditexclusive");
-    PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_AUDITRESET, "auditreset");
-    PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_DECRYPT, "decrypt");
-    PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_ENCRYPT, "encrypt");
-    PRINT_SESSION_ATTRIBUTE(TPMA_SESSION_AUDIT, "audit");
-    tpm2_tool_output("\n");
+    rc = tpm2_yaml_add_kv_uintx32("Session-Handle", tpm_handle, y);
+    get_session_attr_str(attrs, session_attr_str, MAX_ATTR_STR_LEN);
+    rc = tpm2_yaml_add_kv_str("Session-Attributes" , session_attr_str, y);
 
     if (ctx.is_policy_session) {
         TPM2B_DIGEST *digest = NULL;
@@ -84,9 +97,12 @@ static tool_rc process_output(ESYS_CONTEXT *esys_context) {
             goto session_digest_out;
         }
 
-        tpm2_tool_output("Session-Digest: ");
-        tpm2_util_print_tpm2b(digest);
-        tpm2_tool_output("\n");
+        rc = tpm2_yaml_add_kv_tpm2b("Session-Digest", (TPM2B *)digest, y);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Could not create yaml session digest.");
+            return rc;
+        }
+
 session_digest_out:
         Esys_Free(digest);
     }
@@ -222,7 +238,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context,
         return rc;
     }
 
-    return process_output(esys_context);
+    return process_output(esys_context, doc);
     /*
      * Disabling continuesession should flush the session after use.
      */
