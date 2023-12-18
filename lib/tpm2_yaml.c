@@ -21,6 +21,7 @@ typedef struct tpm2_yaml_stack_object tpm2_yaml_stack_object;
 struct tpm2_yaml_stack_object {
     int index;
     tpm2_yaml_stack_object_t type;
+    char *name;
 };
 
 struct tpm2_yaml {
@@ -902,9 +903,27 @@ tool_rc tpm2_yaml_add_mapping(tpm2_yaml *y) {
     y->object_stack[y->stack_idx].index = mapping;
     y->object_stack[y->stack_idx].type = yaml_mapping;
 
-    yaml_document_append_sequence_item(&y->doc, y->object_stack[y->stack_idx - 1].index, mapping);
+    if (y->object_stack[y->stack_idx - 1].type == yaml_mapping) {
+        assert(y->object_stack[y->stack_idx - 1].name);
+        int key = yaml_document_add_scalar(&y->doc, YAML_STR_TAG,   \
+                                           (yaml_char_t *)
+                                           y->object_stack[y->stack_idx - 1].name,
+                                           -1, YAML_ANY_SCALAR_STYLE);
+
+        yaml_document_append_mapping_pair(&y->doc, y->object_stack[y->stack_idx - 1].index ,
+                                          key, mapping);
+    } else {
+        yaml_document_append_sequence_item(&y->doc, y->object_stack[y->stack_idx - 1].index,
+                                           mapping);
+    }
 
     return tool_rc_success;
+}
+
+tool_rc tpm2_yaml_add_mapping_name(tpm2_yaml *y, char *name) {
+    assert(y->stack_idx != MAX_YAML_STACK -1);
+    y->object_stack[y->stack_idx + 1].name = name;
+    return tpm2_yaml_add_mapping(y);
 }
 
 tool_rc tpm2_yaml_close_mapping(tpm2_yaml *y) {

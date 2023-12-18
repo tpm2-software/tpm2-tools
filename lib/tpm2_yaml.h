@@ -46,6 +46,8 @@ tool_rc tpm2_yaml_add_sequence(char *name, tpm2_yaml *y);
 
 tool_rc tpm2_yaml_add_mapping(tpm2_yaml *y);
 
+tool_rc tpm2_yaml_add_mapping_name(tpm2_yaml *y, char *name);
+
 tool_rc tpm2_yaml_close_mapping(tpm2_yaml *y);
 
 tool_rc tpm2_yaml_close_sequence(tpm2_yaml *y);
