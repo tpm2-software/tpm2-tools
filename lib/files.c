@@ -45,7 +45,7 @@ static const UINT32 MAGIC = 0xBADCC0DE;
  * @return
  *  True on success, False otherwise.
  */
-static bool writex(FILE *f, UINT8 *data, size_t size) {
+static bool writex(FILE *f, const UINT8 *data, size_t size) {
 
     size_t wrote = 0;
     size_t index = 0;
@@ -574,7 +574,7 @@ bool files_read_bytes_chunk(FILE *out, UINT8 bytes[], size_t len, size_t *read_l
     return (chunk_len == len);
 }
 
-bool files_write_bytes(FILE *out, uint8_t bytes[], size_t len) {
+bool files_write_bytes(FILE *out, const uint8_t *bytes, size_t len) {
 
     BAIL_ON_NULL("FILE", out);
     BAIL_ON_NULL("bytes", bytes);

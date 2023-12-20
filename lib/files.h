@@ -534,7 +534,7 @@ bool files_write_64(FILE *out, UINT64 data);
  * @return
  *  True on success, False otherwise.
  */
-bool files_write_bytes(FILE *out, UINT8 data[], size_t size);
+bool files_write_bytes(FILE *out, const UINT8 *data, size_t size);
 
 /**
  * Reads a 16 bit value from a file converting from big endian to host
