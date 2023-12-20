@@ -361,14 +361,8 @@ tool_rc tpm2_session_close(tpm2_session **s) {
     }
 
     if ((*s)->internal.delete && path) {
-        if (remove(path)) {
-            LOG_ERR("File \"%s\" can't be deleted.", path);
-            rc = tool_rc_general_error;
-            goto out2;
-        } else {
-            rc = tool_rc_success;
-            goto out2;
-        }
+        rc = tool_rc_success;
+        goto out2;
     }
 
     FILE *session_file = path ? fopen(path, "w+b") : NULL;

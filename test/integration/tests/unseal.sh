@@ -156,9 +156,4 @@ tpm2 sessionconfig enc_session.ctx --enable-encrypt --disable-continuesession
 unsealed=`tpm2 unseal -c seal_key.ctx -p sealkeypass -S enc_session.ctx`
 test "$unsealed" == "$secret"
 
-if [ -e enc_session.ctx ]; then
-    echo "enc_session.ctx was not deleted.";
-    exit 1
-fi
-
 exit 0
