@@ -37,7 +37,7 @@ events:
     ImageLengthInMemory: 171464
     ImageLinkTimeAddress: 0x0
     LengthOfDevicePath: 52
-    DevicePath1: 'PciRoot(0x0)/Pci(0x2,0x0)/Pci(0x0,0x0)/Offset(0x12600,0x3c3ff)'
+    DevicePath: 'PciRoot(0x0)/Pci(0x2,0x0)/Pci(0x0,0x0)/Offset(0x12600,0x3c3ff)'
 pcrs:
   sha1:
     2  : 0x5b5f4d5c31664f01670a98a5796a36473671befc
