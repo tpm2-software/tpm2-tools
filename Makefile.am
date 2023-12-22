@@ -651,11 +651,11 @@ dist-hook:
 
 prepare-check:
 if HAVE_EFIVAR_H
-	cp  $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml.pretty \
-	    $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml
+	cp  $(abs_top_srcdir)/test/integration/fixtures/event-pretty/event-*.yaml \
+	    $(abs_top_srcdir)/test/integration/fixtures/
 else
-	cp  $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml.raw \
-	    $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml
+	cp  $(abs_top_srcdir)/test/integration/fixtures/event-raw/event-*.yaml \
+	    $(abs_top_srcdir)/test/integration/fixtures/
 endif
 
 check: prepare-check
