@@ -426,6 +426,25 @@ bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
     return pcr_print_values(pcr_select, pcrs);
 }
 
+void pcr_print_taggedpcr_selections(TPML_TAGGED_PCR_PROPERTY *pcrProperties) {
+
+    tpm2_tool_output("  - PCR-Handles: [");
+    /* Iterate through the PCRs of the bank */
+    bool first = true;
+    unsigned j;
+    for (j = 0; j < pcrProperties->pcrProperty->sizeofSelect * 8; j++) {
+        if ((pcrProperties->pcrProperty->pcrSelect[j / 8] & 1 << (j % 8)) != 0) {
+            if (first) {
+                tpm2_tool_output(" %i", j);
+                first = false;
+            } else {
+                tpm2_tool_output(", %i", j);
+            }
+        }
+    }
+    tpm2_tool_output(" ]\n");
+}
+
 bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections) {
     tpm2_tool_output("selected-pcrs:\n");
 
