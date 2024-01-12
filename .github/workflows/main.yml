@@ -36,7 +36,7 @@ jobs:
           tpm2-software/ci/runCI@main
         with:
           PROJECT_NAME: ${{ github.event.repository.name }}
-          DOCKER_IMAGE: ubuntu-18.04
+          DOCKER_IMAGE: ubuntu-20.04
           CC: ${{ matrix.compiler }}
           TPM2_TSS_VERSION: master
           GIT_FULL_CLONE: true
