@@ -5842,6 +5842,28 @@ tool_rc tpm2_zgen2phase(ESYS_CONTEXT *esys_context,
         return tool_rc_success;
 }
 
+tool_rc tpm2_pcr_setauthvalue(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *pcrindex_auth_obj, const TPM2B_AUTH *pcrindex_newauth) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+        pcrindex_auth_obj->tr_handle, pcrindex_auth_obj->session, &shandle1);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_PCR_SetAuthValue(esys_context,
+        pcrindex_auth_obj->tr_handle, shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+        pcrindex_newauth);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_PCR_SetAuthValue, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return rc;
+}
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context) {
 
