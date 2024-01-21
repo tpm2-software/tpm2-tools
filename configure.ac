@@ -91,9 +91,9 @@ AC_ARG_WITH([efivar],
 )
 
 # use the true program to avoid failing hard
-AS_IF([test "x$with_efivar" == "xauto"],
+AS_IF([test "x$with_efivar" = "xauto"],
   [PKG_CHECK_MODULES([EFIVAR], [efivar], [AC_CHECK_HEADERS([efivar/efivar.h], , [true])], [true])],
-  [test "x$with_efivar" == "xyes"],
+  [test "x$with_efivar" = "xyes"],
   [PKG_CHECK_MODULES([EFIVAR], [efivar], [AC_CHECK_HEADERS([efivar/efivar.h])])],
 )
 
