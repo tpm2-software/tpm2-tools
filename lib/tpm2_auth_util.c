@@ -81,6 +81,7 @@ static tool_rc get_auth_for_file_param(const char* password, TPM2B_AUTH *auth) {
             free(buffer);
             return tool_rc_general_error;
         }
+        buffer[fsize] = '\0';
         size = fsize;
 
     } else {
