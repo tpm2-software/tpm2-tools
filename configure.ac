@@ -74,12 +74,15 @@ PKG_CHECK_MODULES([TSS2_MU], [tss2-mu])
 PKG_CHECK_MODULES([TSS2_RC], [tss2-rc])
 PKG_CHECK_MODULES([TSS2_SYS], [tss2-sys])
 PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.1.0])
+LIBS_save="${LIBS}"
+LIBS="${CRYPTO_LIBS} ${LIBS}"
 AC_CHECK_LIB(crypto, [EVP_sm3], [
         AC_DEFINE([HAVE_EVP_SM3], [1], [Support EVP_sm3 in openssl])],
         [])
 AC_CHECK_LIB(crypto, [EVP_sm4_cfb128], [
         AC_DEFINE([HAVE_EVP_SM4_CFB], [1], [Support EVP_sm4_cfb in openssl])],
         [])
+LIBS="${LIBS_save}"
 PKG_CHECK_MODULES([CURL], [libcurl])
 
 # pretty print of devicepath if efivar library is present
@@ -91,11 +94,14 @@ AC_ARG_WITH([efivar],
 )
 
 # use the true program to avoid failing hard
-AS_IF([test "x$with_efivar" == "xauto"],
+AS_IF([test "x$with_efivar" = "xauto"],
   [PKG_CHECK_MODULES([EFIVAR], [efivar], [AC_CHECK_HEADERS([efivar/efivar.h], , [true])], [true])],
-  [test "x$with_efivar" == "xyes"],
+  [test "x$with_efivar" = "xyes"],
   [PKG_CHECK_MODULES([EFIVAR], [efivar], [AC_CHECK_HEADERS([efivar/efivar.h])])],
 )
+
+AC_CHECK_HEADERS([efivar/efivar.h],[efivar_h=yes ], [efivar = no ])
+AM_CONDITIONAL([HAVE_EFIVAR_H], [test "$efivar_h" = yes])
 
 # backwards compat with older pkg-config
 # - pull in AC_DEFUN from pkg.m4

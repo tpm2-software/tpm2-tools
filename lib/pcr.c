@@ -54,7 +54,7 @@ static bool pcr_parse_list(const char *str, size_t len,
         pcr_select->pcrSelect[2] = 0xff;
         return true;
     }
-    
+
     if (!strncmp(str, "none", 4)) {
         pcr_select->pcrSelect[0] = 0x00;
         pcr_select->pcrSelect[1] = 0x00;

@@ -209,7 +209,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
         rc = tpm2_util_bin_from_hex_or_file(ctx.policy_qualifier_data,
             &ctx.policy_qualifier.size, ctx.policy_qualifier.buffer) ?
             tool_rc_success : tool_rc_general_error;
-        
+
         if (rc != tool_rc_success) {
             LOG_ERR("Could not load qualifier data");
             return rc;

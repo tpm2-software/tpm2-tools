@@ -35,6 +35,7 @@ struct tpm2_session {
         char *path;
         ESYS_CONTEXT *ectx;
         bool is_final;
+        bool delete;
     } internal;
 };
 
@@ -294,17 +295,22 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
     dup_path = NULL;
 
     TPMA_SESSION attrs = 0;
+    s->internal.delete = false;
+    s->internal.is_final = is_final;
+    *session = s;
 
     if (ctx) {
-
         /* hack this in here, should be done when starting the session */
         tmp_rc = tpm2_sess_get_attributes(ctx, handle, &attrs);
-        UNUSED(tmp_rc);
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
+            LOG_ERR("Can't get session attributes.");
+            goto out;
+        }
+        if ((attrs & TPMA_SESSION_CONTINUESESSION) == 0) {
+            s->internal.delete = true;
+        }
     }
-
-    s->internal.is_final = is_final;
-
-    *session = s;
 
     LOG_INFO("Restored session: ESYS_TR(0x%x) attrs(0x%x)", handle, attrs);
 
@@ -345,6 +351,20 @@ tool_rc tpm2_session_close(tpm2_session **s) {
     }
 
     const char *path = session->internal.path;
+
+    bool flush = path ? session->internal.is_final : true;
+    if (flush) {
+        rc = tpm2_flush_context(session->internal.ectx,
+                session->output.session_handle, NULL, TPM2_ALG_NULL);
+        /* done, use rc to indicate status */
+        goto out2;
+    }
+
+    if ((*s)->internal.delete && path) {
+        rc = tool_rc_success;
+        goto out2;
+    }
+
     FILE *session_file = path ? fopen(path, "w+b") : NULL;
     if (path && !session_file) {
         LOG_ERR("Could not open path \"%s\", due to error: \"%s\"", path,
@@ -353,13 +373,6 @@ tool_rc tpm2_session_close(tpm2_session **s) {
         goto out;
     }
 
-    bool flush = path ? session->internal.is_final : true;
-    if (flush) {
-        rc = tpm2_flush_context(session->internal.ectx,
-                session->output.session_handle, NULL, TPM2_ALG_NULL);
-        /* done, use rc to indicate status */
-        goto out;
-    }
 
     /*
      * Now write the session_type, handle and auth hash data to disk
@@ -398,7 +411,7 @@ tool_rc tpm2_session_close(tpm2_session **s) {
     ESYS_TR handle = tpm2_session_get_handle(session);
     LOG_INFO("Saved session: ESYS_TR(0x%x)", handle);
     rc = files_save_tpm_context_to_file(session->internal.ectx, handle,
-    session_file);
+         session_file, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not write session context");
         /* done, free session resources and use rc to indicate status */

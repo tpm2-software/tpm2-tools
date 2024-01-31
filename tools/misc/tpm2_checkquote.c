@@ -54,10 +54,24 @@ static tpm2_verifysig_ctx ctx = {
         .pcr_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
 };
 
+/**
+ * Size of the table with the possible padding schemes
+ */
+#define N_PADDING 3
+
+/**
+ * Table with possible padding schemes to guess the one appropriate for
+ * for RSA signature verification
+ */
+static const int rsaPadding[N_PADDING] = { -1 , /*<< no padding */
+                                           RSA_PKCS1_PADDING, RSA_PKCS1_PSS_PADDING };
+
+
 static bool verify(void) {
 
     bool result = false;
     EVP_PKEY_CTX *pkey_ctx = NULL;
+    int rc;
 
     /* read the public key */
     EVP_PKEY *pkey = NULL;
@@ -78,39 +92,60 @@ static bool verify(void) {
 #endif
 #endif
 
-    pkey_ctx = EVP_PKEY_CTX_new(pkey, NULL);
-    if (!pkey_ctx) {
-        LOG_ERR("EVP_PKEY_CTX_new failed: %s", ERR_error_string(ERR_get_error(), NULL));
-        goto err;
-    }
-
-    /* get the digest alg */
-    /* TODO SPlit loading on plain vs tss format to detect the hash alg */
-    /* If its a plain sig we need -g */
-    const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(ctx.halg);
-    // TODO error handling
-
-    int rc = EVP_PKEY_verify_init(pkey_ctx);
-    if (!rc) {
-        LOG_ERR("EVP_PKEY_verify_init failed: %s", ERR_error_string(ERR_get_error(), NULL));
-        goto err;
-    }
-
-    rc = EVP_PKEY_CTX_set_signature_md(pkey_ctx, md);
-    if (!rc) {
-        LOG_ERR("EVP_PKEY_CTX_set_signature_md failed: %s", ERR_error_string(ERR_get_error(), NULL));
-        goto err;
-    }
-
     /* TODO dump actual signature */
     tpm2_tool_output("sig: ");
     tpm2_util_hexdump(ctx.signature.buffer, ctx.signature.size);
     tpm2_tool_output("\n");
 
-    // Verify the signature matches message digest
+    /* Try all possible padding schemes for verification */
+    for (int i = 0; i < N_PADDING; i++) {
+        pkey_ctx = EVP_PKEY_CTX_new(pkey, NULL);
+        if (!pkey_ctx) {
+            LOG_ERR("EVP_PKEY_CTX_new failed: %s", ERR_error_string(ERR_get_error(), NULL));
+            goto err;
+        }
 
-    rc = EVP_PKEY_verify(pkey_ctx, ctx.signature.buffer, ctx.signature.size,
-            ctx.msg_hash.buffer, ctx.msg_hash.size);
+        /* get the digest alg */
+        /* TODO SPlit loading on plain vs tss format to detect the hash alg */
+        /* If its a plain sig we need -g */
+        const EVP_MD *md = tpm2_openssl_md_from_tpmhalg(ctx.halg);
+        if (!md) {
+            LOG_ERR("Algorithm not supported: %x", ctx.halg);
+            goto err;
+        }
+
+        rc = EVP_PKEY_verify_init(pkey_ctx);
+        if (!rc) {
+            LOG_ERR("EVP_PKEY_verify_init failed: %s", ERR_error_string(ERR_get_error(), NULL));
+            goto err;
+        }
+
+        rc = EVP_PKEY_CTX_set_signature_md(pkey_ctx, md);
+        if (!rc) {
+            LOG_ERR("EVP_PKEY_CTX_set_signature_md failed: %s", ERR_error_string(ERR_get_error(), NULL));
+            goto err;
+        }
+
+        if (rsaPadding[i] != -1) {
+            rc = EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, rsaPadding[i]);
+            if (rc < 0) {
+                 LOG_ERR("EVP_PKEY_CTX_set_rsa_padding");
+                 goto err;
+            }
+        }
+
+        // Verify the signature matches message digest
+
+        rc = EVP_PKEY_verify(pkey_ctx, ctx.signature.buffer, ctx.signature.size,
+                             ctx.msg_hash.buffer, ctx.msg_hash.size);
+
+        if (rc == 1) {
+            break;
+        } else {
+            EVP_PKEY_CTX_free(pkey_ctx);
+            pkey_ctx = NULL;
+        }
+    }
     if (rc != 1) {
         if (rc == 0) {
             LOG_ERR("Error validating signed message with public key provided");

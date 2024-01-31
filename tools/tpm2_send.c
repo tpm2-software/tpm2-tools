@@ -44,7 +44,7 @@ static int read_command_from_file(FILE *f, tpm2_command_header **c,
         return 0;
     }
 
-    tpm2_command_header *header = tpm2_command_header_from_bytes(buffer);
+    const tpm2_command_header *header = tpm2_command_header_from_bytes(buffer);
 
     UINT32 command_size = tpm2_command_header_get_size(header, true);
     UINT32 data_size = tpm2_command_header_get_size(header, false);
@@ -70,8 +70,8 @@ static int read_command_from_file(FILE *f, tpm2_command_header **c,
     LOG_INFO("command code: 0x%08x", tpm2_command_header_get_code(command));
 
     ret = fread(command->data, data_size, 1, f);
-    if (ret != 1 && ferror(f)) {
-        LOG_ERR("Failed to read command body: %s", strerror (errno));
+    if (ret != 1) {
+        LOG_ERR("Failed to read command body: %s", feof(f) ? "EOF" : strerror (errno));
         free(command);
         return -1;
     }
@@ -84,7 +84,7 @@ static int read_command_from_file(FILE *f, tpm2_command_header **c,
 
 static bool write_response_to_file(FILE *f, UINT8 *rbuf) {
 
-    tpm2_response_header *r = tpm2_response_header_from_bytes(rbuf);
+    const tpm2_response_header *r = tpm2_response_header_from_bytes(rbuf);
 
     UINT32 size = tpm2_response_header_get_size(r, true);
 

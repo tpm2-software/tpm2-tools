@@ -218,6 +218,16 @@ PEM files.
 ```bash
 tpm2_create -C primary.ctx -u obj.pub -r obj.priv -f pem -o obj.pem
 ```
+## Create a restricted RSA signing key
+
+For a restricted signing key the scheme and null for the symmetric algorithm must be
+specified.
+
+```bash
+tpm2_create -C primary.ctx -Grsa2048:rsapss:null  \
+    -a "fixedtpm|fixedparen|sensitivedataorigin|userwithauth|restricted|sign" \
+    -r obj.priv -u obj.pub
+```
 
 [returns](common/returns.md)
 

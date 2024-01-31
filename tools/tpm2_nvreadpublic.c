@@ -23,7 +23,7 @@ struct tpm2_nvreadpublic_ctx {
      * Outputs
      */
     TPM2B_NV_PUBLIC **nv_public_list;
-  
+
     /*
      * Parameter hashes
      */
@@ -216,7 +216,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
             return rc;
         }
     }
-    
+
     if (ctx.nv_index != 0 || !ctx.is_command_dispatch) {
         /*
          * This path is taken for calculating cpHash as NV index cannot be 0
@@ -291,7 +291,7 @@ static tool_rc check_options(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * none we fall back to the old behavior of reading from a define NV index
      * 
      * Also, tcti is setup to a fake_tcti when tcti is specified "none" as the
-     * tool option affords TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI.
+     * tool option affords TPM2_OPTIONS_FAKE_TCTI.
      * 
      * If NVindex name is not specified and tcti is not none, it is expected
      * that the NV index is actually define. This behavior complies with the
@@ -381,7 +381,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("S:n:", ARRAY_LEN(topts), topts, on_option, on_arg,
-        TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
+        TPM2_OPTIONS_FAKE_TCTI);
 
     return *opts != 0;
 }

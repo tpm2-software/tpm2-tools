@@ -313,12 +313,28 @@ tpm2_nvread_skip_esapi_call:
 }
 
 tool_rc tpm2_context_save(ESYS_CONTEXT *esys_context, ESYS_TR save_handle,
-        TPMS_CONTEXT **context) {
+        bool autoflush, TPMS_CONTEXT **context) {
 
     TSS2_RC rval = Esys_ContextSave(esys_context, save_handle, context);
+    TPM2_HANDLE tpm_handle;
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_ContextSave, rval);
         return tool_rc_from_tpm(rval);
+    }
+
+    if (autoflush || tpm2_util_env_yes(TPM2TOOLS_ENV_AUTOFLUSH)) {
+        rval = Esys_TR_GetTpmHandle(esys_context, save_handle, &tpm_handle);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Esys_TR_GetTpmHandle, rval);
+            return tool_rc_from_tpm(rval);
+        }
+        if ((tpm_handle & TPM2_HR_RANGE_MASK) == TPM2_HR_TRANSIENT) {
+            TSS2_RC rval = Esys_FlushContext(esys_context, save_handle);
+            if (rval != TPM2_RC_SUCCESS) {
+                LOG_PERR(Eys_ContextFlush, rval);
+                return false;
+            }
+        }
     }
 
     return tool_rc_success;
@@ -500,7 +516,7 @@ tool_rc tpm2_policy_restart(ESYS_CONTEXT *esys_context, ESYS_TR session_handle,
             LOG_ERR("Failed to acquire SAPI handle");
             return tool_rc_general_error;
         }
-              
+
         TPM2B_NAME name1 = { 0 };
         name1.size = sizeof(TPM2_HANDLE);
         rval = Tss2_MU_TPM2_HANDLE_Marshal(sapi_policy_session, name1.name,
@@ -641,7 +657,7 @@ tool_rc tpm2_pcr_read(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
 
         goto tpm2_pcrread_skip_esapi_call;
     }
-    
+
     rval = Esys_PCR_Read(esys_context, shandle1, shandle2, shandle3,
             pcr_selection_in, pcr_update_counter, pcr_selection_out, pcr_values);
     if (rval != TSS2_RC_SUCCESS) {
@@ -5609,7 +5625,7 @@ tool_rc tpm2_ecephemeral(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
             LOG_PERR(Tss2_Sys_EC_Ephemeral_Prepare, rval);
             return tool_rc_general_error;
         }
-       
+
         rc = tpm2_sapi_getcphash(sys_context, NULL, NULL, NULL,
             parameter_hash_algorithm, cp_hash);
         /*
@@ -5617,8 +5633,8 @@ tool_rc tpm2_ecephemeral(ESYS_CONTEXT *esys_context, TPMI_ECC_CURVE curve_id,
          */
         goto tpm2_ecephemeral_skip_esapi_call;
     }
-    
-    
+
+
     rval = Esys_EC_Ephemeral(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
         ESYS_TR_NONE, curve_id, Q, counter);
     if (rval != TSS2_RC_SUCCESS) {

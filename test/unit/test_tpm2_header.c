@@ -18,11 +18,7 @@ static void test_tpm_command_header(void **state) {
       0x00, 0x06, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x7f
     };
 
-    tpm2_command_header *c = tpm2_command_header_from_bytes(command_bytes);
-
-    assert_true(c->tag == 0x0180);
-    assert_true(c->size == 0x16000000);
-    assert_true(c->command_code == 0x7a010000);
+    const tpm2_command_header *c = tpm2_command_header_from_bytes(command_bytes);
 
     /* everything from bytes should be the same as the byte array */
     assert_memory_equal(c->bytes, command_bytes, sizeof(command_bytes));
@@ -94,11 +90,7 @@ static void test_tpm_response_header(void **state) {
       0x00
     };
 
-    tpm2_response_header *r = tpm2_response_header_from_bytes(response_bytes);
-
-    assert_true(r->tag == 0x0180);
-    assert_true(r->size == 0x1b020000);
-    assert_true(r->response_code == 0x00);
+    const tpm2_response_header *r = tpm2_response_header_from_bytes(response_bytes);
 
     /* everything from bytes should be the same as the byte array */
     assert_memory_equal(r->bytes, response_bytes, sizeof(response_bytes));

@@ -24,10 +24,11 @@ static void test_tpm2_create_dummy_context(TPMS_CONTEXT *context) {
     memset(context->contextBlob.buffer, '\0', context->contextBlob.size);
 }
 
-tool_rc __wrap_tpm2_context_save(ESYS_CONTEXT *esysContext, ESYS_TR saveHandle,
+tool_rc __wrap_tpm2_context_save(ESYS_CONTEXT *esysContext, ESYS_TR saveHandle, bool autoflush,
         TPMS_CONTEXT **context) {
 
     UNUSED(esysContext);
+    UNUSED(autoflush);
 
     // context should be non-null or bool files_save_tpm_context_to_file()
     // segfaults

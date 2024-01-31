@@ -257,7 +257,7 @@ tool_rc tpm2_util_object_fetch_priv_pub_from_tpk(const char *objectstr,
         LOG_ERR("Error deserializing TSS Privkey Object");
         goto ret;
     }
-            
+
     rc = Tss2_MU_TPM2B_PUBLIC_Unmarshal(tpk->pubkey->data, pub_len,
         NULL, pub);
     if (rc != tool_rc_success) {

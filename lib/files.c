@@ -45,7 +45,7 @@ static const UINT32 MAGIC = 0xBADCC0DE;
  * @return
  *  True on success, False otherwise.
  */
-static bool writex(FILE *f, UINT8 *data, size_t size) {
+static bool writex(FILE *f, const UINT8 *data, size_t size) {
 
     size_t wrote = 0;
     size_t index = 0;
@@ -273,11 +273,11 @@ out:
 }
 
 tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *ectx, ESYS_TR handle,
-        FILE *stream) {
+        FILE *stream, bool autoflush) {
 
     TPMS_CONTEXT *context = NULL;
 
-    tool_rc rc = tpm2_context_save(ectx, handle, &context);
+    tool_rc rc = tpm2_context_save(ectx, handle, autoflush, &context);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -288,7 +288,7 @@ tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *ectx, ESYS_TR handle,
 }
 
 tool_rc files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
-        const char *path) {
+        const char *path, bool autoflush) {
 
     FILE *f = fopen(path, "w+b");
     if (!f) {
@@ -297,7 +297,7 @@ tool_rc files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
         return tool_rc_general_error;
     }
 
-    tool_rc rc = files_save_tpm_context_to_file(context, handle, f);
+    tool_rc rc = files_save_tpm_context_to_file(context, handle, f, autoflush);
     fclose(f);
     return rc;
 }
@@ -574,7 +574,7 @@ bool files_read_bytes_chunk(FILE *out, UINT8 bytes[], size_t len, size_t *read_l
     return (chunk_len == len);
 }
 
-bool files_write_bytes(FILE *out, uint8_t bytes[], size_t len) {
+bool files_write_bytes(FILE *out, const uint8_t *bytes, size_t len) {
 
     BAIL_ON_NULL("FILE", out);
     BAIL_ON_NULL("bytes", bytes);

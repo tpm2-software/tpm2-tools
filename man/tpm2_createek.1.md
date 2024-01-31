@@ -93,25 +93,30 @@ tpm2_createek -G ecc384 -c 0x81010002
 ```
 
 ### Create a transient Endorsement Key, flush it, and reload it.
+Typically, when using the TPM, the interactions occur through a resource
+manager, like tpm2-abrmd(8).  However, when interacting with the TPM directly,
+this scenario is possible. The below example assumes direct TPM access not
+brokered by a resource manager. Specifically we will use /dev/tpm0.
+
 ```bash
-tpm2_createek -c ek.ctx -G rsa -u ek.pub
+tpm2_createek -c ek.ctx -G rsa -u ek.pub -Tdevice:/dev/tpm0 
 
 # Check that it is loaded in transient memory
-tpm2_getcap handles-transient
+tpm2_getcap handles-transient -Tdevice:/dev/tpm0 
 - 0x80000000
 
 # Flush the handle
-tpm2_flushcontext 0x80000000
+tpm2_flushcontext 0x80000000 -Tdevice:/dev/tpm0
 
 # Note that it is flushed
-tpm2_getcap handles-transient
+tpm2_getcap handles-transient -Tdevice:/dev/tpm0
 <null output>
 
 # Reload it via loadexternal
-tpm2_loadexternal -C o -u ek.pub -c ek.ctx
+tpm2_loadexternal -C o -u ek.pub -c ek.ctx -Tdevice:/dev/tpm0
 
 # Check that it is re-loaded in transient memory
-tpm2_getcap handles-transient
+tpm2_getcap handles-transient -Tdevice:/dev/tpm0
 - 0x80000000
 
 ```

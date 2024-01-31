@@ -88,6 +88,16 @@ tpm2 checkquote -u ecc.ak.tpmt -m quote.bin -s quote.sig -f quote.pcr -g sha256 
 tpm2 pcrread sha256:15,16,22 -o pcr.bin
 
 tpm2 checkquote -u ecc.ak.tpmt -m quote.bin -s quote.sig -g sha256 -q nonce.bin \
--f pcr.bin -l sha256:15,16,22
+     -f pcr.bin -l sha256:15,16,22
+
+# Verify quote with
+
+tpm2 createprimary -Q -C e -G rsa2048:rsapss-sha256:null -c ek.ctx -o ek.pub -a 'fixedtpm|fixedparent|sensitivedataorigin|userwithauth|sign|restricted'
+
+# Provide scheme explicitly
+tpm2 quote -Q -c ek.ctx -g sha256 -l sha1:0,1,2,3 -o quote.pcrs -m quote.msg -s quote.sig --scheme=rsapss 
+
+# Signature verification
+tpm2 checkquote -u ek.pub -m quote.msg -s quote.sig -f quote.pcrs
 
 exit 0

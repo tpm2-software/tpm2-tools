@@ -100,6 +100,7 @@ struct createek_context {
     tpm2_hierarchy_pdata objdata;
     char *out_file_path;
     tpm2_convert_pubkey_fmt format;
+    bool autoflush;
     struct {
         UINT8 f :1;
         UINT8 t :1;
@@ -118,7 +119,8 @@ static createek_context ctx = {
         },
     },
     .flags = { 0 },
-    .find_persistent_handle = false
+    .find_persistent_handle = false,
+    .autoflush = false
 };
 
 typedef struct alg_map alg_map;
@@ -334,7 +336,7 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
     } else {
         /* If it wasn't persistent, save a context for future tool interactions */
         tool_rc rc = files_save_tpm_context_to_path(ectx,
-                ctx.objdata.out.handle, ctx.auth_ek.ctx_path);
+                     ctx.objdata.out.handle, ctx.auth_ek.ctx_path, ctx.autoflush);
         if (rc != tool_rc_success) {
             LOG_ERR("Error saving tpm context for handle");
             return rc;
@@ -392,6 +394,10 @@ static bool on_option(char key, char *value) {
     case 't':
         ctx.flags.t = true;
         break;
+    case 'R':
+        ctx.autoflush = true;
+        break;
+
     }
 
     return true;
@@ -407,9 +413,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "format",               required_argument, NULL, 'f' },
         { "ek-context",           required_argument, NULL, 'c' },
         { "template",             no_argument,       NULL, 't' },
+        { "autoflush",            no_argument,       NULL, 'R' },
     };
 
-    *opts = tpm2_options_new("P:w:G:u:f:c:t", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:w:G:u:f:c:tR", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

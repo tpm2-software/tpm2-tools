@@ -25,6 +25,7 @@ struct tpm_nvread_ctx {
     UINT32 size_to_read;
     UINT32 offset;
     bool is_yaml;
+    bool nv_specified;
 
     /*
      * Outputs
@@ -207,6 +208,11 @@ static tool_rc check_options(tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
+    if(!ctx.nv_specified) {
+        LOG_ERR("Must specify NV index argument");
+        return tool_rc_option_error;
+    }
+
     /*
      * Peculiar to this and some other tools, the object (nvindex) name must
      * be specified when only calculating the cpHash.
@@ -221,7 +227,7 @@ static tool_rc check_options(tpm2_option_flags flags) {
      * none we fall back to the old behavior of reading from a define NV index
      * 
      * Also, tcti is setup to a fake_tcti when tcti is specified "none" as the
-     * tool option affords TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI.
+     * tool option affords TPM2_OPTIONS_FAKE_TCTI.
      * 
      * If NVindex name is not specified and tcti is not none, it is expected
      * that the NV index is actually define. This behavior complies with the
@@ -281,7 +287,8 @@ static bool on_arg(int argc, char **argv) {
     if (!ctx.auth_hierarchy.ctx_path) {
         ctx.auth_hierarchy.ctx_path = argv[0];
     }
-    return on_arg_nv_index(argc, argv, &ctx.nv_index);
+
+    return ctx.nv_specified = on_arg_nv_index(argc, argv, &ctx.nv_index);
 }
 
 static bool on_option(char key, char *value) {
@@ -361,7 +368,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("C:s:o:P:n:S:", ARRAY_LEN(topts), topts, on_option,
-            on_arg, TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI);
+            on_arg, TPM2_OPTIONS_FAKE_TCTI);
 
     if (ctx.is_yaml) {
         ctx.offset = 0;

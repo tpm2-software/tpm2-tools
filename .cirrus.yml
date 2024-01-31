@@ -13,7 +13,7 @@ task:
     - pkg update -f
     - pkg upgrade -y
     - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive e2fsprogs-libuuid py39-yaml expect
-    - pkg install -y automake glib dbus dbus-glib cmocka wget git openssl json-c vim
+    - pkg install -y automake glib dbus dbus-glib cmocka wget git openssl json-c vim hs-pandoc
     - wget --quiet --show-progress --progress=dot:giga "https://downloads.sourceforge.net/project/ibmswtpm2/$ibmtpm_name.tar.gz"
     - shasum -a256 $ibmtpm_name.tar.gz | grep ^dd3a4c3f7724243bc9ebcd5c39bbf87b82c696d1c1241cb8e5883534f6e2e327
     - mkdir -p $ibmtpm_name
@@ -26,7 +26,7 @@ task:
     - rm -rf $ibmtpm_name $ibmtpm_name.tar.gz
     - mkdir tss
     - cd tss && git clone https://github.com/tpm2-software/tpm2-tss.git
-    - cd tpm2-tss && ./bootstrap && ./configure --disable-doxygen-doc --disable-tcti-swtpm --disable-dependency-tracking && gmake -j install
+    - cd tpm2-tss && ./bootstrap && ./configure --disable-doxygen-doc --disable-tcti-swtpm --disable-tcti-libtpms --disable-dependency-tracking && gmake -j install
     - cd ../../ && rm -rf tss
     - mkdir rm
     - cd rm && git clone https://github.com/tpm2-software/tpm2-abrmd.git && cd tpm2-abrmd

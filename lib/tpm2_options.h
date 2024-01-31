@@ -8,10 +8,10 @@
 #include <stdio.h>
 
 #include <getopt.h>
-
 #include <tss2/tss2_sys.h>
 
 #define TPM2TOOLS_ENV_TCTI      "TPM2TOOLS_TCTI"
+#define TPM2TOOLS_ENV_AUTOFLUSH "TPM2TOOLS_AUTOFLUSH"
 
 #define TPM2TOOLS_ENV_ENABLE_ERRATA  "TPM2TOOLS_ENABLE_ERRATA"
 
@@ -65,9 +65,9 @@ typedef bool (*tpm2_arg_handler)(int argc, char **argv);
  * TPM2_OPTIONS_NO_SAPI:
  *  Skip SAPI initialization. Removes the "-T" common option.
  */
-#define TPM2_OPTIONS_NO_SAPI 0x1
-#define TPM2_OPTIONS_OPTIONAL_SAPI 0x2
-#define TPM2_OPTIONS_OPTIONAL_SAPI_AND_FAKE_TCTI 0x4
+#define TPM2_OPTIONS_NO_SAPI       (1 << 0)
+#define TPM2_OPTIONS_OPTIONAL_SAPI (1 << 1)
+#define TPM2_OPTIONS_FAKE_TCTI     (1 << 3)
 
 struct tpm2_options {
     struct {

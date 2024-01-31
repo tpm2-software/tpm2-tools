@@ -21,6 +21,8 @@ struct changeauth_ctx {
         tpm2_loaded_object obj;
     } parent;
 
+    bool autoflush;
+
     struct {
         const char *auth_current;
         const char *auth_new;
@@ -59,6 +61,7 @@ static changeauth_ctx ctx = {
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
     .aux_session_handle[0] = ESYS_TR_NONE,
     .aux_session_handle[1] = ESYS_TR_NONE,
+    .autoflush = false,
 };
 
 static tool_rc hierarchy_change_auth(ESYS_CONTEXT *ectx) {
@@ -77,15 +80,29 @@ static tool_rc nv_change_auth(ESYS_CONTEXT *ectx) {
 
 static tool_rc object_change_auth(ESYS_CONTEXT *ectx) {
 
+    TSS2_RC rval;
+
     if (!ctx.object.out_path) {
         LOG_ERR("Require private output file path option -r");
         return tool_rc_general_error;
     }
 
-    return tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
+    tool_rc rc = tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
         ctx.new_auth, &ctx.out_private, &ctx.cp_hash, &ctx.rp_hash,
         ctx.parameter_hash_algorithm, ctx.aux_session_handle[0],
         ctx.aux_session_handle[1]);
+    if (rc != tool_rc_success) {
+            return rc;
+    }
+    if ((ctx.autoflush || tpm2_util_env_yes(TPM2TOOLS_ENV_AUTOFLUSH)) &&
+        ctx.parent.obj.path &&
+        (ctx.parent.obj.handle & TPM2_HR_RANGE_MASK) == TPM2_HR_TRANSIENT) {
+        rval = Esys_FlushContext(ectx, ctx.parent.obj.tr_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            return tool_rc_general_error;
+        }
+    }
+    return tool_rc_success;
 }
 
 static tool_rc change_authorization(ESYS_CONTEXT *ectx) {
@@ -317,6 +334,10 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'R':
+        ctx.autoflush = true;
+        break;
+
         /*no default */
     }
 
@@ -333,8 +354,9 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "cphash",         required_argument, NULL,  0  },
         { "rphash",         required_argument, NULL,  1  },
         { "session",        required_argument, NULL, 'S' },
+        { "autoflush",      no_argument,       NULL, 'R' },
     };
-    *opts = tpm2_options_new("p:c:C:r:S:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:c:C:r:S:R", ARRAY_LEN(topts), topts,
                              on_option, on_arg, 0);
 
     return *opts != NULL;

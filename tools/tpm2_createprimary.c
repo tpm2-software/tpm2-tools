@@ -34,6 +34,7 @@ struct tpm_createprimary_ctx {
     char *key_auth_str;
     char *unique_file;
     char *outside_info_data;
+    bool autoflush;
 
     /*
      * Outputs
@@ -68,6 +69,7 @@ static tpm_createprimary_ctx ctx = {
     .format = pubkey_format_tss,
     .auth_hierarchy.ctx_path = "owner",
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
+    .autoflush = false,
 };
 
 static tool_rc createprimary(ESYS_CONTEXT *ectx) {
@@ -117,7 +119,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     tpm2_util_public_to_yaml(ctx.objdata.out.public, 0);
 
     rc = ctx.context_file ? files_save_tpm_context_to_path(ectx,
-        ctx.objdata.out.handle, ctx.context_file) : tool_rc_success;
+         ctx.objdata.out.handle, ctx.context_file, ctx.autoflush) : tool_rc_success;
     if (rc != tool_rc_success) {
         LOG_ERR("Failed saving object context.");
         return rc;
@@ -351,6 +353,9 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.output_path = value;
         break;
+    case 'R':
+        ctx.autoflush = true;
+        break;
         /* no default */
     }
 
@@ -378,9 +383,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "cphash",         required_argument, 0,  2  },
         { "format",         required_argument, 0, 'f' },
         { "output",         required_argument, 0, 'o' },
+        { "autoflush",      no_argument,       0, 'R' },
     };
 
-    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:l:o:f:", ARRAY_LEN(topts),
+    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:l:o:f:R", ARRAY_LEN(topts),
         topts, on_option, 0, 0);
 
     return *opts != 0;

@@ -152,10 +152,8 @@ tpm2 sessionconfig enc_session.ctx --disable-encrypt
 tpm2 create -Q -C prim.ctx -u seal_key.pub -r seal_key.priv -c seal_key.ctx \
 -p sealkeypass -i- <<< $secret -S enc_session.ctx
 
-tpm2 sessionconfig enc_session.ctx --enable-encrypt
+tpm2 sessionconfig enc_session.ctx --enable-encrypt --disable-continuesession
 unsealed=`tpm2 unseal -c seal_key.ctx -p sealkeypass -S enc_session.ctx`
 test "$unsealed" == "$secret"
-
-tpm2 flushcontext enc_session.ctx
 
 exit 0

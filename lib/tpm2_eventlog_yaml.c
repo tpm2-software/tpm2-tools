@@ -290,7 +290,7 @@ char *yaml_devicepath(BYTE* dp, UINT64 dp_len) {
         LOG_ERR("failed to allocate memory: %s\n", strerror(errno));
         return NULL;
     }
-  
+
     /* The void* cast is a hack to support efivar versions < 38 */
     ret = efidp_format_device_path((void *)text_path,
             text_path_len, (const_efidp)dp, dp_len);
@@ -682,7 +682,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
             if ((strlen(ret) == NAME_BOOTORDER_LEN && strncmp(ret, NAME_BOOTORDER, NAME_BOOTORDER_LEN) == 0)) {
                 free(ret);
                 tpm2_tool_output("    VariableData:\n");
-                
+
                 if (data->VariableDataLength % 2 != 0) {
                     LOG_ERR("BootOrder value length %" PRIu64 " is not divisible by 2\n",
                             data->VariableDataLength);

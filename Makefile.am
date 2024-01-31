@@ -19,7 +19,7 @@ LIB_COMMON := lib/libcommon.a
 AM_CFLAGS := \
     $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(TSS2_ESYS_CFLAGS) $(TSS2_MU_CFLAGS) \
     $(CRYPTO_CFLAGS) $(CODE_COVERAGE_CFLAGS) $(TSS2_TCTILDR_CFLAGS) \
-    $(TSS2_RC_CFLAGS) $(TSS2_SYS_CFLAGS)
+    $(TSS2_RC_CFLAGS) $(TSS2_SYS_CFLAGS) $(CURL_CFLAGS)
 
 AM_LDFLAGS   := $(EXTRA_LDFLAGS) $(CODE_COVERAGE_LIBS)
 
@@ -31,7 +31,7 @@ AM_DISTCHECK_CONFIGURE_FLAGS = --with-bashcompdir='$$(datarootdir)/bash-completi
 
 # keep me sorted
 bin_PROGRAMS =
-FAPI_CFLAGS = $(EXTRA_CFLAGS) $(TSS2_FAPI_CFLAGS) $(CODE_COVERAGE_CFLAGS)
+FAPI_CFLAGS = $(EXTRA_CFLAGS) $(TSS2_FAPI_CFLAGS) $(CODE_COVERAGE_CFLAGS) $(CRYPTO_CFLAGS)
 TESTS =
 
 if HAVE_FAPI
@@ -352,6 +352,7 @@ TEST_EXTENSIONS = .sh
 
 check-hook:
 	rm -rf .lock_file
+	rm -f  $(abs_top_srcdir)/test/integration/fixtures/event-uefiservices.bin.yaml
 
 EXTRA_DIST_IGNORE = \
     .gitignore \
@@ -647,6 +648,18 @@ dist-hook:
 	for f in $(EXTRA_DIST_IGNORE); do \
 		rm -rf `find $(distdir) -name $$f`; \
 	done;
+
+prepare-check:
+if HAVE_EFIVAR_H
+	cp  $(abs_top_srcdir)/test/integration/fixtures/event-pretty/event-*.yaml \
+	    $(abs_top_srcdir)/test/integration/fixtures/
+else
+	cp  $(abs_top_srcdir)/test/integration/fixtures/event-raw/event-*.yaml \
+	    $(abs_top_srcdir)/test/integration/fixtures/
+endif
+
+check: prepare-check
+
 if !HAVE_PANDOC
 # If pandoc is not enabled, we want to complain that you need pandoc for make dist,
 # so hook the target and complain.

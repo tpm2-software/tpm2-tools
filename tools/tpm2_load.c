@@ -44,13 +44,17 @@ struct tpm_tool_ctx {
     TPM2B_DIGEST cp_hash;
     bool is_command_dispatch;
     TPMI_ALG_HASH parameter_hash_algorithm;
+    bool autoflush;
 };
 
 static tpm_load_ctx ctx = {
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
+    .autoflush = false,
 };
 
 static tool_rc load(ESYS_CONTEXT *ectx) {
+
+    TSS2_RC rval;
 
     /*
      * If a tssprivkey was specified, load the private and public from the
@@ -62,8 +66,20 @@ static tool_rc load(ESYS_CONTEXT *ectx) {
     TPM2B_PUBLIC *to_load_pub =
         ctx.is_tss_pem ? &tpm2_util_object_tsspem_pub : &ctx.object.public;
 
-    return tpm2_load(ectx, &ctx.parent.object, to_load_priv, to_load_pub,
+    tool_rc tmp_rc = tpm2_load(ectx, &ctx.parent.object, to_load_priv, to_load_pub,
         &ctx.object.handle, &ctx.cp_hash, ctx.parameter_hash_algorithm);
+    if (tmp_rc != tool_rc_success) {
+        return tmp_rc;
+    }
+    if ((ctx.autoflush || tpm2_util_env_yes(TPM2TOOLS_ENV_AUTOFLUSH)) &&
+        ctx.parent.object.path &&
+        (ctx.parent.object.handle & TPM2_HR_RANGE_MASK) == TPM2_HR_TRANSIENT) {
+        rval = Esys_FlushContext(ectx, ctx.parent.object.tr_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            return tool_rc_general_error;
+        }
+    }
+    return tool_rc_success;
 }
 
 static tool_rc process_output(ESYS_CONTEXT *ectx) {
@@ -110,7 +126,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     }
 
     return files_save_tpm_context_to_path(ectx, ctx.object.handle,
-            ctx.contextpath);
+           ctx.contextpath, ctx.autoflush);
 }
 
 static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
@@ -166,7 +182,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
         if (!is_file_op_success) {
             return tool_rc_general_error;
         }
-    
+
         is_file_op_success = files_load_private(ctx.object.privpath,
             &ctx.object.private);
         if (!is_file_op_success) {
@@ -281,6 +297,10 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.cp_hash_path = value;
         break;
+    case 'R':
+        ctx.autoflush = true;
+        break;
+
     }
 
     return true;
@@ -296,9 +316,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "key-context",    required_argument, 0, 'c' },
       { "parent-context", required_argument, 0, 'C' },
       { "cphash",         required_argument, 0,  0  },
+      { "autoflush",      no_argument,       0, 'R' },
     };
 
-    *opts = tpm2_options_new("P:u:r:n:C:c:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:u:r:n:C:c:R", ARRAY_LEN(topts), topts, on_option,
         0, 0);
 
     return *opts != 0;

@@ -61,7 +61,7 @@ struct tpm_create_ctx {
     } object;
 
     bool is_createloaded;
-
+    bool autoflush;
     /*
      * Parameter hashes
      */
@@ -103,6 +103,7 @@ static tpm_create_ctx ctx = {
         .is_command_dispatch = true,
         .parameter_hash_algorithm = TPM2_ALG_ERROR,
         .format = pubkey_format_tss,
+        .autoflush = false,
 };
 
 static bool load_outside_info(TPM2B_DATA *outside_info) {
@@ -124,6 +125,8 @@ static void print_help_message() {
 }
 
 static tool_rc create(ESYS_CONTEXT *ectx) {
+
+    TSS2_RC rval;
 
     /*
      * 1. TPM2_CC_<command> OR Retrieve cpHash
@@ -179,6 +182,14 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         }
     }
 
+    if ((ctx.autoflush || tpm2_util_env_yes(TPM2TOOLS_ENV_AUTOFLUSH)) &&
+        ctx.parent.object.path &&
+        (ctx.parent.object.handle & TPM2_HR_RANGE_MASK) == TPM2_HR_TRANSIENT) {
+        rval = Esys_FlushContext(ectx, ctx.parent.object.tr_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            return tool_rc_general_error;
+        }
+    }
     return tool_rc_success;
 }
 
@@ -209,7 +220,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     if (ctx.is_createloaded && ctx.object.template_data_path) {
         is_file_op_success = files_save_template(
             &ctx.object.in_public.publicArea, ctx.object.template_data_path);
-        
+
         if (!is_file_op_success) {
             LOG_ERR("Could not save public template to file.");
             return tool_rc_general_error;
@@ -311,7 +322,7 @@ create_out:
 
     if (ctx.object.ctx_path) {
         rc = files_save_tpm_context_to_path(ectx, ctx.object.object_handle,
-            ctx.object.ctx_path);
+             ctx.object.ctx_path, ctx.autoflush);
         
         if (rc != tool_rc_success) {
             goto out;
@@ -559,6 +570,9 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.output_path = value;
         break;
+    case 'R':
+        ctx.autoflush = true;
+        break;
         /* no default */
     };
 
@@ -590,9 +604,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "session",        required_argument, NULL, 'S' },
       { "format",         required_argument, NULL, 'f' },
       { "output",         required_argument, NULL, 'o' },
+      { "autoflush",      no_argument,       NULL, 'R' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:l:S:o:f:",
+    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:l:S:o:f:R",
     ARRAY_LEN(topts), topts, on_option, NULL, 0);
 
     return *opts != NULL;

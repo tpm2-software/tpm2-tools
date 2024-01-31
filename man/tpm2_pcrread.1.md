@@ -41,7 +41,7 @@ sha256 :
   * **-o**, **\--output**=_FILE_:
 
     The output file to write the PCR values in binary format, optional.
-    
+
   * **\--cphash**=_FILE_
 
     File path to record the hash of the command parameters. This is commonly

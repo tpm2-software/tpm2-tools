@@ -94,7 +94,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
             is_file_op_success = files_save_bytes_to_file(
                 ctx.policy_timeout_path, ctx.timeout->buffer,
                 ctx.timeout->size);
-            
+
             if (!is_file_op_success) {
                 LOG_ERR("Failed to save timeout to file.");
                 return tool_rc_general_error;
@@ -108,7 +108,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
         } else {
             is_file_op_success = files_save_authorization_ticket(
                 ctx.policy_ticket, ctx.policy_ticket_path);
-            
+
             if (!is_file_op_success) {
                 LOG_ERR("Failed to save auth ticket");
                 return tool_rc_general_error;
@@ -144,7 +144,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     if (rc != tool_rc_success) {
         return rc;
     }
-    
+
     rc = tpm2_session_restore(ectx, ctx.extended_session_path, false,
             &ctx.extended_session);
     if (rc != tool_rc_success) {

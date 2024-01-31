@@ -302,7 +302,7 @@ static bool print_TPM2B_PUBLIC(FILE *fstream) {
 static bool print_TSSPRIVKEY_OBJ(FILE *fstream) {
 
     UNUSED(fstream);
-    
+
     TPM2B_PUBLIC pub = { 0 };
     TPM2B_PRIVATE priv = { 0 };
     tool_rc rc = tpm2_util_object_fetch_priv_pub_from_tpk(ctx.file.path, &pub,

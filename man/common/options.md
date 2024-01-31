@@ -27,3 +27,8 @@ information that many users may expect.
     Enable the application of errata fixups. Useful if an errata fixup needs to be
     applied to commands sent to the TPM. Defining the environment
     TPM2TOOLS\_ENABLE\_ERRATA is equivalent.
+  * **-R**, **\--autoflush**:
+    Enable autoflush for transient objects created by the command. If a parent
+    object is loaded from a context file also the transient parent object will
+    be flushed. Autoflush can also be activated if the environment variable
+    TPM2TOOLS\_AUTOFLUSH is is set to yes or true.
