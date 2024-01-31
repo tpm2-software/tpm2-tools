@@ -63,12 +63,14 @@ static tool_rc get_auth_for_file_param(const char* password, TPM2B_AUTH *auth) {
     const char* path = password;
     size_t size = (sizeof(auth->buffer) * 2) + HEX_PREFIX_LEN + 2;
     bool is_a_tty = isatty(STDIN_FILENO);
-    UINT8 *buffer = calloc(1, size);
 
+    /* Allocating one extra byte for \0 termination safety */
+    UINT8 *buffer = calloc(1, size + 1);
     if (!buffer) {
         LOG_ERR("oom");
         return tool_rc_general_error;
     }
+    buffer[size] = '\0';
 
     if (path) {
         path = strcmp("-", path) ? path : NULL;
