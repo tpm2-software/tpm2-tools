@@ -91,7 +91,7 @@ static bool tpm2_apply_forward_seals(
     unsigned int idx = 0;
 
     if (pcr_selection->count != forwards->count) {
-        LOG_ERR("mismatch between pcr count (%d) and forward count (%lu)",
+        LOG_ERR("mismatch between pcr count (%d) and forward count (%zu)",
                 pcr_selection->count, forwards->count);
 
         return false;
@@ -124,7 +124,7 @@ static bool tpm2_apply_forward_seals(
             idx++;
             if (idx == ARRAY_LEN(pcrs->pcr_values) *
                            ARRAY_LEN(pcrs->pcr_values[0].digests)) {
-                LOG_ERR("Too many PCRs specified (%u > %lu max)",
+                LOG_ERR("Too many PCRs specified (%u > %zu max)",
                         idx, ARRAY_LEN(pcrs->pcr_values) *
                                 ARRAY_LEN(pcrs->pcr_values[0].digests));
             }
