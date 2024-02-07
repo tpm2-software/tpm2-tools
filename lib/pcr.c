@@ -65,7 +65,7 @@ static bool pcr_parse_list(const char *str, size_t len,
     do {
         char dgst_buf[sizeof(TPMU_HA) * 2 + 1];
         const char *dgst;;
-        int dgst_len;
+        int dgst_len = 0;
         UINT16 dgst_size;
         int pcr_len;
 
