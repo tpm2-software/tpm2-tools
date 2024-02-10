@@ -635,9 +635,9 @@ char *tpm2_util_getenv(const char *name) {
 bool tpm2_util_env_yes(const char *name) {
 
     char *value = getenv(name);
-    return (value && (strcasecmp(name, "yes") == 0 ||
-                      strcasecmp(name, "1") == 0 ||
-                      strcasecmp(name, "true") == 0));
+    return (value && (strcasecmp(value, "yes") == 0 ||
+                      strcasecmp(value, "1") == 0 ||
+                      strcasecmp(value, "true") == 0));
 }
 
 /**
