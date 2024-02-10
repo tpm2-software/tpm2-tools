@@ -595,6 +595,7 @@ static bool load_public_RSA_from_key(EVP_PKEY *key, TPM2B_PUBLIC *pub) {
     switch (rdetail->keyBits) {
     case 1024: /* falls-through */
     case 2048: /* falls-through */
+    case 3072: /* falls-through */
     case 4096: /* falls-through */
         break;
     default:
