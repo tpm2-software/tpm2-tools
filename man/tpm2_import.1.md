@@ -23,7 +23,7 @@ These options control the key importation process:
 
     The algorithm used by the key to be imported. Supports:
     * **aes** - AES 128, 192 or 256 key.
-    * **rsa** - RSA 1024 or 2048 key.
+    * **rsa** - RSA 1024, 2048, 3072, or 4096 key.
     * **ecc** - ECC NIST P192, P224, P256, P384 or P521 public and private key.
 	* **hmac** - HMAC key.
 
