@@ -136,10 +136,13 @@ Version tags after v1.1.0 shall be signed.
 Valid known public keys can be reached by
 referencing the annotated tags listed below:
 
-- william-roberts-pub
-- javier-martinez-pub
-- joshua-lock-pub
-- idesai-pub
+| Tag | Fingerprint |
+| ------------- | ------------- |
+| idesai-pub  | [6313e6dc41aafc315a8760a414986f6944b1f72b](https://keys.openpgp.org/vks/v1/by-fingerprint/6313E6DC41AAFC315A8760A414986F6944B1F72B) |
+| william-roberts-pub | [5b482b8e3e19da7c978e1d016de2e9078e1f50c1](https://keys.openpgp.org/vks/v1/by-fingerprint/5B482B8E3E19DA7C978E1D016DE2E9078E1F50C1)|
+| javier-martinez-pub | [D75ED7AA24E50CD645C6F457C751E590D63F3D69](https://keys.openpgp.org/vks/v1/by-fingerprint/D75ED7AA24E50CD645C6F457C751E590D63F3D69)|
+| joshua-lock-pub | [5BEC526CE3A61CAF07E7A7DA49BCAE5443FFFC34](https://keys.openpgp.org/vks/v1/by-fingerprint/5BEC526CE3A61CAF07E7A7DA49BCAE5443FFFC34)|
+| ajay-kish-pub |[6f72a30eea41b9b548570ad20d0db2b265493e29](http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x6f72a30eea41b9b548570ad20d0db2b265493e29)|
 
 or via a PGP public keyring server like:
   - http://keyserver.pgp.com/vkd/GetWelcomeScreen.event
