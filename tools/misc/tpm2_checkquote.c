@@ -54,6 +54,37 @@ static tpm2_verifysig_ctx ctx = {
         .pcr_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
 };
 
+static bool compare_pcr_selection(TPML_PCR_SELECTION *attest_sel, TPML_PCR_SELECTION *pcr_sel) {
+    if (attest_sel->count != pcr_sel->count) {
+        LOG_ERR("Selection sizes do not match.");
+        return false;
+    }
+    for (uint32_t i = 0; i < attest_sel->count; i++) {
+        for (uint32_t j = 0; j < pcr_sel->count; j++) {
+            if (attest_sel->pcrSelections[i].hash ==
+                pcr_sel->pcrSelections[j].hash) {
+                if (attest_sel->pcrSelections[i].sizeofSelect !=
+                        pcr_sel->pcrSelections[j].sizeofSelect) {
+                    LOG_ERR("Bitmask size does not match");
+                    return false;
+                }
+                if (memcmp(&attest_sel->pcrSelections[i].pcrSelect[0],
+                           &pcr_sel->pcrSelections[j].pcrSelect[0],
+                           attest_sel->pcrSelections[i].sizeofSelect) != 0) {
+                    LOG_ERR("Selection bitmasks do not match");
+                    return false;
+                }
+                break;
+            }
+            if (j == pcr_sel->count - 1) {
+                LOG_ERR("Hash selections to not match.");
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 static bool verify(void) {
 
     bool result = false;
@@ -388,7 +419,7 @@ static tool_rc init(void) {
     }
 
     TPM2B_ATTEST *msg = NULL;
-    TPML_PCR_SELECTION pcr_select;
+    TPML_PCR_SELECTION pcr_select = { 0 };
     tpm2_pcrs *pcrs;
     tpm2_pcrs temp_pcrs = {};
     tool_rc return_value = tool_rc_general_error;
@@ -549,6 +580,14 @@ static tool_rc init(void) {
     if (tmp_rc != tool_rc_success) {
         return_value = tmp_rc;
         goto err;
+    }
+
+    if (ctx.flags.pcr) {
+        if (!compare_pcr_selection(&ctx.attest.attested.quote.pcrSelect,
+                                   &pcr_select)) {
+            LOG_ERR("PCR selection does not match PCR slection from attest!");
+            goto err;
+        }
     }
 
     // Figure out the digest for this message
