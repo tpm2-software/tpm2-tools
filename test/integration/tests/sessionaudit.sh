@@ -35,6 +35,8 @@ tpm2 getrandom 8 -S session.ctx --cphash cp.hash --rphash rp.hash
 tpm2 getsessionauditdigest -c signing_key.ctx -m att.data -s att.sig \
 -S session.ctx
 
+tpm2 print -t TPMS_ATTEST att.data
+
 tpm2 flushcontext session.ctx
 
 dd if=/dev/zero bs=1 count=32 status=none of=zero.bin

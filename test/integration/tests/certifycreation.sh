@@ -30,6 +30,8 @@ tpm2 certifycreation -C signing_key.ctx -c primary.ctx -d creation.digest \
 -t creation.ticket -g sha256 -o signature.bin --attestation attestation.bin \
 -f plain -s rsassa
 
+tpm2 print -t TPMS_ATTEST attestation.bin
+
 openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin \
 attestation.bin
 
