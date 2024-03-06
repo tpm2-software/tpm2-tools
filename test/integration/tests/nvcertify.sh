@@ -43,6 +43,8 @@ dd if=/dev/urandom of=qual.dat bs=1 count=32
 tpm2 nvcertify -C signing_key.ctx -g sha256 -f plain -s rsassa \
 -o signature.bin --attestation attestation.bin --size 32 -q qual.dat 1
 
+tpm2 print -t TPMS_ATTEST attestation.bin
+
 openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin \
 attestation.bin
 

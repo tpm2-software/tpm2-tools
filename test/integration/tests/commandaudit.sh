@@ -65,6 +65,7 @@ diff -B \
 xxd -r -p | openssl dgst -sha256 -binary ) \
 <( tail -c 32 att.data )
 
+tpm2 print -t TPMS_ATTEST att.data
 #
 # Check TPM2_CC_GetRandom is removed from the audit list
 #
