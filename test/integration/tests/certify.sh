@@ -41,6 +41,8 @@ tpm2 certify \
 
 verify_signature_with_ssl
 
+tpm2 print -t TPMS_ATTEST attest.out
+
 # Test with full options
 
 tpm2 certify \

@@ -103,6 +103,97 @@ static bool print_TPMS_QUOTE_INFO(TPMS_QUOTE_INFO *info, size_t indent_count) {
     return true;
 }
 
+static void print_TPMS_CERTIFY_INFO(TPMS_CERTIFY_INFO *certify_info, size_t indent_count) {
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("name: ");
+    tpm2_util_print_tpm2b(&certify_info->name);
+    tpm2_tool_output("\n");
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("qualifiedName: ");
+    tpm2_util_print_tpm2b(&certify_info->qualifiedName);
+    tpm2_tool_output("\n");
+}
+
+static void print_TPMS_CREATION_INFO(TPMS_CREATION_INFO *creation_info, size_t indent_count) {
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("objectName: ");
+    tpm2_util_print_tpm2b(&creation_info->objectName);
+    tpm2_tool_output("\n");
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("creationHash: ");
+    tpm2_util_print_tpm2b(&creation_info->creationHash);
+    tpm2_tool_output("\n");
+}
+
+static void print_TPMS_COMMAND_AUDIT_INFO(TPMS_COMMAND_AUDIT_INFO *command_audit_info,
+                                          size_t indent_count) {
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("auditCounter:  %"PRIu64"\n", command_audit_info->auditCounter);
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("digestAlg: %s\n", tpm2_alg_util_algtostr(command_audit_info->digestAlg,
+                                                               tpm2_alg_util_flags_hash));
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("auditDigest: ");
+    tpm2_util_print_tpm2b(&command_audit_info->auditDigest);
+    tpm2_tool_output("\n");
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("commandDigest: ");
+    tpm2_util_print_tpm2b(&command_audit_info->commandDigest);
+    tpm2_tool_output("\n");
+}
+
+static void print_TPMS_SESSION_AUDIT_INFO(TPMS_SESSION_AUDIT_INFO *session_audit_info,
+                                          size_t indent_count) {
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("exclusiveSession: %s\n", session_audit_info->exclusiveSession ? "yes" : "no"); 
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("sessionDigest: ");
+    tpm2_util_print_tpm2b(&session_audit_info->sessionDigest);
+    tpm2_tool_output("\n");
+}
+
+static void print_TPMS_CLOCK_INFO(TPMS_CLOCK_INFO *clock_info, size_t indent_count) {
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("clock:  %"PRIu64"\n", clock_info->clock);
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("resetCount:  %"PRIu32"\n", clock_info->resetCount);
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("restartCount:  %"PRIu32"\n", clock_info->restartCount);
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("safe: %s\n", clock_info->safe ? "yes" : "no"); 
+}
+
+static void print_TPMS_TIME_INFO(TPMS_TIME_INFO *time_info, size_t indent_count) {
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("time:  %"PRIu64"\n", time_info->time);
+     print_yaml_indent(indent_count);
+    tpm2_tool_output("clockInfo:\n");
+    print_TPMS_CLOCK_INFO(&time_info->clockInfo, indent_count + 1);
+}
+
+static void print_TPMS_TIME_ATTEST_INFO(TPMS_TIME_ATTEST_INFO *time_info, size_t indent_count) {
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("time:\n");
+    print_TPMS_TIME_INFO(&time_info->time, indent_count + 1);
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("firmwareVersion:  %"PRIu64"\n", time_info->firmwareVersion);
+    tpm2_tool_output("\n");
+}
+
+static void print_TPMS_NV_CERTIFY_INFO(TPMS_NV_CERTIFY_INFO *nv_certify_info,
+                                          size_t indent_count) {
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("indexName: ");
+    tpm2_util_print_tpm2b(&nv_certify_info->indexName);
+    tpm2_tool_output("\n");
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("offset:  %"PRIu32"\n", nv_certify_info->offset);
+    print_yaml_indent(indent_count);
+    tpm2_tool_output("nvContents: ");
+    tpm2_util_print_tpm2b(&nv_certify_info->nvContents);
+    tpm2_tool_output("\n");
+}
+
 static bool print_TPMS_ATTEST(FILE* fd) {
 
     TPMS_ATTEST attest = { 0 };
@@ -149,14 +240,44 @@ static bool print_TPMS_ATTEST(FILE* fd) {
             sizeof(attest.firmwareVersion));
     tpm2_tool_output("\n");
 
+    tpm2_tool_output("attested:\n");
+    print_yaml_indent(1);
+
     switch (attest.type) {
     case TPM2_ST_ATTEST_QUOTE:
-        tpm2_tool_output("attested:\n");
-        print_yaml_indent(1);
         tpm2_tool_output("quote:\n");
         return print_TPMS_QUOTE_INFO(&attest.attested.quote, 2);
         break;
-
+    case TPM2_ST_ATTEST_CERTIFY:
+        tpm2_tool_output("certify:\n");
+        print_TPMS_CERTIFY_INFO(&attest.attested.certify, 2);
+        return true;
+        break;
+    case TPM2_ST_ATTEST_CREATION:
+        tpm2_tool_output("creation:\n");
+        print_TPMS_CREATION_INFO(&attest.attested.creation, 2);
+        return true;
+        break;
+    case TPM2_ST_ATTEST_COMMAND_AUDIT:
+        tpm2_tool_output("commandAudit:\n");
+        print_TPMS_COMMAND_AUDIT_INFO(&attest.attested.commandAudit, 2);
+        return true;
+        break;
+    case TPM2_ST_ATTEST_SESSION_AUDIT:
+        tpm2_tool_output("sessiondAudit:\n");
+        print_TPMS_SESSION_AUDIT_INFO(&attest.attested.sessionAudit, 2);
+        return true;
+        break;
+    case TPM2_ST_ATTEST_TIME:
+        tpm2_tool_output("time:\n");
+        print_TPMS_TIME_ATTEST_INFO(&attest.attested.time, 2);
+        return true;
+        break;
+    case TPM2_ST_ATTEST_NV :
+        tpm2_tool_output("nv:\n");
+        print_TPMS_NV_CERTIFY_INFO(&attest.attested.nv, 2);
+        return true;
+        break;
     default:
         LOG_ERR("Cannot print unsupported type 0x%" PRIx16, attest.type);
         return false;
