@@ -143,6 +143,8 @@ referencing the annotated tags listed below:
 | javier-martinez-pub | [D75ED7AA24E50CD645C6F457C751E590D63F3D69](https://keys.openpgp.org/vks/v1/by-fingerprint/D75ED7AA24E50CD645C6F457C751E590D63F3D69)|
 | joshua-lock-pub | [5BEC526CE3A61CAF07E7A7DA49BCAE5443FFFC34](https://keys.openpgp.org/vks/v1/by-fingerprint/5BEC526CE3A61CAF07E7A7DA49BCAE5443FFFC34)|
 | ajay-kish-pub |[6f72a30eea41b9b548570ad20d0db2b265493e29](http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x6f72a30eea41b9b548570ad20d0db2b265493e29)|
+| juergen-repp-pub |[7A8F470DA9C8B2CACED1DBAAF1B152D9441A2563](https://keys.openpgp.org/vks/v1/by-fingerprint/7A8F470DA9C8B2CACED1DBAAF1B152D9441A2563)|
+| andreas-fuchs-pub |[D533275B0123D0A679F51FF48F4F9A45D7FFEE74](https://keys.openpgp.org/vks/v1/by-fingerprint/D533275B0123D0A679F51FF48F4F9A45D7FFEE74)|
 
 or via a PGP public keyring server like:
   - http://keyserver.pgp.com/vkd/GetWelcomeScreen.event
