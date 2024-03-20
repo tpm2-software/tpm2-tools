@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
+      - name: fix-sanitizer
+        run: sudo sysctl vm.mmap_rnd_bits=28
       - name: Launch Action
         uses:
           tpm2-software/ci/runCI@main
@@ -31,6 +33,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
+      - name: fix-sanitizer
+        run: sudo sysctl vm.mmap_rnd_bits=28
       - name: Launch Action
         uses:
           tpm2-software/ci/runCI@main
@@ -49,6 +53,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
+      - name: fix-sanitizer
+        run: sudo sysctl vm.mmap_rnd_bits=28
       - name: Launch Action
         uses:
           tpm2-software/ci/runCI@main
@@ -69,6 +75,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
+      - name: fix-sanitizer
+        run: sudo sysctl vm.mmap_rnd_bits=28
       - name: Launch Coverity Action
         uses:
           tpm2-software/ci/coverityScan@main
