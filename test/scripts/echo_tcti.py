@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #
 # This TCTI is designed to use with the subprocess TCTI and echo the contents
