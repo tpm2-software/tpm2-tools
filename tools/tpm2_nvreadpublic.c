@@ -210,7 +210,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
     if (ctx.nv_index == 0 && ctx.is_command_dispatch) {
         rc = tpm2_getcap(ectx, TPM2_CAP_HANDLES,
-            TPM2_HT_NV_INDEX << 24, TPM2_PT_NV_INDEX_MAX, NULL,
+            TPM2_NV_INDEX_FIRST, TPM2_PT_NV_INDEX_MAX, NULL,
             &ctx.capability_data);
         if (rc != tool_rc_success) {
             return rc;
