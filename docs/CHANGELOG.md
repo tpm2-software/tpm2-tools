@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 5.7-rc0 - 2024-03-26
+
+### Fixed
+- tpm2_sessionconfig: fix handling of `--disable-continue session` so that the subsequent command will not fail
+   when attempting to context save a flushed session.
+- detection of functions within libcrypto when CRYPTO_LIBS is set and system has install libcrypto.
+- tpm2_send: fix EOF detection on input stream.
+- tpm2_policy.c fix compilation error caused by format directive for size_t on 32 bit systems.
+- tpm2_nvread: fix input handling no nv index.
+- Auth file: Ensure 0-termination when reading auths from a file.
+- configure.ac: fix bashisms. configure scripts need to be runnable with a POSIX-compliant /bin/sh.
+- cirrus.yml fix tss compilation with libtpms for FreeBSD.
+- tpm2_tool.c Fix missing include for basename to enable compilation on netbsd.
+- options: fix TCTI handling to avoid failures for commands that should work with no options.
+- tpm2_getekcertificate.c Fix leak. ek_uri was not freed if get_ek_server_address failed.
+
+### Added
+- Add the possibility for autoflush (environment variable "TPM2TOOLS_AUTOFLUSH", or -R option)
+
+### Removed
+- Testing on Ubuntu 18.04 as it's near EOL (May 2023).m2_policy.c fix compilation error caused by format directive for size_t on 32 bit systems.
+- tpm2_nvread: fix input handling no nv index.
+
 ## 5.6 - 2023-11-08
 
        - Add safe directory in config
