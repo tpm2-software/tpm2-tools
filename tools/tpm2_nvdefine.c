@@ -190,7 +190,7 @@ static tool_rc handle_no_index_specified(ESYS_CONTEXT *ectx, TPM2_NV_INDEX *chos
     capabilities = NULL;
 
     /* now find what NV indexes are in use */
-    rc = tpm2_getcap(ectx, TPM2_CAP_HANDLES, tpm2_util_hton_32(TPM2_HT_NV_INDEX),
+    rc = tpm2_getcap(ectx, TPM2_CAP_HANDLES, TPM2_NV_INDEX_FIRST,
             TPM2_PT_NV_INDEX_MAX, NULL, &capabilities);
     if (rc != tool_rc_success) {
         goto out;
