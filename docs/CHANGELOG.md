@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 5.6.1-rc0 - 2023-03-27
+
+### Fixed
+- tpm2_sessionconfig: fix handling of --disable-continue session so that the subsequent command will not fail.
+- tpm2_policy.c fix compilation error caused by format directive for size_t on 32 bit systems.
+- Auth file: Ensure 0-termination when reading auths from a file.
+- cirrus.yml fix tss compilation with libtpms for FreeBSD.
+-  tpm2_tool.c Fix missing include for basename to enable compilation on netbsd.
+- tpm2_nvread: fix input handling no nv index.
+- options: fix TCTI handling to avoid failures for commands that should work with no options.
+- tpm2_getekcertificate.c Fix leak. ek_uri was not freed if get_ek_server_address failed.
+
+### Removed
+- Testing on Ubuntu 18.04 as it's near EOL (May 2023).m2_policy.c fix compilation error caused by format directive for size_t on 32 bit systems.
+
 ## 5.6 - 2023-11-08
 
        - Add safe directory in config
