@@ -17,7 +17,7 @@ start_up
 # Positive tests:
 #
 fail=0
-TPM2_TOOL="$(which tpm2)"
+TPM2_TOOL="$(command -v tpm2)"
 
 if [ -z "$TPM2_TOOL" ]; then
     echo "unable to locate tpm2 tool"
