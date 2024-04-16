@@ -44,7 +44,7 @@ yaml_verify $hash_out_file
 while IFS='' read -r l || [[ -n "$l" ]]; do
 
   alg=`echo -n $l | cut -d\: -f 1-1`
-  if ! which "$alg"sum >/dev/null 2>&1; then
+  if ! command -v "$alg"sum >/dev/null 2>&1; then
       echo "Ignore checking $alg algorithm due to unavailable \"${alg}sum\" program"
       continue
   fi
