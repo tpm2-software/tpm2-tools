@@ -405,9 +405,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     }
 
     /* Check command type */
-    if ((ctx.object.ctx_path || ctx.object.template_data_path) &&
-        (!ctx.object.creation_data_file && !ctx.object.creation_ticket_file &&
-        !ctx.object.creation_hash_file)) {
+    if ((ctx.object.ctx_path || ctx.object.template_data_path)) {
         ctx.is_createloaded = true;
     }
 
