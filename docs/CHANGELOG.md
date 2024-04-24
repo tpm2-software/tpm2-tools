@@ -4,8 +4,13 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## 5.7-rc0 - 2024-03-26
+## 5.7-rc1 - 2024-04-24
+### Fixed
+- Fix eventlog test
+- Fix issues with reading NV indexes
+- Fix context save error on tpm2_create
 
+## 5.7-rc0 - 2024-03-26
 ### Fixed
 - tpm2_sessionconfig: fix handling of `--disable-continue session` so that the subsequent command will not fail
    when attempting to context save a flushed session.
