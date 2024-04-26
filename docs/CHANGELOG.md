@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 5.5.1 - 2024-04-26
+### Security
+- Fixed CVE-2024-29038
+- Fixed CVE-2024-29039
+
 ## 5.5 - 2022-02-13
 
 ### Added
