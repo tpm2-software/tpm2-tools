@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## 5.6.1-rc0 - 2023-03-27
+## 5.6.1 - 2023-04-26
+
+### Security
+- Fixed CVE-2024-29038
+- Fixed CVE-2024-29039
 
 ### Fixed
 - tpm2_sessionconfig: fix handling of --disable-continue session so that the subsequent command will not fail.
