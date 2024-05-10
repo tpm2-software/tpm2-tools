@@ -339,7 +339,7 @@ load the remote key and save its "name"
 tpm2_loadexternal -C o -u new_parent.pub -c new_parent.ctx -n new_parent.name
 ```
 
-Create a primary object and a policy that restricts duplication to just `TPM-A` parent
+Create a primary object and a policy that restricts duplication to just `TPM-B` parent
 
 ```bash
 tpm2_createprimary -C o -g sha256 -G rsa -c primary.ctx
