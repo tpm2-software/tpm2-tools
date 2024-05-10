@@ -316,6 +316,88 @@ tpm2_import -C primary.ctx -G rsa -i rsa.dpriv -s rsa.seed -u rsa.pub -r rsa.pri
 tpm2_load -C primary.ctx -c rsa.ctx -u rsa.pub -r rsa.priv
 ```
 
+#### Example-4: Exporting an HMAC key for a remote TPM and restrict it from further exports
+
+This procedure will export an HMAC key created inside `TPM-A` only to `TPM-B` and with a 
+policy that prevents `TPM-B` from allowing any further exports.
+
+* On the destination `TPM-B`, create a primary context:
+
+```bash
+tpm2_createprimary -C o -g sha256 -G rsa -c primary.ctx
+tpm2_create  -C primary.ctx -g sha256 -G rsa -r new_parent.prv \
+    -u new_parent.pub -a "fixedtpm|fixedparent|restricted|sensitivedataorigin|decrypt|userwithauth"
+```
+
+Copy `new_parent.pub` to `TPM-A`.
+
+* On source `TPM-A`
+
+load the remote key and save its "name"
+
+```bash
+tpm2_loadexternal -C o -u new_parent.pub -c new_parent.ctx -n new_parent.name
+```
+
+Create a primary object and a policy that restricts duplication to just `TPM-A` parent
+
+```bash
+tpm2_createprimary -C o -g sha256 -G rsa -c primary.ctx
+tpm2_startauthsession -S session.dat
+tpm2_policyduplicationselect -S session.dat  -N new_parent.name -L dpolicy.dat 
+tpm2_flushcontext session.dat
+```
+
+Create an HMAC key with that policy
+
+```bash
+tpm2_create -C primary.ctx -g sha256 -G hmac -r key.prv -u key.pub \
+   -L dpolicy.dat -a "sensitivedataorigin|userwithauth|sign"
+```
+
+Load the key and save its "name".  Generate a test HMAC
+
+```bash
+tpm2_load -C primary.ctx -r key.prv -u key.pub -c key.ctx
+tpm2_readpublic -c key.ctx -n dupkey.name
+
+export plain="foo"
+echo -n $plain | tpm2_hmac -g sha256 -c key.ctx | xxd -p -c 256
+   42a1fad918fa0e4cbea94d759da89ccdfac5a640672d0170f4930cafe14d179c
+```
+
+Start auth session for duplication with `tpm2_policyduplicationselect`
+
+```bash
+tpm2_startauthsession --policy-session -S session.dat
+tpm2_policyduplicationselect -S session.dat  -N new_parent.name \
+   -L dpolicy.dat  -n dupkey.name
+
+tpm2_duplicate -C new_parent.ctx -c key.ctx -G null \
+   -p "session:session.dat" -r dup.dup -s dup.seed
+```
+
+Copy `dup.dup` `dup.seed` `key.pub` to `TPM-B`
+
+* On destination `TPM-B`
+
+Reload the original new parent and import the key
+
+```bash
+tpm2_load -C primary.ctx -u new_parent.pub -r new_parent.prv -c new_parent.ctx
+
+tpm2_import -C new_parent.ctx -u key.pub -i dup.dup  -r dup.prv -s dup.seed
+tpm2_load -C new_parent.ctx -u key.pub -r dup.prv -c dup.ctx
+```
+
+Generate a sample HMAC
+
+```bash
+export plain="foo"
+echo -n $plain | tpm2_hmac -g sha256 -c dup.ctx | xxd -p -c 256
+   42a1fad918fa0e4cbea94d759da89ccdfac5a640672d0170f4930cafe14d179c
+```
+
 
 [returns](common/returns.md)
 
