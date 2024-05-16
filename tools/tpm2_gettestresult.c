@@ -35,8 +35,6 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_tool_output("status: ");
     print_yaml_indent(1);
 
-    status &= TPM2_RC_TESTING;
-
     switch (status) {
     case TPM2_RC_SUCCESS:
         tpm2_tool_output("success");
