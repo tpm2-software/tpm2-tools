@@ -102,7 +102,11 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
 
     tool_rc tmp_rc = tool_rc_success;
     if (ctx.output_arg) {
-        tmp_rc = files_save_ESYS_TR(ectx, ctx.out_tr, ctx.output_arg);
+        if (ctx.out_tr == ESYS_TR_NONE) {
+            LOG_WARN("The parameter --output can't be used if a persistent object will be evicted");
+        } else {
+            tmp_rc = files_save_ESYS_TR(ectx, ctx.out_tr, ctx.output_arg);
+        }
     }
 
     if (!is_evicted) {
