@@ -430,7 +430,7 @@ static bool do_open_file(FILE *f, const char *path, char **pass) {
         goto out;
     }
 
-    char *tmp = calloc(sizeof(char), file_size + 1);
+    char *tmp = calloc(file_size + 1, sizeof(char));
     if (!tmp) {
         LOG_ERR("oom");
         goto out;
@@ -485,7 +485,7 @@ static bool do_stdin(const char *passin, char **pass) {
 
     UNUSED(passin);
 
-    void *buf = calloc(sizeof(BYTE), UINT16_MAX + 1);
+    void *buf = calloc(UINT16_MAX + 1, sizeof(BYTE));
     if (!buf) {
         LOG_ERR("oom");
         return false;
