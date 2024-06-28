@@ -90,7 +90,7 @@ tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
 
 tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -c rsa.ctx
 
-echo "my message > message.dat
+echo "my message" > message.dat
 
 tpm2_sign -c rsa.ctx -g sha256 -s sig.rssa message.dat
 
