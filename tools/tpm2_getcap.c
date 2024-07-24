@@ -123,6 +123,12 @@ capability_map_entry_t capability_map[] = {
         .property          = TPM2_ACTIVE_SESSION_FIRST,
         .count             = TPM2_MAX_CAP_HANDLES,
     },
+    {
+        .capability_string = "pcrhandles-with-auth",
+        .capability        = TPM2_CAP_PCR_PROPERTIES,
+        .property          = TPM2_PT_PCR_AUTH,
+        .count             = TPM2_MAX_PCR_PROPERTIES,
+    },
 #if defined(ESYS_4_0)
     {
         .capability_string = "vendor",
@@ -811,6 +817,12 @@ static bool dump_tpm_capability(TPMU_CAPABILITIES *capabilities) {
         break;
     case TPM2_CAP_PCRS:
         pcr_print_pcr_selections(&capabilities->assignedPCR);
+        break;
+    case TPM2_CAP_PCR_PROPERTIES:
+        if(options.property == TPM2_PT_PCR_AUTH) {
+            tpm2_tool_output("TPM2_PT_PCR_AUTH:\n");
+            pcr_print_taggedpcr_selections(&capabilities->pcrProperties);
+        }
         break;
 #if defined(ESYS_4_0)
     case TPM2_CAP_VENDOR_PROPERTY: {
