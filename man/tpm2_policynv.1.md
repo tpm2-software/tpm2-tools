@@ -104,7 +104,7 @@ echo "aa" | xxd -r -p | tpm2_nvwrite -P nvpass -i- $nv_test_index
 ```bash
 tpm2_startauthsession -S session.ctx --policy-session
 ### This should fail
-echo 0xBB | tpm2_policynv -S session.ctx -L policy.nv -i- 0x1500001 eq -P nvpass
+echo "bb" | xxd -r -p | tpm2_policynv -S session.ctx -L policy.nv -i- 0x1500001 eq -P nvpass
 tpm2_flushcontext session.ctx
 ```
 
@@ -112,7 +112,7 @@ tpm2_flushcontext session.ctx
 ```bash
 tpm2_startauthsession -S session.ctx --policy-session
 ### This should pass
-echo 0xAA | tpm2_policynv -S session.ctx -L policy.nv -i- 0x1500001 eq -P nvpass
+echo "aa" | xxd -r -p | tpm2_policynv -S session.ctx -L policy.nv -i- 0x1500001 eq -P nvpass
 tpm2_flushcontext session.ctx
 ```
 
