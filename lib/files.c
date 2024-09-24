@@ -843,20 +843,19 @@ tool_rc files_load_unique_data(const char *file_path, TPM2B_PUBLIC *public_data)
 
     /* Unstructured stdin unique data paired with an ECC object */
     if (public_data->publicArea.type == TPM2_ALG_ECC) {
+        int pivot = (unique_size / 2) + (unique_size % 2);
         /* The size limitation is TPM implementation dependent. */
-        if((unique_size / 2) > TPM2_MAX_ECC_KEY_BYTES) {
+        if(pivot > TPM2_MAX_ECC_KEY_BYTES) {
             LOG_ERR("Unique data too big for ECC object's allowed unique size");
             return tool_rc_general_error;
         }
         /* Copy data into X and Y coordinates unique buffers */
-        public_data->publicArea.unique.ecc.x.size = (unique_size / 2);
-        memcpy(&public_data->publicArea.unique.ecc.x.buffer, file_data,
-        (unique_size / 2));
+        public_data->publicArea.unique.ecc.x.size = pivot;
+        memcpy(&public_data->publicArea.unique.ecc.x.buffer, file_data, pivot);
         /* Copy the rest of buffer to y and also adjust size if input is odd */
-        public_data->publicArea.unique.ecc.y.size = (unique_size / 2) +
-        (unique_size % 2);
+        public_data->publicArea.unique.ecc.y.size = pivot;
         memcpy(&public_data->publicArea.unique.ecc.y.buffer,
-        file_data + (unique_size / 2), (unique_size / 2));
+        file_data + pivot, (unique_size / 2));
     }
 
     /* Unstructured stdin unique data paired with an Keyedhash object */
