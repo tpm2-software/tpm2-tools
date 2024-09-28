@@ -63,7 +63,7 @@ static tpm_nvwrite_ctx ctx = {
     .aux_session_handle[1] = ESYS_TR_NONE,
 };
 
-static tool_rc nv_write(ESYS_CONTEXT *ectx) {
+static tool_rc nv_write(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     TPM2B_MAX_NV_BUFFER nv_write_data;
     UINT16 data_offset = 0;
@@ -93,7 +93,7 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
             }
 
             rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, flags.restricted_pwd_session,
             TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
             if (rc != tool_rc_success) {
                 LOG_ERR("Failed updating the auth");
@@ -152,7 +152,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
 }
 
 
-static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /*
      * 1. Object and auth initializations
@@ -189,7 +189,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
            tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth_hierarchy.object.handle) : 0;
     } else {
         rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, flags.restricted_pwd_session,
             TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
     }
 
@@ -450,7 +450,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 2. Process inputs
      */
-    rc = process_inputs(ectx);
+    rc = process_inputs(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -458,7 +458,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 3. TPM2_CC_<command> call
      */
-    rc = nv_write(ectx);
+    rc = nv_write(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }

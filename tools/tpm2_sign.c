@@ -210,10 +210,10 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     return rc;
 }
 
-static tool_rc check_options(ESYS_CONTEXT *ectx) {
+static tool_rc check_options(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
-            ctx.signing_key.auth_str, &ctx.signing_key.object, false,
+            ctx.signing_key.auth_str, &ctx.signing_key.object, flags.restricted_pwd_session,
             TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key authorization");
@@ -367,12 +367,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    UNUSED(flags);
-
     /*
      * 1. Process options
      */
-    tool_rc rc = check_options(ectx);
+    tool_rc rc = check_options(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }

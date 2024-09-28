@@ -143,21 +143,21 @@ static bool check_input_options_and_args(void) {
     return true;
 }
 
-static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /*
      * Load auths
      */
     tool_rc rc = tpm2_util_object_load_auth(ectx,
         ctx.endorsement_hierarchy.ctx_path, ctx.endorsement_hierarchy.auth_str,
-        &ctx.endorsement_hierarchy.object, false, TPM2_HANDLE_FLAGS_E);
+        &ctx.endorsement_hierarchy.object, flags.restricted_pwd_session, TPM2_HANDLE_FLAGS_E);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid endorsement hierarchy authorization");
         return rc;
     }
 
     rc = tpm2_util_object_load_auth(ectx, ctx.key.ctx_path,
-            ctx.key.auth_str, &ctx.key.object, false,
+            ctx.key.auth_str, &ctx.key.object, flags.restricted_pwd_session,
             TPM2_HANDLES_FLAGS_TRANSIENT|TPM2_HANDLES_FLAGS_PERSISTENT);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key authorization");
@@ -214,7 +214,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     //Process inputs
-    tool_rc rc = process_inputs(ectx);
+    tool_rc rc = process_inputs(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }
