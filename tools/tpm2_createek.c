@@ -101,6 +101,7 @@ struct createek_context {
     char *out_file_path;
     tpm2_convert_pubkey_fmt format;
     bool autoflush;
+    bool restricted_pwd_session;
     struct {
         UINT8 f :1;
         UINT8 t :1;
@@ -120,7 +121,8 @@ static createek_context ctx = {
     },
     .flags = { 0 },
     .find_persistent_handle = false,
-    .autoflush = false
+    .autoflush = false,
+    .restricted_pwd_session = false,
 };
 
 typedef struct alg_map alg_map;
@@ -424,8 +426,6 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    UNUSED(flags);
-
     size_t i;
     tool_rc rc = tool_rc_general_error;
 
@@ -472,7 +472,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     rc = tpm2_util_object_load_auth(ectx, "owner",
         ctx.auth_owner_hierarchy.auth_str, &ctx.auth_owner_hierarchy.object,
-        false, TPM2_HANDLE_FLAGS_O);
+        flags.restricted_pwd_session, TPM2_HANDLE_FLAGS_O);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid owner hierarchy authorization");
         return rc;
@@ -480,7 +480,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     rc = tpm2_util_object_load_auth(ectx, "endorsement",
         ctx.auth_endorse_hierarchy.auth_str, &ctx.auth_endorse_hierarchy.object,
-        false, TPM2_HANDLE_FLAGS_E);
+        flags.restricted_pwd_session, TPM2_HANDLE_FLAGS_E);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid endorsement hierarchy authorization");
         return rc;
@@ -491,7 +491,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * The ek object attributes are setup to policy reference eh-auth
      */
     rc = tpm2_auth_util_from_optarg(ectx, ctx.auth_ek.auth_str,
-            &ctx.auth_ek.object.session, false);
+            &ctx.auth_ek.object.session, flags.restricted_pwd_session);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid EK authorization");
         goto out;

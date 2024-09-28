@@ -162,7 +162,7 @@ static bool set_signature_format(char *value) {
     return true;
 }
 
-static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /*
      * 1. Object and auth initializations
@@ -185,7 +185,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
     if (!ctx.is_tcti_none) {
         rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
-                ctx.signing_key.auth_str, &ctx.signing_key.object, false,
+                ctx.signing_key.auth_str, &ctx.signing_key.object, flags.restricted_pwd_session,
                 TPM2_HANDLES_FLAGS_TRANSIENT|TPM2_HANDLES_FLAGS_PERSISTENT);
         if (rc != tool_rc_success) {
             LOG_ERR("Invalid signing key/ authorization.");
@@ -213,7 +213,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
           tpm2_tpmi_hierarchy_to_esys_tr(ctx.nvindex_authobj.object.handle) : 0;
     } else {
         rc = tpm2_util_object_load_auth(ectx, ctx.nvindex_authobj.ctx_path,
-            ctx.nvindex_authobj.auth_str, &ctx.nvindex_authobj.object, false,
+            ctx.nvindex_authobj.auth_str, &ctx.nvindex_authobj.object, flags.restricted_pwd_session,
             TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
     }
 
@@ -556,7 +556,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 2. Process inputs
      */
-    rc = process_inputs(ectx);
+    rc = process_inputs(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }

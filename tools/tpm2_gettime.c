@@ -124,7 +124,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
 }
 
 
-static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /*
      * 1. Object and auth initializations
@@ -141,7 +141,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /* Object #1 */
     /* set up the privacy admin (always endorsement) hard coded in ctx init */
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.privacy_admin.ctx_path,
-        ctx.privacy_admin.auth_str, &ctx.privacy_admin.object, false,
+        ctx.privacy_admin.auth_str, &ctx.privacy_admin.object, flags.restricted_pwd_session,
         TPM2_HANDLE_FLAGS_E);
     if (rc != tool_rc_success) {
         return rc;
@@ -150,7 +150,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /* Object #2 */
     /* load the signing key */
     rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
-        ctx.signing_key.auth_str, &ctx.signing_key.object, false,
+        ctx.signing_key.auth_str, &ctx.signing_key.object, flags.restricted_pwd_session,
         TPM2_HANDLES_FLAGS_TRANSIENT|TPM2_HANDLES_FLAGS_PERSISTENT);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key authorization");
@@ -309,7 +309,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 2. Process inputs
      */
-    rc = process_inputs(ectx);
+    rc = process_inputs(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }
