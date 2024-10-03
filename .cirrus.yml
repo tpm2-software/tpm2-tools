@@ -12,7 +12,7 @@ task:
   install_script:
     - pkg update -f
     - pkg upgrade -y
-    - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive e2fsprogs-libuuid py39-yaml expect
+    - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive e2fsprogs-libuuid py311-yaml expect
     - pkg install -y automake glib dbus dbus-glib cmocka wget git openssl json-c vim hs-pandoc
     - pkg install -y swtpm
     - mkdir tss
