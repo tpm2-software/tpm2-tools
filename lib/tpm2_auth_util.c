@@ -467,7 +467,13 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     }
 
     /* must be a password */
-    return handle_password_session(ectx, password, session);
+    if (is_restricted) {
+        /* ESYS_TR_PASSWORD will be used as handle. */
+        return handle_password_session(NULL, password, session);
+    } else {
+        /* A hmac session will be created. */
+        return handle_password_session(ectx, password, session);
+    }
 }
 
 tool_rc tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR object,

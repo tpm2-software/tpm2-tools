@@ -129,7 +129,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
            ctx.contextpath, ctx.autoflush);
 }
 
-static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(ectx);
     /*
@@ -162,7 +162,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * tssprivkey, the parent object is always loaded.
      */
     tool_rc rc = tpm2_util_object_load_auth(ectx, objectstr, auth,
-        &ctx.parent.object, false, TPM2_HANDLE_ALL_W_NV);
+        &ctx.parent.object, flags.restricted_pwd_session, TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -340,7 +340,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 2. Process inputs
      */
-    rc = process_inputs(ectx);
+    rc = process_inputs(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }

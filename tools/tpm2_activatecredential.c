@@ -173,7 +173,7 @@ out:
     return result;
 }
 
-static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /*
      * 1. Object and auth initializations
@@ -189,14 +189,14 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
 
     /* Object #1 */
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.credential_key.ctx_path,
-        ctx.credential_key.auth_str, &ctx.credential_key.object, false,
+        ctx.credential_key.auth_str, &ctx.credential_key.object, flags.restricted_pwd_session,
         TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
     /* Object #2 */
     rc = tpm2_util_object_load_auth(ectx, ctx.credentialed_key.ctx_path,
-        ctx.credentialed_key.auth_str, &ctx.credentialed_key.object, false,
+        ctx.credentialed_key.auth_str, &ctx.credentialed_key.object, flags.restricted_pwd_session,
         TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
@@ -341,7 +341,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 2. Process inputs
      */
-    rc = process_inputs(ectx);
+    rc = process_inputs(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }
