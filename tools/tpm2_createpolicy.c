@@ -54,6 +54,9 @@ static create_policy_ctx pctx = {
 
 static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
 
+    tool_rc rc;
+    TSS2_RC rval;
+
     if (!pctx.common_policy_options.policy_type.policy_pcr) {
         LOG_ERR("Only PCR policy is currently supported!");
         return tool_rc_option_error;
@@ -71,7 +74,7 @@ static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
 
     tpm2_session **s = &pctx.common_policy_options.policy_session;
 
-    tool_rc rc = tpm2_session_open(ectx, session_data, s);
+    rc = tpm2_session_open(ectx, session_data, s);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -91,9 +94,19 @@ static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    return tpm2_policy_tool_finish(ectx,
-            pctx.common_policy_options.policy_session,
-            pctx.common_policy_options.policy_file);
+    rc = tpm2_policy_tool_finish(ectx,
+          pctx.common_policy_options.policy_session,
+          pctx.common_policy_options.policy_file);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+    if (pctx.common_policy_options.policy_session_type == TPM2_SE_TRIAL) {
+        rval = Esys_FlushContext(ectx, tpm2_session_get_handle(*s));
+        if (rval != TPM2_RC_SUCCESS) {
+            return tool_rc_general_error;
+        }
+    }
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
