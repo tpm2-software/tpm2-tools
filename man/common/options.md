@@ -22,11 +22,16 @@ information that many users may expect.
 
   * **-Q**, **\--quiet**:
     Silence normal tool output to stdout.
-
+x
   * **-Z**, **\--enable-errata**:
     Enable the application of errata fixups. Useful if an errata fixup needs to be
     applied to commands sent to the TPM. Defining the environment
     TPM2TOOLS\_ENABLE\_ERRATA is equivalent.
+  * **-z**, **\--pwd-session**:
+    Use password session instead of a HMAC session for authentication. A clear text password
+    is passed to the TPM to authorize the action. This option can be used to avoid problems
+    when unsalted sessions are used in OpenSSL FIPS mode. If auth values are used
+    a salted session should be used for authentication.
   * **-R**, **\--autoflush**:
     Enable autoflush for transient objects created by the command. If a parent
     object is loaded from a context file also the transient parent object will

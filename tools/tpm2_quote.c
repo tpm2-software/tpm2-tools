@@ -205,7 +205,7 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     return write_output_files();
 }
 
-static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
+static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(ectx);
     /*
@@ -220,7 +220,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * 1.b Add object names and their auth sessions
      */
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.key.ctx_path,
-            ctx.key.auth_str, &ctx.key.object, false, TPM2_HANDLE_ALL_W_NV);
+            ctx.key.auth_str, &ctx.key.object, flags.restricted_pwd_session, TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key authorization");
         return rc;
@@ -405,7 +405,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 2. Process inputs
      */
-    rc = process_inputs(ectx);
+    rc = process_inputs(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }
