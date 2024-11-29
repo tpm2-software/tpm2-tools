@@ -552,6 +552,9 @@ tool_rc tpm2_zgen2phase(ESYS_CONTEXT *esys_context,
     TPM2B_ECC_POINT *Q2, TPM2B_ECC_POINT **Z1, TPM2B_ECC_POINT **Z2,
     TPMI_ECC_KEY_EXCHANGE keyexchange_scheme, UINT16 commit_counter);
 
+tool_rc tpm2_pcr_setauthvalue(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *pcrindex_auth_obj, const TPM2B_AUTH *pcrindex_newauth);
+
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context);
 
