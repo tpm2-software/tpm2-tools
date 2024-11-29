@@ -113,7 +113,7 @@ static tool_rc check_opts(void) {
     return rc;
 }
 
-static tool_rc init(ESYS_CONTEXT *ectx) {
+static tool_rc init(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     bool res = files_load_public(ctx.object.pubpath, &ctx.object.public);
     if (!res) {
         return tool_rc_general_error;
@@ -125,7 +125,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
     }
 
     return tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
-            ctx.parent.auth_str, &ctx.parent.object, false,
+            ctx.parent.auth_str, &ctx.parent.object, flags.restricted_pwd_session,
             TPM2_HANDLE_ALL_W_NV);
 }
 
@@ -212,14 +212,13 @@ static int encode(ESYS_CONTEXT *ectx) {
 }
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
-    UNUSED(flags);
 
     tool_rc rc = check_opts();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = init(ectx);
+    rc = init(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }

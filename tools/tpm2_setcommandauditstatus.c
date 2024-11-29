@@ -98,7 +98,7 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.hierarchy.ctx_path,
-    ctx.hierarchy.auth_str , &ctx.hierarchy.object, false,
+    ctx.hierarchy.auth_str , &ctx.hierarchy.object, flags.restricted_pwd_session,
     TPM2_HANDLE_FLAGS_O|TPM2_HANDLE_FLAGS_P);
     if (rc != tool_rc_success) {
         return rc;

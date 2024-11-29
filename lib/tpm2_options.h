@@ -22,6 +22,8 @@ union tpm2_option_flags {
         uint8_t quiet :1;
         uint8_t enable_errata :1;
         uint8_t tcti_none :1;
+        uint8_t restricted_pwd_session :1;
+        
     };
     uint8_t all;
 };

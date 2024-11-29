@@ -144,10 +144,10 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     return tool_rc_success;
 }
 
-static tool_rc check_options(ESYS_CONTEXT *ectx) {
+static tool_rc check_options(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, flags.restricted_pwd_session,
             TPM2_HANDLE_FLAGS_P | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_E);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid authorization");
@@ -300,12 +300,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    UNUSED(flags);
-
     /*
      * 1. Process options
      */
-    tool_rc rc = check_options(ectx);
+    tool_rc rc = check_options(ectx, flags);
     if (rc != tool_rc_success) {
         return rc;
     }
