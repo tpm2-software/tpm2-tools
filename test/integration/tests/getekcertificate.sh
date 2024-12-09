@@ -94,6 +94,8 @@ diff test_ecc_ek.pem test_ek.pem
 # Retrieve EK certificates from NV indices
 RSA_EK_CERT_NV_INDEX=0x01C00002
 ECC_EK_CERT_NV_INDEX=0x01C0000A
+RSA_3072_EK_CERT_NV_INDEX=0x01C0001C
+ECC_NIST_P384_EK_CERT_NV_INDEX=0x01C00016
 
 define_ek_cert_nv_index() {
     file_size=`ls -l $1 | awk {'print $5'}`
@@ -133,5 +135,41 @@ tpm2 getekcertificate -o nv_rsa_ek_cert.der -o nv_ecc_ek_cert.der
 
 diff nv_rsa_ek_cert.der rsa_ek_cert.der
 diff nv_ecc_ek_cert.der ecc_ek_cert.der
+
+rm nv_rsa_ek_cert.der rsa_ek_cert.der nv_ecc_ek_cert.der ecc_ek_cert.der -f
+
+## RSA & ECC self-signed EK certs stored in high range NV indexes
+tpm2 nvundefine -C p $RSA_EK_CERT_NV_INDEX
+tpm2 nvundefine -C p $ECC_EK_CERT_NV_INDEX
+
+create_self_signed_ek_cert(){
+    case "$1" in
+        *rsa_3072)
+            openssl genpkey -algorithm RSA -out priv_key.pem \
+            -pkeyopt rsa_keygen_bits:3072 > /dev/null 2>&1
+            openssl req -new -key priv_key.pem -x509 -days 1 \
+            -subj "/" -outform DER -out $2
+        ;;
+        *ecc_nist_p384)
+            openssl ecparam -name secp384r1 -genkey -out priv_key.pem > /dev/null 2>&1
+            openssl req -new -key priv_key.pem -x509 -days 1 \
+            -subj "/" -outform DER -out $2
+        ;;
+        *) echo "Unsupported key type $1"; return 1;;
+    esac
+}
+
+create_self_signed_ek_cert rsa_3072 rsa_ek_cert.der
+create_self_signed_ek_cert ecc_nist_p384 ecc_ek_cert.der
+
+define_ek_cert_nv_index rsa_ek_cert.der $RSA_3072_EK_CERT_NV_INDEX
+define_ek_cert_nv_index ecc_ek_cert.der $ECC_NIST_P384_EK_CERT_NV_INDEX
+
+tpm2 getekcertificate -o nv_rsa_ek_cert.der -o nv_ecc_ek_cert.der
+
+diff nv_rsa_ek_cert.der rsa_ek_cert.der
+diff nv_ecc_ek_cert.der ecc_ek_cert.der
+
+rm nv_rsa_ek_cert.der rsa_ek_cert.der nv_ecc_ek_cert.der ecc_ek_cert.der priv_key.pem -f
 
 exit 0
