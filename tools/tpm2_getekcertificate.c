@@ -21,6 +21,12 @@
 #include "tpm2_tool.h"
 
 
+/*
+ * Sourced from TCG Vendor ID Registry v1.06:
+ * https://trustedcomputinggroup.org/resource/vendor-id-registry/
+ *
+ */
+
 typedef enum tpm_manufacturer tpm_manufacturer;
 enum tpm_manufacturer {
     VENDOR_AMD       = 0x414D4400,
@@ -57,6 +63,25 @@ enum pubkey_enc_mode {
     ENC_AMD = 2,
 };
 
+/*
+ * Sourced from TCG PC Client Platform TPM Profile Specification v1.05 rev 14:
+ * https://trustedcomputinggroup.org/resource/pc-client-platform-tpm-profile-ptp-specification/
+ *
+ */
+
+typedef enum ek_nv_index ek_nv_index;
+enum ek_nv_index {
+    RSA_EK_CERT_NV_INDEX = 0x01C00002,
+    ECC_EK_CERT_NV_INDEX = 0x01C0000A,
+    RSA_2048_EK_CERT_NV_INDEX = 0x01C00012,
+    RSA_3072_EK_CERT_NV_INDEX = 0x01C0001C,
+    RSA_4096_EK_CERT_NV_INDEX = 0x01C0001E,
+    ECC_NIST_P256_EK_CERT_NV_INDEX = 0x01C00014,
+    ECC_NIST_P384_EK_CERT_NV_INDEX = 0x01C00016,
+    ECC_NIST_P521_EK_CERT_NV_INDEX = 0x01C00018,
+    ECC_SM2_P256_EK_CERT_NV_INDEX = 0x01C0001A,
+};
+
 #define EK_SERVER_INTEL "https://ekop.intel.com/ekcertservice/"
 #define EK_SERVER_AMD "https://ftpm.amd.com/pki/aia/"
 
@@ -68,6 +93,8 @@ struct tpm_getekcertificate_ctx {
     tpm_manufacturer manufacturer;
     bool is_rsa_ek_cert_nv_location_defined;
     bool is_ecc_ek_cert_nv_location_defined;
+    ek_nv_index rsa_ek_cert_nv_location;
+    ek_nv_index ecc_ek_cert_nv_location;
     bool is_tpmgeneratedeps;
     // Certficate data handling
     uint8_t cert_count;
@@ -90,24 +117,52 @@ struct tpm_getekcertificate_ctx {
     TPM2B_PUBLIC *out_public;
 };
 
-/*
- * Sourced from TCG Vendor ID Registry v1.06:
- * https://trustedcomputinggroup.org/resource/vendor-id-registry/
- *
- */
-
-typedef enum ek_nv_index ek_nv_index;
-enum ek_nv_index {
-    RSA_EK_CERT_NV_INDEX = 0x01C00002,
-    ECC_EK_CERT_NV_INDEX = 0x01C0000A
-};
-
 static tpm_getekcertificate_ctx ctx = {
     .is_tpm2_device_active = true,
     .is_cert_on_nv = true,
     .cert_count = 0,
     .encoding = ENC_AUTO,
 };
+
+
+typedef enum key_type key_type;
+enum key_type {
+    KTYPE_RSA = 0,
+    KTYPE_ECC = 1,
+};
+
+typedef struct ek_index_map ek_index_map;
+struct ek_index_map
+{
+  const char *name;
+  key_type key_type;
+  ek_nv_index index;
+  TPMI_ALG_HASH hash_alg;
+};
+
+static ek_index_map ek_index_maps[] = {
+    {"rsa", KTYPE_RSA, RSA_EK_CERT_NV_INDEX, TPM2_ALG_SHA256},
+    {"rsa2048", KTYPE_RSA, RSA_2048_EK_CERT_NV_INDEX, TPM2_ALG_SHA256},
+    {"rsa3072", KTYPE_RSA, RSA_3072_EK_CERT_NV_INDEX, TPM2_ALG_SHA384},
+    {"rsa4096", KTYPE_RSA, RSA_4096_EK_CERT_NV_INDEX, TPM2_ALG_SHA512},
+    {"ecc", KTYPE_ECC, ECC_EK_CERT_NV_INDEX, TPM2_ALG_SHA256},
+    {"ecc_nist_p256", KTYPE_ECC, ECC_NIST_P256_EK_CERT_NV_INDEX, TPM2_ALG_SHA256},
+    {"ecc_nist_p384", KTYPE_ECC, ECC_NIST_P384_EK_CERT_NV_INDEX, TPM2_ALG_SHA384},
+    {"ecc_nist_p521", KTYPE_ECC, ECC_NIST_P521_EK_CERT_NV_INDEX, TPM2_ALG_SHA512},
+    {"ecc_sm2_p256", KTYPE_ECC, ECC_SM2_P256_EK_CERT_NV_INDEX, TPM2_ALG_SM3_256},
+};
+
+static const ek_index_map *lookup_ek_index_map(const TPMI_RH_NV_INDEX index) {
+    size_t i;
+
+    for (i = 0; i < ARRAY_LEN(ek_index_maps); i++)
+    {
+        if (index == ek_index_maps[i].index) {
+            return &ek_index_maps[i];
+        }
+    }
+    return NULL;
+}
 
 
 static char *get_ek_server_address(void) {
@@ -613,11 +668,20 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
     UINT32 i;
     for (i = 0; i < capability_data->data.handles.count; i++) {
         TPMI_RH_NV_INDEX index = capability_data->data.handles.handle[i];
-        if (index == RSA_EK_CERT_NV_INDEX) {
-            ctx.is_rsa_ek_cert_nv_location_defined = true;
+        const ek_index_map *m = lookup_ek_index_map(index);
+        if (!m) {
+            continue;
         }
-        if (index == ECC_EK_CERT_NV_INDEX) {
+
+        if (m->key_type == KTYPE_RSA) {
+            LOG_INFO("Found pre-provisioned RSA EK certificate at %u [type=%s]", index, m->name);
+            ctx.is_rsa_ek_cert_nv_location_defined = true;
+            ctx.rsa_ek_cert_nv_location = m->index;
+        }
+        if (m->key_type == KTYPE_ECC) {
+            LOG_INFO("Found pre-provisioned ECC EK certificate at %u [type=%s]", index, m->name);
             ctx.is_ecc_ek_cert_nv_location_defined = true;
+            ctx.ecc_ek_cert_nv_location = m->index;
         }
     }
 
@@ -638,13 +702,15 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
      * with attributes:
      * ppwrite|ppread|ownerread|authread|no_da|written|platformcreate
      */
-    const bool is_rsa = nv_index == RSA_EK_CERT_NV_INDEX;
-    char index_string[11];
-    if (is_rsa) {
-        strcpy(index_string, "0x01C00002");
-    } else {
-        strcpy(index_string, "0x01C0000A");
+    const ek_index_map *m = lookup_ek_index_map(nv_index);
+    if (!m) {
+        LOG_ERR("Unsupported NV INDEX, got \"%u\"", nv_index);
+        return tool_rc_unsupported;
     }
+
+    const bool is_rsa = m->key_type == KTYPE_RSA;
+    char index_string[11];
+    snprintf(index_string, sizeof(index_string), "%u", m->index);
     tpm2_loaded_object object;
     tool_rc tmp_rc = tool_rc_success;
     tool_rc rc = tpm2_util_object_load_auth(ectx, index_string, NULL, &object,
@@ -658,11 +724,11 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
     uint16_t nv_buf_size = 0;
     rc = is_rsa ?
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.rsa_cert_buffer,
-            &nv_buf_size, &cp_hash, &rp_hash, TPM2_ALG_SHA256, 0,
+            &nv_buf_size, &cp_hash, &rp_hash, m->hash_alg, 0,
             ESYS_TR_NONE, ESYS_TR_NONE, NULL) :
 
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.ecc_cert_buffer,
-            &nv_buf_size, &cp_hash, &rp_hash, TPM2_ALG_SHA256, 0,
+            &nv_buf_size, &cp_hash, &rp_hash, m->hash_alg, 0,
             ESYS_TR_NONE, ESYS_TR_NONE, NULL);
     if (is_rsa) {
         ctx.rsa_cert_buffer_size = nv_buf_size;
@@ -707,14 +773,14 @@ static tool_rc get_nv_ek_certificate(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_success;
     if (ctx.is_rsa_ek_cert_nv_location_defined) {
-        rc = nv_read(ectx, RSA_EK_CERT_NV_INDEX);
+        rc = nv_read(ectx, ctx.rsa_ek_cert_nv_location);
         if (rc != tool_rc_success) {
             return rc;
         }
     }
 
     if (ctx.is_ecc_ek_cert_nv_location_defined) {
-        rc = nv_read(ectx, ECC_EK_CERT_NV_INDEX);
+        rc = nv_read(ectx, ctx.ecc_ek_cert_nv_location);
     }
 
     return rc;
