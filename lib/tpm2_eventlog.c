@@ -427,7 +427,7 @@ size_t i;
             break;
 
         default:
-            LOG_WARN("Event %zu is unexectedly not extending either PCR 8, 9, 12 or 14", eventnum - 1);
+            LOG_WARN("Event %zu is unexpectedly not extending either PCR 8, 9, 12 or 14", eventnum - 1);
             return false;
         }
 
