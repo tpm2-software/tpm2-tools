@@ -19,6 +19,9 @@
 #include "tpm2_capability.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/core_names.h> 
+#endif
 
 
 /*
@@ -122,6 +125,7 @@ static tpm_getekcertificate_ctx ctx = {
     .is_cert_on_nv = true,
     .cert_count = 0,
     .encoding = ENC_AUTO,
+    
 };
 
 
@@ -619,11 +623,334 @@ static bool get_web_ek_certificate(void) {
     return ret;
 }
 
+static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
+
+    /*
+     * Typical NV Index holding EK certificate has an empty auth
+     * with attributes:
+     * ppwrite|ppread|ownerread|authread|no_da|written|platformcreate
+     */
+    const ek_index_map *m = lookup_ek_index_map(nv_index);
+    if (!m) {
+        LOG_ERR("Unsupported NV INDEX, got \"%u\"", nv_index);
+        return tool_rc_unsupported;
+    }
+
+    const bool is_rsa = m->key_type == KTYPE_RSA;
+    char index_string[11];
+    snprintf(index_string, sizeof(index_string), "%u", m->index);
+    tpm2_loaded_object object;
+    tool_rc tmp_rc = tool_rc_success;
+    tool_rc rc = tpm2_util_object_load_auth(ectx, index_string, NULL, &object,
+        false, TPM2_HANDLE_FLAGS_NV);
+    if (rc != tool_rc_success) {
+        goto nv_read_out;
+    }
+
+    TPM2B_DIGEST cp_hash = { 0 };
+    TPM2B_DIGEST rp_hash = { 0 };
+    uint16_t nv_buf_size = 0;
+    rc = is_rsa ?
+         tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.rsa_cert_buffer,
+            &nv_buf_size, &cp_hash, &rp_hash, m->hash_alg, 0,
+            ESYS_TR_NONE, ESYS_TR_NONE, NULL) :
+
+         tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.ecc_cert_buffer,
+            &nv_buf_size, &cp_hash, &rp_hash, m->hash_alg, 0,
+            ESYS_TR_NONE, ESYS_TR_NONE, NULL);
+    if (is_rsa) {
+        ctx.rsa_cert_buffer_size = nv_buf_size;
+    } else {
+        ctx.ecc_cert_buffer_size = nv_buf_size;
+    }
+
+nv_read_out:
+    tmp_rc = tpm2_session_close(&object.session);
+    if (rc != tool_rc_success) {
+        return tmp_rc;
+    }
+
+    return rc;
+}
+
+bool cmp_public_key(
+    TPM2B_PUBLIC *key1,
+    TPM2B_PUBLIC *key2)
+{
+    if (key1->publicArea.type != key2->publicArea.type)
+        return false;
+    switch (key1->publicArea.type) {
+    case TPM2_ALG_RSA:
+        if (key1->publicArea.unique.rsa.size != key2->publicArea.unique.rsa.size) {
+            return false;
+        }
+        if (memcmp(&key1->publicArea.unique.rsa.buffer[0],
+                   &key2->publicArea.unique.rsa.buffer[0],
+                   key1->publicArea.unique.rsa.size) == 0)
+            return true;
+        else
+            return false;
+        break;
+    case TPM2_ALG_ECC:
+        if (key1->publicArea.unique.ecc.x.size != key2->publicArea.unique.ecc.x.size) {
+            return false;
+        }
+        if (memcmp(&key1->publicArea.unique.ecc.x.buffer[0],
+                   &key2->publicArea.unique.ecc.x.buffer[0],
+                   key1->publicArea.unique.ecc.x.size) != 0)
+            return false;
+        if (key1->publicArea.unique.ecc.y.size != key2->publicArea.unique.ecc.y.size) {
+            return false;
+        }
+        if (memcmp(&key1->publicArea.unique.ecc.y.buffer[0],
+                   &key2->publicArea.unique.ecc.y.buffer[0],
+                   key1->publicArea.unique.ecc.y.size) != 0)
+            return false;
+        else
+            return true;
+        break;
+
+    default:
+        return false;
+    }
+}
+
+static int bn2binpad(const BIGNUM *bn, unsigned char *bin, int binSize)
+{
+    /* Check for NULL parameters */
+    if (!bn || !bin) {
+        return 0;
+    }
+    /* Convert bn */
+    int bnSize = BN_num_bytes(bn);
+    int offset = binSize - bnSize;
+    memset(bin, 0, offset);
+    BN_bn2bin(bn, bin + offset);
+    return 1;
+}
+
+tool_rc get_rsa_tpm2b_public_from_evp(
+    EVP_PKEY *publicKey,
+    TPM2B_PUBLIC *tpmPublic)
+{
+    /* Check for NULL parameters */
+    if (!publicKey) {
+        LOG_ERR("publicKey is NULL");
+        return tool_rc_general_error;
+    }
+    if (!tpmPublic) {
+        LOG_ERR("tpmPublic is NULL");
+        return tool_rc_general_error;
+    }
+
+    /* Extract the public information */
+    tool_rc rc = tool_rc_success;
+    int keyBits, keySize;
+
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    const BIGNUM *e = NULL, *n = NULL;
+    RSA *rsaKey = EVP_PKEY_get1_RSA(publicKey);
+    if (!rsaKey) {
+        LOG_ERR("Out of memory.");
+        rc = tool_rc_general_error;
+        goto cleanup;
+    }
+    keySize = RSA_size(rsaKey);
+    keyBits = keySize * 8;
+    RSA_get0_key(rsaKey, &n, &e, NULL);
+#else
+    BIGNUM *e = NULL, *n = NULL;
+
+    keyBits = EVP_PKEY_get_bits(publicKey);
+    keySize = (keyBits + 7) / 8;
+    if (!EVP_PKEY_get_bn_param(publicKey, OSSL_PKEY_PARAM_RSA_N, &n)
+            || !EVP_PKEY_get_bn_param(publicKey, OSSL_PKEY_PARAM_RSA_E, &e)) {
+        LOG_ERR("Retrieve pubkey failed");
+        rc = tool_rc_general_error;
+        goto cleanup;
+    }
+#endif
+    tpmPublic->publicArea.unique.rsa.size = keySize;
+    if (1 != bn2binpad(n, &tpmPublic->publicArea.unique.rsa.buffer[0],
+                       keySize)) {
+        LOG_ERR("Write big num byte buffer failed.");
+        rc = tool_rc_general_error;
+        goto cleanup;
+    }
+    tpmPublic->publicArea.parameters.rsaDetail.keyBits = keyBits;
+    tpmPublic->publicArea.parameters.rsaDetail.exponent = BN_get_word(e);
+
+cleanup:
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    RSA_free(rsaKey);
+#else
+    BN_free(e);
+    BN_free(n);
+#endif
+    return rc;
+}
+
+#define EC_POINT_get_affine_coordinates_tss(group, tpm_pub_key, bn_x, bn_y, dmy) \
+        EC_POINT_get_affine_coordinates(group, tpm_pub_key, bn_x, bn_y, dmy)
+
+tool_rc get_ecc_tpm2b_public_from_evp(
+    EVP_PKEY *publicKey,
+    TPM2B_PUBLIC *tpmPublic)
+{
+    /* Check for NULL parameters */
+    if (!publicKey || !tpmPublic) {
+        LOG_ERR("Bad reference.");
+        return tool_rc_general_error;
+    }
+
+    /* Initialize variables that will contain the relevant information */
+    tool_rc rc = tool_rc_success;
+    int curveId;
+    size_t ecKeySize;
+    BIGNUM *bnX = NULL;
+    BIGNUM *bnY = NULL;
+    TPMI_ECC_CURVE tpmCurveId;
+#if OPENSSL_VERSION_NUMBER < 0x30000000
+    const EC_GROUP *ecGroup;
+    const EC_POINT *publicPoint;
+    EC_KEY *ecKey = EVP_PKEY_get1_EC_KEY(publicKey);
+    if (!ecKey) {
+        LOG_ERR("Out of memory.");
+        return tool_rc_general_error;
+    }
+
+    /* Retrieve the relevant information and write it to tpmPublic */
+    ecGroup = EC_KEY_get0_group(ecKey);
+    publicPoint = EC_KEY_get0_public_key(ecKey);
+    curveId = EC_GROUP_get_curve_name(ecGroup);
+    ecKeySize = (EC_GROUP_get_degree(ecGroup) + 7) / 8;
+
+    if (!(bnX = BN_new())) {
+        LOG_ERR("Create bignum failed.");
+        rc = tool_rc_general_error;
+        goto cleanup;
+    }
+
+    if (!(bnY = BN_new())) {
+        LOG_ERR("Create bignum failed.");
+        rc = tool_rc_general_error;
+        goto cleanup;
+    }
+
+    if (1 != EC_POINT_get_affine_coordinates_tss(ecGroup, publicPoint,
+                                                 bnX, bnY, NULL)) {
+        LOG_ERR("Get affine coordinates failed.");
+        rc = tool_rc_general_error;
+        goto cleanup;
+    }
+#else
+    char curveName[80];
+
+    if (!EVP_PKEY_get_utf8_string_param(publicKey, OSSL_PKEY_PARAM_GROUP_NAME,
+                                        curveName, sizeof(curveName), NULL)
+            || !EVP_PKEY_get_bn_param(publicKey, OSSL_PKEY_PARAM_EC_PUB_X, &bnX)
+            || !EVP_PKEY_get_bn_param(publicKey, OSSL_PKEY_PARAM_EC_PUB_Y, &bnY)) {
+        LOG_ERR("Get public key failde.");
+        rc = tool_rc_general_error;
+        goto cleanup;
+     }
+    curveId = OBJ_txt2nid(curveName);
+    ecKeySize = (EVP_PKEY_bits(publicKey) + 7) / 8;
+#endif
+    tpmPublic->publicArea.unique.ecc.x.size = ecKeySize;
+    tpmPublic->publicArea.unique.ecc.y.size = ecKeySize;
+    if (1 != bn2binpad(bnX, &tpmPublic->publicArea.unique.ecc.x.buffer[0],
+                       (int) ecKeySize)) {
+        LOG_ERR("Write big num byte buffer failed.");
+        rc = tool_rc_general_error;
+        goto cleanup;
+    }
+    if (1 != bn2binpad(bnY, &tpmPublic->publicArea.unique.ecc.y.buffer[0],
+                       (int) ecKeySize)) {
+        LOG_ERR("Write big num byte buffer failed.");
+        rc = tool_rc_general_error;
+        goto cleanup;
+    }
+    switch (curveId) {
+    case NID_X9_62_prime192v1:
+        tpmCurveId = TPM2_ECC_NIST_P192;
+        break;
+    case NID_secp224r1:
+        tpmCurveId = TPM2_ECC_NIST_P224;
+        break;
+    case NID_X9_62_prime256v1:
+        tpmCurveId = TPM2_ECC_NIST_P256;
+        break;
+    case NID_secp384r1:
+        tpmCurveId = TPM2_ECC_NIST_P384;
+        break;
+    case NID_secp521r1:
+        tpmCurveId = TPM2_ECC_NIST_P521;
+        break;
+#ifdef NID_sm2
+    case NID_sm2:
+        tpmCurveId = TPM2_ECC_SM2_P256;
+        break;
+#endif
+    default:
+        LOG_ERR("Curve %i not implemented", curveId);
+        rc = tool_rc_general_error;
+        goto cleanup;
+    }
+    tpmPublic->publicArea.parameters.eccDetail.curveID = tpmCurveId;
+
+cleanup:
+#if OPENSSL_VERSION_NUMBER < 0x30000000
+    if (ecKey) EC_KEY_free(ecKey);
+#endif
+    if (bnX) BN_free(bnX);
+    if (bnY) BN_free(bnY);
+    return rc;
+}
+
+tool_rc get_public_from_cert(X509 *cert, TPM2B_PUBLIC *tpm_public)
+{
+    tool_rc rc = tool_rc_success;
+    EVP_PKEY *public_key = NULL;
+
+    public_key = X509_get_pubkey(cert);
+    if (!public_key) {
+        LOG_ERR("Certificate did not contain a public key.");
+        return  tool_rc_general_error;
+    }
+
+    if (EVP_PKEY_type(EVP_PKEY_id(public_key)) == EVP_PKEY_RSA) {
+        tpm_public->publicArea.type = TPM2_ALG_RSA;
+        rc = get_rsa_tpm2b_public_from_evp(public_key, tpm_public);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+    } else if (EVP_PKEY_type(EVP_PKEY_id(public_key)) == EVP_PKEY_EC) {
+        tpm_public->publicArea.type = TPM2_ALG_ECC;
+        rc = get_ecc_tpm2b_public_from_evp(public_key, tpm_public);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+    } else {
+        LOG_ERR("Wrong key type");
+        rc = tool_rc_general_error;
+    }
+    EVP_PKEY_free(public_key);
+    return rc;
+}
+
+
 tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
 
     TPMI_YES_NO more_data;
     TPMS_CAPABILITY_DATA *capability_data;
     tool_rc rc = tool_rc_success;
+    unsigned char *cert_buffer;
+    unsigned char *cert_buffer_ossl;
+    size_t cert_buffer_size;
+    X509 *cert = NULL;
+    TPM2B_PUBLIC public_key;
+
     rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_MANUFACTURER,
             1, &more_data, &capability_data);
     if (rc != tool_rc_success) {
@@ -676,15 +1003,59 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
             continue;
         }
 
-        if (m->key_type == KTYPE_RSA && index < ctx.rsa_ek_cert_nv_location) {
-            LOG_INFO("Found pre-provisioned RSA EK certificate at %u [type=%s]", index, m->name);
-            ctx.is_rsa_ek_cert_nv_location_defined = true;
-            ctx.rsa_ek_cert_nv_location = m->index;
-        }
-        if (m->key_type == KTYPE_ECC && index < ctx.ecc_ek_cert_nv_location) {
-            LOG_INFO("Found pre-provisioned ECC EK certificate at %u [type=%s]", index, m->name);
-            ctx.is_ecc_ek_cert_nv_location_defined = true;
-            ctx.ecc_ek_cert_nv_location = m->index;
+        if (ctx.ek_path) {
+            /* Read possible certificate  */
+            if (ctx.out_public->publicArea.type == TPM2_ALG_RSA && m->key_type == KTYPE_RSA) {
+                rc = nv_read(ectx, index);
+                if (rc != tool_rc_success) {
+                    return rc;
+                }
+                cert_buffer = ctx.rsa_cert_buffer;
+                cert_buffer_size =  ctx.rsa_cert_buffer_size;
+            } else if (ctx.out_public->publicArea.type == TPM2_ALG_ECC && m->key_type == KTYPE_ECC) {
+                rc = nv_read(ectx, index);
+                if (rc != tool_rc_success) {
+                    return rc;
+                }
+                cert_buffer = ctx.ecc_cert_buffer;
+                cert_buffer_size =  ctx.ecc_cert_buffer_size;
+            } else {
+                continue;
+            }
+            cert_buffer_ossl = cert_buffer;
+            cert = d2i_X509(NULL, (const unsigned char **)&cert_buffer_ossl, cert_buffer_size);
+            if (!cert) {
+                free(cert_buffer);
+                LOG_WARN("Invalid certificate found at %x", index);
+            } else {
+                /* Compare certificate with pub key. */
+                rc = get_public_from_cert(cert, &public_key);
+                X509_free(cert);
+                if (rc != tool_rc_success) {
+                    return rc;
+                }
+                if (cmp_public_key(ctx.out_public, &public_key)) {
+                    if (m->key_type == KTYPE_RSA) {
+                        ctx.is_rsa_ek_cert_nv_location_defined = true;
+                    } else {
+                        ctx.is_ecc_ek_cert_nv_location_defined = true;
+                    }
+                    break;
+                } else {
+                    free(cert_buffer);
+                }
+            }
+        } else {
+            if (m->key_type == KTYPE_RSA && index < ctx.rsa_ek_cert_nv_location) {
+                LOG_INFO("Found pre-provisioned RSA EK certificate at %u [type=%s]", index, m->name);
+                ctx.is_rsa_ek_cert_nv_location_defined = true;
+                ctx.rsa_ek_cert_nv_location = m->index;
+            }
+            if (m->key_type == KTYPE_ECC && index < ctx.ecc_ek_cert_nv_location) {
+                LOG_INFO("Found pre-provisioned ECC EK certificate at %u [type=%s]", index, m->name);
+                ctx.is_ecc_ek_cert_nv_location_defined = true;
+                ctx.ecc_ek_cert_nv_location = m->index;
+            }
         }
     }
 
@@ -698,56 +1069,6 @@ get_tpm_properties_out:
     return rc;
 }
 
-static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
-
-    /*
-     * Typical NV Index holding EK certificate has an empty auth
-     * with attributes:
-     * ppwrite|ppread|ownerread|authread|no_da|written|platformcreate
-     */
-    const ek_index_map *m = lookup_ek_index_map(nv_index);
-    if (!m) {
-        LOG_ERR("Unsupported NV INDEX, got \"%u\"", nv_index);
-        return tool_rc_unsupported;
-    }
-
-    const bool is_rsa = m->key_type == KTYPE_RSA;
-    char index_string[11];
-    snprintf(index_string, sizeof(index_string), "%u", m->index);
-    tpm2_loaded_object object;
-    tool_rc tmp_rc = tool_rc_success;
-    tool_rc rc = tpm2_util_object_load_auth(ectx, index_string, NULL, &object,
-        false, TPM2_HANDLE_FLAGS_NV);
-    if (rc != tool_rc_success) {
-        goto nv_read_out;
-    }
-
-    TPM2B_DIGEST cp_hash = { 0 };
-    TPM2B_DIGEST rp_hash = { 0 };
-    uint16_t nv_buf_size = 0;
-    rc = is_rsa ?
-         tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.rsa_cert_buffer,
-            &nv_buf_size, &cp_hash, &rp_hash, m->hash_alg, 0,
-            ESYS_TR_NONE, ESYS_TR_NONE, NULL) :
-
-         tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.ecc_cert_buffer,
-            &nv_buf_size, &cp_hash, &rp_hash, m->hash_alg, 0,
-            ESYS_TR_NONE, ESYS_TR_NONE, NULL);
-    if (is_rsa) {
-        ctx.rsa_cert_buffer_size = nv_buf_size;
-    } else {
-        ctx.ecc_cert_buffer_size = nv_buf_size;
-    }
-
-nv_read_out:
-    tmp_rc = tpm2_session_close(&object.session);
-    if (rc != tool_rc_success) {
-        return tmp_rc;
-    }
-
-    return rc;
-}
-
 static tool_rc get_nv_ek_certificate(ESYS_CONTEXT *ectx) {
 
     if (!ctx.is_cert_on_nv) {
@@ -757,11 +1078,6 @@ static tool_rc get_nv_ek_certificate(ESYS_CONTEXT *ectx) {
 
     if (ctx.SSL_NO_VERIFY) {
         LOG_WARN("Ignoring -X or --allow-unverified if EK certificate found on NV");
-    }
-
-    if (ctx.ek_path) {
-        LOG_WARN("Ignoring -u or --ek-public option if EK certificate found on NV");
-        return tool_rc_option_error;
     }
 
     if (ctx.is_rsa_ek_cert_nv_location_defined &&
@@ -808,6 +1124,10 @@ static tool_rc print_intel_ek_certificate_warning(void) {
 static tool_rc get_ek_certificates(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_success;
+    /* if ek_path is defined certificate was already read. */
+    if (ctx.is_cert_on_nv && ctx.ek_path) {
+         return rc;
+    }
     if (ctx.is_cert_on_nv) {
         rc = get_nv_ek_certificate(ectx);
         if (rc == tool_rc_success) {

@@ -134,6 +134,11 @@ tpm2_getekcertificate -X -x -o ECcert.bin -u ek.pub
 ```bash
 tpm2_getekcertificate -o ECcert.bin
 ```
+## Retrieve EK certificate from TPM NV indices for an EK public key, fail otherwise.
+```bash
+ tpm2_createek -G ecc384 -u ek_ecc384.pub -c ek_ecc384.ctx
+ tpm2_getekcertificate -o ek_ecc384.cert -u ek_ecc384.pub
+```
 
 ## Retrieve multiple EK certificates from TPM NV indices only, fail otherwise.
 ```bash
