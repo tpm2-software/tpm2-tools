@@ -172,4 +172,12 @@ diff nv_ecc_ek_cert.der ecc_ek_cert.der
 
 rm nv_rsa_ek_cert.der rsa_ek_cert.der nv_ecc_ek_cert.der ecc_ek_cert.der priv_key.pem -f
 
+## Make sure that if there are several certificates of the same type, then the one belonging to low range has priority
+openssl x509 -in ecc_ek_cert.bin -out ecc_low_range_ek_cert.der -outform DER
+define_ek_cert_nv_index ecc_low_range_ek_cert.der $ECC_EK_CERT_NV_INDEX
+
+tpm2 getekcertificate -o nv_ecc_ek_cert.der
+
+diff nv_ecc_ek_cert.der ecc_low_range_ek_cert.der
+
 exit 0
