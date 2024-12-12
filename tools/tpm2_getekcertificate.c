@@ -665,6 +665,9 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
         goto get_tpm_properties_out;
     }
 
+    ctx.rsa_ek_cert_nv_location = 0xffffffff;
+    ctx.ecc_ek_cert_nv_location = 0xffffffff;
+    
     UINT32 i;
     for (i = 0; i < capability_data->data.handles.count; i++) {
         TPMI_RH_NV_INDEX index = capability_data->data.handles.handle[i];
@@ -673,12 +676,12 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
             continue;
         }
 
-        if (m->key_type == KTYPE_RSA) {
+        if (m->key_type == KTYPE_RSA && index < ctx.rsa_ek_cert_nv_location) {
             LOG_INFO("Found pre-provisioned RSA EK certificate at %u [type=%s]", index, m->name);
             ctx.is_rsa_ek_cert_nv_location_defined = true;
             ctx.rsa_ek_cert_nv_location = m->index;
         }
-        if (m->key_type == KTYPE_ECC) {
+        if (m->key_type == KTYPE_ECC && index < ctx.ecc_ek_cert_nv_location) {
             LOG_INFO("Found pre-provisioned ECC EK certificate at %u [type=%s]", index, m->name);
             ctx.is_ecc_ek_cert_nv_location_defined = true;
             ctx.ecc_ek_cert_nv_location = m->index;
