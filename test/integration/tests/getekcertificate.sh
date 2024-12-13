@@ -71,6 +71,7 @@ tpm2 loadexternal -C e  -u test_rsa_ek.pub -c rsa_key.ctx
 tpm2 readpublic -c rsa_key.ctx -f pem -o test_rsa_ek.pem
 openssl x509 -pubkey -in rsa_ek_cert.bin -noout -out test_ek.pem
 diff test_rsa_ek.pem test_ek.pem
+tpm2 flushcontext -t
 
 # Sample ECC ek public from a real platform
 echo "007a0023000b000300b20020837197674484b3f81a90cc8d46a5d724fd52
@@ -90,6 +91,7 @@ tpm2 loadexternal -C e  -u test_ecc_ek.pub -c ecc_key.ctx
 tpm2 readpublic -c ecc_key.ctx -f pem -o test_ecc_ek.pem
 openssl x509 -pubkey -in ecc_ek_cert.bin -noout -out test_ek.pem
 diff test_ecc_ek.pem test_ek.pem
+tpm2 flushcontext -t
 
 # Retrieve EK certificates from NV indices
 RSA_EK_CERT_NV_INDEX=0x01C00002
@@ -170,14 +172,15 @@ tpm2 getekcertificate -o nv_rsa_ek_cert.der -o nv_ecc_ek_cert.der
 diff nv_rsa_ek_cert.der rsa_ek_cert.der
 diff nv_ecc_ek_cert.der ecc_ek_cert.der
 
-rm nv_rsa_ek_cert.der rsa_ek_cert.der nv_ecc_ek_cert.der ecc_ek_cert.der priv_key.pem -f
+rm nv_rsa_ek_cert.der nv_ecc_ek_cert.der -f
 
 ## Make sure that if there are several certificates of the same type, then the one belonging to low range has priority
 openssl x509 -in ecc_ek_cert.bin -out ecc_low_range_ek_cert.der -outform DER
 define_ek_cert_nv_index ecc_low_range_ek_cert.der $ECC_EK_CERT_NV_INDEX
 
-tpm2 getekcertificate -o nv_ecc_ek_cert.der
+tpm2 getekcertificate -o nv_rsa_ek_cert.der -o nv_ecc_ek_cert.der
 
 diff nv_ecc_ek_cert.der ecc_low_range_ek_cert.der
+diff nv_rsa_ek_cert.der rsa_ek_cert.der
 
 exit 0
