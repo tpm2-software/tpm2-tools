@@ -30,7 +30,7 @@ jobs:
         if: ${{ matrix.language == 'cpp' }}
         run: |
           sudo apt-get update
-          sudo apt-get install --yes autoconf-archive libcurl4-openssl-dev libjson-c-dev libssl-dev acl git uuid-dev
+          sudo apt-get install --yes autoconf-archive libcurl4-openssl-dev libjson-c-dev libssl-dev acl git uuid-dev libltdl-dev
 
       - name: After Prepare (cpp)
         if: ${{ matrix.language == 'cpp' }}
