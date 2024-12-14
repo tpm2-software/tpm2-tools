@@ -147,22 +147,22 @@ tpm2 nvundefine -C p $ECC_EK_CERT_NV_INDEX
 create_self_signed_ek_cert(){
     case "$1" in
         *rsa_3072)
-            openssl genpkey -algorithm RSA -out priv_key.pem \
+            openssl genpkey -algorithm RSA -out $3 \
             -pkeyopt rsa_keygen_bits:3072 > /dev/null 2>&1
-            openssl req -new -key priv_key.pem -x509 -days 1 \
+            openssl req -new -key $3 -x509 -days 1 \
             -subj "/" -outform DER -out $2
         ;;
         *ecc_nist_p384)
-            openssl ecparam -name secp384r1 -genkey -out priv_key.pem > /dev/null 2>&1
-            openssl req -new -key priv_key.pem -x509 -days 1 \
+            openssl ecparam -name secp384r1 -genkey -out $3 > /dev/null 2>&1
+            openssl req -new -key $3 -x509 -days 1 \
             -subj "/" -outform DER -out $2
         ;;
         *) echo "Unsupported key type $1"; return 1;;
     esac
 }
 
-create_self_signed_ek_cert rsa_3072 rsa_ek_cert.der
-create_self_signed_ek_cert ecc_nist_p384 ecc_ek_cert.der
+create_self_signed_ek_cert rsa_3072 rsa_ek_cert.der rsa_priv.pem
+create_self_signed_ek_cert ecc_nist_p384 ecc_ek_cert.der ecc_priv.pem
 
 define_ek_cert_nv_index rsa_ek_cert.der $RSA_3072_EK_CERT_NV_INDEX
 define_ek_cert_nv_index ecc_ek_cert.der $ECC_NIST_P384_EK_CERT_NV_INDEX
@@ -182,5 +182,19 @@ tpm2 getekcertificate -o nv_rsa_ek_cert.der -o nv_ecc_ek_cert.der
 
 diff nv_ecc_ek_cert.der ecc_low_range_ek_cert.der
 diff nv_rsa_ek_cert.der rsa_ek_cert.der
+
+# Check usage of --ek_public (-u) param
+
+tpm2 loadexternal -r rsa_priv.pem -Grsa -c rsa_priv.ctx
+tpm2 readpublic -c rsa_priv.ctx -o rsa_pub.tss
+tpm2 getekcertificate -u rsa_pub.tss -o nv_rsa_ek_cert.der
+diff nv_rsa_ek_cert.der rsa_ek_cert.der
+
+tpm2 loadexternal -r ecc_priv.pem -Gecc -c ecc_priv.ctx
+tpm2 readpublic -c ecc_priv.ctx -o ecc_pub.tss
+tpm2 getekcertificate -u ecc_pub.tss -o nv_ecc_ek_cert.der
+diff nv_ecc_ek_cert.der ecc_ek_cert.der
+
+rm nv_rsa_ek_cert.der nv_ecc_ek_cert.der -f
 
 exit 0
