@@ -323,7 +323,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "output",       required_argument, NULL, 'o' },
-        { "force",        required_argument, NULL, 'f' },
+        { "force",        no_argument,       NULL, 'f' },
         { "hex",          no_argument,       NULL,  0  },
         { "session",      required_argument, NULL, 'S' },
         { "cphash",       required_argument, NULL,  1  },
