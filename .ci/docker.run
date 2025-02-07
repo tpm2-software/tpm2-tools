@@ -152,7 +152,7 @@ check_branch="origin/${TRAVIS_BRANCH:-master}"
 [ -z "$TRAVIS_TAG" ] && git fetch "$check_branch" && git diff --check "$check_branch"
 
 if [ "$ENABLE_COVERAGE" == "true" ]; then
-    bash <(curl -s https://codecov.io/bash)
+    lcov --capture --directory . --output-file ./coverage.info
 else
     echo "ENABLE_COVERAGE not true, got \"$ENABLE_COVERAGE\""
 fi

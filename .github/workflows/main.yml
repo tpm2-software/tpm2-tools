@@ -63,6 +63,13 @@ jobs:
           ENABLE_COVERAGE: true
           DOCKER_IMAGE: ubuntu-20.04
           CC: gcc
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.info
+          fail_ci_if_error: true
+          verbose: true
       - name: failure cat build logs
         if: ${{ failure() }}
         run: cat build/test-suite.log || true
