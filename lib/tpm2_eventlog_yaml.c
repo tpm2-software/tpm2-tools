@@ -783,7 +783,7 @@ bool yaml_uefi_platfwblob2(UEFI_PLATFORM_FIRMWARE_BLOB2 *data) {
     return false;
   }
 
-  bytes_to_str (data->BlobDescription, blobdescsize, eventdesc, 2*blobdescsize);
+  bytes_to_str (data->BlobDescription, blobdescsize, eventdesc, 2*blobdescsize + 1);
 
   tpm2_tool_output("  Event:\n"
                    "    BlobDescriptionSize: %d\n"
