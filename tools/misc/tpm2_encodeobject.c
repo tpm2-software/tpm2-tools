@@ -165,7 +165,7 @@ static int encode(ESYS_CONTEXT *ectx) {
         goto error;
     }
 
-    tpk->emptyAuth = ctx.object.needs_auth;
+    tpk->emptyAuth = !ctx.object.needs_auth;
 
     bn_parent = BN_new();
     if (!bn_parent) {
