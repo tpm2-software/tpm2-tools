@@ -650,13 +650,19 @@ dist-hook:
 	done;
 
 prepare-check:
-if HAVE_EFIVAR_H
+if HAVE_EFIVAR_GE_39
+	cp  $(abs_top_srcdir)/test/integration/fixtures/event-pretty-39/event-*.yaml \
+	    $(abs_top_srcdir)/test/integration/fixtures/
+endif
+if HAVE_EFIVAR_L_39
 	cp  $(abs_top_srcdir)/test/integration/fixtures/event-pretty/event-*.yaml \
 	    $(abs_top_srcdir)/test/integration/fixtures/
-else
+endif
+if HAVE_EFIVAR_NO
 	cp  $(abs_top_srcdir)/test/integration/fixtures/event-raw/event-*.yaml \
 	    $(abs_top_srcdir)/test/integration/fixtures/
 endif
+
 
 check: prepare-check
 

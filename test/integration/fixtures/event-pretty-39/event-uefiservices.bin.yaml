@@ -1,0 +1,45 @@
+---
+version: 1
+events:
+- EventNum: 0
+  PCRIndex: 0
+  EventType: EV_NO_ACTION
+  Digest: "0000000000000000000000000000000000000000"
+  EventSize: 37
+  SpecID:
+  - Signature: Spec ID Event03
+    platformClass: 0
+    specVersionMinor: 0
+    specVersionMajor: 2
+    specErrata: 0
+    uintnSize: 2
+    numberOfAlgorithms: 2
+    Algorithms:
+    - Algorithm[0]:
+      algorithmId: sha1
+      digestSize: 20
+    - Algorithm[1]:
+      algorithmId: sha256
+      digestSize: 32
+    vendorInfoSize: 0
+- EventNum: 1
+  PCRIndex: 2
+  EventType: EV_EFI_BOOT_SERVICES_DRIVER
+  DigestCount: 2
+  Digests:
+  - AlgorithmId: sha1
+    Digest: "855685b4dbd4b67d50e0594571055054cfe2b1e9"
+  - AlgorithmId: sha256
+    Digest: "dd8576b4ff346c19c56c3e4f97ce55c5afa646f9c669be0a7cdd05057a0ecdf3"
+  EventSize: 84
+  Event:
+    ImageLocationInMemory: 0x7dcf6018
+    ImageLengthInMemory: 171464
+    ImageLinkTimeAddress: 0x0
+    LengthOfDevicePath: 52
+    DevicePath: 'PciRoot(0x0)/Pci(0x2,0x0)/Pci(0x0,0x0)/Offset(0x12600,0x3c3ff)'
+pcrs:
+  sha1:
+    2  : 0x5b5f4d5c31664f01670a98a5796a36473671befc
+  sha256:
+    2  : 0x35fcf9d737c52c971f7c74058d36937dbd7824177fa0f1de3eba3934fcb83b9d
