@@ -103,6 +103,18 @@ AS_IF([test "x$with_efivar" = "xauto"],
 AC_CHECK_HEADERS([efivar/efivar.h],[efivar_h=yes ], [efivar = no ])
 AM_CONDITIONAL([HAVE_EFIVAR_H], [test "$efivar_h" = yes])
 
+AS_IF([ test "x$efivar_h" = "xyes" ], [
+    EFIVAR_VERSION=`$PKG_CONFIG --modversion efivar`,
+    AX_COMPARE_VERSION([$EFIVAR_VERSION], [ge], [39],
+      [ efivar_version=ge39 ],
+      [ efivar_version=l39 ] ) ],
+  [ efivar_version=no ]
+  )
+                  
+AM_CONDITIONAL([HAVE_EFIVAR_GE_39], [test "x$efivar_version" = "xge39" ])
+AM_CONDITIONAL([HAVE_EFIVAR_L_39], [test "x$efivar_version" = "xl39" ])
+AM_CONDITIONAL([HAVE_EFIVAR_NO], [test "x$efivar_version" = "xno" ])
+
 # backwards compat with older pkg-config
 # - pull in AC_DEFUN from pkg.m4
 m4_ifndef([PKG_CHECK_VAR], [
