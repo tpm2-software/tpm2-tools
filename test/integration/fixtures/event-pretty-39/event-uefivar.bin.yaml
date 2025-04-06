@@ -1,0 +1,51 @@
+---
+version: 1
+events:
+- EventNum: 0
+  PCRIndex: 0
+  EventType: EV_NO_ACTION
+  Digest: "0000000000000000000000000000000000000000"
+  EventSize: 45
+  SpecID:
+  - Signature: Spec ID Event03
+    platformClass: 0
+    specVersionMinor: 0
+    specVersionMajor: 2
+    specErrata: 0
+    uintnSize: 2
+    numberOfAlgorithms: 4
+    Algorithms:
+    - Algorithm[0]:
+      algorithmId: sha1
+      digestSize: 20
+    - Algorithm[1]:
+      algorithmId: sha256
+      digestSize: 32
+    - Algorithm[2]:
+      algorithmId: sha384
+      digestSize: 48
+    - Algorithm[3]:
+      algorithmId: sha512
+      digestSize: 64
+    vendorInfoSize: 0
+- EventNum: 1
+  PCRIndex: 7
+  EventType: EV_EFI_VARIABLE_DRIVER_CONFIG
+  DigestCount: 2
+  Digests:
+  - AlgorithmId: sha1
+    Digest: "d4fdd1f14d4041494deb8fc990c45343d2277d08"
+  - AlgorithmId: sha256
+    Digest: "ccfc4bb32888a345bc8aeadaba552b627d99348c767681ab3141f5b01e40a40e"
+  EventSize: 53
+  Event:
+    VariableName: 8be4df61-93ca-11d2-aa0d-00e098032b8c
+    UnicodeNameLength: 10
+    VariableDataLength: 1
+    UnicodeName: SecureBoot
+    VariableData: "01"
+pcrs:
+  sha1:
+    7  : 0x3a1ea200b8fafe60c290e903c5e6443cfef67f04
+  sha256:
+    7  : 0xe58ada1ba75f2e4722b539824598ad5e10c55f2e4aeab2033f3b0a8ee3f3eca6
