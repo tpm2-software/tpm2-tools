@@ -69,7 +69,7 @@ argument to the tool. Currently supported capability groups are:
   * **-l**, **\--list**:
 
     List known supported capability names. These names can be
-    supplied as the argument to the **-c** option. Output is in a
+    supplied as the argument to **tpm2_getcap**(1). Output is in a
     YAML compliant list to stdout.
 
     For example:
