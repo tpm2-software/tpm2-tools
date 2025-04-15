@@ -143,7 +143,7 @@ static const alg_map alg_maps[] = {
     { "ecc256",        "ecc_nist_p256:aes128cfb", "sha256", &policy_a_sha256, ATTRS_A },
     { "ecc384",        "ecc_nist_p384:aes256cfb", "sha384", &policy_b_sha384, ATTRS_B },
     { "ecc521",        "ecc_nist_p521:aes256cfb", "sha512", &policy_b_sha512, ATTRS_B },
-    { "ecc_nist_p256", "ecc_nist_p256:aes128cfb", "sha256", &policy_a_sha256, ATTRS_A },
+    { "ecc_nist_p256", "ecc_nist_p256:aes128cfb", "sha256", &policy_b_sha256, ATTRS_A },
     { "ecc_nist_p384", "ecc_nist_p384:aes256cfb", "sha384", &policy_b_sha384, ATTRS_B },
     { "ecc_nist_p521", "ecc_nist_p521:aes256cfb", "sha512", &policy_b_sha512, ATTRS_B },
     { "ecc_sm2",       "ecc_sm2_p256:sm4_128cfb", "sm3_256", &policy_b_sm3_256, ATTRS_B },
