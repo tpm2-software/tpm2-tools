@@ -18,18 +18,16 @@ void log_set_level(log_level value) {
 
 static const char *
 get_level_msg(log_level level) {
-    const char *value = "UNK";
     switch (level) {
     case log_level_error:
-        value = "ERROR";
-        break;
+        return "ERROR";
     case log_level_warning:
-        value = "WARN";
-        break;
+        return "WARN";
     case log_level_verbose:
-        value = "INFO";
+        return "INFO";
+    default:
+        return "UNK";
     }
-    return value;
 }
 
 void _log(log_level level, const char *file, unsigned lineno, const char *fmt,
