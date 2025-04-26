@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 #include <string.h>
+#include <errno.h>
 
 #include "files.h"
 #include "log.h"
@@ -100,6 +101,12 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
     }
 
     FILE *fp = fopen(ctx.commit_counter_path, "wb");
+    if (!fp) {
+        LOG_ERR("Could not open output file \"%s\" error: \"%s\"",
+                ctx.commit_counter_path, strerror(errno));
+        return tool_rc_general_error;
+    }
+    
     is_file_op_success = files_write_16(fp, ctx.counter);
     fclose(fp);
     if (!is_file_op_success) {
