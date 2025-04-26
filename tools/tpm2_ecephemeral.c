@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <errno.h>
+
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
@@ -74,6 +76,11 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
      * 2. Outputs generated after TPM2_CC_<command> dispatch
      */
     FILE *fp = fopen(ctx.commit_counter_path, "wb");
+    if (!fp) {
+        LOG_ERR("Could not open output file \"%s\" error: \"%s\"",
+                ctx.commit_counter_path, strerror(errno));
+        return tool_rc_general_error;
+    }
     is_file_op_success = files_write_16(fp, ctx.counter);
     fclose(fp);
     if (!is_file_op_success) {
