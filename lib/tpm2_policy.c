@@ -188,6 +188,16 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
             for (i = 0; i < pcr_values->count; i++) {
                 size_t sz = fread(&pcr_values->digests[i].buffer, 1,
                         pcr_values->digests[i].size, fp);
+                if (ferror(fp)) {
+                    LOG_ERR("fread error: %s\n", strerror(errno));
+                    fclose(fp);
+                    return tool_rc_general_error;
+                }
+                if (feof(fp)) {
+                    LOG_ERR("Unexpected eof in pcr file.");
+                    fclose(fp);
+                    return tool_rc_general_error;
+                }
                 if (sz != pcr_values->digests[i].size) {
                     const char *msg =
                             ferror(fp) ? strerror(errno) : "end of file reached";

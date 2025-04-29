@@ -51,6 +51,10 @@ static bool writex(FILE *f, const UINT8 *data, size_t size) {
     size_t index = 0;
     do {
         wrote = fwrite(&data[index], 1, size, f);
+        if (ferror(f)) {
+            LOG_ERR("fread error: %s\n", strerror(errno));
+            return false;
+        }
         if (wrote != size) {
             if (errno != EINTR) {
                 return false;
@@ -80,6 +84,10 @@ static size_t readx(FILE *f, UINT8 *data, size_t size) {
     size_t bread = 0;
     do {
         bread += fread(&data[bread], 1, size-bread, f);
+        if (ferror(f)) {
+            LOG_ERR("fread error: %s\n", strerror(errno));
+            return 0;
+        }
     } while (bread < size && !feof(f) && errno == EINTR);
 
     return bread;
