@@ -158,6 +158,14 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (stream && stream != stdout) {
         fclose(stream);
     }
+#ifdef __clang_analyzer__
+    /* Workaround for scan-build false positive */
+    else {
+        if (stream) {
+            fclose(stream);
+        }
+    }
+#endif
 
     return 0;
 
@@ -165,6 +173,14 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
     if (stream && stream != stdout) {
         fclose(stream);
     }
+#ifdef __clang_analyzer__
+    /* Workaround for scan-build false positive */
+    else {
+        if (stream) {
+            fclose(stream);
+        }
+    }
+#endif
     Fapi_Free (esys_blob);
     if (esys_handle != ESYS_TR_NONE) {
         Esys_FlushContext(esys_ctx, esys_handle);

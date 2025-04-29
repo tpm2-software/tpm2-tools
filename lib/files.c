@@ -214,7 +214,14 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
     if (fp != stdout) {
         fclose(fp);
     }
-
+#ifdef __clang_analyzer__
+    /* Workaround for scan-build false positive */
+    else {
+        if (fp) {
+            fclose(fp);
+        }
+    }
+#endif
     return result;
 }
 
