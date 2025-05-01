@@ -41,6 +41,18 @@ static const TPM2B_DIGEST policy_a_sha256 = {
     }
 };
 
+static const TPM2B_DIGEST policy_b_sha256 = {
+    .size = 32,
+    .buffer = {
+        0xca, 0x3d, 0x0a, 0x99, 0xa2, 0xb9,
+        0x39, 0x06, 0xf7, 0xa3, 0x34, 0x24,
+        0x14, 0xef, 0xcf, 0xb3, 0xa3, 0x85,
+        0xd4, 0x4c, 0xd1, 0xfd, 0x45, 0x90,
+        0x89, 0xd1, 0x9b, 0x50, 0x71, 0xc0,
+        0xb7, 0xa0
+    }
+};
+
 static const TPM2B_DIGEST policy_b_sha384 = {
     .size = 48,
     .buffer = {
@@ -136,14 +148,19 @@ struct alg_map {
 
 static const alg_map alg_maps[] = {
     { "rsa",           "rsa2048:aes128cfb", "sha256", &policy_a_sha256, ATTRS_A },
+    { "rsa_high",      "rsa2048:aes128cfb", "sha256", &policy_b_sha256, ATTRS_B },
     { "rsa2048",       "rsa2048:aes128cfb", "sha256", &policy_a_sha256, ATTRS_A },
+    { "rsa2048_high",  "rsa2048:aes128cfb", "sha256", &policy_b_sha256, ATTRS_B },
     { "rsa3072",       "rsa3072:aes256cfb", "sha384", &policy_b_sha384, ATTRS_B },
     { "rsa4096",       "rsa4096:aes256cfb", "sha384", &policy_b_sha384, ATTRS_B },
     { "ecc",           "ecc_nist_p256:aes128cfb", "sha256", &policy_a_sha256, ATTRS_A },
+    { "ecc_high",      "ecc_nist_p256:aes128cfb", "sha256", &policy_b_sha256, ATTRS_B },
     { "ecc256",        "ecc_nist_p256:aes128cfb", "sha256", &policy_a_sha256, ATTRS_A },
+    { "ecc256_high",   "ecc_nist_p256:aes128cfb", "sha256", &policy_b_sha256, ATTRS_B },
     { "ecc384",        "ecc_nist_p384:aes256cfb", "sha384", &policy_b_sha384, ATTRS_B },
     { "ecc521",        "ecc_nist_p521:aes256cfb", "sha512", &policy_b_sha512, ATTRS_B },
     { "ecc_nist_p256", "ecc_nist_p256:aes128cfb", "sha256", &policy_a_sha256, ATTRS_A },
+    { "ecc_nist_p256_high", "ecc_nist_p256:aes128cfb", "sha256", &policy_b_sha256, ATTRS_B },
     { "ecc_nist_p384", "ecc_nist_p384:aes256cfb", "sha384", &policy_b_sha384, ATTRS_B },
     { "ecc_nist_p521", "ecc_nist_p521:aes256cfb", "sha512", &policy_b_sha512, ATTRS_B },
     { "ecc_sm2",       "ecc_sm2_p256:sm4_128cfb", "sm3_256", &policy_b_sm3_256, ATTRS_B },
