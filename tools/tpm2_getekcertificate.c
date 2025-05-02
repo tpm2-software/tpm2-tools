@@ -110,6 +110,7 @@ struct tpm_getekcertificate_ctx {
     unsigned char *ecc_cert_buffer;
     size_t ecc_cert_buffer_size;
     bool is_cert_raw;
+    bool need_x509_trunc;
     size_t curl_buffer_size;
     // EK certificate hosting particulars
     char *ek_server_addr;
@@ -125,7 +126,7 @@ static tpm_getekcertificate_ctx ctx = {
     .is_cert_on_nv = true,
     .cert_count = 0,
     .encoding = ENC_AUTO,
-    
+    .need_x509_trunc = false,
 };
 
 
@@ -623,6 +624,16 @@ static bool get_web_ek_certificate(void) {
     return ret;
 }
 
+static ssize_t x509_get_len(void *data, int len)
+{
+    const unsigned char *p, *p_save;
+    p_save = p = data;
+
+    d2i_X509(NULL, &p, len);
+
+    return (ssize_t)(p - p_save);
+}
+
 static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
 
     /*
@@ -658,6 +669,16 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
          tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.ecc_cert_buffer,
             &nv_buf_size, &cp_hash, &rp_hash, m->hash_alg, 0,
             ESYS_TR_NONE, ESYS_TR_NONE, NULL);
+
+    if(ctx.need_x509_trunc) {
+        int len = is_rsa ? 
+                  x509_get_len(ctx.rsa_cert_buffer, nv_buf_size) :
+                  x509_get_len(ctx.ecc_cert_buffer, nv_buf_size);
+        if(len > 0){
+            nv_buf_size = len;
+        }
+    }
+
     if (is_rsa) {
         ctx.rsa_cert_buffer_size = nv_buf_size;
     } else {
@@ -1382,6 +1403,9 @@ static bool on_option(char key, char *value) {
                 return false;
         }
         break;
+    case 't':
+        ctx.need_x509_trunc = true;
+        break;
     case 0:
         ctx.is_cert_raw = true;
         break;
@@ -1399,9 +1423,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "offline",          no_argument,       NULL, 'x' },
         { "encoding",         required_argument, NULL, 'E' },
         { "raw",              no_argument,       NULL,  0  },
+        { "x509-trunc",       no_argument,       NULL, 't' },
     };
 
-    *opts = tpm2_options_new("o:u:XxE:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("o:u:XxE:t", ARRAY_LEN(topts), topts, on_option,
             on_args, 0);
 
     return *opts != NULL;
