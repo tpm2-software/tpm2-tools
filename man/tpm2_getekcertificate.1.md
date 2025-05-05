@@ -89,6 +89,12 @@ conditions dictating the certificate location lookup.
     Specifies the encoding format to use explicitly. Normally, the default
     method is the one used by Intel unless an AMD fTPM is detected, in which
     case the AMD-specific encoding is used. Use 'a' for AMD and 'i' for Intel.
+    
+  * **-t**, **\--x509-trunc**:
+
+    This flags the tool to parse certificates, with a X509 parser, read from TPM
+    NV indices, and truncate the trailing data before output. Useful when dealing
+    with TPMs that output certificates with trailing data padded to a fixed size.
 
   * **ARGUMENT** the command line argument specifies the URL address for the EK
     certificate portal. This forces the tool to not look for the EK certificates
