@@ -59,7 +59,7 @@ the various known TCTI modules.
 
 ## Print a TPM Quote
 
-### Setup a key to generate a qoute from
+### Setup a key to generate a quote from
 ```bash
 tpm2_createprimary -C e -c primary.ctx
 tpm2_create -C primary.ctx -u key.pub -r key.priv
