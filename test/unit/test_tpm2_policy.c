@@ -559,6 +559,18 @@ static void tpm2_policy_parse_policy_list_double_call(void **state) {
     assert_memory_equal(policy_list.digests[3].buffer, sha256_digest_2, sizeof(sha256_digest_2));
 }
 
+static void tpm2_policy_parse_policy_list_toomany(void **state) {
+    UNUSED(state);
+
+    TPML_DIGEST policy_list = { 0 };
+    char str[] = "sha256:testpolicy.sha256,testpolicy.sha256,testpolicy.sha256,testpolicy.sha256,"
+                 "testpolicy.sha256,testpolicy.sha256,testpolicy.sha256,testpolicy.sha256,"
+                 "testpolicy.sha256,testpolicy.sha256,testpolicy.sha256,testpolicy.sha256,"
+                 "testpolicy.sha256,testpolicy.sha256,testpolicy.sha256,testpolicy.sha256";
+    bool res = tpm2_policy_parse_policy_list(str, &policy_list);
+    assert_false(res);
+}
+
 /* link required symbol, but tpm2_tool.c declares it AND main, which
  * we have a main below for cmocka tests.
  */
@@ -572,6 +584,7 @@ int main(int argc, char *argv[]) {
         cmocka_unit_test(test_tpm2_policy_build_pcr_good),
         cmocka_unit_test(tpm2_policy_parse_policy_list_good),
         cmocka_unit_test(tpm2_policy_parse_policy_list_double_call),
+        cmocka_unit_test(tpm2_policy_parse_policy_list_toomany),
         cmocka_unit_test_setup_teardown(test_tpm2_policy_build_pcr_file_good,
                 test_setup, test_teardown),
         cmocka_unit_test_setup_teardown(test_tpm2_policy_build_pcr_file_bad_size,

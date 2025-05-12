@@ -642,6 +642,10 @@ static bool tpm2_policy_populate_digest_list(char *buf,
         return false;
     }
 
+    if (policy_list->count == ARRAY_LEN(policy_list->digests)) {
+        return false;
+    }
+
     unsigned long file_size;
     bool retval = files_get_file_size_path(buf, &file_size);
     if (!retval) {
