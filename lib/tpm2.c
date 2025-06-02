@@ -5115,10 +5115,21 @@ tpm2_loadexternal_skip_esapi_call:
 }
 
 tool_rc tpm2_pcr_extend(ESYS_CONTEXT *ectx, TPMI_DH_PCR pcr_index,
-    TPML_DIGEST_VALUES *digests) {
+          tpm2_session *session,
+          TPML_DIGEST_VALUES *digests,
+          ESYS_TR session_handle_2,
+          ESYS_TR session_handle_3) {
 
-    TSS2_RC rval = Esys_PCR_Extend(ectx, pcr_index, ESYS_TR_PASSWORD,
-        ESYS_TR_NONE, ESYS_TR_NONE, digests);
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, pcr_index, session,
+            &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+
+    TSS2_RC rval = Esys_PCR_Extend(ectx, pcr_index, shandle1,
+        session_handle_2, session_handle_3, digests);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PCR_Extend, rval);
         return tool_rc_from_tpm(rval);
@@ -5129,7 +5140,8 @@ tool_rc tpm2_pcr_extend(ESYS_CONTEXT *ectx, TPMI_DH_PCR pcr_index,
 
 tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx, ESYS_TR pcr, tpm2_session *session,
         const TPM2B_EVENT *event_data, TPML_DIGEST_VALUES **digests,
-        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm) {
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm,
+        ESYS_TR session_handle_2, ESYS_TR session_handle_3) {
 
     TSS2_RC rval = TSS2_RC_SUCCESS;
     tool_rc rc = tool_rc_success;
@@ -5176,8 +5188,8 @@ tpm2_pcrevent_free_name1:
         return rc;
     }
 
-    rval = Esys_PCR_Event(ectx, pcr, shandle1, ESYS_TR_NONE,
-            ESYS_TR_NONE, event_data, digests);
+    rval = Esys_PCR_Event(ectx, pcr, shandle1, session_handle_2,
+             session_handle_3, event_data, digests);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PCR_Event, rval);
         return tool_rc_from_tpm(rval);

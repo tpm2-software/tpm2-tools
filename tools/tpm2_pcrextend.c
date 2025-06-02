@@ -7,28 +7,53 @@
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
+#include "tpm2_auth_util.h"
 
 typedef struct tpm_pcr_extend_ctx tpm_pcr_extend_ctx;
+#define MAX_AUX_SESSIONS 2
+#define MAX_SESSIONS 3
 struct tpm_pcr_extend_ctx {
     /*
      * Inputs
      */
+    struct {
+        const char *auth_str;
+        tpm2_session *session;
+    } auth;
+
     size_t digest_spec_len;
     tpm2_pcr_digest_spec *digest_spec;
 
     /*
      * Outputs
      */
+
+    /*
+     * Aux Sessions
+     */
+    uint8_t aux_session_cnt;
+    tpm2_session *aux_session[MAX_AUX_SESSIONS];
+    const char *aux_session_path[MAX_AUX_SESSIONS];
+    ESYS_TR aux_session_handle[MAX_AUX_SESSIONS];
 };
 
 static tpm_pcr_extend_ctx ctx;
 
-static tool_rc pcr_extend(ESYS_CONTEXT *ectx) {
+static tpm_pcr_extend_ctx ctx = {
+    .aux_session_handle[0] = ESYS_TR_NONE,
+    .aux_session_handle[1] = ESYS_TR_NONE,
+};
+
+static tool_rc pcr_extend(ESYS_CONTEXT *ectx,
+                          ESYS_TR session_handle_2,
+                          ESYS_TR session_handle_3) {
 
     size_t i;
     for (i = 0; i < ctx.digest_spec_len; i++) {
         tpm2_pcr_digest_spec *dspec = &ctx.digest_spec[i];
-        tool_rc rc = tpm2_pcr_extend(ectx, dspec->pcr_index, &dspec->digests);
+        tool_rc rc = tpm2_pcr_extend(ectx, dspec->pcr_index, ctx.auth.session,
+                                     &dspec->digests,
+                                     session_handle_2, session_handle_3);
         if (rc != tool_rc_success) {
             LOG_ERR("Could not extend pcr index: 0x%X", dspec->pcr_index);
             return rc;
@@ -67,10 +92,21 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 1.b Add object names and their auth sessions
      */
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+            &ctx.auth.session, false);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid key handle authorization");
+        return rc;
+    }
 
     /*
      * 2. Restore auxiliary sessions
      */
+    rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, ctx.aux_session_handle, ctx.aux_session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
 
     /*
      * 3. Command specific initializations
@@ -96,6 +132,31 @@ static tool_rc check_options(void) {
     return tool_rc_success;
 }
 
+static bool on_options(char key, char *value) {
+
+    UNUSED(key);
+
+    switch (key) {
+    case 'P':
+        ctx.auth.auth_str = value;
+        break;
+        /* no default */
+    case 'S':
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
+            ctx.aux_session_cnt++;
+        } else {
+            LOG_ERR("Specify a max of 3 sessions");
+            return false;
+        }
+        break;
+        /* no default */
+    }
+
+    return true;
+}
+
+
 static bool on_arg(int argc, char **argv) {
 
     if (argc < 1) {
@@ -118,7 +179,12 @@ static bool on_arg(int argc, char **argv) {
 
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_arg, 0);
+    const struct option topts[] = {
+        { "auth",         required_argument, NULL, 'P' },
+        { "session",      required_argument, NULL, 'S' },
+    };
+
+    *opts = tpm2_options_new("P:S:", ARRAY_LEN(topts), topts, on_options, on_arg, 0);
 
     return *opts != NULL;
 }
@@ -146,7 +212,9 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 3. TPM2_CC_<command> call
      */
-    rc = pcr_extend(ectx);
+    rc = pcr_extend(ectx,
+                    ctx.aux_session_handle[0],
+                    ctx.aux_session_handle[1]);
     if (rc != tool_rc_success) {
         return rc;
     }

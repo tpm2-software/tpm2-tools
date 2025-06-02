@@ -212,7 +212,8 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
     } else {
         // Read PCRs
         tool_rc rc = pcr_read_pcr_values(ectx, pcr_selections, &pcrs,
-                                         NULL, TPM2_ALG_ERROR);
+                                         NULL, TPM2_ALG_ERROR, ESYS_TR_NONE,
+                                         ESYS_TR_NONE, ESYS_TR_NONE);
         if (rc != tool_rc_success) {
             return rc;
         }

@@ -15,6 +15,7 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_tool.h"
 
+#define MAX_AUX_SESSIONS 2
 #define MAX_SESSIONS 3
 typedef struct tpm_pcrevent_ctx tpm_pcrevent_ctx;
 struct tpm_pcrevent_ctx {
@@ -38,6 +39,13 @@ struct tpm_pcrevent_ctx {
      */
     TPML_DIGEST_VALUES *digests;
     /*
+     * Aux Sessions
+     */
+    uint8_t aux_session_cnt;
+    tpm2_session *aux_session[MAX_AUX_SESSIONS];
+    const char *aux_session_path[MAX_AUX_SESSIONS];
+    ESYS_TR aux_session_handle[MAX_AUX_SESSIONS];
+    /*
      * Parameter hashes
      */
     const char *cp_hash_path;
@@ -49,6 +57,8 @@ struct tpm_pcrevent_ctx {
 static tpm_pcrevent_ctx ctx = {
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
     .pcr = ESYS_TR_RH_NULL,
+    .aux_session_handle[0] = ESYS_TR_NONE,
+    .aux_session_handle[1] = ESYS_TR_NONE,
 };
 
 static tool_rc pcr_hashsequence(ESYS_CONTEXT *ectx) {
@@ -121,13 +131,14 @@ static tool_rc pcr_hashsequence(ESYS_CONTEXT *ectx) {
             ctx.auth.session, &data, &ctx.digests);
 }
 
-static tool_rc pcrevent(ESYS_CONTEXT *ectx) {
+static tool_rc pcrevent(ESYS_CONTEXT *ectx, ESYS_TR session_handle_2,
+                        ESYS_TR session_handle_3) {
 
     tool_rc rc = tool_rc_success;
     if (!ctx.is_hashsequence_needed) {
         rc = tpm2_pcr_event(ectx, ctx.pcr, ctx.auth.session,
             &ctx.pcrevent_buffer, &ctx.digests, &ctx.cp_hash,
-            ctx.parameter_hash_algorithm);
+            ctx.parameter_hash_algorithm, session_handle_2, session_handle_3);
     } else {
         /*
          * Note: We must not calculate pHash in this case to avoid overwriting
@@ -240,6 +251,11 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 2. Restore auxiliary sessions
      */
+    rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, ctx.aux_session_handle, ctx.aux_session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
 
     /*
      * 3. Command specific initializations
@@ -358,6 +374,16 @@ static bool on_option(char key, char *value) {
         ctx.auth.auth_str = value;
         break;
         /* no default */
+    case 'S':
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
+            ctx.aux_session_cnt++;
+        } else {
+            LOG_ERR("Specify a max of 3 sessions");
+            return false;
+        }
+        break;
+        /* no default */
     case 0:
         ctx.cp_hash_path = value;
         break;
@@ -369,12 +395,13 @@ static bool on_option(char key, char *value) {
 static bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "auth",   required_argument, NULL, 'P' },
-        { "cphash", required_argument, 0,     0  },
+        { "auth",    required_argument, NULL, 'P' },
+        { "cphash",  required_argument, 0,     0  },
+        { "session", required_argument, NULL, 'S' }
 
     };
 
-    *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts, on_option, on_arg,
+    *opts = tpm2_options_new("P:S:", ARRAY_LEN(topts), topts, on_option, on_arg,
         0);
 
     return *opts != NULL;
@@ -403,7 +430,8 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 3. TPM2_CC_<command> call
      */
-    rc = pcrevent(ectx);
+    rc = pcrevent(ectx, ctx.aux_session_handle[0],
+                  ctx.aux_session_handle[1]);
     if (rc != tool_rc_success) {
         return rc;
     }

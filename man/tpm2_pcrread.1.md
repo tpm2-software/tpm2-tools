@@ -48,6 +48,10 @@ sha256 :
     termed as cpHash. NOTE: When this option is selected, The tool will not
     actually execute the command, it simply returns a cpHash.
 
+  * **-S**, **\--session**=_FILE_:
+
+    Specifies the auxiliary sessions for the command.
+
 [PCR output file format specifiers](common/pcrs_format.md)
     Default is 'values'.
 
