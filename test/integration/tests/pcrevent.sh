@@ -10,7 +10,7 @@ yaml_out_file=pcr_list.yaml
 
 cleanup() {
   rm -f $hash_in_file $hash_out_file $yaml_out_file
-
+  rm -f audit_session.ctx hmac_session.ctx eventfile
   shut_down
 }
 trap cleanup EXIT
@@ -82,5 +82,10 @@ if [ $? -eq 0 ]; then
   echo "Expected $cmd to fail, passed."
   exit 1;
 fi
+
+echo event > eventfile
+tpm2 startauthsession -Q --session hmac_session.ctx --hmac 
+tpm2 startauthsession -Q --session audit_session.ctx --audit
+tpm2 pcrevent -S audit_session.ctx -P session:hmac_session.ctx 10 eventfile
 
 exit 0

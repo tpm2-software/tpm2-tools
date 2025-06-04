@@ -2,6 +2,12 @@
 
 source helpers.sh
 
+cleanup() {
+  rm -f audit_session.ctx hmac_session.ctx
+  shut_down
+}
+trap cleanup EXIT
+
 start_up
 
 declare -A alg_hashes=(
@@ -45,5 +51,10 @@ if tpm2 pcrextend 8:$digests,sha1=${alg_hashes["sha256"]}; then
 else
     true
 fi
+
+tpm2 startauthsession -Q --session hmac_session.ctx --hmac 
+tpm2 startauthsession -Q --session audit_session.ctx --audit
+tpm2 pcrextend -S audit_session.ctx -P session:hmac_session.ctx \
+               16:sha256=b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c
 
 exit 0

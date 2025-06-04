@@ -36,15 +36,23 @@ These options control extending the pcr:
 
     Specifies the authorization value for PCR.
 
+  * **-S**, **\--session**=_FILE_:
+
+    Specifies the auxiliary sessions for the command.
+
   * **\--cphash**=_FILE_
 
     File path to record the hash of the command parameters. This is commonly
     termed as cpHash. NOTE: When this option is selected, The tool will not
     actually execute the command, it simply returns a cpHash.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 [authorization formatting](common/authorizations.md)
 

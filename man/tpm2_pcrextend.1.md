@@ -36,7 +36,13 @@ supported. This is to keep the parser simple.
 
 # OPTIONS
 
-This tool accepts no tool specific options.
+* **-P**, **\--auth**=_AUTH_:
+
+The authorization value of the used PCR register.
+
+* **-S**, **\--session**=_FILE_:
+
+Specifies the auxiliary sessions for the command.
 
 [common options](common/options.md)
 

@@ -11,6 +11,7 @@
 #include "tpm2_tool.h"
 #include "files.h"
 
+#define MAX_AUX_SESSIONS 3
 #define MAX_SESSIONS 3
 typedef struct listpcr_context listpcr_context;
 struct listpcr_context {
@@ -30,6 +31,13 @@ struct listpcr_context {
     char *output_file_path;
     FILE *output_file;
     /*
+     * Aux Sessions
+     */
+    uint8_t aux_session_cnt;
+    tpm2_session *aux_session[MAX_AUX_SESSIONS];
+    const char *aux_session_path[MAX_AUX_SESSIONS];
+    ESYS_TR aux_session_handle[MAX_AUX_SESSIONS];
+    /*
      * Parameter hashes
      */
     const char *cp_hash_path;
@@ -40,13 +48,18 @@ struct listpcr_context {
 
 static listpcr_context ctx = {
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
-    .format = pcrs_output_format_values
+    .format = pcrs_output_format_values,
+    .aux_session_handle[0] = ESYS_TR_NONE,
+    .aux_session_handle[1] = ESYS_TR_NONE,
+    .aux_session_handle[2] = ESYS_TR_NONE,
 };
 
-static tool_rc pcrread(ESYS_CONTEXT *ectx) {
+static tool_rc pcrread(ESYS_CONTEXT *ectx, ESYS_TR session_handle_1,
+           ESYS_TR session_handle_2, ESYS_TR session_handle_3) {
 
     tool_rc rc = pcr_read_pcr_values(ectx, &ctx.pcr_selections, &ctx.pcrs,
-        &ctx.cp_hash, ctx.parameter_hash_algorithm);
+        &ctx.cp_hash, ctx.parameter_hash_algorithm,
+        session_handle_1, session_handle_2, session_handle_3);
     if (rc != tool_rc_success) {
         LOG_ERR("Failed TPM2_CC_PCR_Read"); 
     }
@@ -111,11 +124,16 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
     /*
      * 2. Restore auxiliary sessions
      */
+    tool_rc rc = tpm2_util_aux_sessions_setup(ectx, ctx.aux_session_cnt,
+        ctx.aux_session_path, ctx.aux_session_handle, ctx.aux_session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
 
     /*
      * 3. Command specific initializations
      */
-    tool_rc rc = pcr_get_banks(ectx, &ctx.capdata, &ctx.algs);
+    rc = pcr_get_banks(ectx, &ctx.capdata, &ctx.algs);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -184,6 +202,16 @@ static bool on_option(char key, char *value) {
         }
         break;
         /* no default */
+    case 'S':
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
+            ctx.aux_session_cnt++;
+        } else {
+            LOG_ERR("Specify a max of 3 sessions");
+            return false;
+        }
+        break;
+        /* no default */
     case 0:
         ctx.cp_hash_path = value;
         break;
@@ -218,9 +246,10 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
          { "output",         required_argument, NULL, 'o' },
          { "pcrs_format",    required_argument, NULL, 'F' },
          { "cphash",         required_argument, 0,     0  },
+         { "session",        required_argument, NULL, 'S' }
      };
 
-    *opts = tpm2_options_new("o:F:", ARRAY_LEN(topts), topts, on_option, on_arg,
+    *opts = tpm2_options_new("o:F:S:", ARRAY_LEN(topts), topts, on_option, on_arg,
             0);
 
     return *opts != NULL;
@@ -249,7 +278,10 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * 3. TPM2_CC_<command> call
      */
-    rc = pcrread(ectx);
+    rc = pcrread(ectx,
+                 ctx.aux_session_handle[0],
+                 ctx.aux_session_handle[1],
+                 ctx.aux_session_handle[2]);
     if (rc != tool_rc_success) {
         return rc;
     }
