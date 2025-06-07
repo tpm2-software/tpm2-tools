@@ -33,6 +33,7 @@ struct tpm_certify_ctx {
     tpm2_convert_sig_fmt sig_fmt;
     TPMT_SIG_SCHEME scheme;
     TPMI_ALG_SIG_SCHEME sig_scheme;
+    TPM2B_DATA qualifying_data;
 
     /*
      * Outputs
@@ -71,22 +72,21 @@ static tpm_certify_ctx ctx = {
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
     .scheme = {
         .scheme = TPM2_ALG_NULL,
+    },
+    .qualifying_data = {
+        .size = 4,
+        .buffer = { 0x00, 0xff, 0x55,0xaa },
     }
 };
 
 static tool_rc certify(ESYS_CONTEXT *ectx) {
-
-    TPM2B_DATA qualifying_data = {
-        .size = 4,
-        .buffer = { 0x00, 0xff, 0x55,0xaa },
-    };
 
     /*
      * 1. TPM2_CC_<command> OR Retrieve cpHash
      */
 
     return tpm2_certify(ectx, &ctx.certified_key.object,
-        &ctx.signing_key.object, &qualifying_data, &ctx.scheme,
+        &ctx.signing_key.object, &ctx.qualifying_data, &ctx.scheme,
         &ctx.certify_info, &ctx.signature, &ctx.cp_hash, &ctx.rp_hash,
         ctx.parameter_hash_algorithm, ctx.aux_session_handle[0]);
 }
@@ -261,6 +261,11 @@ static bool on_option(char key, char *value) {
     case 's':
         ctx.file_path.sig = value;
         break;
+    case 'q':
+        ctx.qualifying_data.size = sizeof(ctx.qualifying_data.buffer);
+        return tpm2_util_bin_from_hex_or_file(value,
+            &ctx.qualifying_data.size, ctx.qualifying_data.buffer);
+        break;
     case 0:
         ctx.cp_hash_path = value;
         break;
@@ -306,13 +311,14 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "attestation",          required_argument, NULL, 'o' },
       { "signature",            required_argument, NULL, 's' },
       { "format",               required_argument, NULL, 'f' },
+      { "qualifying-data",      required_argument, NULL, 'q' },
       { "cphash",               required_argument, NULL,  0  },
       { "rphash",               required_argument, NULL,  1  },
       { "scheme",               required_argument, NULL,  2  },
       { "session",              required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("P:p:g:o:s:c:C:f:S:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:o:s:c:C:f:S:q:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
