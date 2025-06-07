@@ -1338,3 +1338,4 @@ void tpm2_util_tpm2_nv_to_yaml(TPM2B_NV_PUBLIC *nv_public, UINT8 *data, UINT16 s
 	break;
     }
 }
+

@@ -53,4 +53,16 @@ tpm2 certify \
 
 verify_signature_with_ssl
 
+# Test with changed qualified data.
+
+tpm2 certify \
+    -c primary.ctx -P signedpass \
+    -C certify.ctx -p certifypass \
+    -q "0f0f0f0f" \
+    -g sha256 -o attest.out -f plain -s sig.out
+
+tpm2 print -t TPMS_ATTEST attest.out| grep 0f0f0f0f > /dev/null
+
+verify_signature_with_ssl
+
 exit 0

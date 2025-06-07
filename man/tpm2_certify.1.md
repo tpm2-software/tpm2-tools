@@ -58,6 +58,13 @@ These options control the certification:
 
     Output file name for the attestation data.
 
+  * **-q**, **\--qualifying-data**=_HEX\_STRING\_OR\_PATH_:
+
+    Data given as a Hex string or binary file to qualify the certification, optional.
+    This is typically used to add a nonce against replay attacks.
+    The default is:  0x00, 0xff, 0x55, 0xaa
+
+
   * **-s**, **\--signature**=_FILE_:
 
     Output file name for the signature data.
