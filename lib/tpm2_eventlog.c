@@ -116,7 +116,7 @@ bool foreach_digest2(tpm2_eventlog_context *ctx, UINT32 eventType, unsigned pcr_
 bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
 
     switch (type) {
-    /* TCG PC Client FPF section 9.2.6 */
+    /* TCG PC Client FPF section 10.2.6 */
     case EV_EFI_VARIABLE_DRIVER_CONFIG:
     case EV_EFI_VARIABLE_BOOT:
     case EV_EFI_VARIABLE_AUTHORITY:
@@ -135,11 +135,11 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
             }
         }
         break;
-    /* TCG PC Client FPF section 2.3.4.1 and 9.4.1 */
+    /* TCG PC Client FPF section 3.3.4.1 and 10.4.1 */
     case EV_POST_CODE:
         // the event is a string, so there are no length requirements.
         break;
-    /* TCG PC Client FPF section 9.2.5 */
+    /* TCG PC Client FPF section 10.2.5 */
     case EV_S_CRTM_CONTENTS:
     case EV_EFI_PLATFORM_FIRMWARE_BLOB:
         {
