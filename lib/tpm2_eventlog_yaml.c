@@ -219,7 +219,7 @@ static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
     return true;
 }
 /*
- * TCG PC Client FPF section 2.3.4.1 and 9.4.1:
+ * TCG PC Client FPF section 3.3.4.1 and 10.4.1:
  * Usage of the event type EV_POST_CODE:
  * - If a combined event is measured, the event field SHOULD
  * be the string "POST CODE" in all caps. ...
@@ -473,7 +473,7 @@ static bool yaml_split_print_string(const char *indent,
 }
 
 /*
- * TCG PC Client FPF section 9.2.6
+ * TCG PC Client FPF section 10.2.6
  * The tpm2_eventlog module validates the event structure but nothing within
  * the event data buffer so we must do that here.
  */
@@ -761,7 +761,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
     free(ret);
     return yaml_uefi_var_data(data);
 }
-/* TCG PC Client FPF section 9.2.5 */
+/* TCG PC Client FPF section 10.2.5 */
 bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
 
     tpm2_tool_output("  Event:\n"
