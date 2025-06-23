@@ -39,6 +39,7 @@ struct tpm2_setclock_ctx {
 static tpm2_setclock_ctx ctx = {
     .auth_hierarchy.ctx_path = "o", /* default to owner hierarchy */
     .parameter_hash_algorithm = TPM2_ALG_ERROR,
+    .adjustment = NULL,
 };
 
 
@@ -142,6 +143,11 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 static tool_rc check_options(ESYS_CONTEXT *ectx) {
 
     UNUSED(ectx);
+
+    if (!ctx.adjustment) {
+        LOG_ERR("No clock rate adjust specifier is used");
+        return tool_rc_option_error;
+    }
 
     size_t len = strlen(ctx.adjustment);
     if (len > 3) {
