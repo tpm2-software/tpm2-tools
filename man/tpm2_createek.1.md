@@ -46,6 +46,9 @@ Refer to:
       using algorithm specifiers (e.g. **ecc384** or **ecc_nist_p384**) .
     * **rsa** - An RSA2048 key.
     * **keyedhash** - hmac key.
+    By default, For NIST_P256 and RSA2048 the LOW range template defined in
+    the EK Credential Profile will be used. The HIGH range template can
+    be selected by adding the suffix _high to the algorithm name.
 
   * **-u**, **\--public**=_FILE_:
 
