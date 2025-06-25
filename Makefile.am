@@ -275,7 +275,7 @@ test_unit_test_tpm2_auth_util_LDFLAGS  = -Wl,--wrap=Esys_TR_SetAuth \
                                          -Wl,--wrap=fread \
                                          -Wl,--wrap=fseek \
                                          -Wl,--wrap=ftell \
-                                         -Wl,--wrap=feof, \
+                                         -Wl,--wrap=feof \
                                          -Wl,--wrap=fclose
 test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
