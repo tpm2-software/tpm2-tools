@@ -53,6 +53,9 @@ argument to the tool. Currently supported capability groups are:
 - **handles-saved-session**:
   Display handles about saved sessions.
 
+- **pcrhandles-with-auth**:
+  Display PCR handles that are in the authorization set.
+
 - **vendor[:num]**:
   Displays the vendor properties as a hex buffer output. The string "vendor"
   can be suffixed with a colon followed by a number as understood by strtoul(3)
