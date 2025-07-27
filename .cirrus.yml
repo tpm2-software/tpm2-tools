@@ -12,13 +12,15 @@ task:
   install_script:
     - pkg update -f
     - pkg upgrade -y
-    - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive e2fsprogs-libuuid py311-pip expect
+    - pkg install -y ca_root_nss
+    - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive py311-pip expect
     - python3 -m pip install pyyaml
-    - pkg install -y automake glib dbus dbus-glib cmocka wget git openssl json-c vim hs-pandoc
+    - pkg install -y automake glib dbus dbus-glib cmocka uthash util-linux wget git openssl json-c vim hs-pandoc
     - pkg install -y swtpm
     - mkdir tss
     - cd tss && git clone https://github.com/tpm2-software/tpm2-tss.git
-    - cd tpm2-tss && ./bootstrap && ./configure --disable-doxygen-doc --enable-tcti-swtpm=yes  --enable-tcti-mssim=no --disable-tcti-libtpms --disable-dependency-tracking && gmake -j install
+    - cd tpm2-tss
+    - ./bootstrap && ./configure --disable-doxygen-doc --enable-tcti-swtpm=yes  --enable-tcti-mssim=no --disable-tcti-libtpms --disable-dependency-tracking && gmake -j install
     - cd ../../ && rm -rf tss
     - mkdir rm
     - cd rm && git clone https://github.com/tpm2-software/tpm2-abrmd.git && cd tpm2-abrmd
