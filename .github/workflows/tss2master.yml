@@ -1,0 +1,30 @@
+name: Tss2Master
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+jobs:
+  master-tss-build-test:
+    runs-on: ubuntu-latest
+    if: "!contains(github.ref, 'coverity_scan')"
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: fix-sanitizer
+        run: sudo sysctl vm.mmap_rnd_bits=28
+      - name: Launch Action
+        uses:
+          tpm2-software/ci/runCI@main
+        with:
+          PROJECT_NAME: ${{ github.event.repository.name }}
+          DOCKER_IMAGE: ubuntu-24.04
+          CC: ${{ matrix.compiler }}
+          TPM2_TSS_VERSION: master
+          GIT_FULL_CLONE: true
+      - name: failure
+        if: ${{ failure() }}
+        run: cat build/test-suite.log || true
+
