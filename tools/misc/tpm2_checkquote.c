@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <endian.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -19,6 +20,8 @@
 #include "tpm2_systemdeps.h"
 #include "tpm2_tool.h"
 #include "tpm2_eventlog.h"
+#include "tss2_common.h"
+#include "tss2_mu.h"
 
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
 struct tpm2_verifysig_ctx {
@@ -46,12 +49,14 @@ struct tpm2_verifysig_ctx {
     char *eventlog_path;
     tpm2_loaded_object key_context_object;
     const char *pcr_selection_string;
+    tpm2_convert_pcrs_output_fmt pcrs_format;
 };
 
 static tpm2_verifysig_ctx ctx = {
         .halg = TPM2_ALG_SHA256,
         .msg_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
         .pcr_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
+        .pcrs_format = pcrs_output_format_serialized,
 };
 
 /**
@@ -340,35 +345,95 @@ static bool parse_selection_data_from_selection_string(FILE *pcr_input,
 
 static bool parse_selection_data_from_file(FILE *pcr_input,
     TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
+    size_t j, i;
 
     // Import TPML_PCR_SELECTION structure to pcr outfile
     if (fread(pcr_select, sizeof(TPML_PCR_SELECTION), 1, pcr_input) != 1) {
         LOG_ERR("Failed to read PCR selection from file");
         return false;
     }
-
+    pcr_select->count = le32toh(pcr_select->count);
+    for (i = 0; i < pcr_select->count; i++) {
+        pcr_select->pcrSelections[i].hash = le16toh(pcr_select->pcrSelections[i].hash);
+    }
+ 
     // Import PCR digests to pcr outfile
     if (fread(&pcrs->count, sizeof(UINT32), 1, pcr_input) != 1) {
         LOG_ERR("Failed to read PCR digests header from file");
         return false;
     }
 
-    if (le64toh(pcrs->count) > ARRAY_LEN(pcrs->pcr_values)) {
+    pcrs->count = le64toh(pcrs->count);
+
+    if (pcrs->count > ARRAY_LEN(pcrs->pcr_values)) {
         LOG_ERR("Malformed PCR file, pcr count cannot be greater than %zu, got: %" PRIu64 " ",
                 ARRAY_LEN(pcrs->pcr_values), le64toh((UINT64)pcrs->count));
         return false;
     }
 
-    size_t j;
-    for (j = 0; j < le64toh(pcrs->count); j++) {
+     for (j = 0; j < pcrs->count; j++) {
         if (fread(&pcrs->pcr_values[j], sizeof(TPML_DIGEST), 1, pcr_input)
                 != 1) {
             LOG_ERR("Failed to read PCR digest from file");
             return false;
         }
+        // Convert TPML_DIGEST from little endian to host endian.
+        pcrs->pcr_values[j].count = le32toh( pcrs->pcr_values[j].count);
+        for (i = 0; i < pcrs->pcr_values[j].count; i++) {
+            pcrs->pcr_values[j].digests[i].size =
+                le16toh(pcrs->pcr_values[j].digests[i].size);
+        }
     }
 
     return true;
+}
+
+static bool parse_marshaled_selection_data(FILE *pcr_input,
+    TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs,  unsigned long fsize) {
+    size_t i;
+    uint8_t *buffer = NULL;
+    UINT16 size = fsize;
+    size_t offset = 0;
+    TSS2_RC rc;
+    UINT32 count;
+
+    buffer = malloc(fsize);
+
+    if (!file_read_bytes_from_file(pcr_input, buffer, &size, ctx.pcr_file_path)) {
+        LOG_ERR("Failed to read PCR selection from file");
+        return false;
+    }
+
+    rc = Tss2_MU_TPML_PCR_SELECTION_Unmarshal(buffer, size, &offset, pcr_select);
+    if (rc) {
+        LOG_ERR("Failed unmarshal PCR selection.");
+        goto error;
+    }
+    rc = Tss2_MU_UINT32_Unmarshal(buffer, size, &offset, &count);
+    if (rc) {
+        LOG_ERR("Failed unmarshal number of PCR digest lists.");
+        goto error;
+    }
+    pcrs->count = count;
+    if (pcrs->count > ARRAY_LEN(pcrs->pcr_values)) {
+        LOG_ERR("Malformed PCR file, pcr count cannot be greater than %zu, got: %" PRIu64 " ",
+                ARRAY_LEN(pcrs->pcr_values), le64toh((UINT64)pcrs->count));
+        return false;
+    }
+
+     for (i = 0; i < pcrs->count; i++) {
+         rc = Tss2_MU_TPML_DIGEST_Unmarshal(buffer, size, &offset,
+                                                   &pcrs->pcr_values[i]);
+         if (rc) {
+             LOG_ERR("Failed unmarshal PCR digest list.");
+             goto error;
+         }
+     }
+     return true;
+
+ error:
+     free(buffer);
+     return false;
 }
 
 static bool pcrs_from_file(const char *pcr_file_path,
@@ -394,9 +459,16 @@ static bool pcrs_from_file(const char *pcr_file_path,
     }
 
     if (!ctx.pcr_selection_string) {
-        result = parse_selection_data_from_file(pcr_input, pcr_select, pcrs);
-        if (!result) {
+        if (ctx.pcrs_format == pcrs_output_format_marshaled) {
+            result = parse_marshaled_selection_data(pcr_input, pcr_select, pcrs, size);
+            if (!result) {
             goto out;
+            }
+        } else {
+            result = parse_selection_data_from_file(pcr_input, pcr_select, pcrs);
+            if (!result) {
+                goto out;
+            }
         }
     } else {
         result = parse_selection_data_from_selection_string(pcr_input,
@@ -519,20 +591,20 @@ static tool_rc init(void) {
             goto err;
         }
 
-        if (le32toh(pcr_select.count) > TPM2_NUM_PCR_BANKS)
+        if (pcr_select.count > TPM2_NUM_PCR_BANKS)
             goto err;
 
         UINT32 i;
-        for (i = 0; i < le32toh(pcr_select.count); i++)
-            if (le16toh(pcr_select.pcrSelections[i].hash) == TPM2_ALG_ERROR)
+        for (i = 0; i < pcr_select.count; i++)
+            if (pcr_select.pcrSelections[i].hash == TPM2_ALG_ERROR)
             goto err;
 
-        if (!tpm2_openssl_hash_pcr_banks_le(ctx.halg, &pcr_select, pcrs,
+        if (!tpm2_openssl_hash_pcr_banks(ctx.halg, &pcr_select, pcrs,
                 &ctx.pcr_hash)) {
             LOG_ERR("Failed to hash PCR values related to quote!");
             goto err;
         }
-        if (!pcr_print_pcr_struct_le(&pcr_select, pcrs)) {
+        if (!pcr_print_pcr_struct(&pcr_select, pcrs)) {
             LOG_ERR("Failed to print PCR values related to quote!");
             goto err;
         }
@@ -668,7 +740,10 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'F':
-        LOG_WARN("DEPRECATED: Format ignored");
+        ctx.pcrs_format = tpm2_convert_pcrs_output_fmt_from_optarg(value);
+        if (ctx.pcrs_format == pcrs_output_format_err) {
+            return false;
+        }
         break;
     case 'q':
         ctx.extra_data.size = sizeof(ctx.extra_data.buffer);

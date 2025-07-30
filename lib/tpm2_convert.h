@@ -29,6 +29,7 @@ typedef enum tpm2_convert_pcrs_output_fmt tpm2_convert_pcrs_output_fmt;
 enum tpm2_convert_pcrs_output_fmt {
     pcrs_output_format_values,
     pcrs_output_format_serialized,
+    pcrs_output_format_marshaled,
     pcrs_output_format_err
 };
 
