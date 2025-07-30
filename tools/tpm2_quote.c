@@ -105,6 +105,12 @@ static tool_rc write_output_files(void) {
             if (!result) {
                 is_file_op_success = result;
             }
+        } else if (ctx.pcrs_format == pcrs_output_format_marshaled) {
+            result = pcr_fwrite_marshaled(&ctx.pcr_selections, &ctx.pcrs,
+               ctx.pcr_output);
+            if (!result) {
+                is_file_op_success = result;
+            }
         }
     }
 

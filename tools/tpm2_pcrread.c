@@ -102,6 +102,10 @@ static tool_rc process_outputs(ESYS_CONTEXT *ectx) {
             success = pcr_fwrite_serialized(&ctx.pcr_selections, &ctx.pcrs,
                 ctx.output_file);
         }
+        if (ctx.format == pcrs_output_format_marshaled) {
+            success = pcr_fwrite_marshaled(&ctx.pcr_selections, &ctx.pcrs,
+                ctx.output_file);
+        }
     }
     return success ? tool_rc_success : tool_rc_general_error;
 }
