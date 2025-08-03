@@ -53,9 +53,10 @@ must be specified using the **-l** option to interpret the PCR data.
     Qualification data for the quote. Can either be a hex string or path.
     This is typically used to add a nonce against replay attacks.
 
-  * **-F**, **\--format**=_FORMAT_:
+[PCR output file format specifiers](common/pcrs_format.md)
+    If -l is provided 'normalized' will be used. Otherwise 'serialized' is
+    the default.
 
-    **DEPRECATED** and **IGNORED ** as it's superfluous.
 
 ## References
 
