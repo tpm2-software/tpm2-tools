@@ -1,6 +1,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
+#include <endian.h>
 
 #include <tss2/tss2_tpm2_types.h>
 
@@ -54,7 +55,7 @@ bool foreach_digest2(tpm2_eventlog_context *ctx, UINT32 eventType, unsigned pcr_
             return false;
         }
 
-        const TPMI_ALG_HASH alg = digest->AlgorithmId;
+        const TPMI_ALG_HASH alg = le16toh(digest->AlgorithmId);
         const size_t alg_size = tpm2_alg_util_get_hash_size(alg);
         if (size < sizeof(*digest) + alg_size) {
             LOG_ERR("insufficient size for digest buffer");
@@ -122,13 +123,13 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
     case EV_EFI_VARIABLE_AUTHORITY:
         {
             UEFI_VARIABLE_DATA *data = (UEFI_VARIABLE_DATA*)event->Event;
-            if (event->EventSize < sizeof(*data)) {
+            if (le32toh(event->EventSize) < sizeof(*data)) {
                 LOG_ERR("size is insufficient for UEFI variable data");
                 return false;
             }
 
-            if (event->EventSize < sizeof(*data) + data->UnicodeNameLength *
-                sizeof(UTF16_CHAR) + data->VariableDataLength)
+            if (le32toh(event->EventSize) < sizeof(*data) + le64toh(data->UnicodeNameLength) *
+                sizeof(UTF16_CHAR) + le64toh(data->VariableDataLength))
             {
                 LOG_ERR("size is insufficient for UEFI variable data");
                 return false;
@@ -146,7 +147,7 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
             UEFI_PLATFORM_FIRMWARE_BLOB *data =
                 (UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event;
             UNUSED(data);
-            if (event->EventSize < sizeof(*data)) {
+            if (le32toh(event->EventSize) < sizeof(*data)) {
                 LOG_ERR("size is insufficient for UEFI FW blob data");
                 return false;
             }
@@ -158,7 +159,7 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
         {
             UEFI_IMAGE_LOAD_EVENT *data = (UEFI_IMAGE_LOAD_EVENT*)event->Event;
             UNUSED(data);
-            if (event->EventSize < sizeof(*data)) {
+            if (le32toh(event->EventSize) < sizeof(*data)) {
                 LOG_ERR("size is insufficient for UEFI image load event");
                 return false;
             }
@@ -171,7 +172,7 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
             const char hcrtm_data[] = "HCRTM";
             size_t len = strlen(hcrtm_data);
             BYTE *data = (BYTE *)event->Event;
-            if (event->EventSize != len ||
+            if (le32toh(event->EventSize) != len ||
                     strncmp((const char *)data, hcrtm_data, len)) {
                 LOG_ERR("HCRTM Event Data MUST be the string: \"%s\"", hcrtm_data);
                 return false;
@@ -201,9 +202,9 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
         .data = digests_size,
         .digest2_cb = digest2_accumulator_callback,
     };
-    ret = foreach_digest2(&ctx, eventhdr->EventType,
-                          eventhdr->PCRIndex, 
-                          eventhdr->Digests, eventhdr->DigestCount,
+    ret = foreach_digest2(&ctx, le32toh(eventhdr->EventType),
+                          le32toh(eventhdr->PCRIndex), 
+                          eventhdr->Digests, le32toh(eventhdr->DigestCount),
                           buf_size - sizeof(*eventhdr), 0);
     if (ret != true) {
         return false;
@@ -217,11 +218,11 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
     }
     *event_size += sizeof(*event);
 
-    if (buf_size < *event_size + event->EventSize) {
+    if (buf_size < *event_size + le32toh(event->EventSize)) {
         LOG_ERR("size insufficient for event data");
         return false;
     }
-    *event_size += event->EventSize;
+    *event_size += le32toh(event->EventSize);
 
     return true;
 }
@@ -238,19 +239,19 @@ bool parse_sha1_log_event(tpm2_eventlog_context *ctx, TCG_EVENT const *event, si
     }
     *event_size = sizeof(*event);
 
-    pcr = ctx->sha1_pcrs[ event->pcrIndex];
-    if (event->eventType != EV_NO_ACTION && pcr) {
+    pcr = ctx->sha1_pcrs[le32toh(event->pcrIndex)];
+    if (le32toh(event->eventType) != EV_NO_ACTION && pcr) {
         tpm2_openssl_pcr_extend(TPM2_ALG_SHA1, pcr, &event->digest[0], 20);
-        ctx->sha1_used |= (1 << event->pcrIndex);
+        ctx->sha1_used |= (1 << le32toh(event->pcrIndex));
     }
 
     /* buffer size must be sufficient to hold event and event data */
     if (size < sizeof(*event) + (sizeof(event->event[0]) *
-                                 event->eventDataSize)) {
+                                 le32toh(event->eventDataSize))) {
         LOG_ERR("insufficient size for SpecID event data");
         return false;
     }
-    *event_size += event->eventDataSize;
+    *event_size += le32toh(event->eventDataSize);
     return true;
 }
 
@@ -289,14 +290,14 @@ bool foreach_sha1_log_event(tpm2_eventlog_context *ctx, TCG_EVENT const *eventhd
             }
         }
 
-        ret = parse_event2body(event, eventhdr->eventType);
+        ret = parse_event2body(event, le32toh(eventhdr->eventType));
         if (ret != true) {
             return ret;
         }
 
         /* event data callback */
         if (ctx->event2_cb != NULL) {
-            ret = ctx->event2_cb(event, eventhdr->eventType, ctx->data,
+            ret = ctx->event2_cb(event, le32toh(eventhdr->eventType), ctx->data,
                                  ctx->eventlog_version);
             if (ret != true) {
                 return false;
@@ -467,12 +468,12 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
 
         TCG_EVENT2 *event = (TCG_EVENT2*)((uintptr_t)eventhdr->Digests + digests_size);
 
-        if (eventhdr->EventType == EV_EFI_HCRTM_EVENT && eventhdr->PCRIndex == 0) {
+        if (le32toh(eventhdr->EventType) == EV_EFI_HCRTM_EVENT && le32toh(eventhdr->PCRIndex) == 0) {
             found_hcrtm = true;
         }
 
         /* Handle StartupLocality in replay for PCR0 */
-        if (!found_hcrtm && eventhdr->EventType == EV_NO_ACTION && eventhdr->PCRIndex == 0) {
+        if (!found_hcrtm && le32toh(eventhdr->EventType) == EV_NO_ACTION && le32toh(eventhdr->PCRIndex) == 0) {
             if (event_size < sizeof(EV_NO_ACTION_STRUCT)) {
                 LOG_ERR("EventSize is too small\n");
                 return false;
@@ -496,13 +497,13 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
         }
 
         /* digest callback foreach digest */
-        ret = foreach_digest2(ctx, eventhdr->EventType, eventhdr->PCRIndex,
-                              eventhdr->Digests, eventhdr->DigestCount, digests_size, locality);
+        ret = foreach_digest2(ctx, le32toh(eventhdr->EventType), le32toh(eventhdr->PCRIndex),
+                              eventhdr->Digests, le32toh(eventhdr->DigestCount), digests_size, locality);
         if (ret != true) {
             return false;
         }
 
-        ret = parse_event2body(event, eventhdr->EventType);
+        ret = parse_event2body(event, le32toh(eventhdr->EventType));
         if (ret != true) {
             return ret;
         }
@@ -514,7 +515,7 @@ bool foreach_event2(tpm2_eventlog_context *ctx, TCG_EVENT_HEADER2 const *eventhd
 
         /* event data callback */
         if (ctx->event2_cb != NULL) {
-            ret = ctx->event2_cb(event, eventhdr->EventType, ctx->data, ctx->eventlog_version);
+            ret = ctx->event2_cb(event, le32toh(eventhdr->EventType), ctx->data, ctx->eventlog_version);
             if (ret != true) {
                 return false;
             }
@@ -533,12 +534,12 @@ bool specid_event(TCG_EVENT const *event, size_t size,
         return false;
     }
 
-    if (event->eventType != EV_NO_ACTION) {
+    if (le32toh(event->eventType) != EV_NO_ACTION) {
         LOG_ERR("SpecID eventType must be EV_NO_ACTION");
         return false;
     }
 
-    if (event->pcrIndex != 0) {
+    if (le32toh(event->pcrIndex) != 0) {
         LOG_ERR("bad pcrIndex for EV_NO_ACTION event");
         return false;
     }
@@ -552,29 +553,29 @@ bool specid_event(TCG_EVENT const *event, size_t size,
     }
 
     /* eventDataSize must be sufficient to hold the specid event */
-    if (event->eventDataSize < sizeof(TCG_SPECID_EVENT)) {
+    if (le32toh(event->eventDataSize) < sizeof(TCG_SPECID_EVENT)) {
         LOG_ERR("invalid eventDataSize in specid event");
         return false;
     }
 
     /* buffer size must be sufficient to hold event and event data */
     if (size < sizeof(*event) + (sizeof(event->event[0]) *
-                                 event->eventDataSize)) {
+                                 le32toh(event->eventDataSize))) {
         LOG_ERR("insufficient size for SpecID event data");
         return false;
     }
 
     /* specid event must have 1 or more algorithms */
     TCG_SPECID_EVENT *event_specid = (TCG_SPECID_EVENT*)event->event;
-    if (event_specid->numberOfAlgorithms == 0) {
+    if (le32toh(event_specid->numberOfAlgorithms) == 0) {
         LOG_ERR("numberOfAlgorithms is invalid, may not be 0");
         return false;
     }
 
     /* buffer size must be sufficient to hold event, specid event & algs */
     if (size < sizeof(*event) + sizeof(*event_specid) +
-               sizeof(event_specid->digestSizes[0]) *
-               event_specid->numberOfAlgorithms) {
+               sizeof(event_specid->digestSizes[0]) * 
+               le32toh(event_specid->numberOfAlgorithms)) {
         LOG_ERR("insufficient size for SpecID algorithms");
         return false;
     }
@@ -582,18 +583,18 @@ bool specid_event(TCG_EVENT const *event, size_t size,
     /* size must be sufficient for event, specid, algs & vendor stuff */
     if (size < sizeof(*event) + sizeof(*event_specid) +
                sizeof(event_specid->digestSizes[0]) *
-               event_specid->numberOfAlgorithms + sizeof(TCG_VENDOR_INFO)) {
+               le32toh(event_specid->numberOfAlgorithms) + sizeof(TCG_VENDOR_INFO)) {
         LOG_ERR("insufficient size for VendorStuff");
         return false;
     }
 
     TCG_VENDOR_INFO *vendor = (TCG_VENDOR_INFO*)((uintptr_t)event_specid->digestSizes +
                                                  sizeof(*event_specid->digestSizes) *
-                                                 event_specid->numberOfAlgorithms);
+                                                 le32toh(event_specid->numberOfAlgorithms));
     /* size must be sufficient for vendorInfo */
     if (size < sizeof(*event) + sizeof(*event_specid) +
                sizeof(event_specid->digestSizes[0]) *
-               event_specid->numberOfAlgorithms + sizeof(*vendor) +
+               le32toh(event_specid->numberOfAlgorithms) + sizeof(*vendor) +
                vendor->vendorInfoSize) {
         LOG_ERR("insufficient size for VendorStuff data");
         return false;
@@ -614,7 +615,7 @@ bool parse_eventlog(tpm2_eventlog_context *ctx, BYTE const *eventlog, size_t siz
     }
 
     TCG_EVENT *event = (TCG_EVENT*)eventlog;
-    if (event->eventType == EV_NO_ACTION) {
+    if (le32toh(event->eventType) == EV_NO_ACTION) {
         TCG_EVENT_HEADER2 *next;
         bool ret = specid_event(event, size, &next);
         if (!ret) {
