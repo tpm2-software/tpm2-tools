@@ -42,6 +42,8 @@
 #define NAME_SHIM "Shim"
 #define NAME_SHIM_LEN 4
 #define NAME_SECUREBOOT_LEN 10
+#define NAME_VENDOR_DB "vendor_db"
+#define NAME_VENDOR_DB_LEN 9
 
 static void guid_unparse_lower(EFI_GUID guid, char guid_buf[37]) {
 
@@ -645,8 +647,9 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
                 }
                 return true;
             } else if ((strlen(ret) == NAME_DB_LEN && strncmp(ret, NAME_DB, NAME_DB_LEN) == 0) ||
-                       (strlen(ret) == NAME_SHIM_LEN && strncmp(ret, NAME_SHIM, NAME_SHIM_LEN) == 0)) {
-                /* db and Shim will be parsed as EFI_SIGNATURE_DATA */
+                       (strlen(ret) == NAME_SHIM_LEN && strncmp(ret, NAME_SHIM, NAME_SHIM_LEN) == 0) ||
+                       (strlen(ret) == NAME_VENDOR_DB_LEN && strncmp(ret, NAME_VENDOR_DB, NAME_VENDOR_DB_LEN) == 0))  {
+                /* db, Shim and vendor_db will be parsed as EFI_SIGNATURE_DATA */
                 free(ret);
                 tpm2_tool_output("    VariableData:\n");
                 EFI_SIGNATURE_DATA *s= (EFI_SIGNATURE_DATA *)&data->UnicodeName[
