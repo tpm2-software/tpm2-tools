@@ -38,6 +38,8 @@ struct tpm_loadexternal_ctx {
     TPM2B_SENSITIVE priv; /* Set the AUTH value for sensitive portion */
     TPM2B_PUBLIC pub; /* Load the users specified public object if specified via -u*/
     bool autoflush; /* Flush the object after creation of the ctx file */
+    bool rsa_exponent_zero; /* Set rsa exponent to zero to support name computation for
+                               tpm2 keys with exponent zero. */
     /*
      * TSS Privkey related
      */
@@ -258,6 +260,11 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
             if (!result) {
                 return tool_rc_general_error;
             }
+            if (ctx.pub.publicArea.type == TPM2_ALG_RSA && ctx.rsa_exponent_zero) {
+                ctx.pub.publicArea.parameters.rsaDetail.exponent = 0;
+            } else if (ctx.rsa_exponent_zero) {
+                LOG_WARN("Option --rsa_exponent_zero used for key which is no RSA key.");
+            }
         }
     } else {
         LOG_ERR("Unkown internal state");
@@ -410,7 +417,10 @@ static bool on_option(char key, char *value) {
         break;
     case 'R':
         ctx.autoflush = true;
-        break; 
+        break;
+    case 'e':
+        ctx.rsa_exponent_zero = true;
+        break;
     }
 
     return true;
@@ -431,10 +441,11 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
       { "name",           required_argument, 0, 'n'},
       { "passin",         required_argument, 0,  0 },
       { "cphash",         required_argument, 0,  1 },
-      { "autoflush",      no_argument,       0, 'R' },
+      { "autoflush",      no_argument,       0, 'R'},
+      { "rsa_exponent_zero", no_argument,    0, 'e'},
     };
 
-    *opts = tpm2_options_new("C:u:r:c:a:p:L:g:G:n:R", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:u:r:c:a:p:L:g:G:n:Re", ARRAY_LEN(topts), topts,
         on_option, 0, 0);
 
     return *opts != 0;
