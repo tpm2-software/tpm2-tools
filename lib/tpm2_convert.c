@@ -34,6 +34,8 @@ tpm2_convert_pcrs_output_fmt tpm2_convert_pcrs_output_fmt_from_optarg(
         return pcrs_output_format_values;
     } else if (strcasecmp(label, "serialized") == 0) {
         return pcrs_output_format_serialized;
+    } else if (strcasecmp(label, "marshaled") == 0) {
+        return pcrs_output_format_marshaled;
     }
 
     LOG_ERR("Invalid pcrs output format '%s' specified", label);
