@@ -112,6 +112,11 @@ It also saves a context file for future interactions with the object.
     It mirrors the -passin option of OSSL and is known to support the pass,
     file, env, fd and plain password formats of openssl.
     (see *man(1) openssl*) for more.
+    
+ * **-e**, **\--rsa_exponent_zero**:
+    Set the exponent of a public RSA key to zero, to enable compatibility
+    in the computation of the key name if the TPM key is generated with
+    exponent zero.
 
 ## References
 
