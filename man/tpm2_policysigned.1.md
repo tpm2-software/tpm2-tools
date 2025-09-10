@@ -58,6 +58,11 @@ The optional TPM2 parameters being cpHashA, nonceTPM, policyRef and expiration.
     The command parameter hash (cpHash), enforcing the TPM command to be
     authorized as well as its handle and parameter values.
 
+* **\--raw-data**=_FILE_:
+
+   The raw data, generated based on the selected parameters, serves as the input
+   for computing the hash that must be signed.
+
   * **\--ticket**=_FILE_:
 
     The ticket file to record the authorization ticket structure.
