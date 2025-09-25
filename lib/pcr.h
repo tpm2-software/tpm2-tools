@@ -45,6 +45,15 @@ typedef struct tpm2_forwards {
 bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs);
 
 /**
+ * Echo out all the PCR indices that satisy a PCR property
+ * @param pcrProperties
+ *  Description of the selected pcr properties
+ * @return
+ *  None
+ */
+void pcr_print_taggedpcr_selections(TPML_TAGGED_PCR_PROPERTY *pcrProperties);
+
+/**
  * Echo out all PCR banks according to g_pcrSelection & g_pcrs->.
  * Assume that data structures are all little endian.
  * @param pcrSelect

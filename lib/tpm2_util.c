@@ -614,10 +614,87 @@ ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh) {
     return ESYS_TR_NONE;
 }
 
+ESYS_TR tpm2_sys_pcrhandle_to_esys_tr(TPMI_DH_PCR sys_pcrhandle) {
+
+    switch (sys_pcrhandle) {
+    case 0:
+        return ESYS_TR_PCR0;
+    case 1:
+        return ESYS_TR_PCR1;
+    case 2:
+        return ESYS_TR_PCR2;
+    case 3:
+        return ESYS_TR_PCR3;
+    case 4:
+        return ESYS_TR_PCR4;
+    case 5:
+        return ESYS_TR_PCR5;
+    case 6:
+        return ESYS_TR_PCR6;
+    case 7:
+        return ESYS_TR_PCR7;
+    case 8:
+        return ESYS_TR_PCR8;
+    case 9:
+        return ESYS_TR_PCR9;
+    case 10:
+        return ESYS_TR_PCR10;
+    case 11:
+        return ESYS_TR_PCR11;
+    case 12:
+        return ESYS_TR_PCR12;
+    case 13:
+        return ESYS_TR_PCR13;
+    case 14:
+        return ESYS_TR_PCR14;
+    case 15:
+        return ESYS_TR_PCR15;
+    case 16:
+        return ESYS_TR_PCR16;
+    case 17:
+        return ESYS_TR_PCR17;
+    case 18:
+        return ESYS_TR_PCR18;
+    case 19:
+        return ESYS_TR_PCR19;
+    case 20:
+        return ESYS_TR_PCR20;
+    case 21:
+        return ESYS_TR_PCR21;
+    case 22:
+        return ESYS_TR_PCR22;
+    case 23:
+        return ESYS_TR_PCR23;
+    case 24:
+        return ESYS_TR_PCR24;
+    case 25:
+        return ESYS_TR_PCR25;
+    case 26:
+        return ESYS_TR_PCR26;
+    case 27:
+        return ESYS_TR_PCR27;
+    case 28:
+        return ESYS_TR_PCR28;
+    case 29:
+        return ESYS_TR_PCR29;
+    case 30:
+        return ESYS_TR_PCR30;
+    case 31:
+        return ESYS_TR_PCR31;
+    }
+    return ESYS_TR_NONE;
+}
+
 tool_rc tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         TPM2_HANDLE sys_handle, ESYS_TR *esys_handle) {
 
     ESYS_TR h = tpm2_tpmi_hierarchy_to_esys_tr(sys_handle);
+    if (h != ESYS_TR_NONE) {
+        *esys_handle = h;
+        return tool_rc_success;
+    }
+
+    h = tpm2_sys_pcrhandle_to_esys_tr(sys_handle);
     if (h != ESYS_TR_NONE) {
         *esys_handle = h;
         return tool_rc_success;
