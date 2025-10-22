@@ -14,6 +14,7 @@ output_ek_pub=ek_pub.out
 output_ak_pub=ak_pub.out
 output_ak_pub_name=ak_name_pub.out
 output_mkcredential=mkcredential.out
+output_mkcredential2=mkcredentiali2.out
 
 cleanup() {
     rm -f $output_ek_pub $output_ak_pub $output_ak_pub_name \
@@ -44,6 +45,10 @@ Loadkeyname=`cat $output_ak_pub_name | xxd -p -c $file_size`
 
 tpm2 makecredential -Q -u $output_ek_pub -s $file_input_data -n $Loadkeyname \
 -o $output_mkcredential
+
+# Check usage of name file instead of hex string
+tpm2 makecredential -Q -u $output_ek_pub -s $file_input_data -n $output_ak_pub_name \
+-o $output_mkcredential2
 
 # use no tpm backend
 tpm2 makecredential -T none -Q -u $output_ek_pub -s $file_input_data \

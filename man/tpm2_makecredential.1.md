@@ -55,9 +55,10 @@ TCTI option.
 
     The secret which will be protected by the key derived from the random seed. It can be specified as a file or passed from stdin.
 
-  * **-n**, **\--name**=_FILE_:
+  * **-n**, **\--name**=_FILE\_OR\_HEX_:
 
-    The name of the key for which certificate is to be created.
+    The name of the key for which certificate is to be created. Can either be
+    a path or hex string.
 
   * **-o**, **\--credential-blob**=_FILE_:
 

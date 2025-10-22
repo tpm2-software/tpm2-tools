@@ -203,6 +203,7 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
 
 static bool on_option(char key, char *value) {
 
+    tool_rc rc;
     switch (key) {
     case 'u':
         if (ctx.flags.e) {
@@ -226,12 +227,15 @@ static bool on_option(char key, char *value) {
         break;
     case 'n':
         ctx.object_name.size = BUFFER_SIZE(TPM2B_NAME, name);
-        int q;
-        if ((q = tpm2_util_hex_to_byte_structure(value, &ctx.object_name.size,
-                ctx.object_name.name)) != 0) {
-            LOG_ERR("FAILED: %d", q);
+        rc = tpm2_util_bin_from_hex_or_file(value,
+               &ctx.object_name.size, ctx.object_name.name) ?
+               tool_rc_success : tool_rc_general_error;
+
+        if (rc != tool_rc_success) {
+            LOG_ERR("Could not load name data");
             return false;
         }
+ 
         ctx.flags.n = 1;
         break;
     case 'o':
