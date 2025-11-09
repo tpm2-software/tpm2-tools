@@ -520,7 +520,7 @@ static bool retrieve_web_endorsement_certificate(char *uri) {
      * should not be used - Used only on platforms with older CA certificates.
      */
     if (ctx.SSL_NO_VERIFY) {
-        rc = curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+        rc = curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         if (rc != CURLE_OK) {
             LOG_ERR("curl_easy_setopt for CURLOPT_SSL_VERIFYPEER failed: %s",
                     curl_easy_strerror(rc));
@@ -565,7 +565,7 @@ static bool retrieve_web_endorsement_certificate(char *uri) {
         goto out_easy_cleanup;
     }
 
-    rc = curl_easy_setopt(curl, CURLOPT_FAILONERROR, true);
+    rc = curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
     if (rc != CURLE_OK) {
         LOG_ERR("curl_easy_setopt for CURLOPT_FAILONERROR failed: %s",
                 curl_easy_strerror(rc));
