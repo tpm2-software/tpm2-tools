@@ -421,19 +421,19 @@ static bool parse_marshaled_selection_data(FILE *pcr_input,
         return false;
     }
 
-     for (i = 0; i < pcrs->count; i++) {
-         rc = Tss2_MU_TPML_DIGEST_Unmarshal(buffer, size, &offset,
-                                                   &pcrs->pcr_values[i]);
-         if (rc) {
-             LOG_ERR("Failed unmarshal PCR digest list.");
-             goto error;
-         }
-     }
-     return true;
+    for (i = 0; i < pcrs->count; i++) {
+        rc = Tss2_MU_TPML_DIGEST_Unmarshal(buffer, size, &offset,
+                                           &pcrs->pcr_values[i]);
+        if (rc) {
+            LOG_ERR("Failed unmarshal PCR digest list.");
+            goto error;
+        }
+    }
+    return true;
 
- error:
-     free(buffer);
-     return false;
+error:
+    free(buffer);
+    return false;
 }
 
 static bool pcrs_from_file(const char *pcr_file_path,
