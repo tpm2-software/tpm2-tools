@@ -405,7 +405,7 @@ static bool parse_marshaled_selection_data(FILE *pcr_input,
 
     if (!file_read_bytes_from_file(pcr_input, buffer, &size, ctx.pcr_file_path)) {
         LOG_ERR("Failed to read PCR selection from file");
-        return false;
+        goto error;
     }
 
     rc = Tss2_MU_TPML_PCR_SELECTION_Unmarshal(buffer, size, &offset, pcr_select);
@@ -422,7 +422,7 @@ static bool parse_marshaled_selection_data(FILE *pcr_input,
     if (pcrs->count > ARRAY_LEN(pcrs->pcr_values)) {
         LOG_ERR("Malformed PCR file, pcr count cannot be greater than %zu, got: %" PRIu64 " ",
                 ARRAY_LEN(pcrs->pcr_values), le64toh((UINT64)pcrs->count));
-        return false;
+        goto error;
     }
 
     for (i = 0; i < pcrs->count; i++) {
@@ -433,6 +433,7 @@ static bool parse_marshaled_selection_data(FILE *pcr_input,
             goto error;
         }
     }
+    free(buffer);
     return true;
 
 error:
