@@ -398,6 +398,10 @@ static bool parse_marshaled_selection_data(FILE *pcr_input,
     UINT32 count;
 
     buffer = malloc(fsize);
+    if (!buffer) {
+        LOG_ERR("OOM");
+        return false;
+    }
 
     if (!file_read_bytes_from_file(pcr_input, buffer, &size, ctx.pcr_file_path)) {
         LOG_ERR("Failed to read PCR selection from file");
