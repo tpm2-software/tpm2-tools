@@ -24,6 +24,7 @@ fi
 declare -A codes
 
 tss2_tpm2_types=''
+tss2_tpm2_types2=tss2_tpm2_types.h
 for dir in "$(pkg-config --variable includedir tss2-esys)" \
 /usr/local/include /usr/include; do
     if [ -f "$dir/tss2/tss2_tpm2_types.h" ]; then
@@ -37,19 +38,22 @@ if [ -z "$tss2_tpm2_types" ]; then
     exit 1
 fi
 
+sed -z 's/\\\n//g; s/  */ /g' $tss2_tpm2_types > $tss2_tpm2_types2
+
 # Populate the main TPM2_RC values
-eval $(grep -Po "^#define \K(TPM2_RC.*)" "$tss2_tpm2_types" \
+eval $(grep -Po "^#define \K(TPM2_RC.*)" "$tss2_tpm2_types2" \
           | grep -v '+' \
           | sed "s%/*[^/]*/$%%g" \
           | sed "s%[[:space:]]*((TPM2_RC)[[:space:]]*%=%g" \
           | sed "s%)%%g")
 
 # Generate the TPM2_RC array based on TSS2 header
-varlist="$(sed -rn "s%^#define (TPM2_RC_[^[:space:]]*)[[:space:]]*\(\(TPM2_RC\) \((TPM2_RC[^\)]*)[^/]*/\* ([^\*]*) \*/%\1=\$\(\(\2\)\):\3%p" "$tss2_tpm2_types")"
+varlist="$(sed -rn "s%^#define (TPM2_RC_[^[:space:]]*)[[:space:]]*\(\(TPM2_RC\)\((TPM2_RC[^\)]*)[^/]*/\* ([^\*]*) \*/%\1=\$\(\(\2\)\):\3%p" "$tss2_tpm2_types2")"
 while IFS='=' read key value; do
     codes[${key}]="${value}"
 done <<< "${varlist}"
 
+rm $tss2_tpm2_types2
 fail=0
 
 for key in "${!codes[@]}"; do

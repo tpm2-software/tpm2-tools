@@ -115,6 +115,10 @@ if [[ "${TPM2_TSS_VERSION}" == "master" && "$CC" != clang* ]];then
   git checkout HEAD test/integration/tests/getcap.sh
   #
   # symlink is an irrelevant test for 4.X branch
+
+  # The file tss2_tpm2_types.h was changed by clang-formt
+  # through extracting the error messages would not work.
+  git checkout HEAD test/integration/tests/rc_decode.sh
   #
   rm test/integration/tests/symlink.sh
 
