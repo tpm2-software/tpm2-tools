@@ -268,50 +268,52 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
 }
 
 static void set_default_TCG_EK_template(TPMI_ALG_PUBLIC alg) {
+    /* Values for RSA-2048 and ECC-256 keys. */
+    TPMI_AES_KEY_BITS bits = 128;
+    TPMI_ALG_HASH name_alg = TPM2_ALG_SHA256;
+
+    ctx.public.publicArea.objectAttributes = 0;
 
     switch (alg) {
         case TPM2_ALG_RSA:
+            if (ctx.public.publicArea.parameters.rsaDetail.keyBits > 2048) {
+                /* Values for RSA-3072 and RSA-4096 keys. */
+                bits = 256;
+                name_alg = TPM2_ALG_SHA384;
+                ctx.public.publicArea.objectAttributes = TPMA_OBJECT_USERWITHAUTH;
+            }
             ctx.public.publicArea.parameters.rsaDetail.symmetric.algorithm =
                     TPM2_ALG_AES;
-            ctx.public.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+            ctx.public.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = bits;
             ctx.public.publicArea.parameters.rsaDetail.symmetric.mode.aes =
                     TPM2_ALG_CFB;
-            ctx.public.publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
-            ctx.public.publicArea.parameters.rsaDetail.keyBits = 2048;
-            ctx.public.publicArea.parameters.rsaDetail.exponent = 0;
-            ctx.public.publicArea.unique.rsa.size = 256;
             break;
         case TPM2_ALG_ECC:
+            if (ctx.public.publicArea.unique.ecc.x.size > 32) {
+                /* Values for ECC-384 keys. */
+                bits = 256;
+                name_alg = TPM2_ALG_SHA384;
+                ctx.public.publicArea.objectAttributes = TPMA_OBJECT_USERWITHAUTH;
+            }
+            if (ctx.public.publicArea.unique.ecc.x.size > 48) {
+                /* Values for ECC-512 keys. */
+                name_alg = TPM2_ALG_SHA512;
+            }
+
             ctx.public.publicArea.parameters.eccDetail.symmetric.algorithm =
                     TPM2_ALG_AES;
-            ctx.public.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
+            ctx.public.publicArea.parameters.eccDetail.symmetric.keyBits.aes = bits;
             ctx.public.publicArea.parameters.eccDetail.symmetric.mode.sym =
                     TPM2_ALG_CFB;
-            ctx.public.publicArea.parameters.eccDetail.scheme.scheme = TPM2_ALG_NULL;
-            ctx.public.publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
-            ctx.public.publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
-            ctx.public.publicArea.unique.ecc.x.size = 32;
-            ctx.public.publicArea.unique.ecc.y.size = 32;
             break;
     }
 
-    ctx.public.publicArea.objectAttributes =
+    ctx.public.publicArea.objectAttributes |=
           TPMA_OBJECT_RESTRICTED  | TPMA_OBJECT_ADMINWITHPOLICY
         | TPMA_OBJECT_DECRYPT     | TPMA_OBJECT_FIXEDTPM
         | TPMA_OBJECT_FIXEDPARENT | TPMA_OBJECT_SENSITIVEDATAORIGIN;
 
-    static const TPM2B_DIGEST auth_policy = {
-        .size = 32,
-        .buffer = {
-            0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8, 0x1A, 0x90, 0xCC,
-            0x8D, 0x46, 0xA5, 0xD7, 0x24, 0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52,
-            0x0B, 0x64, 0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA
-        }
-    };
-    TPM2B_DIGEST *authp = &ctx.public.publicArea.authPolicy;
-    *authp = auth_policy;
-
-    ctx.public.publicArea.nameAlg = TPM2_ALG_SHA256;
+    ctx.public.publicArea.nameAlg = name_alg;
 }
 
 static tool_rc process_input(tpm2_option_flags flags) {
