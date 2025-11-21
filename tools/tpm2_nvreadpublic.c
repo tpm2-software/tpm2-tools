@@ -236,7 +236,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * Individual index NV public structure is allocated by Esys_NV_ReadPublic.
      */
     ctx.nv_public_list =
-    malloc(ctx.capability_data->data.handles.count * sizeof(TPM2B_NV_PUBLIC*));
+    calloc(ctx.capability_data->data.handles.count, sizeof(TPM2B_NV_PUBLIC*));
     /*
      * When calculating cpHash only, Esys_NV_Readpublic isn't invoked and so
      * allocate space for one index.
@@ -432,7 +432,9 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     uint32_t i = 0;
     if (ctx.capability_data) {
         for (i = 0; i < ctx.capability_data->data.handles.count; i++) {
-            free(ctx.nv_public_list[i]);
+	    if (ctx.nv_public_list[i]) {
+                free(ctx.nv_public_list[i]);
+	    }
         }
         free(ctx.capability_data);
     }
