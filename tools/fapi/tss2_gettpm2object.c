@@ -81,7 +81,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
         return 1;
     }
 
-    if (strcmp(ctx.data, "-")) {
+    if (strcmp(ctx.data, "-") != 0) {
         if (!ctx.overwrite) {
             FILE *fp = fopen(ctx.data, "rb");
             if (fp) {

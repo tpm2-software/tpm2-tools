@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include <tss2/tss2_esys.h>
 #include <tss2/tss2_rc.h>
@@ -304,7 +305,10 @@ static bool print_TPMS_CONTEXT(FILE *fstream) {
     if (!result) {
         LOG_WARN("The loaded tpm context does not appear to be in the proper "
                  "format, assuming old format.");
-        rewind(fstream);
+        if (fseek(fstream, 0, SEEK_SET) != 0) {
+            LOG_ERR("Could not rewind stream: %s", strerror(errno));
+            return false;
+        }
         result = files_read_bytes(fstream, (UINT8 *) &context, sizeof(context));
         if (!result) {
             LOG_ERR("Could not load tpm context file");

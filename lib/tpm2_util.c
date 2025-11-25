@@ -188,7 +188,7 @@ int tpm2_util_hex_to_byte_structure(const char *input_string, UINT16 *byte_lengt
     int i = 0;
     if (input_string == NULL || byte_length == NULL || byte_buffer == NULL)
         return -1;
-    str_length = strlen(input_string);
+    str_length = (int)strlen(input_string);
     if (str_length % 2)
         return -2;
     for (i = 0; i < str_length; i++) {

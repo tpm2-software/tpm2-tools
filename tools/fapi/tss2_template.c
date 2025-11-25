@@ -142,7 +142,7 @@ static tpm2_option_code tss2_handle_options (
         case '?':
             goto out;
         default:
-            if (!(*tool_opts)->callbacks.on_opt(c, optarg))
+            if (!(*tool_opts)->callbacks.on_opt((char)c, optarg))
                 goto out;
         }
     }
@@ -293,8 +293,8 @@ TSS2_RC sign_callback(
         int cpy_size = 0;
         if (strlen(publicKeyHint) > 0) {
             const char* tmp = "the key corresponding to the key hint \"%s\" and";
-            cpy_size = strlen(tmp) - 2 /* remove replaced %s */ +
-                strlen(publicKeyHint);
+            cpy_size = (int)(strlen(tmp) - 2 /* remove replaced %s */ +
+                             strlen(publicKeyHint));
             rc = snprintf(publicKeyHintStr, cpy_size+1 /* add \0 */, tmp,
                 publicKeyHint);
             if (rc != cpy_size){
@@ -311,8 +311,8 @@ TSS2_RC sign_callback(
                     "PEM-encoded public key\n");
                 return TSS2_FAPI_RC_GENERAL_FAILURE;
             }
-            cpy_size = strlen(tmp) - 2 /* remove replaced %s */ +
-                strlen(publicKeyHintTmp);
+            cpy_size = (int)(strlen(tmp) - 2 /* remove replaced %s */ +
+                             strlen(publicKeyHintTmp));
             rc = snprintf(publicKeyHintStr, cpy_size+1 /* add \0 */, tmp,
                 publicKeyHintTmp);
             if (rc != cpy_size){

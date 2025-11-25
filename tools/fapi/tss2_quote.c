@@ -141,7 +141,7 @@ static int tss2_tool_onrun (FAPI_CONTEXT *fctx) {
 
     /* Read qualifyingData file */
     TSS2_RC r;
-    uint8_t *qualifyingData = NULL;
+    void *qualifyingData = NULL;
     size_t qualifyingDataSize = 0;
     if (ctx.qualifyingData) {
         r = open_read_and_close (ctx.qualifyingData,

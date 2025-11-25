@@ -190,7 +190,7 @@ static char *yaml_utf16_to_str(UTF16_CHAR *data, size_t len) {
     }
 
     for(size_t i = 0; i < len; ++i, tmp += ret) {
-        ret = c16rtomb(tmp, le16toh(data[i].c), &st);
+        ret = c16rtomb(tmp, (int)le16toh(data[i].c), &st);
         if (ret < 0) {
             LOG_ERR("c16rtomb failed: %s", strerror(errno));
             free(mbstr);
@@ -279,7 +279,7 @@ static bool yaml_uefi_hcrtm(const TCG_EVENT2* const event) {
 #ifdef HAVE_EFIVAR_EFIVAR_H
 char *yaml_devicepath(BYTE* dp, UINT64 dp_len) {
     int ret;
-    ret = efidp_format_device_path(NULL, 0, (const_efidp)dp, dp_len);
+    ret = (int)efidp_format_device_path(NULL, 0, (const_efidp)dp, (ssize_t)dp_len);
     if (ret < 0) {
         LOG_ERR("failed to allocate memory: %s\n", strerror(errno));
         return NULL;
@@ -295,8 +295,8 @@ char *yaml_devicepath(BYTE* dp, UINT64 dp_len) {
     }
 
     /* The void* cast is a hack to support efivar versions < 38 */
-    ret = efidp_format_device_path((void *)text_path,
-            text_path_len, (const_efidp)dp, dp_len);
+    ret = (int)efidp_format_device_path((void *)text_path,
+                                        text_path_len, (const_efidp)dp, (ssize_t)dp_len);
     if (ret < 0) {
         free(text_path);
         LOG_ERR("cannot parse device path\n");
@@ -351,7 +351,7 @@ char **yaml_split_escape_string(UINT8 const *description, size_t size)
             len = size - i;
         }
 
-        tmp = realloc(lines, sizeof(char *) * (nlines + 2));
+        tmp = (char **)realloc(lines, sizeof(char *) * (nlines + 2));
         if (!tmp) {
             LOG_ERR("failed to allocate memory for description lines: %s\n",
                     strerror(errno));
@@ -422,7 +422,7 @@ char **yaml_split_escape_string(UINT8 const *description, size_t size)
             }
 
             if (escape == NULL) {
-                lines[nlines][k++] = description[j];
+                lines[nlines][k++] = (char)description[j];
             } else {
                 while (*escape) {
                     lines[nlines][k++] = *escape;
@@ -440,7 +440,7 @@ char **yaml_split_escape_string(UINT8 const *description, size_t size)
     for (i = 0; lines != NULL && lines[i] != NULL; i++) {
       free(lines[i]);
     }
-    free(lines);
+    free((char **)lines);
     return NULL;
 }
 
@@ -575,7 +575,7 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data, size_t size, UINT32 type,
 
                     uint8_t *signature = (uint8_t *)slist +
                         sizeof(*slist) + le32toh(slist->SignatureHeaderSize);
-                    int signatures = signature_size / le32toh(slist->SignatureSize);
+                    int signatures = (int)(signature_size / le32toh(slist->SignatureSize));
                     /* iterate through each EFI_SIGNATURE on the list */
                     int i;
                     for (i = 0; i < signatures; i++) {
