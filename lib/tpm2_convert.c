@@ -806,7 +806,7 @@ bool tpm2_base64_encode(BYTE *buffer, size_t buffer_length, char *base64) {
     EVP_ENCODE_CTX *ctx = EVP_ENCODE_CTX_new();
     EVP_EncodeInit(ctx);
 
-    int rc = EVP_EncodeUpdate(ctx, out, &outl, buffer, buffer_length);
+    int rc = EVP_EncodeUpdate(ctx, out, &outl, buffer, (int)buffer_length);
     if(rc < 0) {
         LOG_ERR("EVP_DecodeUpdate failed with %d\n", rc);
         EVP_ENCODE_CTX_free(ctx);
@@ -824,19 +824,20 @@ bool tpm2_base64_encode(BYTE *buffer, size_t buffer_length, char *base64) {
 
 bool tpm2_base64_decode(char *base64, BYTE *buffer, size_t *buffer_length) {
 
-    bool is_base64_bufferlen_valid = strlen(base64) > 1024 ? false : true;
+    size_t len = strlen(base64);
+    bool is_base64_bufferlen_valid = len > 1024 ? false : true;
     if (!is_base64_bufferlen_valid) {
         return false;
     }
 
     unsigned char base64u[1024];
-    memcpy(base64u, base64, strlen(base64));
+    memcpy(base64u, base64, len);
 
     EVP_ENCODE_CTX *ctx = EVP_ENCODE_CTX_new();
     EVP_DecodeInit(ctx);
     unsigned char out[1024];
     int outl;
-    int rc = EVP_DecodeUpdate(ctx, out, &outl, base64u, strlen(base64));
+    int rc = EVP_DecodeUpdate(ctx, out, &outl, base64u, (int)len);
     if(rc < 0) {
         LOG_ERR("EVP_DecodeUpdate failed with %d\n", rc);
         EVP_ENCODE_CTX_free(ctx);

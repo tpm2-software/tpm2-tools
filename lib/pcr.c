@@ -74,22 +74,25 @@ static bool pcr_parse_list(const char *str, size_t len,
         current_string = str;
         str = memchr(current_string, ',', len);
         if (str) {
-            current_length = str - current_string;
+            ptrdiff_t diff = str - current_string;
+            if (diff > INT_MAX)
+                return false;
+            current_length = (int)diff;
             str++;
             len -= current_length + 1;
         } else {
-            current_length = len;
+            current_length = (int)len;
             len = 0;
         }
 
         dgst = memchr(current_string, '=', current_length);
         if (dgst && ((str == NULL) || (str && dgst < str))) {
-            pcr_len = dgst - current_string;
+            pcr_len = (int)(dgst - current_string);
             dgst++;
             if (str) {
-                dgst_len = str - dgst - 1;
+                dgst_len = (int)(str - dgst - 1);
             } else {
-                dgst_len = current_length - pcr_len - 1;
+                dgst_len = (int)(current_length - pcr_len - 1);
             }
         } else {
             dgst = NULL;

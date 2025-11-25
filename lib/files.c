@@ -334,7 +334,10 @@ static bool load_tpm_context_file(FILE *fstream, TPMS_CONTEXT *context) {
         LOG_WARN("The loaded tpm context does not appear to be in the proper "
                 "format, assuming old format, this will be converted on the "
                 "next save.");
-        rewind(fstream);
+        if (fseek(fstream, 0, SEEK_SET) != 0) {
+            LOG_ERR("Could not rewind stream: %s", strerror(errno));
+            return false;
+        }
         result = files_read_bytes(fstream, (UINT8 *) context, sizeof(*context));
         if (!result) {
             LOG_ERR("Could not load tpm context file");
@@ -407,7 +410,7 @@ static bool check_magic(FILE *fstream, bool seek_reset) {
     bool match = magic == MAGIC;
 
     if (seek_reset) {
-        int rc = fseek(fstream, -sizeof(magic), SEEK_CUR);
+        int rc = fseek(fstream, -(long)sizeof(magic), SEEK_CUR);
         if (rc != 0) {
             LOG_ERR("fseek failed: %s", strerror(errno));
             return false;

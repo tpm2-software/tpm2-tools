@@ -466,7 +466,15 @@ static bool do_file(const char *path, char **pass) {
 static bool do_fd(const char *passin, char **pass) {
 
     char *end_ptr = NULL;
-    int fd = strtoul(passin, &end_ptr, 0);
+    unsigned long tmp = strtoul(passin, &end_ptr, 0);
+
+    if (tmp > INT_MAX) {
+        LOG_ERR("Invalid fd (out of range), got: \"%s\"", passin);
+        return false;
+    }
+
+    int fd = (int)tmp;
+
     if (passin[0] != '\0' && end_ptr[0] != '\0') {
         LOG_ERR("Invalid fd, got: \"%s\"", passin);
         return false;
@@ -793,6 +801,7 @@ static bool load_public_ECC_from_key(EVP_PKEY *key, TPM2B_PUBLIC *pub) {
         goto out;
     }
     pp->curveID = curve_id;
+    unsigned int tmp;
 
     /*
      * Copy the X and Y coordinate data into the ECC unique field,
@@ -813,13 +822,25 @@ static bool load_public_ECC_from_key(EVP_PKEY *key, TPM2B_PUBLIC *pub) {
         goto out;
     }
 
-    X->size = BN_bn2binpad(x, X->buffer, keysize);
+    tmp = BN_bn2binpad(x, X->buffer, (int)keysize);
+
+    if (tmp > INT_MAX) {
+        LOG_ERR("Invalid result of BN_bn2binpad");
+        return false;
+    }
+    X->size = tmp;
     if (X->size != keysize) {
         LOG_ERR("Error converting X point BN to binary");
         goto out;
     }
 
-    Y->size = BN_bn2binpad(y, Y->buffer, keysize);
+    tmp = BN_bn2binpad(y, Y->buffer, (int)keysize);
+    if (tmp > INT_MAX) {
+        LOG_ERR("Invalid result of BN_bn2binpad");
+        return false;
+    }
+
+    Y->size = (int)tmp;
     if (Y->size != keysize) {
         LOG_ERR("Error converting Y point BN to binary");
         goto out;
@@ -1073,7 +1094,7 @@ static bool load_private_ECC_from_key(EVP_PKEY *key, TPM2B_SENSITIVE *priv) {
         goto out;
     }
 
-    p->size = BN_bn2binpad(b, p->buffer, priv_bytes);
+    p->size = BN_bn2binpad(b, p->buffer, (int)priv_bytes);
     if (p->size != priv_bytes) {
         goto out;
     }

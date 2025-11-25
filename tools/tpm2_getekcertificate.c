@@ -671,9 +671,9 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
             ESYS_TR_NONE, ESYS_TR_NONE, NULL);
 
     if(ctx.need_x509_trunc) {
-        int len = is_rsa ? 
+        int len = (int)(is_rsa ? 
                   x509_get_len(ctx.rsa_cert_buffer, nv_buf_size) :
-                  x509_get_len(ctx.ecc_cert_buffer, nv_buf_size);
+                  x509_get_len(ctx.ecc_cert_buffer, nv_buf_size));
         if(len > 0){
             nv_buf_size = len;
         }
@@ -1044,7 +1044,7 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
                 continue;
             }
             cert_buffer_ossl = cert_buffer;
-            cert = d2i_X509(NULL, (const unsigned char **)&cert_buffer_ossl, cert_buffer_size);
+            cert = d2i_X509(NULL, (const unsigned char **)&cert_buffer_ossl, (int)cert_buffer_size);
             if (!cert) {
                 free(cert_buffer);
                 LOG_WARN("Invalid certificate found at %x", index);

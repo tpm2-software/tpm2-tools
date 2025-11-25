@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -249,8 +250,13 @@ static bool aes_encrypt_buffers(TPMT_SYM_DEF_OBJECT *sym,
         if (!b) {
             continue;
         }
+        size_t diff = total_len - offset;
+        if (diff > INT_MAX || l > INT_MAX) {
+            LOG_ERR("Size can't be converted to int");
+            return false;
+        }
 
-        int output_len = total_len - offset;
+        int output_len = (int)diff;
 
         rc = EVP_EncryptUpdate(ctx, &cipher_text->buffer[offset], &output_len,
                 b, l);
