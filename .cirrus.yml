@@ -8,25 +8,19 @@ task:
     ibmtpm_name: ibmtpm1637
     TSS2_LOG: "all+ERROR;tcti+TRACE"
   freebsd_instance:
-    image_family: freebsd-13-2
+    image_family: freebsd-14-3
   install_script:
     - pkg update -f
     - pkg upgrade -y
-    - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive e2fsprogs-libuuid py39-yaml expect
-    - pkg install -y automake glib dbus dbus-glib cmocka wget git openssl json-c vim hs-pandoc
-    - wget --quiet --show-progress --progress=dot:giga "https://downloads.sourceforge.net/project/ibmswtpm2/$ibmtpm_name.tar.gz"
-    - shasum -a256 $ibmtpm_name.tar.gz | grep ^dd3a4c3f7724243bc9ebcd5c39bbf87b82c696d1c1241cb8e5883534f6e2e327
-    - mkdir -p $ibmtpm_name
-    - tar xvf $ibmtpm_name.tar.gz -C $ibmtpm_name && cd $ibmtpm_name/src
-    - sed -i '' -e 's/gcc/clang/g' makefile
-    - sed -i '' -e 's/-Wall //g' makefile
-    - sed -i '' -e 's/-Werror //g' makefile
-    - gmake && cp tpm_server /usr/bin/
-    - cd -
-    - rm -rf $ibmtpm_name $ibmtpm_name.tar.gz
+    - pkg install -y ca_root_nss
+    - pkg install -y bash gmake coreutils libtool pkgconf autoconf autoconf-archive py311-pip expect
+    - python3 -m pip install pyyaml
+    - pkg install -y automake glib dbus dbus-glib cmocka uthash util-linux wget git openssl json-c vim hs-pandoc
+    - pkg install -y swtpm
     - mkdir tss
     - cd tss && git clone https://github.com/tpm2-software/tpm2-tss.git
-    - cd tpm2-tss && ./bootstrap && ./configure --disable-doxygen-doc --disable-tcti-swtpm --disable-tcti-libtpms --disable-dependency-tracking && gmake -j install
+    - cd tpm2-tss
+    - ./bootstrap && ./configure --disable-doxygen-doc --enable-tcti-swtpm=yes  --enable-tcti-mssim=no --disable-tcti-libtpms --disable-dependency-tracking && gmake -j install
     - cd ../../ && rm -rf tss
     - mkdir rm
     - cd rm && git clone https://github.com/tpm2-software/tpm2-abrmd.git && cd tpm2-abrmd
