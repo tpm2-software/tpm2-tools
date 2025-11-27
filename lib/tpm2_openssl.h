@@ -113,12 +113,14 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg,
 bool tpm2_openssl_pcr_extend(TPMI_ALG_HASH halg, BYTE *pcr,
         const BYTE *data, UINT16 length);
 
-typedef enum tpm2_openssl_load_rc tpm2_openssl_load_rc;
-enum tpm2_openssl_load_rc {
-    lprc_error = 0, /* an error has occurred */
-    lprc_private = 1 << 0, /* successfully loaded a private portion of object */
-    lprc_public = 1 << 1, /* successfully loaded a public portion of object */
+typedef enum tpm2_openssl_load_rc_enum tpm2_openssl_load_rc_enum;
+enum tpm2_openssl_load_rc_eum {
+  lprc_error = 0,        /* an error has occurred */
+  lprc_private = 1 << 0, /* successfully loaded a private portion of object */
+  lprc_public = 1 << 1,  /* successfully loaded a public portion of object */
 };
+
+typedef unsigned int tpm2_openssl_load_rc;
 
 /**
  * Helper routine for gathering if the loading status included a public

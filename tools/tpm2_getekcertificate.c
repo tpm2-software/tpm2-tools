@@ -72,18 +72,20 @@ enum pubkey_enc_mode {
  *
  */
 
-typedef enum ek_nv_index ek_nv_index;
-enum ek_nv_index {
-    RSA_EK_CERT_NV_INDEX = 0x01C00002,
-    ECC_EK_CERT_NV_INDEX = 0x01C0000A,
-    RSA_2048_EK_CERT_NV_INDEX = 0x01C00012,
-    RSA_3072_EK_CERT_NV_INDEX = 0x01C0001C,
-    RSA_4096_EK_CERT_NV_INDEX = 0x01C0001E,
-    ECC_NIST_P256_EK_CERT_NV_INDEX = 0x01C00014,
-    ECC_NIST_P384_EK_CERT_NV_INDEX = 0x01C00016,
-    ECC_NIST_P521_EK_CERT_NV_INDEX = 0x01C00018,
-    ECC_SM2_P256_EK_CERT_NV_INDEX = 0x01C0001A,
+typedef enum ek_nv_index_enum ek_nv_index_enum;
+enum ek_nv_index_enum {
+  RSA_EK_CERT_NV_INDEX = 0x01C00002,
+  ECC_EK_CERT_NV_INDEX = 0x01C0000A,
+  RSA_2048_EK_CERT_NV_INDEX = 0x01C00012,
+  RSA_3072_EK_CERT_NV_INDEX = 0x01C0001C,
+  RSA_4096_EK_CERT_NV_INDEX = 0x01C0001E,
+  ECC_NIST_P256_EK_CERT_NV_INDEX = 0x01C00014,
+  ECC_NIST_P384_EK_CERT_NV_INDEX = 0x01C00016,
+  ECC_NIST_P521_EK_CERT_NV_INDEX = 0x01C00018,
+  ECC_SM2_P256_EK_CERT_NV_INDEX = 0x01C0001A,
 };
+
+typedef unsigned int ek_nv_index;
 
 #define EK_SERVER_INTEL "https://ekop.intel.com/ekcertservice/"
 #define EK_SERVER_AMD "https://ftpm.amd.com/pki/aia/"

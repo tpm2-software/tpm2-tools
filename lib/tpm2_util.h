@@ -435,8 +435,8 @@ char *tpm2_util_getenv(const char *name);
 
 bool tpm2_util_env_yes(const char *name);
 
-typedef enum tpm2_handle_flags tpm2_handle_flags;
-enum tpm2_handle_flags {
+typedef enum tpm2_handle_flags_enum tpm2_handle_flags_enum;
+enum tpm2_handle_flags_enum {
     TPM2_HANDLE_FLAGS_NONE = 0,
     TPM2_HANDLE_FLAGS_O = 1 << 0,
     TPM2_HANDLE_FLAGS_P = 1 << 1,
@@ -452,6 +452,8 @@ enum tpm2_handle_flags {
     TPM2_HANDLE_FLAGS_PCR = 1 << 8,
     TPM2_HANDLE_ALL_W_PCR = 0x17F,
 };
+
+typedef unsigned int tpm2_handle_flags;
 
 /**
  * Converts an option from the command line into a valid TPM handle, checking

@@ -192,7 +192,7 @@ static tool_rc generate_partial_X509() {
     BIO *cert_out = BIO_new_file(ctx.out_path, "wb");
     if (!cert_out) {
         LOG_ERR("Can not create file %s", ctx.out_path);
-        return -1;
+        return tool_rc_general_error;
     }
 
     X509_EXTENSION *extv3 = NULL;
