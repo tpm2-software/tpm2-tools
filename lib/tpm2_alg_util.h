@@ -9,23 +9,25 @@
 
 #include "tool_rc.h"
 
-typedef enum tpm2_alg_util_flags tpm2_alg_util_flags;
-enum tpm2_alg_util_flags {
-    tpm2_alg_util_flags_none       = 0,
-    tpm2_alg_util_flags_hash       = 1 << 0,
-    tpm2_alg_util_flags_keyedhash  = 1 << 1,
-    tpm2_alg_util_flags_symmetric  = 1 << 2,
-    tpm2_alg_util_flags_asymmetric = 1 << 3,
-    tpm2_alg_util_flags_kdf        = 1 << 4,
-    tpm2_alg_util_flags_mgf        = 1 << 5,
-    tpm2_alg_util_flags_sig        = 1 << 6,
-    tpm2_alg_util_flags_mode       = 1 << 7,
-    tpm2_alg_util_flags_base       = 1 << 8,
-    tpm2_alg_util_flags_misc       = 1 << 9,
-    tpm2_alg_util_flags_enc_scheme = 1 << 10,
-    tpm2_alg_util_flags_rsa_scheme = 1 << 11,
-    tpm2_alg_util_flags_any        = ~0
+typedef enum tpm2_alg_util_flags_enum tpm2_alg_util_flags_enum;
+enum tpm2_alg_util_flags_enum {
+  tpm2_alg_util_flags_none = 0,
+  tpm2_alg_util_flags_hash = 1 << 0,
+  tpm2_alg_util_flags_keyedhash = 1 << 1,
+  tpm2_alg_util_flags_symmetric = 1 << 2,
+  tpm2_alg_util_flags_asymmetric = 1 << 3,
+  tpm2_alg_util_flags_kdf = 1 << 4,
+  tpm2_alg_util_flags_mgf = 1 << 5,
+  tpm2_alg_util_flags_sig = 1 << 6,
+  tpm2_alg_util_flags_mode = 1 << 7,
+  tpm2_alg_util_flags_base = 1 << 8,
+  tpm2_alg_util_flags_misc = 1 << 9,
+  tpm2_alg_util_flags_enc_scheme = 1 << 10,
+  tpm2_alg_util_flags_rsa_scheme = 1 << 11,
+  tpm2_alg_util_flags_any = ~0
 };
+
+typedef unsigned int tpm2_alg_util_flags;
 
 /**
  * Convert a "nice-name" string to an algorithm id.
