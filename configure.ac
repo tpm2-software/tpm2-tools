@@ -373,6 +373,17 @@ AS_IF([test x"$strip" = x"yyy"], [
   AC_MSG_NOTICE([Not using compiler options to reduce binary size!])
 )
 
+AC_MSG_CHECKING([whether the compiler is Clang])
+CLANG=no
+if $CC --version 2>/dev/null | grep -qi clang; then
+    CLANG=yes
+fi
+AC_MSG_RESULT([$CLANG])
+
+if test "x$CLANG" = "xyes"; then
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -Wno-unknown-warning-option"
+fi
+
 AC_SUBST([EXTRA_CFLAGS])
 AC_SUBST([EXTRA_LDFLAGS])
 AC_SUBST([PATH])
