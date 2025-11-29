@@ -18,8 +18,10 @@
  */
 
 #ifdef _FORTIFY_SOURCE
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
+#endif
 #endif
 
 TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
@@ -153,7 +155,9 @@ err:
 #endif
 
 #ifdef _FORTIFY_SOURCE
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC pop_options
+#endif
 #endif
 
 
