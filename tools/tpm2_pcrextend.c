@@ -236,12 +236,26 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     /*
      * 2. Close authorization sessions
      */
+    tool_rc rc = tool_rc_success;
+    tool_rc tmp_rc = tpm2_session_close(&ctx.auth.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+    }
 
     /*
      * 3. Close auxiliary sessions
      */
+    size_t i;
+    for (i = 0; i < ctx.aux_session_cnt; i++) {
+        if (ctx.aux_session_path[i]) {
+            tmp_rc = tpm2_session_close(&ctx.aux_session[i]);
+            if (tmp_rc != tool_rc_success) {
+                rc = tmp_rc;
+            }
+        }
+    }
 
-    return tool_rc_success;
+    return rc;
 }
 
 static void tpm2_tool_onexit(void) {
