@@ -76,7 +76,7 @@ tpm2_getrandom -o random.out 20
 
 ## Generate a random 8 bytes and output the hex formatted data to stdout
 ```bash
-tpm2_getrandom 8
+tpm2_getrandom 8 --hex
 ```
 
 [returns](common/returns.md)
