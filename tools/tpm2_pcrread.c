@@ -313,8 +313,19 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     /*
      * 3. Close auxiliary sessions
      */
+    tool_rc rc = tool_rc_success;
+    tool_rc tmp_rc = tool_rc_success;
+    size_t i;
+    for (i = 0; i < ctx.aux_session_cnt; i++) {
+        if (ctx.aux_session_path[i]) {
+            tmp_rc = tpm2_session_close(&ctx.aux_session[i]);
+            if (tmp_rc != tool_rc_success) {
+                rc = tmp_rc;
+            }
+        }
+    }
 
-    return tool_rc_success;
+    return rc;
 }
 
 // Register this tool with tpm2_tool.c
