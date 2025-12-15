@@ -123,7 +123,35 @@ information many users may expect.
 
 [common tcti options](common/tcti.md) collection of options used to configure
 the various known TCTI modules.
+
 # EXAMPLES
+
+## Parameter encryption.
+
+Command parameters and responses are not encrypted if no hmac session is used for
+commands. A session where the parameter, in this case the password, is
+encrypted can be created as follows:
+
+```bash
+tpm2_createprimary -c prim.ctx
+tpm2_startauthsession -S enc_session.ctx --hmac-session --key-context prim.ctx
+tpm2_create -C prim.ctx -c key.ctx -S enc_session.ctx -p password
+```
+Even without using a key for the session, a session can be used for parameter
+encryption:
+
+```bash
+tpm2_startauthsession -S enc_session.ctx --hmac-session
+tpm2_sessionconfig enc_session.ctx --enable-decrypt
+tpm2_create -C prim.ctx -c key.ctx -S enc_session.ctx -p password
+```
+If the response has to be encrypted, the --enable-encrypt parameter can be used:
+
+```bash
+tpm2_startauthsession -S enc_session.ctx --hmac-session
+tpm2_sessionconfig enc_session.ctx --enable-encrypt
+tpm2_getrandom -S enc_session.ctx -o rand
+```
 
 ## Start a *trial* session and save the session data to a file
 ```bash
