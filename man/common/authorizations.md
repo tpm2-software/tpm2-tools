@@ -7,6 +7,11 @@ Authorization for use of an object in TPM2.0 can come in 3 different forms:
 
 **NOTE:** "Authorizations default to the **EMPTY PASSWORD** when not specified".
 
+For authentication with auth values, the tool commands implicitly
+generate an HMAC session. Thus passwords are not transmitted unencrypted.
+This does not apply to passwords defined for objects. In this case, an HMAC
+session should be used (see tpm2\_startauthsession(1)).
+
 ## Passwords
 
 Passwords are interpreted in the following forms below using prefix identifiers.
