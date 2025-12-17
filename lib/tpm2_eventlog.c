@@ -427,6 +427,11 @@ size_t i;
             }
             break;
 
+        /* For TPM2 PCR measurements made by systemd for each PE section of the UKI that is
+           defined by the UAPI.5 UKI Specification PCR 11 is used. */
+        case 11:
+            return true;
+
         default:
             LOG_WARN("Event %zu is unexpectedly not extending either PCR 8, 9, 12 or 14", eventnum - 1);
             return false;
