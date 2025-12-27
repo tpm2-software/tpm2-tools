@@ -387,6 +387,10 @@ static tool_rc check_options(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             goto is_input_options_args_valid_out;
         }
 
+        if (ctx.size == 0) {
+            ctx.size = nv_public->nvPublic.dataSize;
+        }
+
         if (ctx.offset + ctx.size > nv_public->nvPublic.dataSize) {
             LOG_ERR("Size to read at offset is bigger than nv index size");
             rc = tool_rc_option_error;

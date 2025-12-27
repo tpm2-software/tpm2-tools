@@ -68,7 +68,7 @@ These options control the certification:
 
   * **--attestation**=_FILE_:
 
-    The attestation data of the type TPM2_CREATION_INFO signed with signing key.
+    The attestation data of the type TPMS_ATTEST signed with signing key.
 
   * **\--cphash**=_FILE_
 
