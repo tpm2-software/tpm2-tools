@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include <curl/curl.h>
 #include <openssl/buffer.h>
@@ -90,27 +91,50 @@ typedef unsigned int ek_nv_index;
 #define EK_SERVER_INTEL "https://ekop.intel.com/ekcertservice/"
 #define EK_SERVER_AMD "https://ftpm.amd.com/pki/aia/"
 
+typedef enum key_type key_type;
+enum key_type {
+    KTYPE_RSA = 0,
+    KTYPE_ECC = 1,
+};
+
+typedef struct ek_index_map ek_index_map;
+struct ek_index_map
+{
+  const char *name;
+  key_type key_type;
+  ek_nv_index index;
+  TPMI_ALG_HASH hash_alg;
+  bool found;
+  unsigned char *cert_buffer;
+  size_t cert_buffer_size;
+};
+
+static ek_index_map ek_index_maps[] = {
+    {"rsa", KTYPE_RSA, RSA_EK_CERT_NV_INDEX, TPM2_ALG_SHA256, false, NULL, 0},
+    {"rsa2048", KTYPE_RSA, RSA_2048_EK_CERT_NV_INDEX, TPM2_ALG_SHA256, false, NULL, 0},
+    {"ecc", KTYPE_ECC, ECC_EK_CERT_NV_INDEX, TPM2_ALG_SHA256, false, NULL, 0},
+    {"ecc_nist_p256", KTYPE_ECC, ECC_NIST_P256_EK_CERT_NV_INDEX, TPM2_ALG_SHA256, false, NULL, 0},
+    {"rsa3072", KTYPE_RSA, RSA_3072_EK_CERT_NV_INDEX, TPM2_ALG_SHA384, false, NULL, 0},
+    {"rsa4096", KTYPE_RSA, RSA_4096_EK_CERT_NV_INDEX, TPM2_ALG_SHA512, false, NULL, 0},
+    {"ecc_nist_p384", KTYPE_ECC, ECC_NIST_P384_EK_CERT_NV_INDEX, TPM2_ALG_SHA384, false, NULL, 0},
+    {"ecc_nist_p521", KTYPE_ECC, ECC_NIST_P521_EK_CERT_NV_INDEX, TPM2_ALG_SHA512, false, NULL, 0},
+    {"ecc_sm2_p256", KTYPE_ECC, ECC_SM2_P256_EK_CERT_NV_INDEX, TPM2_ALG_SM3_256, false, NULL, 0},
+};
+
 typedef struct tpm_getekcertificate_ctx tpm_getekcertificate_ctx;
 struct tpm_getekcertificate_ctx {
     // TPM Device properties
     bool is_tpm2_device_active;
     bool is_cert_on_nv;
     tpm_manufacturer manufacturer;
-    bool is_rsa_ek_cert_nv_location_defined;
-    bool is_ecc_ek_cert_nv_location_defined;
-    ek_nv_index rsa_ek_cert_nv_location;
-    ek_nv_index ecc_ek_cert_nv_location;
     bool is_tpmgeneratedeps;
     // Certficate data handling
-    uint8_t cert_count;
-    char *ec_cert_path_1;
-    FILE *ec_cert_file_handle_1;
-    char *ec_cert_path_2;
-    FILE *ec_cert_file_handle_2;
-    unsigned char *rsa_cert_buffer;
-    size_t rsa_cert_buffer_size;
-    unsigned char *ecc_cert_buffer;
-    size_t ecc_cert_buffer_size;
+    size_t cert_count;
+    size_t nv_cert_count;
+    char *ec_cert_paths[ARRAY_LEN(ek_index_maps)];
+    FILE *ec_cert_file_handles[ARRAY_LEN(ek_index_maps)];
+    unsigned char *web_cert_buffer;
+    size_t web_cert_buffer_size;
     bool is_cert_raw;
     bool need_x509_trunc;
     size_t curl_buffer_size;
@@ -125,46 +149,19 @@ struct tpm_getekcertificate_ctx {
 
 static tpm_getekcertificate_ctx ctx = {
     .is_tpm2_device_active = true,
-    .is_cert_on_nv = true,
+    .is_cert_on_nv = false,
     .cert_count = 0,
     .encoding = ENC_AUTO,
     .need_x509_trunc = false,
 };
 
-
-typedef enum key_type key_type;
-enum key_type {
-    KTYPE_RSA = 0,
-    KTYPE_ECC = 1,
-};
-
-typedef struct ek_index_map ek_index_map;
-struct ek_index_map
-{
-  const char *name;
-  key_type key_type;
-  ek_nv_index index;
-  TPMI_ALG_HASH hash_alg;
-};
-
-static ek_index_map ek_index_maps[] = {
-    {"rsa", KTYPE_RSA, RSA_EK_CERT_NV_INDEX, TPM2_ALG_SHA256},
-    {"rsa2048", KTYPE_RSA, RSA_2048_EK_CERT_NV_INDEX, TPM2_ALG_SHA256},
-    {"rsa3072", KTYPE_RSA, RSA_3072_EK_CERT_NV_INDEX, TPM2_ALG_SHA384},
-    {"rsa4096", KTYPE_RSA, RSA_4096_EK_CERT_NV_INDEX, TPM2_ALG_SHA512},
-    {"ecc", KTYPE_ECC, ECC_EK_CERT_NV_INDEX, TPM2_ALG_SHA256},
-    {"ecc_nist_p256", KTYPE_ECC, ECC_NIST_P256_EK_CERT_NV_INDEX, TPM2_ALG_SHA256},
-    {"ecc_nist_p384", KTYPE_ECC, ECC_NIST_P384_EK_CERT_NV_INDEX, TPM2_ALG_SHA384},
-    {"ecc_nist_p521", KTYPE_ECC, ECC_NIST_P521_EK_CERT_NV_INDEX, TPM2_ALG_SHA512},
-    {"ecc_sm2_p256", KTYPE_ECC, ECC_SM2_P256_EK_CERT_NV_INDEX, TPM2_ALG_SM3_256},
-};
-
-static const ek_index_map *lookup_ek_index_map(const TPMI_RH_NV_INDEX index) {
+static ek_index_map *lookup_ek_index_map(const TPMI_RH_NV_INDEX index) {
     size_t i;
 
     for (i = 0; i < ARRAY_LEN(ek_index_maps); i++)
     {
         if (index == ek_index_maps[i].index) {
+            ek_index_maps[i].found = true;
             return &ek_index_maps[i];
         }
     }
@@ -454,10 +451,7 @@ static char *encode_ek_public(void) {
         return encode_ek_public_intel();
     }
 }
-/*
- * As only one cert is downloaded at a time, we can simply use
- * rsa_cert_buffer for either RSA EK cert or ECC EK cert.
- */
+
 static size_t writecallback(char *contents, size_t size, size_t nitems,
     void *userdata) {
     UNUSED(userdata);
@@ -467,20 +461,20 @@ static size_t writecallback(char *contents, size_t size, size_t nitems,
       return 0;
     }
 
-    const size_t new_used_size = ctx.rsa_cert_buffer_size + chunk_size;
+    const size_t new_used_size = ctx.web_cert_buffer_size + chunk_size;
     if (ctx.curl_buffer_size < new_used_size) {
         const size_t new_buf_size = ctx.curl_buffer_size + CURL_MAX_WRITE_SIZE;
-        void *new_buf = realloc(ctx.rsa_cert_buffer, new_buf_size);
+        void *new_buf = realloc(ctx.web_cert_buffer, new_buf_size);
         if (!new_buf) {
             LOG_ERR("OOM when downloading EK cert");
             return 0;
         }
-        ctx.rsa_cert_buffer = new_buf;
+        ctx.web_cert_buffer = new_buf;
         ctx.curl_buffer_size = new_buf_size;
     }
 
-    memcpy(ctx.rsa_cert_buffer + ctx.rsa_cert_buffer_size, contents, chunk_size);
-    ctx.rsa_cert_buffer_size += chunk_size;
+    memcpy(ctx.web_cert_buffer + ctx.web_cert_buffer_size, contents, chunk_size);
+    ctx.web_cert_buffer_size += chunk_size;
     return chunk_size;
 }
 
@@ -496,8 +490,8 @@ static bool retrieve_web_endorsement_certificate(char *uri) {
     }
 
     bool ret = true;
-    ctx.rsa_cert_buffer = malloc(CURL_MAX_WRITE_SIZE);
-    if (!ctx.rsa_cert_buffer) {
+    ctx.web_cert_buffer = malloc(CURL_MAX_WRITE_SIZE);
+    if (!ctx.web_cert_buffer) {
         LOG_ERR("OOM");
         ret = false;
         goto out_memory;
@@ -586,10 +580,10 @@ out_easy_cleanup:
 out_global_cleanup:
     curl_global_cleanup();
 out_memory:
-    if (!ret && ctx.rsa_cert_buffer) {
-      free(ctx.rsa_cert_buffer);
-      ctx.rsa_cert_buffer = NULL;
-      ctx.rsa_cert_buffer_size = 0;
+    if (!ret && ctx.web_cert_buffer) {
+      free(ctx.web_cert_buffer);
+      ctx.web_cert_buffer = NULL;
+      ctx.web_cert_buffer_size = 0;
       ctx.curl_buffer_size = 0;
     }
     free(weblink);
@@ -643,13 +637,12 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
      * with attributes:
      * ppwrite|ppread|ownerread|authread|no_da|written|platformcreate
      */
-    const ek_index_map *m = lookup_ek_index_map(nv_index);
+    ek_index_map *m = lookup_ek_index_map(nv_index);
     if (!m) {
         LOG_ERR("Unsupported NV INDEX, got \"%u\"", nv_index);
         return tool_rc_unsupported;
     }
 
-    const bool is_rsa = m->key_type == KTYPE_RSA;
     char index_string[11];
     snprintf(index_string, sizeof(index_string), "%u", m->index);
     tpm2_loaded_object object;
@@ -663,28 +656,16 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
     TPM2B_DIGEST cp_hash = { 0 };
     TPM2B_DIGEST rp_hash = { 0 };
     uint16_t nv_buf_size = 0;
-    rc = is_rsa ?
-         tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.rsa_cert_buffer,
+    rc = tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &m->cert_buffer,
             &nv_buf_size, &cp_hash, &rp_hash, m->hash_alg, 0,
-            ESYS_TR_NONE, ESYS_TR_NONE, NULL) :
-
-         tpm2_util_nv_read(ectx, nv_index, 0, 0, &object, &ctx.ecc_cert_buffer,
-            &nv_buf_size, &cp_hash, &rp_hash, m->hash_alg, 0,
-            ESYS_TR_NONE, ESYS_TR_NONE, NULL);
-
-    if(ctx.need_x509_trunc) {
-        int len = (int)(is_rsa ? 
-                  x509_get_len(ctx.rsa_cert_buffer, nv_buf_size) :
-                  x509_get_len(ctx.ecc_cert_buffer, nv_buf_size));
-        if(len > 0){
-            nv_buf_size = len;
-        }
+                           ESYS_TR_NONE, ESYS_TR_NONE, NULL);
+    if (rc != tool_rc_success) {
+        goto nv_read_out;
     }
-
-    if (is_rsa) {
-        ctx.rsa_cert_buffer_size = nv_buf_size;
-    } else {
-        ctx.ecc_cert_buffer_size = nv_buf_size;
+    m->cert_buffer_size =  nv_buf_size;
+    if (ctx.need_x509_trunc) {
+        int len = (int)x509_get_len(m->cert_buffer, nv_buf_size);
+        nv_buf_size = len;
     }
 
 nv_read_out:
@@ -1015,38 +996,25 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
         goto get_tpm_properties_out;
     }
 
-    ctx.rsa_ek_cert_nv_location = 0xffffffff;
-    ctx.ecc_ek_cert_nv_location = 0xffffffff;
-    
     UINT32 i;
     for (i = 0; i < capability_data->data.handles.count; i++) {
         TPMI_RH_NV_INDEX index = capability_data->data.handles.handle[i];
-        const ek_index_map *m = lookup_ek_index_map(index);
+        ek_index_map *m = lookup_ek_index_map(index);
         if (!m) {
             continue;
         }
 
         if (ctx.ek_path) {
             /* Read possible certificate  */
-            if (ctx.out_public->publicArea.type == TPM2_ALG_RSA && m->key_type == KTYPE_RSA) {
-                rc = nv_read(ectx, index);
-                if (rc != tool_rc_success) {
-                    return rc;
-                }
-                cert_buffer = ctx.rsa_cert_buffer;
-                cert_buffer_size =  ctx.rsa_cert_buffer_size;
-            } else if (ctx.out_public->publicArea.type == TPM2_ALG_ECC && m->key_type == KTYPE_ECC) {
-                rc = nv_read(ectx, index);
-                if (rc != tool_rc_success) {
-                    return rc;
-                }
-                cert_buffer = ctx.ecc_cert_buffer;
-                cert_buffer_size =  ctx.ecc_cert_buffer_size;
-            } else {
-                continue;
+            rc = nv_read(ectx, index);
+            if (rc != tool_rc_success) {
+                return rc;
             }
+            cert_buffer = m->cert_buffer;
+            cert_buffer_size =  m->cert_buffer_size;
+            ctx.web_cert_buffer_size = m->cert_buffer_size;
             cert_buffer_ossl = cert_buffer;
-            cert = d2i_X509(NULL, (const unsigned char **)&cert_buffer_ossl, (int)cert_buffer_size);
+            cert = d2i_X509(NULL, (const unsigned char **)&cert_buffer_ossl, cert_buffer_size);
             if (!cert) {
                 free(cert_buffer);
                 LOG_WARN("Invalid certificate found at %x", index);
@@ -1058,33 +1026,27 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
                     return rc;
                 }
                 if (cmp_public_key(ctx.out_public, &public_key)) {
-                    if (m->key_type == KTYPE_RSA) {
-                        ctx.is_rsa_ek_cert_nv_location_defined = true;
-                    } else {
-                        ctx.is_ecc_ek_cert_nv_location_defined = true;
-                    }
+                    ctx.is_cert_on_nv = true;
+                    m->found = true;
+                    ctx.nv_cert_count++;
                     break;
                 } else {
                     free(cert_buffer);
+                    m->cert_buffer = NULL;
                 }
             }
         } else {
-            if (m->key_type == KTYPE_RSA && index < ctx.rsa_ek_cert_nv_location) {
+            /* Update certificate table */
+            m->found = true;
+            ctx.is_cert_on_nv = true;
+            ctx.nv_cert_count++;
+            if (m->key_type == KTYPE_RSA) {
                 LOG_INFO("Found pre-provisioned RSA EK certificate at %u [type=%s]", index, m->name);
-                ctx.is_rsa_ek_cert_nv_location_defined = true;
-                ctx.rsa_ek_cert_nv_location = m->index;
             }
-            if (m->key_type == KTYPE_ECC && index < ctx.ecc_ek_cert_nv_location) {
+            if (m->key_type == KTYPE_ECC) {
                 LOG_INFO("Found pre-provisioned ECC EK certificate at %u [type=%s]", index, m->name);
-                ctx.is_ecc_ek_cert_nv_location_defined = true;
-                ctx.ecc_ek_cert_nv_location = m->index;
             }
         }
-    }
-
-    if (!ctx.is_rsa_ek_cert_nv_location_defined &&
-    !ctx.is_ecc_ek_cert_nv_location_defined) {
-        ctx.is_cert_on_nv = false;
     }
 
 get_tpm_properties_out:
@@ -1093,6 +1055,7 @@ get_tpm_properties_out:
 }
 
 static tool_rc get_nv_ek_certificate(ESYS_CONTEXT *ectx) {
+    size_t i;
 
     if (!ctx.is_cert_on_nv) {
         LOG_ERR("TCG specified location for EK certs aren't defined.");
@@ -1103,28 +1066,16 @@ static tool_rc get_nv_ek_certificate(ESYS_CONTEXT *ectx) {
         LOG_WARN("Ignoring -X or --allow-unverified if EK certificate found on NV");
     }
 
-    if (ctx.is_rsa_ek_cert_nv_location_defined &&
-    ctx.is_ecc_ek_cert_nv_location_defined && ctx.cert_count == 1) {
-        LOG_WARN("Found 2 certficates on NV. Add another -o to save the ECC cert");
-    }
-
-    if ((!ctx.is_rsa_ek_cert_nv_location_defined ||
-    !ctx.is_ecc_ek_cert_nv_location_defined) && ctx.cert_count == 2) {
-        LOG_WARN("Ignoring the additional output file since only 1 cert found on NV");
-    }
-
     tool_rc rc = tool_rc_success;
-    if (ctx.is_rsa_ek_cert_nv_location_defined) {
-        rc = nv_read(ectx, ctx.rsa_ek_cert_nv_location);
-        if (rc != tool_rc_success) {
-            return rc;
+
+    for (i = 0; i < ARRAY_LEN(ek_index_maps); i++) { 
+        if (ek_index_maps[i].found) {
+            rc = nv_read(ectx, ek_index_maps[i].index);
+            if (rc != tool_rc_success) {
+                return rc;
+            }
         }
     }
-
-    if (ctx.is_ecc_ek_cert_nv_location_defined) {
-        rc = nv_read(ectx, ctx.ecc_ek_cert_nv_location);
-    }
-
     return rc;
 }
 
@@ -1243,15 +1194,11 @@ static tool_rc process_output(void) {
      * the EK public hash in addition to the certificate data.
      * If so set the flag.
      */
+    size_t i, j;
     bool is_intel_cert = ctx.manufacturer == VENDOR_INTEL;
 
-    if (!is_intel_cert && ctx.rsa_cert_buffer) {
-        is_intel_cert = !(strncmp((const char *)ctx.rsa_cert_buffer,
-            "{\"pubhash", strlen("{\"pubhash")));
-    }
-
-    if (!is_intel_cert && ctx.ecc_cert_buffer) {
-        is_intel_cert = !(strncmp((const char *)ctx.ecc_cert_buffer,
+    if (!is_intel_cert && ctx.web_cert_buffer) {
+        is_intel_cert = !(strncmp((const char *)ctx.web_cert_buffer,
             "{\"pubhash", strlen("{\"pubhash")));
     }
 
@@ -1266,85 +1213,97 @@ static tool_rc process_output(void) {
      *  Convert Intel EK certificates as received in the URL safe variant of
      *  Base 64: https://tools.ietf.org/html/rfc4648#section-5 to PEM
      */
-    if (ctx.rsa_cert_buffer && is_intel_cert && !ctx.is_cert_raw) {
-        char *split = strstr((const char *)ctx.rsa_cert_buffer, "certificate");
-        char *copy_buffer = base64_decode(&split, ctx.rsa_cert_buffer_size);
-        ctx.rsa_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
+    if (ctx.web_cert_buffer && is_intel_cert && !ctx.is_cert_raw) {
+        char *split = strstr((const char *)ctx.web_cert_buffer, "certificate");
+        char *copy_buffer = base64_decode(&split, ctx.web_cert_buffer_size);
+        ctx.web_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
             strlen(copy_buffer) + strlen(PEM_END_CERT_LINE);
-        strcpy((char *)ctx.rsa_cert_buffer, PEM_BEGIN_CERT_LINE);
-        strcpy((char *)ctx.rsa_cert_buffer + strlen(PEM_BEGIN_CERT_LINE),
+        strcpy((char *)ctx.web_cert_buffer, PEM_BEGIN_CERT_LINE);
+        strcpy((char *)ctx.web_cert_buffer + strlen(PEM_BEGIN_CERT_LINE),
             copy_buffer);
-        strcpy((char *)ctx.rsa_cert_buffer + strlen(PEM_BEGIN_CERT_LINE) +
-            strlen(copy_buffer), PEM_END_CERT_LINE);
-        free(copy_buffer);
-    }
-
-    if (ctx.ecc_cert_buffer && is_intel_cert && !ctx.is_cert_raw) {
-        char *split = strstr((const char *)ctx.ecc_cert_buffer, "certificate");
-        char *copy_buffer = base64_decode(&split, ctx.ecc_cert_buffer_size);
-        ctx.ecc_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
-            strlen(copy_buffer) + strlen(PEM_END_CERT_LINE);
-        strcpy((char *)ctx.ecc_cert_buffer, PEM_BEGIN_CERT_LINE);
-        strcpy((char *)ctx.ecc_cert_buffer + strlen(PEM_BEGIN_CERT_LINE),
-            copy_buffer);
-        strcpy((char *)ctx.ecc_cert_buffer + strlen(PEM_BEGIN_CERT_LINE) +
+        strcpy((char *)ctx.web_cert_buffer + strlen(PEM_BEGIN_CERT_LINE) +
             strlen(copy_buffer), PEM_END_CERT_LINE);
         free(copy_buffer);
     }
 
     bool retval = true;
-    if (ctx.rsa_cert_buffer) {
+    if (ctx.web_cert_buffer) {
         retval = files_write_bytes(
-            ctx.ec_cert_file_handle_1 ? ctx.ec_cert_file_handle_1 : stdout,
-            ctx.rsa_cert_buffer, ctx.rsa_cert_buffer_size);
+            ctx.ec_cert_file_handles[0] ? ctx.ec_cert_file_handles[0] : stdout,
+            ctx.web_cert_buffer, ctx.web_cert_buffer_size);
         if (!retval) {
             return tool_rc_general_error;
         }
+        return tool_rc_success;
     }
 
-    if (ctx.ecc_cert_buffer) {
-        retval = files_write_bytes(
-            ctx.ec_cert_file_handle_2 ? ctx.ec_cert_file_handle_2 :
-            ctx.rsa_cert_buffer ? stdout : ctx.ec_cert_file_handle_1,
-            ctx.ecc_cert_buffer, ctx.ecc_cert_buffer_size);
-        if (!retval) {
-            return tool_rc_general_error;
+    /*
+     * Output of all NV certificates.
+     */
+
+    /* If possible first write a RSA certificate to achieve backward compatibility */
+    j = 0; /* index to file handles. */
+    for (i = 0; i < ARRAY_LEN(ek_index_maps); i++) {
+        if (ek_index_maps[i].cert_buffer && ek_index_maps[i].key_type == KTYPE_RSA) {
+            retval = files_write_bytes(
+                ctx.ec_cert_file_handles[j] ? ctx.ec_cert_file_handles[j] : stdout,
+                ek_index_maps[i].cert_buffer, ek_index_maps[i].cert_buffer_size);
+            if (!retval) {
+                return tool_rc_general_error;
+            }
+            free(ek_index_maps[i].cert_buffer);
+            ek_index_maps[i].cert_buffer = NULL;
+            j++;
+            break;
         }
     }
 
+    for (i = 0; i < ARRAY_LEN(ek_index_maps); i++) {
+        if (ek_index_maps[i].cert_buffer) {
+            if (!ctx.ec_cert_file_handles[j] && j > 0) {
+                break;
+            }
+            retval = files_write_bytes(
+                ctx.ec_cert_file_handles[j] ? ctx.ec_cert_file_handles[j] : stdout,
+                ek_index_maps[i].cert_buffer, ek_index_maps[i].cert_buffer_size);
+            if (!retval) {
+                return tool_rc_general_error;
+            }
+            j++;
+        }
+    }
+
+    if (ctx.cert_count < ctx.nv_cert_count) {
+        LOG_WARN("Found %zu certficates on NV. Add another -o to save all certificates",
+                 ctx.nv_cert_count);
+    }
+
+    if (ctx.cert_count > ctx.nv_cert_count){
+        LOG_WARN("Ignoring the additional output file since only %zu certificates found on NV",
+                  ctx.nv_cert_count);
+    }
+ 
     return tool_rc_success;
 }
 
 static tool_rc check_input_options(void) {
+    size_t i = 0;
 
-    if (!ctx.ek_path && !ctx.is_cert_on_nv) {
-        LOG_ERR("Must specify the EK public key path");
-        return tool_rc_option_error;
-    }
-
-    if (!ctx.ek_server_addr && !ctx.is_cert_on_nv) {
-        LOG_ERR("Must specify a valid remote server url!");
-        return tool_rc_option_error;
-    }
-
-    if (ctx.ec_cert_path_1) {
-        ctx.ec_cert_file_handle_1 = fopen(ctx.ec_cert_path_1, "wb");
-        if (!ctx.ec_cert_file_handle_1) {
+    while (ctx.ec_cert_paths[i]) {
+        int fd = open(ctx.ec_cert_paths[i], O_WRONLY | O_CREAT | O_TRUNC, 0664);
+        if (fd == -1) {
+             LOG_ERR("Could not open file for writing: \"%s\"",
+                     ctx.ec_cert_paths[i]);
+             return tool_rc_general_error;
+        }
+        ctx.ec_cert_file_handles[i] = fdopen(fd, "wb");
+        if (!ctx.ec_cert_file_handles[i]) {
             LOG_ERR("Could not open file for writing: \"%s\"",
-                ctx.ec_cert_path_1);
+                ctx.ec_cert_paths[i]);
             return tool_rc_general_error;
         }
+        i++;
     }
-
-    if (ctx.ec_cert_path_2) {
-        ctx.ec_cert_file_handle_2 = fopen(ctx.ec_cert_path_2, "wb");
-        if (!ctx.ec_cert_file_handle_2) {
-            LOG_ERR("Could not open file for writing: \"%s\"",
-                ctx.ec_cert_path_2);
-            return tool_rc_general_error;
-        }
-    }
-
     return tool_rc_success;
 }
 
@@ -1365,18 +1324,16 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'o':
-        if (ctx.cert_count < 2) {
-            ctx.cert_count++;
-        } else {
-            LOG_ERR("Specify only 2 outputs for RSA/ ECC certificates");
+        /* - add value to cert file table
+           - check counter
+           - increment counter
+         */
+        if (ctx.cert_count == ARRAY_LEN(ek_index_maps)) {
+            LOG_ERR("Max %zu certificates can be specified", ARRAY_LEN(ek_index_maps));
             return false;
         }
-        if (ctx.cert_count == 1) {
-            ctx.ec_cert_path_1 = value;
-        }
-        if (ctx.cert_count == 2) {
-            ctx.ec_cert_path_2 = value;
-        }
+        ctx.ec_cert_paths[ctx.cert_count] = value;
+        ctx.cert_count++;
         break;
     case 'X':
         ctx.SSL_NO_VERIFY = 1;
@@ -1462,21 +1419,18 @@ static tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
     UNUSED(ectx);
+    size_t i = 0;
 
-    if (ctx.ec_cert_file_handle_1) {
-        fclose(ctx.ec_cert_file_handle_1);
+    while(ctx.ec_cert_paths[i]) {
+        fclose(ctx.ec_cert_file_handles[i]);
+        i++;
     }
 
-    if (ctx.ec_cert_file_handle_2) {
-        fclose(ctx.ec_cert_file_handle_2);
-    }
+    free(ctx.web_cert_buffer);
 
-    if (ctx.rsa_cert_buffer) {
-        free(ctx.rsa_cert_buffer);
-    }
-
-    if (ctx.ecc_cert_buffer) {
-        free(ctx.ecc_cert_buffer);
+    for (i = 0; i < ARRAY_LEN(ek_index_maps); i++)
+    {
+        free(ek_index_maps[i].cert_buffer);
     }
 
     return tool_rc_success;
