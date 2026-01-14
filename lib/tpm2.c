@@ -2060,15 +2060,32 @@ tpm2_create_skip_esapi_call:
 tool_rc tpm2_create_loaded(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *parent_obj,
         const TPM2B_SENSITIVE_CREATE *in_sensitive,
-        const TPM2B_TEMPLATE *in_public, ESYS_TR *object_handle,
+        const TPM2B_PUBLIC *in_public, ESYS_TR *object_handle,
         TPM2B_PRIVATE **out_private, TPM2B_PUBLIC **out_public,
         TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
         TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,
         ESYS_TR shandle3) {
-
+    TPM2B_TEMPLATE template = { .size = 0 };
+   
     TSS2_SYS_CONTEXT *sys_context = NULL;
+    bool create_loaded_exists;
     tool_rc rc = tool_rc_success;
-    if (cp_hash->size || rp_hash->size) {
+    size_t offset = 0;
+
+    tool_rc tmp_rc = tpm2_mu_tpmt_public_marshal(
+                       &in_public->publicArea, &template.buffer[0],
+                       sizeof(TPMT_PUBLIC), &offset);
+    if (tmp_rc != tool_rc_success) {
+        return tmp_rc;
+    }
+
+    template.size = offset;
+
+    rc = tpm2_check_cc(esys_context, TPM2_CC_CreateLoaded, &create_loaded_exists);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+    if ((cp_hash->size || rp_hash->size) && create_loaded_exists) {
         rc = tpm2_getsapicontext(esys_context, &sys_context);
 
         if(rc != tool_rc_success) {
@@ -2077,9 +2094,9 @@ tool_rc tpm2_create_loaded(ESYS_CONTEXT *esys_context,
         }
     }
 
-    if (cp_hash->size) {
+    if (cp_hash->size && create_loaded_exists) {
         TSS2_RC rval = Tss2_Sys_CreateLoaded_Prepare(sys_context,
-            parent_obj->handle, in_sensitive, in_public);
+            parent_obj->handle, in_sensitive, &template);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_CreateLoaded_Prepare, rval);
             return tool_rc_general_error;
@@ -2115,19 +2132,39 @@ tpm2_createloaded_free_name1:
         return rc;
     }
 
-    TSS2_RC rval = Esys_CreateLoaded(esys_context, parent_obj->tr_handle,
-            shandle1, shandle2, shandle3, in_sensitive, in_public,
+    if (create_loaded_exists) {
+        TSS2_RC rval = Esys_CreateLoaded(esys_context, parent_obj->tr_handle,
+             shandle1, shandle2, shandle3, in_sensitive, &template,
             object_handle, out_private, out_public);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_CreateLoaded, rval);
-        return tool_rc_from_tpm(rval);
-    }
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Esys_CreateLoaded, rval);
+            return tool_rc_from_tpm(rval);
+        }
 
-    if (rp_hash->size) {
-        rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
-            parameter_hash_algorithm);
+        if (rp_hash->size) {
+            rc = tpm2_sapi_getrphash(sys_context, rval, rp_hash,
+                                     parameter_hash_algorithm);
+        }
+    } else {
+        TPML_PCR_SELECTION creationPCR = {
+            .count = 0,
+        };
+        
+        TSS2_RC rval = Esys_Create(esys_context, parent_obj->tr_handle,
+             shandle1, shandle2, shandle3, in_sensitive, in_public,
+             NULL, &creationPCR, out_private, out_public, NULL, NULL, NULL);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Esys_CreateLoaded, rval);
+            return tool_rc_from_tpm(rval);
+        }
+        rval = Esys_Load(esys_context, parent_obj->tr_handle,
+            shandle1, shandle2, shandle3, *out_private,
+            *out_public, object_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_Load, rval);
+            return tool_rc_from_tpm(rval);
+        }
     }
-
 tpm2_createloaded_skip_esapi_call:
     return rc;
 }
