@@ -64,8 +64,11 @@ tool_rc tpm2_sess_get_noncetpm(ESYS_CONTEXT *esys_context,
     ESYS_TR session_handle, TPM2B_NONCE **nonce_tpm);
 
 tool_rc tpm2_policy_restart(ESYS_CONTEXT *esys_context, ESYS_TR session_handle,
-        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
+                            ESYS_TR shandle1, ESYS_TR shandle2,
+                            ESYS_TR shandle3, TPM2B_DIGEST *cp_hash,
+                            TPMI_ALG_HASH parameter_hash_algorithm);
+
+tool_rc tpm2_check_cc(ESYS_CONTEXT *ectx, uint32_t cc, bool *exists);
 
 tool_rc tpm2_get_capability(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
         ESYS_TR shandle2, ESYS_TR shandle3, TPM2_CAP capability,
@@ -212,7 +215,7 @@ tool_rc tpm2_create(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
 tool_rc tpm2_create_loaded(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *parent_obj,
         const TPM2B_SENSITIVE_CREATE *in_sensitive,
-        const TPM2B_TEMPLATE *in_public, ESYS_TR *object_handle,
+        const TPM2B_PUBLIC *in_public, ESYS_TR *object_handle,
         TPM2B_PRIVATE **out_private, TPM2B_PUBLIC **out_public,
         TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
         TPMI_ALG_HASH parameter_hash_algorithm, ESYS_TR shandle2,

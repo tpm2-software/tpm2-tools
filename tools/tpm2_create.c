@@ -134,19 +134,9 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
     /* TPM2_CC_CreateLoaded */
     if (ctx.is_createloaded) {
-        size_t offset = 0;
-        TPM2B_TEMPLATE template = { .size = 0 };
-        tool_rc tmp_rc = tpm2_mu_tpmt_public_marshal(
-                &ctx.object.in_public.publicArea, &template.buffer[0],
-                sizeof(TPMT_PUBLIC), &offset);
-        if (tmp_rc != tool_rc_success) {
-            return tmp_rc;
-        }
-
-        template.size = offset;
-
+        tool_rc tmp_rc;
         tmp_rc = tpm2_create_loaded(ectx, &ctx.parent.object,
-            &ctx.object.sensitive, &template, &ctx.object.object_handle,
+            &ctx.object.sensitive, &ctx.object.in_public, &ctx.object.object_handle,
             &ctx.object.out_private, &ctx.object.out_public, &ctx.cp_hash,
             &ctx.rp_hash, ctx.parameter_hash_algorithm,
             ctx.aux_session_handle[0], ctx.aux_session_handle[1]);
