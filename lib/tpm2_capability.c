@@ -5,26 +5,67 @@
 #include <string.h>
 
 #include "log.h"
+#include "tool_rc.h"
 #include "tpm2.h"
 #include "tpm2_capability.h"
 
-#define APPEND_CAPABILITY_INFORMATION(capability, field, subfield, max_count) \
-    if (fetched_data->data.capability.count > max_count - property_count) { \
-        fetched_data->data.capability.count = max_count - property_count; \
-    } \
-\
-    memmove(&(*capability_data)->data.capability.field[property_count], \
-            fetched_data->data.capability.field, \
-            fetched_data->data.capability.count * sizeof(fetched_data->data.capability.field[0])); \
-    property_count += fetched_data->data.capability.count; \
-\
-    (*capability_data)->data.capability.count = property_count; \
-\
-    if (more_data && property_count < count && fetched_data->data.capability.count) { \
-        property = (*capability_data)->data.capability.field[property_count - 1]subfield + 1; \
-    } else { \
-        more_data = false; \
+#define APPEND_CAPABILITY_INFORMATION(capability, field, subfield, max_count)  \
+  if (fetched_data->data.capability.count > max_count - property_count) {      \
+    fetched_data->data.capability.count = max_count - property_count;          \
+  }                                                                            \
+                                                                               \
+  memmove(&(*capability_data)->data.capability.field[property_count],          \
+          fetched_data->data.capability.field,                                 \
+          fetched_data->data.capability.count *                                \
+              sizeof(fetched_data->data.capability.field[0]));                 \
+  property_count += fetched_data->data.capability.count;                       \
+                                                                               \
+  (*capability_data)->data.capability.count = property_count;                  \
+                                                                               \
+  if (more_data && property_count < count &&                                   \
+      fetched_data->data.capability.count) {                                   \
+    property = (*capability_data)                                              \
+                   ->data.capability.field[property_count - 1] subfield +      \
+               1;                                                              \
+  } else {                                                                     \
+    more_data = false;                                                         \
+  }
+
+tool_rc tpm2_check_cc(ESYS_CONTEXT *ectx, uint32_t cc, bool *exists) {
+    TPMI_YES_NO more_data = TPM2_NO;
+    TPMS_CAPABILITY_DATA *cap = NULL;
+    uint32_t count = 1;
+    
+
+    TSS2_RC rc = Esys_GetCapability(
+        ectx,
+        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+        TPM2_CAP_COMMANDS,
+        cc,
+        count,
+        &more_data,
+        &cap
+    );
+
+    if (rc != TSS2_RC_SUCCESS) {
+        LOG_ERR("Esys_GetCapability(TPM2_CAP_COMMANDS, property=0x%08" PRIX32 " failed: 0x%x",
+                cc, rc);
+        return tool_rc_general_error;
     }
+
+    const TPML_CCA *cmds = &cap->data.command;
+
+    if (cmds->count == 1 && (cmds->commandAttributes[0] & 0xffff) == cc) {
+        Esys_Free(cap);
+        *exists = true;
+        return tool_rc_success;
+    }
+
+    Esys_Free(cap);
+    *exists = false;
+    return tool_rc_success;
+}
+
 
 tool_rc tpm2_capability_get_ex(ESYS_CONTEXT *ectx, TPM2_CAP capability,
         UINT32 property, UINT32 count, bool ignore_more_data,
