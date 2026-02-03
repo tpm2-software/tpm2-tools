@@ -308,29 +308,23 @@ static bool parse_selection_data_from_selection_string(FILE *pcr_input,
                 /*
                  * Read the digest at a selected PCR index.
                  */
-                pcrs->pcr_values[digest_list_count].digests[pcrs->pcr_values[
-                    digest_list_count].count].size = read_size;
-                read_count = fread(pcrs->pcr_values[digest_list_count].digests[
-                    pcrs->pcr_values[digest_list_count].count].buffer,
+                if (pcrs->pcr_values[digest_list_count].count == 8) {
+                    ++digest_list_count;
+                    if (digest_list_count >= TPM2_MAX_PCRS) {
+                        LOG_ERR("Maximum count for allowed digest lists reached.");
+                        return false;
+                    }
+                }
+                UINT32 digest_index = pcrs->pcr_values[digest_list_count].count;
+                pcrs->pcr_values[digest_list_count].digests[digest_index].size = read_size;
+                read_count = fread(
+                    pcrs->pcr_values[digest_list_count].digests[digest_index].buffer,
                     read_size, 1, pcr_input);
                 if (read_count != 1) {
                     LOG_ERR("Failed to read PCR digests from file");
                     return false;
                 }
-                /*
-                 * Ensure we don't overrun the allowed digest count in a
-                 * TPML_DIGEST.
-                 */
-                if (pcrs->pcr_values[digest_list_count].count == 7) {
-                    digest_list_count++;
-                } else {
-                    /*
-                     * Ensure we populate the digest in a new list if we
-                     * exhausted the digest count in the current TPML_DIGEST
-                     * instance.
-                     */
-                    pcrs->pcr_values[digest_list_count].count++;
-                }
+                pcrs->pcr_values[digest_list_count].count++;
             }
         }
     }
