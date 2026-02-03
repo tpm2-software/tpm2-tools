@@ -347,6 +347,10 @@ static bool parse_selection_data_from_file(FILE *pcr_input,
         return false;
     }
     pcr_select->count = le32toh(pcr_select->count);
+    if (pcr_select->count > TPM2_NUM_PCR_BANKS) {
+        LOG_ERR("Failed to read PCR selection from file");
+        return false;
+    }
     for (i = 0; i < pcr_select->count; i++) {
         pcr_select->pcrSelections[i].hash = le16toh(pcr_select->pcrSelections[i].hash);
     }
@@ -373,9 +377,19 @@ static bool parse_selection_data_from_file(FILE *pcr_input,
         }
         // Convert TPML_DIGEST from little endian to host endian.
         pcrs->pcr_values[j].count = le32toh( pcrs->pcr_values[j].count);
+        if (pcrs->pcr_values[j].count > ARRAY_LEN(pcrs->pcr_values[j].digests)) {
+            LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %" PRIu64,
+                    ARRAY_LEN(pcrs->pcr_values[j].digests));
+            return false;
+        }
         for (i = 0; i < pcrs->pcr_values[j].count; i++) {
             pcrs->pcr_values[j].digests[i].size =
                 le16toh(pcrs->pcr_values[j].digests[i].size);
+            if (pcrs->pcr_values[j].digests[i].size > sizeof(TPMU_HA)) {
+                LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %" PRIu64,
+                        sizeof(TPMU_HA));
+                return false;
+            }
         }
     }
 
