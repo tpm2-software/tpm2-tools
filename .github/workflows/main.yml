@@ -11,7 +11,7 @@ jobs:
         compiler: [gcc, clang]
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
       - name: fix-sanitizer
         run: sudo sysctl vm.mmap_rnd_bits=28
       - name: Launch Action
@@ -32,7 +32,7 @@ jobs:
         compiler: [gcc, clang]
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
       - name: fix-sanitizer
         run: sudo sysctl vm.mmap_rnd_bits=28
       - name: Launch Action
@@ -52,7 +52,7 @@ jobs:
     if: "!contains(github.ref, 'coverity_scan')"
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
       - name: fix-sanitizer
         run: sudo sysctl vm.mmap_rnd_bits=28
       - name: Launch Action
@@ -81,7 +81,7 @@ jobs:
     if: contains(github.ref, 'coverity_scan')
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
       - name: fix-sanitizer
         run: sudo sysctl vm.mmap_rnd_bits=28
       - name: Launch Coverity Action
