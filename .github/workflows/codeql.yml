@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Install Packages (cpp)
         if: ${{ matrix.language == 'cpp' }}
@@ -46,15 +46,15 @@ jobs:
           export LD_LIBRARY_PATH="$RUNNER_TEMP/installdir/usr/lib:$LD_LIBRARY_PATH" && echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
