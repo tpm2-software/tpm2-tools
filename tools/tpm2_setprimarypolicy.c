@@ -106,7 +106,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      */
     if (ctx.policy_path) {
 
-        ctx.auth_policy = malloc(UINT16_MAX + sizeof(uint16_t));
+        ctx.auth_policy = malloc(sizeof(*ctx.auth_policy));
         if (!ctx.auth_policy) {
             LOG_ERR("oom");
             return tool_rc_general_error;
