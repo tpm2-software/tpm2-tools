@@ -1011,36 +1011,59 @@ out:
 }
 
 bool tpm2_safe_read_from_stdin(int length, char *data) {
+    int rc;
 
-    /* Read line from stdin; at most length-1 bytes + null-termination */
-    if (!fgets(data, length, stdin)) {
+    char *buf = malloc(length);
+    char *read_data = malloc(length);
+
+    if (buf == fgets(buf, length, stdin)) {
+        char fmt[32];
+        /* Ensure we do not write more than length-1 chars into read_data */
+        if (snprintf(fmt, sizeof(fmt), "%%%ds", length - 1) < 0) {
+            free(buf);
+            free(read_data);
+            return false;
+        }
+        rc = sscanf(buf, fmt, read_data);
+        if (rc != 1) {
+            free(buf);
+            free(read_data);
+            return false;
+        }
+    }
+    else {
+        free(buf);
+        free(read_data);
         return false;
     }
 
-    /* Delete newline character */
-    size_t end = strcspn(data, "\r\n");
-    data[end] = '\0';
-
+    /* Copy at most length-1 bytes to data and ensure null-termination */
+    strncpy(data, read_data, length - 1);
+    data[length - 1] = '\0';
+    free(buf);
+    free(read_data);
     return true;
 }
 
 bool tpm2_pem_encoded_key_to_fingerprint(const char *pem_encoded_key,
     char *fingerprint) {
 
-    if (strlen(pem_encoded_key) >= 1024) {
+    bool is_pemkey_len_valid = strlen(pem_encoded_key) > 1024 ? false : true;
+    if (!is_pemkey_len_valid) {
         return false;
     }
 
     char str[1024] = "";
-    strncpy(str, pem_encoded_key, 1023);
-    str[1023] = '\0';
+    strcpy(str, pem_encoded_key);
 
     /* walk through other tokens */
     char base64[1024] = "";
     char *token = strtok(str, "\n");
     while ( token != NULL ) {
         if (!strstr(token, "-----")) {
-            if ((strlen(base64) + strlen(token)) >= 1024) {
+            bool is_base64_overrun = (strlen(base64) + strlen(token)) > 1024 ?
+                true : false;
+            if (is_base64_overrun) {
                 return false;
             }
             strcat(base64, token);
@@ -1066,7 +1089,7 @@ bool tpm2_pem_encoded_key_to_fingerprint(const char *pem_encoded_key,
 
     rc = tpm2_base64_encode(buffer, buffer_length, base64);
     if(!rc){
-        LOG_ERR("%s", "tpm2_base64_encode");
+        LOG_ERR("%s", "tpm2_base64_decode");
         return false;
     }
     strcpy(fingerprint, "SHA256:");
