@@ -1016,7 +1016,14 @@ bool tpm2_safe_read_from_stdin(int length, char *data) {
     char *read_data = malloc(length);
 
     if (buf == fgets(buf, length, stdin)) {
-        rc = sscanf(buf, "%s", read_data);
+        char fmt[32];
+        /* Ensure we do not write more than length-1 chars into read_data */
+        if (snprintf(fmt, sizeof(fmt), "%%%ds", length - 1) < 0) {
+            free(buf);
+            free(read_data);
+            return false;
+        }
+        rc = sscanf(buf, fmt, read_data);
         if (rc != 1) {
             free(buf);
             free(read_data);
@@ -1029,7 +1036,9 @@ bool tpm2_safe_read_from_stdin(int length, char *data) {
         return false;
     }
 
-    strcpy(data, read_data);
+    /* Copy at most length-1 bytes to data and ensure null-termination */
+    strncpy(data, read_data, length - 1);
+    data[length - 1] = '\0';
     free(buf);
     free(read_data);
     return true;
