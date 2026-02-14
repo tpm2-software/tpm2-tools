@@ -107,7 +107,7 @@ static FILE *open_file(const char *path, const char *mode) {
 
 static void close_file(FILE *f) {
 
-    if (f && (f != stdin || f != stdout)) {
+    if (f && f != stdin && f != stdout) {
         fclose(f);
     }
 }
