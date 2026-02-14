@@ -47,14 +47,18 @@ static int read_command_from_file(FILE *f, tpm2_command_header **c,
     const tpm2_command_header *header = tpm2_command_header_from_bytes(buffer);
 
     UINT32 command_size = tpm2_command_header_get_size(header, true);
-    UINT32 data_size = tpm2_command_header_get_size(header, false);
-
-    if (command_size > TPM2_MAX_SIZE || command_size < data_size) {
-        LOG_ERR("Command buffer %"PRIu32" bytes cannot be smaller then the "
-                "encapsulated data %"PRIu32" bytes, and can not be bigger than"
-                " the maximum buffer size", command_size, data_size);
+    if (command_size < TPM2_COMMAND_HEADER_SIZE) {
+        LOG_ERR("Command buffer size %"PRIu32" is smaller than command header "
+                "size %zu", command_size, TPM2_COMMAND_HEADER_SIZE);
         return -1;
     }
+    if (command_size > TPM2_MAX_SIZE) {
+        LOG_ERR("Command buffer size %"PRIu32" exceeds maximum buffer size %u",
+                command_size, TPM2_MAX_SIZE);
+        return -1;
+    }
+
+    UINT32 data_size = tpm2_command_header_get_size(header, false);
 
     tpm2_command_header *command = (tpm2_command_header *) malloc(command_size);
     if (!command) {
