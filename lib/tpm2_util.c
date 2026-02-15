@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <dlfcn.h>
 #include <inttypes.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1010,28 +1011,16 @@ out:
 }
 
 bool tpm2_safe_read_from_stdin(int length, char *data) {
-    int rc;
 
-    char *buf = malloc(length);
-    char *read_data = malloc(length);
-
-    if (buf == fgets(buf, length, stdin)) {
-        rc = sscanf(buf, "%s", read_data);
-        if (rc != 1) {
-            free(buf);
-            free(read_data);
-            return false;
-        }
-    }
-    else {
-        free(buf);
-        free(read_data);
+    /* Read line from stdin; at most length-1 bytes + null-termination */
+    if (!fgets(data, length, stdin)) {
         return false;
     }
 
-    strcpy(data, read_data);
-    free(buf);
-    free(read_data);
+    /* Delete newline character */
+    size_t end = strcspn(data, "\r\n");
+    data[end] = '\0';
+
     return true;
 }
 
