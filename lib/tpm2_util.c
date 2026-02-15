@@ -1079,7 +1079,7 @@ bool tpm2_pem_encoded_key_to_fingerprint(const char *pem_encoded_key,
 
     rc = tpm2_base64_encode(buffer, buffer_length, base64);
     if(!rc){
-        LOG_ERR("%s", "tpm2_base64_decode");
+        LOG_ERR("%s", "tpm2_base64_encode");
         return false;
     }
     strcpy(fingerprint, "SHA256:");
