@@ -358,13 +358,12 @@ static bool on_option(char key, char *value) {
         ctx.policy_qualifier_data = value;
         break;
     case 'S':
-        ctx.aux_session_path[ctx.aux_session_cnt] = value;
-        if (ctx.aux_session_cnt < MAX_AUX_SESSIONS) {
-            ctx.aux_session_cnt++;
-        } else {
-            LOG_ERR("Specify a max of 3 sessions");
+        if (ctx.aux_session_cnt >= MAX_AUX_SESSIONS) {
+            LOG_ERR("Specify a max of %u auxiliary sessions", MAX_AUX_SESSIONS);
             return false;
         }
+        ctx.aux_session_path[ctx.aux_session_cnt] = value;
+        ++ctx.aux_session_cnt;
         break;
         /* no default */
     }
