@@ -152,9 +152,9 @@ static alg_parser_rc handle_sym_common(const char *ext, TPMT_SYM_DEF_OBJECT *s, 
  * You cannot change all the variables in this, as they are dependent
  * on names in that routine; this is for simplicity.
  */
-#define do_scheme_halg(scheme, advance, alg) \
+#define DO_SCHEME_HALG(scheme_, advance, alg) \
     do { \
-        scheme += advance; \
+        scheme_ += advance; \
         s->scheme.scheme = alg; \
         do_scheme_hash_alg = true; \
         found = true; \
@@ -174,16 +174,18 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
         return alg_parser_rc_error;
     }
 
+    char *buf_ptr = buf;
+
     // Get the scheme and symetric details
     TPMS_ASYM_PARMS *s = &public->publicArea.parameters.asymDetail;
 
-    if (!strcmp(scheme, "null")) {
+    if (!strcmp(buf_ptr, "null")) {
         public->publicArea.parameters.asymDetail.scheme.scheme = TPM2_ALG_NULL;
         return alg_parser_rc_continue;
     }
 
     char *halg = NULL;
-    char *split = strchr(scheme, '-');
+    char *split = strchr(buf_ptr, '-');
     if (split) {
         *split = '\0';
         halg = split + 1;
@@ -193,51 +195,53 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
     bool do_scheme_hash_alg = false;
 
     if (public->publicArea.type == TPM2_ALG_ECC) {
-        if (!strncmp(scheme, "ecdsa", 5)) {
-            do_scheme_halg(scheme, 5, TPM2_ALG_ECDSA);
-        } else if (!strncmp(scheme, "ecdh", 4)) {
-            do_scheme_halg(scheme, 4, TPM2_ALG_ECDH);
-        } else if (!strncmp(scheme, "ecschnorr", 9)) {
-            do_scheme_halg(scheme, 9, TPM2_ALG_ECSCHNORR);
-        } else if (!strncmp(scheme, "sm2", 3)) {
-            do_scheme_halg(scheme, 3, TPM2_ALG_SM2);
-        } else if (!strncmp(scheme, "ecdaa", 5)) {
-            do_scheme_halg(scheme, 5, TPM2_ALG_ECDAA);
+        if (!strncmp(buf_ptr, "ecdsa", 5)) {
+            DO_SCHEME_HALG(buf_ptr, 5, TPM2_ALG_ECDSA);
+        } else if (!strncmp(buf_ptr, "ecdh", 4)) {
+            DO_SCHEME_HALG(buf_ptr, 4, TPM2_ALG_ECDH);
+        } else if (!strncmp(buf_ptr, "ecschnorr", 9)) {
+            DO_SCHEME_HALG(buf_ptr, 9, TPM2_ALG_ECSCHNORR);
+        } else if (!strncmp(buf_ptr, "sm2", 3)) {
+            DO_SCHEME_HALG(buf_ptr, 3, TPM2_ALG_SM2);
+        } else if (!strncmp(buf_ptr, "ecdaa", 5)) {
+            DO_SCHEME_HALG(buf_ptr, 5, TPM2_ALG_ECDAA);
             /*
              * ECDAA has both a commit-counter value and hashing algorithm.
              * The default commit-counter value is set to zero to use the first
              * commit-id.
              */
-            if (scheme[0] == '\0') {
-                scheme = "0";
+            const char *count_str = buf_ptr;
+            if (buf_ptr[0] == '\0') {
+                count_str = "0";
             }
 
             TPMS_SIG_SCHEME_ECDAA *e = &s->scheme.details.ecdaa;
 
-            bool res = tpm2_util_string_to_uint16(scheme, &e->count);
+            bool res = tpm2_util_string_to_uint16(count_str, &e->count);
             if (!res) {
                 return alg_parser_rc_error;
             }
-        } else if (!strcmp("null", scheme)) {
+        } else if (!strcmp(buf_ptr, "null")) {
             s->scheme.scheme = TPM2_ALG_NULL;
+            found = true;
         }
     } else {
-        if (!strcmp(scheme, "rsaes")) {
+        if (!strcmp(buf_ptr, "rsaes")) {
             /*
              * rsaes has no hash alg or details, so it MUST
              * match exactly, notice strcmp and NOT strNcmp!
              */
             s->scheme.scheme = TPM2_ALG_RSAES;
             found = true;
-        } else if (!strcmp("null", scheme)) {
+        } else if (!strcmp(buf_ptr, "null")) {
             s->scheme.scheme = TPM2_ALG_NULL;
             found = true;
-        } else if (!strncmp("rsapss", scheme, 6)) {
-            do_scheme_halg(scheme, 6, TPM2_ALG_RSAPSS);
-        } else if (!strncmp("rsassa", scheme, 6)) {
-            do_scheme_halg(scheme, 6, TPM2_ALG_RSASSA);
-        } else if (!strncmp(scheme, "oaep", 4)) {
-            do_scheme_halg(scheme, 4, TPM2_ALG_OAEP);
+        } else if (!strncmp(buf_ptr, "rsapss", 6)) {
+            DO_SCHEME_HALG(buf_ptr, 6, TPM2_ALG_RSAPSS);
+        } else if (!strncmp(buf_ptr, "rsassa", 6)) {
+            DO_SCHEME_HALG(buf_ptr, 6, TPM2_ALG_RSASSA);
+        } else if (!strncmp(buf_ptr, "oaep", 4)) {
+            DO_SCHEME_HALG(buf_ptr, 4, TPM2_ALG_OAEP);
         }
     }
 
