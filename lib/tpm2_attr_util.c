@@ -381,7 +381,7 @@ static dispatch_table obj_attr_table[] = {         // Bit Index
         dispatch_reserved(31),                     // 31
 };
 
-static bool token_match(const char *name, const char *token, bool has_arg,
+static bool token_match(const char *name, char *token, bool has_arg,
         char **sep) {
 
     /* if it has an argument, we expect a separator */

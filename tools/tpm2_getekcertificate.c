@@ -1214,7 +1214,7 @@ static tool_rc process_output(void) {
      *  Base 64: https://tools.ietf.org/html/rfc4648#section-5 to PEM
      */
     if (ctx.web_cert_buffer && is_intel_cert && !ctx.is_cert_raw) {
-        char *split = strstr((const char *)ctx.web_cert_buffer, "certificate");
+        char *split = strstr((char *)ctx.web_cert_buffer, "certificate");
         char *copy_buffer = base64_decode(&split, ctx.web_cert_buffer_size);
         ctx.web_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
             strlen(copy_buffer) + strlen(PEM_END_CERT_LINE);

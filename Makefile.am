@@ -27,6 +27,10 @@ LDADD = \
 
 AM_DISTCHECK_CONFIGURE_FLAGS = --with-bashcompdir='$$(datarootdir)/bash-completion/completions'
 
+AM_CFLAGS += -DCMOCKA_ENABLE_DEPRECATED=1
+AM_CFLAGS += -Wno-error=deprecated-declarations
+AM_CFLAGS += -Wno-error=discarded-qualifiers
+
 # keep me sorted
 bin_PROGRAMS =
 FAPI_CFLAGS = $(EXTRA_CFLAGS) $(TSS2_FAPI_CFLAGS) $(CODE_COVERAGE_CFLAGS) $(CRYPTO_CFLAGS)

@@ -338,7 +338,7 @@ char **yaml_split_escape_string(UINT8 const *description, size_t size)
     size_t nlines = 0;
     size_t i, j, k;
     size_t len;
-    UINT8 *nl;
+    const UINT8 *nl;
 
     i = 0;
     do {
