@@ -463,7 +463,8 @@ static size_t writecallback(char *contents, size_t size, size_t nitems,
 
     const size_t new_used_size = ctx.web_cert_buffer_size + chunk_size;
     if (ctx.curl_buffer_size < new_used_size) {
-        const size_t new_buf_size = ctx.curl_buffer_size + CURL_MAX_WRITE_SIZE;
+        const size_t count = (new_used_size - 1) / CURL_MAX_WRITE_SIZE + 1;
+        const size_t new_buf_size = count * CURL_MAX_WRITE_SIZE;
         void *new_buf = realloc(ctx.web_cert_buffer, new_buf_size);
         if (!new_buf) {
             LOG_ERR("OOM when downloading EK cert");
@@ -1215,9 +1216,29 @@ static tool_rc process_output(void) {
      */
     if (ctx.web_cert_buffer && is_intel_cert && !ctx.is_cert_raw) {
         char *split = strstr((const char *)ctx.web_cert_buffer, "certificate");
+        if (!split) {
+            LOG_ERR("Unexpected EK cert response: missing \"certificate\" field");
+            return tool_rc_general_error;
+        }
         char *copy_buffer = base64_decode(&split, ctx.web_cert_buffer_size);
-        ctx.web_cert_buffer_size = strlen(PEM_BEGIN_CERT_LINE) +
-            strlen(copy_buffer) + strlen(PEM_END_CERT_LINE);
+        if (!copy_buffer) {
+            LOG_ERR("Failed to decode EK certificate data");
+            return tool_rc_general_error;
+        }
+        const size_t new_used_size = strlen(PEM_BEGIN_CERT_LINE) +
+            strlen(copy_buffer) + strlen(PEM_END_CERT_LINE) + 1;
+        if (ctx.curl_buffer_size < new_used_size) {
+            const size_t count = (new_used_size - 1) / CURL_MAX_WRITE_SIZE + 1;
+            const size_t new_buf_size = count * CURL_MAX_WRITE_SIZE;
+            void *new_buf = realloc(ctx.web_cert_buffer, new_buf_size);
+            if (!new_buf) {
+                LOG_ERR("OOM when formatting EK cert");
+                return tool_rc_general_error;
+            }
+            ctx.web_cert_buffer = new_buf;
+            ctx.curl_buffer_size = new_buf_size;
+        }
+
         strcpy((char *)ctx.web_cert_buffer, PEM_BEGIN_CERT_LINE);
         strcpy((char *)ctx.web_cert_buffer + strlen(PEM_BEGIN_CERT_LINE),
             copy_buffer);
