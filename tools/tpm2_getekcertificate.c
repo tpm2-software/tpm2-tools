@@ -128,7 +128,7 @@ struct tpm_getekcertificate_ctx {
     bool is_cert_on_nv;
     tpm_manufacturer manufacturer;
     bool is_tpmgeneratedeps;
-    // Certficate data handling
+    // Certificate data handling
     size_t cert_count;
     size_t nv_cert_count;
     char *ec_cert_paths[ARRAY_LEN(ek_index_maps)];
@@ -965,7 +965,7 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
     ctx.manufacturer = capability_data->data.tpmProperties.tpmProperty[0].value;
 
     if (ctx.manufacturer == VENDOR_IBMSIM) {
-        LOG_WARN("The TPM device is a simulator —— Inspect the certficate chain and root certificate");
+        LOG_WARN("The TPM device is a simulator —— Inspect the certificate chain and root certificate");
     }
 
     free(capability_data);
@@ -1274,7 +1274,7 @@ static tool_rc process_output(void) {
     }
 
     if (ctx.cert_count < ctx.nv_cert_count) {
-        LOG_WARN("Found %zu certficates on NV. Add another -o to save all certificates",
+        LOG_WARN("Found %zu certificates on NV. Add another -o to save all certificates",
                  ctx.nv_cert_count);
     }
 
