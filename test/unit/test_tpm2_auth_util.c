@@ -308,6 +308,7 @@ static int setup(void **state) {
     ESYS_CONTEXT *ectx;
     size_t size = sizeof(TSS2_TCTI_CONTEXT_FAKE);
     TSS2_TCTI_CONTEXT *tcti = malloc(size);
+    assert_non_null(tcti);
 
     rc = tcti_fake_initialize(tcti, &size);
     if (rc) {

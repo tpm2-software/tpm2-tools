@@ -77,6 +77,7 @@ TSS2_RC __wrap_Esys_TR_GetName(ESYS_CONTEXT *esysContext, ESYS_TR handle,
     UNUSED(handle);
 
     *name = malloc(sizeof(TPM2B_NAME));
+    assert_non_null(*name);
     size_t offset = 0;
     TSS2_RC rc = Tss2_MU_TPM2_HANDLE_Marshal(SESSION_HANDLE, &(*name)->name[0],
             sizeof(TPM2_HANDLE), &offset);
