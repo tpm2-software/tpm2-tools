@@ -196,6 +196,10 @@ static bool on_option(char key, char *value) {
         break;
     case 'd': {
         ctx.msg_hash = malloc(sizeof(TPM2B_DIGEST));
+        if (!ctx.msg_hash) {
+            LOG_ERR("oom");
+            return false;
+        }
         ctx.msg_hash->size = sizeof(ctx.msg_hash->buffer);
         if (!files_load_bytes_from_path(value, ctx.msg_hash->buffer,
                 &ctx.msg_hash->size)) {

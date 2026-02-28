@@ -375,6 +375,10 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.iv_in = 0;
     } else {
         ctx.iv_in = malloc(iv_start.size + sizeof(iv_start));
+        if (!ctx.iv_in) {
+            LOG_ERR("oom");
+            return tool_rc_general_error;
+        }
         ctx.iv_in->size = iv_start.size;
         memcpy(ctx.iv_in->buffer, &iv_start.buffer, iv_start.size);
     }

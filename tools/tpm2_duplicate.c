@@ -179,6 +179,11 @@ static tool_rc openssl_create_duplicate(void) {
         encrypted_duplicate_sensitive.size);
 
     ctx.out_private_data = malloc(private.size + sizeof(private.size));
+    if (!ctx.out_private_data) {
+        LOG_ERR("oom");
+        rc = tool_rc_general_error;
+        goto out;
+    }
     memcpy(ctx.out_private_data, &private, private.size + sizeof(private.size));
 
 out:
@@ -231,6 +236,10 @@ static tool_rc process_openssl_duplicate(void) {
 
     ctx.out_sym_seed = malloc(encrypted_seed.size +
         sizeof(encrypted_seed.size));
+    if (!ctx.out_sym_seed) {
+        LOG_ERR("oom");
+        return tool_rc_general_error;
+    }
     memcpy(ctx.out_sym_seed, &encrypted_seed,
         encrypted_seed.size + sizeof(encrypted_seed.size));
 

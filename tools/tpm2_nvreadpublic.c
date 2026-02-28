@@ -243,6 +243,10 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      */
     if (!ctx.is_command_dispatch) {
         ctx.nv_public_list[0] = malloc(sizeof(TPM2B_NV_PUBLIC));
+        if (!ctx.nv_public_list[0]) {
+            LOG_ERR("oom");
+            return tool_rc_general_error;
+        }
     }
 
     /*

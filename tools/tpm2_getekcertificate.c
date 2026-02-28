@@ -426,6 +426,10 @@ static char *encode_ek_public_amd(void) {
         return NULL;
     }
     char *hash_str = malloc(AMD_EK_URI_LEN * 2 + NULL_TERM_LEN);
+    if (!hash_str) {
+        LOG_ERR("oom");
+        return NULL;
+    }
     for (size_t i = 0; i < AMD_EK_URI_LEN; i++)
     {
         sprintf((char*)(hash_str + (i*2)), "%02x", hash[i]);
@@ -1137,6 +1141,10 @@ static tool_rc process_input(ESYS_CONTEXT *ectx) {
 
     if (ctx.ek_path) {
         ctx.out_public = malloc(sizeof(*ctx.out_public));
+        if (!ctx.out_public) {
+            LOG_ERR("oom");
+            return tool_rc_general_error;
+        }
         ctx.out_public->size = 0;
         bool res = files_load_public(ctx.ek_path, ctx.out_public);
         if (!res) {
