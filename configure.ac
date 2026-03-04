@@ -323,7 +323,14 @@ AS_IF([test x"$enable_hardening" != x"no"], [
   AX_ADD_FORTIFY_SOURCE
 
   add_hardened_c_flag([-fPIC])
-  add_hardened_ld_flag([[-shared]])
+
+  AC_ARG_ENABLE([shared],
+    AS_HELP_STRING([--disable-shared], [don't build shared libraries]),,
+    [enable_shared="yes"]
+  )
+  AS_IF([test x"$enable_shared" != x"no"], [
+    add_hardened_ld_flag([[-shared]])
+  ])
 
   add_hardened_c_flag([-fPIE])
   add_hardened_ld_flag([[-pie]])
