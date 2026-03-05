@@ -3,7 +3,7 @@
 source helpers.sh
 
 cleanup() {
-    rm -f ek.pub ak.pub ak.name ak.name ak.log
+    rm -f ek.pub ak.pub ak.name ak.name ak.log ek.ctx
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
@@ -26,7 +26,7 @@ cleanup "no-shut-down"
 tpm2 createek -Q -c 0x8101000b -G rsa -u ek.pub
 
 tpm2 createak -Q -C 0x8101000b -c ak.ctx -G rsa -g sha256 -s rsassa -u ak.pub \
--n ak.name -q ak.qname
+     -n ak.name -q ak.qname
 
 # Validate the qname
 tpm2 readpublic -c ak.ctx -q ak.qname2
@@ -44,5 +44,14 @@ cleanup "no-shut-down"
 tpm2 changeauth -c e endauth
 tpm2 createek -Q -P endauth -c 0x8101000b -G rsa -u ek.pub
 tpm2 createak -Q -P endauth -C 0x8101000b -c ak.ctx -G rsa -u ak.pub -n ak.name
+
+# Check attributes different from default
+tpm2 createak -Q  -Q -P endauth -C 0x8101000b -c ak.ctx  -u ak.pub -n ak.name \
+     -a "restricted|userwithauth|sign|fixedtpm|fixedparent|sensitivedataorigin|adminwithpolicy"
+
+# Check whether non default attribute was set
+tpm2 readpublic -c ak.ctx | grep adminwithpolicy
+
+
 
 exit 0
