@@ -284,7 +284,11 @@ priv_path:
         TPM2B_DIGEST *seed = &ctx.priv.sensitiveArea.seedValue;
         seed->size = tpm2_alg_util_get_hash_size(ctx.pub.publicArea.nameAlg);
         if (seed->size != 0) {
-            RAND_bytes(seed->buffer, seed->size);
+            int tmp_rc = RAND_bytes(seed->buffer, seed->size);
+            if (tmp_rc != 1) {
+                LOG_ERR("Failed to generate random seed value");
+                return tool_rc_general_error;
+            }
         }
 
         tpm2_openssl_load_rc load_status = tpm2_openssl_load_private(
