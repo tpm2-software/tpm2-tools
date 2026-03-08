@@ -1021,6 +1021,15 @@ bool tpm2_safe_read_from_stdin(int length, char *data) {
     size_t end = strcspn(data, "\r\n");
     data[end] = '\0';
 
+    /* clear fget buffer */
+    if (strlen(data) == (size_t)length - 1) {
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+    }
+    /* Return false if input is empty */
+    if (data[0] == '\0') {
+        return false;
+    }
     return true;
 }
 
