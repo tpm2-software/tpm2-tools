@@ -12,6 +12,7 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_tool.h"
+#include "tpm2_attr_util.h"
 
 #define ATTRS  \
     TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_USERWITHAUTH| \
@@ -108,6 +109,7 @@ struct createak_context {
             const char *qname_file;
         } out;
         char *auth_str;
+        char *attrs;
     } ak;
     struct {
         UINT8 f :1;
@@ -136,6 +138,7 @@ static tool_rc init_ak_public(TPMI_ALG_HASH name_alg, TPM2B_PUBLIC *public) {
 
     const char *name_halg;
     char alg[256];
+    TPMA_OBJECT attrs;
 
     name_halg = tpm2_alg_util_algtostr(name_alg, tpm2_alg_util_flags_hash);
 
@@ -159,7 +162,15 @@ static tool_rc init_ak_public(TPMI_ALG_HASH name_alg, TPM2B_PUBLIC *public) {
         snprintf(alg, sizeof(alg), "%s:%s-%s:null", ctx.ak.in.alg.type,
         ctx.ak.in.alg.sign, ctx.ak.in.alg.digest);
     }
-    return tpm2_alg_util_public_init(alg, name_halg, NULL, NULL, ATTRS, public);
+    if (ctx.ak.attrs) {
+        if (!tpm2_attr_util_obj_from_optarg(ctx.ak.attrs, &attrs)) {
+            LOG_ERR("Invalid attributes.");
+            return tool_rc_general_error;
+        }
+    } else {
+        attrs = ATTRS;
+    }
+    return tpm2_alg_util_public_init(alg, name_halg, NULL, NULL, attrs, public);
 }
 
 static tool_rc create_ak(ESYS_CONTEXT *ectx) {
@@ -464,6 +475,9 @@ static bool on_option(char key, char *value) {
     case 'R':
         ctx.autoflush = true;
         break;
+    case 'a':
+        ctx.ak.attrs = value;
+        break;
     }
 
     return true;
@@ -479,6 +493,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ak-name",           required_argument, NULL, 'n' },
         { "key-algorithm",     required_argument, NULL, 'G' },
         { "hash-algorithm",    required_argument, NULL, 'g' },
+        { "attributes",        required_argument, NULL, 'a' },
         { "signing-algorithm", required_argument, NULL, 's' },
         { "format",            required_argument, NULL, 'f' },
         { "public",            required_argument, NULL, 'u' },
@@ -487,7 +502,7 @@ static bool tpm2_tool_onstart(tpm2_options **opts) {
         { "autoflush",         no_argument,       NULL, 'R' },
     };
 
-    *opts = tpm2_options_new("P:p:C:c:n:G:g:s:f:u:r:q:R", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:C:c:n:G:a:g:s:f:u:r:q:R", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

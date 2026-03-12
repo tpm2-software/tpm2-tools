@@ -48,6 +48,15 @@ loaded-key:
     * **rsa** - An RSA2048 key.
     * **keyedhash** - hmac key.
 
+  * **-a**, **\--attributes**=_ATTRIBUTES_:
+
+    The object attributes, optional. The default for created objects is:
+    "restricted|userwithauth|sign|fixedtpm|fixedparent|sensitivedataorigin"
+    This default setting differs from the settings in the specification
+    TPM 2.0 Keys for Device Identity and Attestation. "adminwithpolicy" is 
+    not set and can be added to the default:
+    "restricted|userwithauth|...|adminwithpolicy"
+
   * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     Specifies the digest algorithm used for signing.
