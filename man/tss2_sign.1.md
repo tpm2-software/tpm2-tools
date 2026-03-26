@@ -16,7 +16,8 @@
 
 **tss2_sign**(1) - This command uses a key inside the TPM to sign a digest value
 using the TPM signing schemes as specified in the cryptographic profile
-(cf., **fapi-profile(5)**).
+(cf., **fapi-profile(5)**). The digest can be provided as an argument
+or computed from data passed as an argument.
 
 # OPTIONS
 
@@ -39,6 +40,10 @@ These are the available options:
   * **-d**, **\--digest**=_FILENAME_ or _-_ (for stdin):
 
     The data to be signed, already hashed.
+
+  * **-m**, **\--data**=_FILENAME_ or _-_ (for stdin):
+
+    The data from which the hash is computed, which is then signed.
 
   * **-f**, **\--force**:
 
