@@ -329,4 +329,27 @@ if {[lindex \$ret 2] || [lindex \$ret 3] != 1} {
 }
 EOF
 
+# Check tss2_sign which computes the digest from data if the FAPI function
+# Fapi_DigestAndSign is available
+
+DATA_FILE=$TEMP_DIR/data.file
+dd if=/dev/zero of=$DATA_FILE bs=1 count=1024
+if [ "$CRYPTO_PROFILE" = "RSA" ]; then
+    PADDING="--padding=RSA_PSS"
+fi
+if nm -D $(ldconfig -p | grep "libtss2-fapi" | head -n1 | awk '{print $NF}') | \
+        grep "Fapi_DigestAndSign";
+then
+    tss2 sign --data=$DATA_FILE --keyPath=$KEY_PATH $PADDING \
+         --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE -f
+
+    shasum -a 256 $DATA_FILE | awk '{ $1 }' | xxd -r -p > $DIGEST_FILE
+    tss2 verifysignature --keyPath=$PUB_KEY_DIR/$IMPORTED_KEY_NAME \
+         --digest=$DIGEST_FILE --signature=$SIGNATURE_FILE
+else
+    # The sign should fail because Fapi_DigestAndSign is not available
+    ! tss2 sign --data=$DATA_FILE --keyPath=$KEY_PATH $PADDING \
+      --signature=$SIGNATURE_FILE --publicKey=$PUBLIC_KEY_FILE
+fi
+
 exit 0

@@ -82,6 +82,9 @@ AC_CHECK_LIB(crypto, [EVP_sm3], [
 AC_CHECK_LIB(crypto, [EVP_sm4_cfb128], [
         AC_DEFINE([HAVE_EVP_SM4_CFB], [1], [Support EVP_sm4_cfb in openssl])],
         [])
+AC_CHECK_LIB(tss2-fapi, [Fapi_DigestAndSign], [
+        AC_DEFINE([HAVE_FAPI_DIGEST_AND_SIGN], [1], [Support signing with restricted keys])],
+        [])
 LIBS="${LIBS_save}"
 PKG_CHECK_MODULES([CURL], [libcurl])
 
