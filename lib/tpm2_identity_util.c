@@ -285,10 +285,17 @@ out:
     return result;
 }
 
-static void hmac_outer_integrity(TPMI_ALG_HASH parent_name_alg,
+static bool hmac_outer_integrity(TPMI_ALG_HASH parent_name_alg,
         uint8_t *buffer1, uint16_t buffer1_size, uint8_t *buffer2,
         uint16_t buffer2_size, uint8_t *hmac_key,
         TPM2B_DIGEST *outer_integrity_hmac) {
+
+    if ((size_t)buffer1_size + buffer2_size > TPM2_MAX_DIGEST_BUFFER) {
+        LOG_ERR("Necessary buffer size (%u) exceeds TPM2_MAX_DIGEST_BUFFER (%zu)",
+                (unsigned)(buffer1_size + buffer2_size),
+                (size_t)TPM2_MAX_DIGEST_BUFFER);
+        return false;
+    }
 
     uint8_t to_hmac_buffer[TPM2_MAX_DIGEST_BUFFER];
     memcpy(to_hmac_buffer, buffer1, buffer1_size);
@@ -301,6 +308,7 @@ static void hmac_outer_integrity(TPMI_ALG_HASH parent_name_alg,
             to_hmac_buffer, buffer1_size + buffer2_size,
             outer_integrity_hmac->buffer, &size);
     outer_integrity_hmac->size = size;
+    return true;
 }
 
 bool tpm2_identity_util_calculate_inner_integrity(TPMI_ALG_HASH name_alg,
@@ -376,7 +384,7 @@ bool tpm2_identity_util_calculate_inner_integrity(TPMI_ALG_HASH name_alg,
             encrypted_inner_integrity);
 }
 
-void tpm2_identity_util_calculate_outer_integrity(TPMI_ALG_HASH parent_name_alg,
+bool tpm2_identity_util_calculate_outer_integrity(TPMI_ALG_HASH parent_name_alg,
         TPM2B_NAME *pubname, TPM2B_MAX_BUFFER *marshalled_sensitive,
         TPM2B_MAX_BUFFER *protection_hmac_key,
         TPM2B_MAX_BUFFER *protection_enc_key, TPMT_SYM_DEF_OBJECT *sym_alg,
@@ -390,7 +398,8 @@ void tpm2_identity_util_calculate_outer_integrity(TPMI_ALG_HASH parent_name_alg,
             marshalled_sensitive->buffer, marshalled_sensitive->size,
             NULL, 0, encrypted_duplicate_sensitive);
     //Calculate outerHMAC
-    hmac_outer_integrity(parent_name_alg, encrypted_duplicate_sensitive->buffer,
+    return hmac_outer_integrity(parent_name_alg,
+            encrypted_duplicate_sensitive->buffer,
             encrypted_duplicate_sensitive->size, pubname->name, pubname->size,
             protection_hmac_key->buffer, outer_hmac);
 }
