@@ -147,11 +147,14 @@ static tool_rc openssl_create_duplicate(void) {
      */
     TPM2B_DIGEST outer_hmac = TPM2B_EMPTY_INIT;
     TPM2B_MAX_BUFFER encrypted_duplicate_sensitive = TPM2B_EMPTY_INIT;
-    tpm2_identity_util_calculate_outer_integrity(
+    bool outer_res = tpm2_identity_util_calculate_outer_integrity(
         ctx.in_parent_public_key_data.publicArea.nameAlg,
         &pubname, &marshalled_sensitive, &hmac_key, &enc_key,
         &ctx.in_parent_public_key_data.publicArea.parameters.rsaDetail.symmetric,
         &encrypted_duplicate_sensitive, &outer_hmac);
+    if (!outer_res) {
+        return tool_rc_general_error;
+    }
 
     /*
      * Build the private data structure for writing out

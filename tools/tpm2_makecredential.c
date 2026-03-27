@@ -137,10 +137,13 @@ static tool_rc make_external_credential_and_save(void) {
      */
     TPM2B_DIGEST outer_hmac = TPM2B_EMPTY_INIT;
     TPM2B_MAX_BUFFER encrypted_sensitive = TPM2B_EMPTY_INIT;
-    tpm2_identity_util_calculate_outer_integrity(name_alg, &ctx.object_name,
-            &marshalled_inner_integrity, &hmac_key, &enc_key,
+    bool outer_res = tpm2_identity_util_calculate_outer_integrity(name_alg,
+            &ctx.object_name, &marshalled_inner_integrity, &hmac_key, &enc_key,
             &ctx.public.publicArea.parameters.rsaDetail.symmetric,
             &encrypted_sensitive, &outer_hmac);
+    if (!outer_res) {
+        return tool_rc_general_error;
+    }
 
     /*
      * Package up the info to save

@@ -95,7 +95,7 @@ bool tpm2_identity_util_calculate_inner_integrity(TPMI_ALG_HASH name_alg,
  * @param outer_hmac
  *  The outer HMAC structure to populate.
  */
-void tpm2_identity_util_calculate_outer_integrity(TPMI_ALG_HASH parent_name_alg,
+bool tpm2_identity_util_calculate_outer_integrity(TPMI_ALG_HASH parent_name_alg,
         TPM2B_NAME *pubname, TPM2B_MAX_BUFFER *marshalled_sensitive,
         TPM2B_MAX_BUFFER *protection_hmac_key,
         TPM2B_MAX_BUFFER *protection_enc_key, TPMT_SYM_DEF_OBJECT *sym_alg,

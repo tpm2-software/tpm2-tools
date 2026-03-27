@@ -375,10 +375,15 @@ static tool_rc process_input_ossl_import(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST outer_hmac = TPM2B_EMPTY_INIT;
     TPM2B_MAX_BUFFER encrypted_duplicate_sensitive = TPM2B_EMPTY_INIT;
-    tpm2_identity_util_calculate_outer_integrity(parent_pub->publicArea.nameAlg,
+    bool outer_res = tpm2_identity_util_calculate_outer_integrity(
+        parent_pub->publicArea.nameAlg,
         &pubname, &encrypted_inner_integrity, &hmac_key, &enc_key,
         &parent_pub->publicArea.parameters.rsaDetail.symmetric,
         &encrypted_duplicate_sensitive, &outer_hmac);
+    if (!outer_res) {
+        rc = tool_rc_general_error;
+        goto out;
+    }
 
     result = create_import_key_private_data(parent_pub->publicArea.nameAlg,
         &encrypted_duplicate_sensitive, &outer_hmac);
