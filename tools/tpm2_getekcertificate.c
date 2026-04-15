@@ -21,7 +21,7 @@
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-#include <openssl/core_names.h> 
+#include <openssl/core_names.h>
 #endif
 
 
@@ -1073,7 +1073,7 @@ static tool_rc get_nv_ek_certificate(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_success;
 
-    for (i = 0; i < ARRAY_LEN(ek_index_maps); i++) { 
+    for (i = 0; i < ARRAY_LEN(ek_index_maps); i++) {
         if (ek_index_maps[i].found) {
             rc = nv_read(ectx, ek_index_maps[i].index);
             if (rc != tool_rc_success) {
@@ -1165,33 +1165,89 @@ static tool_rc process_input(ESYS_CONTEXT *ectx) {
     return print_intel_ek_certificate_warning();
 }
 
-static char *base64_decode(char **split, unsigned int cert_length) {
+static const char *get_json_field(const char *cert_buffer, const char *field_name) {
 
-    *split += strlen("certficate\" : ");
-    char *final_string = NULL;
-    int outlen;
-    CURL *curl = curl_easy_init();
-    if (curl) {
-        char *output = curl_easy_unescape(curl, *split, cert_length, &outlen);
-        if (output) {
-            final_string = strdup(output);
-            curl_free(output);
-        }
+    const char *field_ptr = strstr(cert_buffer, field_name);
+    if (!field_ptr) {
+        return NULL;
     }
-    curl_easy_cleanup(curl);
-    curl_global_cleanup();
+    field_ptr += strlen(field_name);
 
-    if(final_string) {
-        size_t i;
-        for (i = 0; i < strlen(final_string); i++) {
-            final_string[i] = final_string[i] == '-' ? '+'  : final_string[i];
-            final_string[i] = final_string[i] == '_' ? '/'  : final_string[i];
-            final_string[i] = final_string[i] == '"' ? '\0' : final_string[i];
-            final_string[i] = final_string[i] == '}' ? '\0' : final_string[i];
-        }
+    // Skip spaces after field name
+    while (field_ptr && *field_ptr == ' ')
+        ++field_ptr;
+
+    // Expect colon after field name
+    if (*field_ptr != ':')
+        return NULL;
+     ++field_ptr;
+
+     // Skip spaces after colon
+    while (field_ptr && *field_ptr == ' ')
+         ++field_ptr;
+
+    // Expect double quote after colon
+    if (*field_ptr != '"')
+        return NULL;
+    ++field_ptr;
+
+    return field_ptr;
+}
+
+static int hex_digit(unsigned char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+static char *convert_base64url_to_base64(const char *s) {
+
+    size_t len = strlen(s);
+    char *out = malloc(len + 1);
+    if (!out) {
+        return NULL;
     }
 
-    return final_string;
+    size_t i = 0;
+    size_t j = 0;
+    while (i < len) {
+        switch (s[i]) {
+        case '-':
+            out[j] = '+';
+            i++;
+            break;
+        case '_':
+            out[j] = '/';
+            i++;
+            break;
+        case '"':
+        case '}':
+            out[j] = '\0';
+            return out;
+        case '%':
+            if (i + 2 < len) {
+                int hi = hex_digit(s[i + 1]);
+                int lo = hex_digit(s[i + 2]);
+                if (hi >= 0 && lo >= 0) {
+                    out[j] = (char)((hi << 4) | lo);
+                    i += 3;
+                    break;
+                }
+            }
+            out[j] = s[i];
+            i++;
+            break;
+        default:
+            out[j] = s[i];
+            i++;
+            break;
+        }
+        j++;
+    }
+
+    out[j] = '\0';
+    return out;
 }
 
 #define PEM_BEGIN_CERT_LINE "\n-----BEGIN CERTIFICATE-----\n"
@@ -1207,8 +1263,10 @@ static tool_rc process_output(void) {
     bool is_intel_cert = ctx.manufacturer == VENDOR_INTEL;
 
     if (!is_intel_cert && ctx.web_cert_buffer) {
-        is_intel_cert = !(strncmp((const char *)ctx.web_cert_buffer,
-            "{\"pubhash", strlen("{\"pubhash")));
+        /*
+         * Heuristics: If the cert contains the "pubhash" field, it is likely an Intel cert.
+         */
+        is_intel_cert = (bool)get_json_field((const char *)ctx.web_cert_buffer, "\"pubhash\"");
     }
 
     /*
@@ -1223,12 +1281,12 @@ static tool_rc process_output(void) {
      *  Base 64: https://tools.ietf.org/html/rfc4648#section-5 to PEM
      */
     if (ctx.web_cert_buffer && is_intel_cert && !ctx.is_cert_raw) {
-        char *split = strstr((char *)ctx.web_cert_buffer, "certificate");
-        if (!split) {
+        const char *cert_field = get_json_field((const char *)ctx.web_cert_buffer, "\"certificate\"");
+        if (!cert_field) {
             LOG_ERR("Unexpected EK cert response: missing \"certificate\" field");
             return tool_rc_general_error;
         }
-        char *copy_buffer = base64_decode(&split, ctx.web_cert_buffer_size);
+        char *copy_buffer = convert_base64url_to_base64(cert_field);
         if (!copy_buffer) {
             LOG_ERR("Failed to decode EK certificate data");
             return tool_rc_general_error;
@@ -1253,6 +1311,7 @@ static tool_rc process_output(void) {
             copy_buffer);
         strcpy((char *)ctx.web_cert_buffer + strlen(PEM_BEGIN_CERT_LINE) +
             strlen(copy_buffer), PEM_END_CERT_LINE);
+        ctx.web_cert_buffer_size = strlen((char *)ctx.web_cert_buffer);
         free(copy_buffer);
     }
 
@@ -1312,7 +1371,7 @@ static tool_rc process_output(void) {
         LOG_WARN("Ignoring the additional output file since only %zu certificates found on NV",
                   ctx.nv_cert_count);
     }
- 
+
     return tool_rc_success;
 }
 
@@ -1379,7 +1438,7 @@ static bool on_option(char key, char *value) {
         if (!value || !value[0]) {
             LOG_ERR("No encoding given.");
             return false;
-        } 
+        }
         switch (value[0]) {
             case 'a':
                 ctx.encoding = ENC_AMD;
