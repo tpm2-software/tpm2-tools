@@ -1167,7 +1167,22 @@ static tool_rc process_input(ESYS_CONTEXT *ectx) {
 
 static char *base64_decode(char **split, unsigned int cert_length) {
 
-    *split += strlen("certficate\" : ");
+    *split += strlen("certificate\"");
+    while (*split && **split == ' ')
+        ++*split;
+
+    if (**split != ':')
+        return NULL;
+    ++*split;
+
+    while (*split && **split == ' ')
+        ++*split;
+
+    if (**split != '"')
+        return NULL;
+
+    ++*split;
+
     char *final_string = NULL;
     int outlen;
     CURL *curl = curl_easy_init();
