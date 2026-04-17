@@ -501,8 +501,8 @@ static bool pop_ecdsa(const char *path, TPMS_SIGNATURE_ECDSA *ecdsa) {
         LOG_ERR("oom");
         return false;
     }
-    memcpy(R->buffer, r->data, r->length);
-    R->size = r->length;
+    memcpy(R->buffer, ASN1_STRING_get0_data(r), ASN1_STRING_length(r));
+    R->size = ASN1_STRING_length(r);
     ASN1_INTEGER_free(r);
 
     /*
@@ -514,8 +514,8 @@ static bool pop_ecdsa(const char *path, TPMS_SIGNATURE_ECDSA *ecdsa) {
         LOG_ERR("oom");
         return false;
     }
-    memcpy(S->buffer, s->data, s->length);
-    S->size = s->length;
+    memcpy(S->buffer, ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
+    S->size = ASN1_STRING_length(s);
     ASN1_INTEGER_free(s);
 
     return true;
