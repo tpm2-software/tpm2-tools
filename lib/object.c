@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 
 #include "files.h"
@@ -251,21 +250,21 @@ tool_rc tpm2_util_object_fetch_priv_pub_from_tpk(const char *objectstr,
         goto ret;
     }
 
-    int pub_len = tpk->pubkey->length;
-    int priv_len = tpk->privkey->length;
+    int pub_len = ASN1_STRING_length(tpk->pubkey);
+    int priv_len = ASN1_STRING_length(tpk->privkey);
     if (pub_len < 1 || priv_len < 1) {
         LOG_ERR("Error deserializing TSS Privkey Object");
         goto ret;
     }
 
-    rc = Tss2_MU_TPM2B_PUBLIC_Unmarshal(tpk->pubkey->data, pub_len,
+    rc = Tss2_MU_TPM2B_PUBLIC_Unmarshal(ASN1_STRING_get0_data(tpk->pubkey), pub_len,
         NULL, pub);
     if (rc != tool_rc_success) {
         LOG_ERR("Error deserializing public portion of object");
         goto ret;
     }
 
-    rc = Tss2_MU_TPM2B_PRIVATE_Unmarshal(tpk->privkey->data, priv_len,
+    rc = Tss2_MU_TPM2B_PRIVATE_Unmarshal(ASN1_STRING_get0_data(tpk->privkey), priv_len,
         NULL, priv);
     if (rc != tool_rc_success) {
         LOG_ERR("Error deserializing private portion of object");
