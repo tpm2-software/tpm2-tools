@@ -5,6 +5,7 @@
 #include "files.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
+#include "tpm2_capability.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 
@@ -209,9 +210,8 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx) {
      * 3. Command specific initializations dependent on loaded objects
      */
     if (ctx.nv_index == 0 && ctx.is_command_dispatch) {
-        rc = tpm2_getcap(ectx, TPM2_CAP_HANDLES,
-            TPM2_NV_INDEX_FIRST, TPM2_PT_NV_INDEX_MAX, NULL,
-            &ctx.capability_data);
+        rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
+            TPM2_NV_INDEX_FIRST, TPM2_MAX_CAP_HANDLES, &ctx.capability_data);
         if (rc != tool_rc_success) {
             return rc;
         }

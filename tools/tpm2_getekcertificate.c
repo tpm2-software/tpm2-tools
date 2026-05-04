@@ -987,9 +987,8 @@ tool_rc get_tpm_properties(ESYS_CONTEXT *ectx) {
     }
 
     free(capability_data);
-    rc = tpm2_getcap(ectx, TPM2_CAP_HANDLES,
-        TPM2_NV_INDEX_FIRST, TPM2_PT_NV_INDEX_MAX, NULL,
-        &capability_data);
+    rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
+        TPM2_NV_INDEX_FIRST, TPM2_MAX_CAP_HANDLES, &capability_data);
     if (rc != tool_rc_success) {
         LOG_ERR("Failed to read capability data for NV indices.");
         ctx.is_cert_on_nv = false;
