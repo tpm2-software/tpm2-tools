@@ -238,10 +238,15 @@ bool parse_sha1_log_event(tpm2_eventlog_context *ctx, TCG_EVENT const *event, si
     }
     *event_size = sizeof(*event);
 
-    pcr = ctx->sha1_pcrs[ event->pcrIndex];
+    UINT32 pcr_index = le32toh(event->pcrIndex);
+    if (pcr_index >= TPM2_MAX_PCRS) {
+        LOG_ERR("PCR Index %u out of bounds (max %d)", pcr_index, TPM2_MAX_PCRS - 1);
+        return false;
+    }
+    pcr = ctx->sha1_pcrs[pcr_index];
     if (event->eventType != EV_NO_ACTION && pcr) {
         tpm2_openssl_pcr_extend(TPM2_ALG_SHA1, pcr, &event->digest[0], 20);
-        ctx->sha1_used |= (1 << event->pcrIndex);
+        ctx->sha1_used |= (1 << pcr_index);
     }
 
     /* buffer size must be sufficient to hold event and event data */
