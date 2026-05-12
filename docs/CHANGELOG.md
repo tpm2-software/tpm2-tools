@@ -4,6 +4,50 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 5.8-rc0 - 2026-05-12
+### Fixed
+- tpm2_makecredential: fix wrong tcg ek templates
+- tpm2_checkquote: Fix memory leaks, malloced buffer not always freed
+- tpm2_checkquote: Fix missing error checking
+- tpm2_getekcertificate: Fix curl_easy_setopt type warnings
+- tpm2_makecredential: Fix usage of name parameter.
+- tpm2_quote/checkquote: Fix usage of little endian serialization.
+- tpm2_eventlog: parse vendor_db as EFI_SIGNATURE_DATA
+- tpm2_eventlog: Fix parsing on big-endian systems
+- tpm2_clockrateadjust: Fix segfault.
+- tpm2_policy: Do not overflow list of policy digests
+- tpm2_eventlog: Fix pretty print for efivar 39
+- tpm2_encode: Fix setting emptyAuth in generated pem file.
+- tpm2_eventlog_yaml.c Fix output of BlobDescription.
+- tpm2_getrandom: Fix --force parameter
+- tpm2_getekcertificate: fix impl to prioritize low range certificate
+- Options: Add option to allow usage of password session.
+- tpm2_createpolicy: flush session for trial policy.
+- tpm2_evictcontrol.c: Fix segfault for output of handle ESYS_TR_NONE
+- pcr commands: Fix session leaks
+- tools, test: Fix several missing NULL checks after malloc
+- tpm2_util: fix buffer overflow in string validation checks.
+- tpm2_getekcertificate: ensure curl buffer grows to required size.
+- tpm2_getekcertificate:  fix heap buffer overflow.
+
+ 
+### Added
+- tpm2_quote/checkquote: Add new serialization format is added (-F marshaled).
+- tpm2_loadexternal: Add option rsa_exponent_zero
+- tpm2_createek: Add high range templates for rsa20248 and eccp256
+- tpm2_certify: Add parameter qualifying-data.
+- pcr commands: session support added.
+- tpm2_getekcertificate: add option --x509-trunc
+- tpm2_getekcertificate: Provide option -u for certs in NV ram.
+- tpm2_gettestresult: Fix handling of test result.
+- tpm2_checkquote:  Fix usage of more than 7 PCRs
+- tpm2_send: Validate command_size before computing data_size.
+- tpm2_send: Avoid unintended stdio closing a file
+- tpm2_util: Allow file names with whitspace characters.
+- tools: fix out-of-bounds write with too many aux sessions.
+- tss2_sign: Add new parameter from which the digest is computed.
+- OpenSSL use 4.0 compatible macros
+
 ## 5.7 - 2024-04-26
 ### Security
 - Fixed CVE-2024-29038
