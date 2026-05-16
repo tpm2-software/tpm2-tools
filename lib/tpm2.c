@@ -4217,8 +4217,14 @@ tpm2_nvundefinespecial_free_name1:
         return rc;
     }
 
-    ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
-
+    ESYS_TR policy_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(esys_context,
+            esys_tr_nv_handle, policy_session,
+            &policy_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Couldn't get shandle");
+        return rc;
+    }
     rval = Esys_NV_UndefineSpaceSpecial(esys_context,
             esys_tr_nv_handle,
             auth_hierarchy_obj->tr_handle,

@@ -7,6 +7,7 @@
 #include "tpm2_tool.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_options.h"
+#include "tpm2_auth_util.h"
 
 #define MAX_SESSIONS 3
 #define MAX_AUX_SESSIONS 2
@@ -111,6 +112,58 @@ static tool_rc process_output(ESYS_CONTEXT *ectx) {
     return rc;
 }
 
+/*
+ * Get the handle for the policy session which is used for
+ * undefine special and set the needed out value passed with the session
+ * pathname (+passwd).
+ */ 
+static tool_rc get_policy_session(ESYS_CONTEXT *ectx, const char *path,
+       tpm2_session **session) {
+
+    TPM2B_AUTH auth = { 0 };
+
+    /* Make a local copy for manipulation */
+    char tmp[PATH_MAX];
+    size_t len = snprintf(tmp, sizeof(tmp), "%s", path);
+    if (len >= sizeof(tmp)) {
+        LOG_ERR("Path truncated");
+        return tool_rc_general_error;
+    }
+    /*
+     * Sessions can have an associated password/auth value denoted after
+     * a + sign, ie session.ctx+foo, deal with it by
+     * finding a +, splitting the string on it, and if
+     * not a NULL byte after the +, use that as a password.
+     */
+    char *password = strchr(tmp, '+');
+    if (password) {
+        *password = '\0';
+        password++;
+        if (*password) {
+            bool result = handle_password(password, &auth);
+            if (!result) {
+                return tool_rc_general_error;
+            }
+        }
+    }
+
+    tool_rc rc = tpm2_session_restore(ectx, tmp, false, session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    tpm2_session_set_auth_value(*session, &auth);
+
+    bool is_trial = tpm2_session_is_trial(*session);
+    if (is_trial) {
+        LOG_ERR("A trial session cannot be used to authenticate, "
+                "Please use an hmac or policy session");
+        tpm2_session_close(session);
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
+}
 
 static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
@@ -155,8 +208,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * TPM2_CC_NV_UndefineSpaceSpecial
      */
     if (ctx.has_policy_delete_set && !ctx.is_tcti_none) {
-        rc = tpm2_session_restore(ectx, ctx.policy_session.path, false,
-                &ctx.policy_session.session);
+        rc = get_policy_session(ectx, ctx.policy_session.path, &ctx.policy_session.session);
         if (rc != tool_rc_success) {
             return rc;
         }

@@ -44,7 +44,8 @@ default value for `-C` is the "owner" hierarchy when `TPMA_NV_POLICY_DELETE` is 
        aux session can be specified. The order of how sessions are specified
        also matters. First specification of `-S` is interpreted as the session
        for satisfying the ADMIN role required for
-       TPM2_CC_NV_UndefineSpaceSpecial.
+       TPM2_CC_NV_UndefineSpaceSpecial. If a password is used for the NV object
+       the password has to be added to the the session path: "path+passwdord".
 
     2. If TPM2_CC_NV_Undefine is invoked then only two additional aux sessions
        can be specified.
@@ -119,6 +120,11 @@ tpm2_policyauthvalue -S s.ctx
 tpm2_policycommandcode -S s.ctx TPM2_CC_NV_UndefineSpaceSpecial
 
 tpm2_nvundefine -S s.ctx 1
+```
+If a password is used for the nv object. The nv undefine command has to be executed
+as follows:
+```
+tpm2_nvundefine -S s.ctx+mypassword  1
 ```
 
 [returns](common/returns.md)

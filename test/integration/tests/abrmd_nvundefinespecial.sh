@@ -43,4 +43,20 @@ tpm2 policycommandcode -S session.ctx TPM2_CC_NV_UndefineSpaceSpecial
 
 tpm2 nvundefine -S session.ctx 1
 
+tpm2 flushcontext session.ctx
+
+# Test with password for nv object
+tpm2 startauthsession -S session.ctx
+tpm2 policyauthvalue -S session.ctx
+tpm2 policycommandcode -S session.ctx -L policy.dat TPM2_CC_NV_UndefineSpaceSpecial
+tpm2 nvdefine -C p -s 32 -a "platformcreate|policydelete|ownerread|ownerwrite|authwrite|authread" -L policy.dat -p "mypassword" 1
+
+tpm2 flushcontext session.ctx
+tpm2 startauthsession --policy-session -S session.ctx
+tpm2 policyauthvalue -S session.ctx
+tpm2 policycommandcode -S session.ctx TPM2_CC_NV_UndefineSpaceSpecial
+
+tpm2 nvundefine -C p -S session.ctx+mypassword 1
+
+
 exit 0
