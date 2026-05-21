@@ -205,6 +205,12 @@ static bool verify(void) {
         return false;
     }
 
+    // check type
+    if (ctx.attest.type != TPM2_ST_ATTEST_QUOTE) {
+        LOG_ERR("Attest is not of type TPM2_ST_ATTEST_QUOTE");
+        return false;
+    }
+
     // Also ensure digest from quote matches PCR digest
     if (ctx.flags.pcr) {
         if (!tpm2_util_verify_digests(&ctx.attest.attested.quote.pcrDigest,
