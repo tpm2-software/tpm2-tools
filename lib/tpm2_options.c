@@ -58,7 +58,8 @@ tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
     opts->callbacks.on_arg = on_arg;
     opts->len = len;
     opts->flags = flags;
-    memcpy(opts->long_opts, long_opts, len * sizeof(*long_opts));
+    if (long_opts)
+        memcpy(opts->long_opts, long_opts, len * sizeof(*long_opts));
 
     return opts;
 }
