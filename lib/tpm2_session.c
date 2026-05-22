@@ -251,6 +251,10 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
 
     uint32_t version;
     bool result = files_read_header(f, &version);
+    if (!result) {
+        LOG_ERR("Could not read version header");
+        goto out;
+    }
 
     TPM2_SE type;
     result = files_read_bytes(f, &type, sizeof(type));
