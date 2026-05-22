@@ -112,7 +112,7 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             return tool_rc_general_error;
         }
 
-        (ctx.auth_policy)->size = UINT16_MAX;
+        (ctx.auth_policy)->size = sizeof(*ctx.auth_policy);
         bool result = files_load_bytes_from_path(ctx.policy_path,
                 (ctx.auth_policy)->buffer, &((ctx.auth_policy)->size));
         if (!result) {
