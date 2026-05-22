@@ -650,7 +650,7 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, TPMI_RH_NV_INDEX nv_index) {
 
     char index_string[11];
     snprintf(index_string, sizeof(index_string), "%u", m->index);
-    tpm2_loaded_object object;
+    tpm2_loaded_object object = { 0 };
     tool_rc tmp_rc = tool_rc_success;
     tool_rc rc = tpm2_util_object_load_auth(ectx, index_string, NULL, &object,
         false, TPM2_HANDLE_FLAGS_NV);
