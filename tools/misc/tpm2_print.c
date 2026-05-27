@@ -299,7 +299,7 @@ static bool print_TPMS_CONTEXT(FILE *fstream) {
      * U16 contextBlobLength
      * BYTE[] contextBlob
      */
-    UINT32 version;
+    UINT32 version = 0;
     TPMS_CONTEXT context;
     bool result = files_read_header(fstream, &version);
     if (!result) {
