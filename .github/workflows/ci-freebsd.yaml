@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: 2026 Juergen Repp
+# SPDX-License-Identifier: BSD-2-Clause
+
+name: FreeBSD CI
+
+on:
+  [push, pull_request]
+
+jobs:
+  freebsd:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run FreeBSD 14.3 build and tests
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "14.3"
+          usesh: true
+
+          prepare: |
+            set -eux
+
+            export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
+            export CFLAGS="-I/usr/local/include -I/usr/local/openssl/include"
+            export LDFLAGS="-L/usr/local/lib"
+            export libusb_version="v1.0.26"
+            export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
+
+            pkg update -f
+            pkg upgrade -y
+
+            pkg install -y ca_root_nss
+            pkg install -y \
+              bash \
+              gmake \
+              coreutils \
+              libtool \
+              pkgconf \
+              autoconf \
+              autoconf-archive \
+              py311-pip \
+              expect \
+              python3
+
+            python3 -m pip install pyyaml
+
+            pkg install -y \
+              automake \
+              glib \
+              dbus \
+              dbus-glib \
+              cmocka \
+              uthash \
+              util-linux \
+              wget \
+              git \
+              openssl \
+              json-c \
+              vim \
+              hs-pandoc \
+              swtpm \
+              libuuid
+
+            mkdir tss
+            cd tss
+            git clone https://github.com/tpm2-software/tpm2-tss.git
+            cd tpm2-tss
+            ./bootstrap
+            ./configure \
+              --disable-doxygen-doc \
+              --enable-tcti-swtpm=yes \
+              --enable-tcti-mssim=no \
+              --disable-tcti-libtpms \
+              --disable-dependency-tracking
+            gmake -j"$(sysctl -n hw.ncpu)" install
+            cd ../..
+            rm -rf tss
+
+            mkdir rm
+            cd rm
+            git clone https://github.com/tpm2-software/tpm2-abrmd.git
+            cd tpm2-abrmd
+            ./bootstrap
+            ./configure --disable-dependency-tracking
+            gmake -j"$(sysctl -n hw.ncpu)" install
+            cd ../..
+            rm -rf rm
+
+          run: |
+            set -eux
+            export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
+            export CFLAGS="-I/usr/local/include -I/usr/local/openssl/include"
+            export LDFLAGS="-L/usr/local/lib"
+            export libusb_version="v1.0.26"
+            export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
+            git config --global --add safe.directory /home/runner/work/tpm2-tools/tpm2-tools
+
+            ./bootstrap
+            ./configure \
+              --enable-unit=yes \
+              --disable-dependency-tracking \
+              --disable-fapi
+
+            gmake -j"$(sysctl -n hw.ncpu)" check || {
+              cat test-suite.log
+              exit 1
+            }
