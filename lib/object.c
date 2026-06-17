@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "files.h"
 #include "log.h"
@@ -10,6 +11,15 @@
 
 #define NULL_OBJECT "null"
 #define NULL_OBJECT_LEN (sizeof(NULL_OBJECT) - 1)
+
+#define SESSION_PREFIX "session:"
+#define SESSION_PREFIX_LEN sizeof(SESSION_PREFIX) - 1
+
+#define FILE_PREFIX "file:"
+#define FILE_PREFIX_LEN sizeof(FILE_PREFIX) - 1
+
+#define PCR_PREFIX "pcr:"
+#define PCR_PREFIX_LEN sizeof(PCR_PREFIX) - 1
 
 TPM2B_PRIVATE tpm2_util_object_tsspem_priv = { 0 };
 TPM2B_PUBLIC tpm2_util_object_tsspem_pub = { 0 };
@@ -411,6 +421,12 @@ tool_rc tpm2_util_object_load_auth(ESYS_CONTEXT *ctx, const char *objectstr,
         const char *auth, tpm2_loaded_object *outobject,
         bool is_restricted_pswd_session, tpm2_handle_flags flags) {
 
+    bool is_session = auth && !strncmp(auth, SESSION_PREFIX, SESSION_PREFIX_LEN);
+    bool is_file = auth && !strncmp(auth, FILE_PREFIX, FILE_PREFIX_LEN);
+    bool is_pcr = auth && !strncmp(auth, PCR_PREFIX, PCR_PREFIX_LEN);
+    bool use_restricted_pswd_session = is_restricted_pswd_session &&
+        !is_session && !is_file && !is_pcr;
+
     return tpm2_util_object_load2(ctx, objectstr, auth, true, outobject,
-            is_restricted_pswd_session, flags);
+        use_restricted_pswd_session, flags);
 }
