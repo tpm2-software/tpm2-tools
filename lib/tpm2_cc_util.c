@@ -130,6 +130,12 @@ static const cc_map _g_map[] = {
     ADDCC(TPM2_CC_AC_Send),
     ADDCC(TPM2_CC_Policy_AC_SendSelect),
     ADDCC(TPM2_CC_Vendor_TCG_Test),
+    ADDCC(TPM2_CC_Encapsulate),
+    ADDCC(TPM2_CC_Decapsulate),
+    ADDCC(TPM2_CC_SignSequenceStart),
+    ADDCC(TPM2_CC_SignSequenceComplete),
+    ADDCC(TPM2_CC_SignDigest),
+    ADDCC(TPM2_CC_VerifyDigestSignature)
 };
 
 bool tpm2_cc_util_from_str(const char *str, TPM2_CC *cc) {

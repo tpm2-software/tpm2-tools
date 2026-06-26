@@ -20,6 +20,32 @@ tool_rc tpm2_tr_deserialize(ESYS_CONTEXT *esys_context, uint8_t const *buffer,
 tool_rc tpm2_tr_serialize(ESYS_CONTEXT *esys_context, ESYS_TR object,
         uint8_t **buffer, size_t *buffer_size);
 
+tool_rc tpm2_encapsulate(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,
+        TPM2B_KEM_CIPHERTEXT **ciphertext, TPM2B_SHARED_SECRET **sharedSecret);
+        
+tool_rc tpm2_decapsulate(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,
+        TPM2B_KEM_CIPHERTEXT *ciphertext, TPM2B_SHARED_SECRET **sharedSecret);
+    
+tool_rc tpm2_signsequencestart(ESYS_CONTEXT *esys_context, ESYS_TR keyHandle,
+        TPM2B_AUTH *auth, TPM2B_SIGNATURE_CTX *context, ESYS_TR *sequenceHandle);
+        
+tool_rc tpm2_verifysequencestart(ESYS_CONTEXT *esys_context, ESYS_TR keyHandle,
+        TPM2B_AUTH *auth, TPM2B_SIGNATURE_HINT *hint, TPM2B_SIGNATURE_CTX *context, ESYS_TR *sequenceHandle);
+       
+tool_rc tpm2_signsequencecomplete(ESYS_CONTEXT *esys_context, ESYS_TR sequence_handle,
+        ESYS_TR key_handle, TPM2B_MAX_BUFFER *buffer, TPMT_SIGNATURE **signature);
+        
+tool_rc tpm2_verifysequencecomplete(ESYS_CONTEXT *esys_context, ESYS_TR sequenceHandle,
+        ESYS_TR keyHandle, TPMT_SIGNATURE *signature, TPMT_TK_VERIFIED **validation);
+        
+tool_rc tpm2_signdigest(ESYS_CONTEXT *esys_context, ESYS_TR keyHandle,
+        TPM2B_SIGNATURE_CTX *context, TPM2B_DIGEST *digest, TPMT_TK_HASHCHECK *validation,
+        TPMT_SIGNATURE **signature);
+        
+tool_rc tpm2_verifydigestsignature(ESYS_CONTEXT *esys_context, ESYS_TR keyHandle,
+        TPM2B_SIGNATURE_CTX *context, TPM2B_DIGEST *digest, TPMT_SIGNATURE *signature,
+        TPMT_TK_VERIFIED **validation);
+
 tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, TPMI_RH_NV_INDEX nv_index,
     TPM2B_NAME *precalc_nvname, TPM2B_NV_PUBLIC **nv_public,
     TPM2B_NAME **nv_name, TPM2B_DIGEST *cp_hash, TPM2B_DIGEST *rp_hash,
