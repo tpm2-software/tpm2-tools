@@ -47,6 +47,9 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
         // Asymmetric
         { .name = "rsa", .id = TPM2_ALG_RSA, .flags = tpm2_alg_util_flags_asymmetric|tpm2_alg_util_flags_base },
         { .name = "ecc", .id = TPM2_ALG_ECC, .flags = tpm2_alg_util_flags_asymmetric|tpm2_alg_util_flags_base },
+        { .name = "mlkem", .id = TPM2_ALG_MLKEM, .flags  = tpm2_alg_util_flags_symmetric | tpm2_alg_util_flags_base},
+        { .name = "mldsa", .id = TPM2_ALG_MLDSA, .flags  = tpm2_alg_util_flags_sig},
+
 
         // Symmetric
         { .name = "tdes", .id = TPM2_ALG_TDES, .flags = tpm2_alg_util_flags_symmetric },
@@ -84,6 +87,7 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
         { .name = "oaep", .id = TPM2_ALG_OAEP, .flags = tpm2_alg_util_flags_enc_scheme | tpm2_alg_util_flags_rsa_scheme },
         { .name = "rsaes", .id = TPM2_ALG_RSAES, .flags = tpm2_alg_util_flags_enc_scheme | tpm2_alg_util_flags_rsa_scheme },
         { .name = "ecdh", .id = TPM2_ALG_ECDH, .flags = tpm2_alg_util_flags_enc_scheme },
+    
 
         // Key derivation functions
         { .name = "kdf1_sp800_56a", .id = TPM2_ALG_KDF1_SP800_56A, .flags = tpm2_alg_util_flags_kdf },
@@ -242,7 +246,8 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
             DO_SCHEME_HALG(buf_ptr, 6, TPM2_ALG_RSASSA);
         } else if (!strncmp(buf_ptr, "oaep", 4)) {
             DO_SCHEME_HALG(buf_ptr, 4, TPM2_ALG_OAEP);
-        }
+
+        } 
     }
 
     /* If we're not expecting a hash alg then halg should be NULL */
@@ -370,6 +375,58 @@ static alg_parser_rc handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
     return ext[0] == '\0' ? alg_parser_rc_continue : alg_parser_rc_error;
 }
 
+static void init_mlkem_public(TPM2B_PUBLIC *public, UINT16 parameter_set){
+	
+	TPMI_ALG_HASH name_alg = public->publicArea.nameAlg;
+	TPMA_OBJECT attrs = public->publicArea.objectAttributes;
+	TPM2B_DIGEST auth_policy = public->publicArea.authPolicy;
+	
+	*public = (TPM2B_PUBLIC){
+		.size = 0,
+		.publicArea = {
+			.type = TPM2_ALG_MLKEM,
+			.nameAlg = name_alg,
+			.objectAttributes = attrs,
+			.authPolicy = auth_policy,
+			.parameters.mlkemDetail = {
+				.symmetric = {
+					.algorithm = TPM2_ALG_NULL,
+					.keyBits.aes = 0,
+					.mode.aes = 0,
+				},
+				.parameterSet = parameter_set,
+			},
+			.unique.mlkem = {
+				.size = 0,
+			},
+		},
+	};
+}
+
+static void init_mldsa_public(TPM2B_PUBLIC *public, UINT16 parameter_set){
+	
+	TPMI_ALG_HASH name_alg = public->publicArea.nameAlg;
+	TPMA_OBJECT attrs = public->publicArea.objectAttributes;
+	TPM2B_DIGEST auth_policy = public->publicArea.authPolicy;
+	
+	*public = (TPM2B_PUBLIC){
+		.size = 0,
+		.publicArea = {
+			.type = TPM2_ALG_MLDSA,
+			.nameAlg = name_alg,
+			.objectAttributes = attrs,
+			.authPolicy = auth_policy,
+			.parameters.mldsaDetail = {
+				.parameterSet = parameter_set,
+				.allowExternalMu = 1,
+			},
+			.unique.mldsa = {
+				.size = 0,
+			},
+		},
+	};
+}
+
 static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_SYMCIPHER;
@@ -426,6 +483,55 @@ static alg_parser_rc handle_keyedhash(TPM2B_PUBLIC *public) {
     return alg_parser_rc_done;
 }
 
+static alg_parser_rc handle_mlkem(const char *ext, TPM2B_PUBLIC *public){
+	
+	if (ext == NULL || ext[0] == '\0') {
+		return alg_parser_rc_error;
+	}
+	
+	if(!strcmp(ext, "512")){
+		init_mlkem_public(public, TPM2_MLKEM_PARMS_512);
+		return alg_parser_rc_done;
+	}
+	
+	if(!strcmp(ext, "768")){
+		init_mlkem_public(public, TPM2_MLKEM_PARMS_768);
+		return alg_parser_rc_done;
+	}
+	
+	if(!strcmp(ext, "1024")){
+		init_mlkem_public(public, TPM2_MLKEM_PARMS_1024);
+		return alg_parser_rc_done;
+	}
+	
+	return alg_parser_rc_error;
+	
+}
+
+static alg_parser_rc handle_mldsa(const char *ext, TPM2B_PUBLIC *public){
+	
+	if (ext == NULL || ext[0] == '\0') {
+		return alg_parser_rc_error;
+	}
+	
+	if(!strcmp(ext, "44")){
+		init_mldsa_public(public, TPM2_MLDSA_PARMS_44);
+		return alg_parser_rc_done;
+	}
+	
+	if(!strcmp(ext, "65")){
+		init_mldsa_public(public, TPM2_MLDSA_PARMS_65);
+		return alg_parser_rc_done;
+	}
+	
+	if(!strcmp(ext, "87")){
+		init_mldsa_public(public, TPM2_MLDSA_PARMS_87);
+		return alg_parser_rc_done;
+	}
+	
+	return alg_parser_rc_error;
+}
+
 static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
 
     if (!strncmp(object, "rsa", 3)) {
@@ -434,6 +540,12 @@ static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
     } else if (!strncmp(object, "ecc", 3)) {
         object += 3;
         return handle_ecc(object, public);
+	} else if (!strncmp(object, "mlkem", 5)) {
+		object += 5;
+        return handle_mlkem(object, public);
+    } else if (!strncmp(object, "mldsa", 5)) {
+		object += 5;
+        return handle_mldsa(object, public);
     } else if (!strncmp(object, "aes", 3)) {
         object += 3;
         return handle_aes(object, public);
@@ -498,6 +610,8 @@ static alg_parser_rc handle_scheme(const char *scheme, TPM2B_PUBLIC *public) {
 
     return alg_parser_rc_error;
 }
+
+
 
 static alg_parser_rc handle_asym_detail(const char *detail,
         TPM2B_PUBLIC *public) {
@@ -934,6 +1048,22 @@ static tool_rc tpm2_public_to_scheme(ESYS_CONTEXT *ectx, ESYS_TR key, TPMI_ALG_P
         rc = tool_rc_success;
         goto out;
     }
+    
+    /*
+     * MLDSA is also a signing key type. Handle it here rather than treating it as
+     * a keyed hash object
+     */
+    
+    if (*type == TPM2_ALG_MLDSA) {
+
+        sigscheme->scheme = pp->asymDetail.scheme.scheme;
+        /* they all have a hash alg, and for most schemes' thats it */
+        sigscheme->details.any.hashAlg
+            = pp->asymDetail.scheme.details.anySig.hashAlg;
+
+        rc = tool_rc_success;
+        goto out;
+    }
 
     /* keyed hash could be the only one left */
     sigscheme->scheme = pp->keyedHashDetail.scheme.scheme;
@@ -1058,6 +1188,7 @@ tool_rc tpm2_alg_util_public_init(const char *alg_details, const char *name_halg
      */
     TPM2B_PUBLIC tmp = *public;
     bool res = tpm2_alg_util_handle_ext_alg(alg_details, &tmp);
+
     if (!res) {
         LOG_ERR("Could not handle algorithm: \"%s\"", alg_details);
         return tool_rc_unsupported;
