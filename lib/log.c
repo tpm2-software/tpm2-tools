@@ -18,7 +18,7 @@ void log_set_level(log_level value) {
 
 static const char *
 get_level_msg(log_level level) {
-    const char *value = "UNK";
+    const char *value;
     switch (level) {
     case log_level_error:
         value = "ERROR";
@@ -28,6 +28,9 @@ get_level_msg(log_level level) {
         break;
     case log_level_verbose:
         value = "INFO";
+        break;
+    default:
+        value = "UNK";
     }
     return value;
 }
