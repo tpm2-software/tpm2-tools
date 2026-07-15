@@ -4,13 +4,12 @@ All notable changes to this project will be documented in this file.
 
 Starting with release 5.4, The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## 5.8-rc1 - 2026-07-08
+## 5.8 - 2026-07-15
 ### Security
 - Fixes: GHSA-v7w4-4gc9-qcgv
 - Fixes: GHSA-gwfg-w3jr-xh66
 - Fixes: GHSA-qp88-8f4j-wv7q
 
-## 5.8-rc0 - 2026-05-12
 ### Fixed
 - tpm2_makecredential: fix wrong tcg ek templates
 - tpm2_checkquote: Fix memory leaks, malloced buffer not always freed
