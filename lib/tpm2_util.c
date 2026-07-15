@@ -369,6 +369,17 @@ static void tpm2_util_public_to_keydata(TPMT_PUBLIC *public,
         keydata->entries[1].name = "y";
         keydata->entries[1].value = (TPM2B *) &public->unique.ecc.y;
         return;
+    case TPM2_ALG_MLKEM:
+		keydata->len = 1;
+		keydata->entries[0].name = "mlkem";
+		keydata->entries[0].value = (TPM2B *) &public->unique.mlkem;
+		return;
+	case TPM2_ALG_MLDSA:
+		keydata->len = 1;
+		keydata->entries[0].name = tpm2_alg_util_algtostr(
+			public->type, tpm2_alg_util_flags_any);
+		keydata->entries[0].value = (TPM2B *) &public->unique.mldsa;
+		return;
     default:
         LOG_WARN("The algorithm type(0x%4.4x) is not supported",
             public->type);

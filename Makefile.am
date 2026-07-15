@@ -11,6 +11,8 @@ endif
 
 include src_vars.mk
 
+ACLOCAL_AMFLAGS = -I m4 --install
+
 INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib
 LIB_COMMON := lib/libcommon.a
 
@@ -201,7 +203,13 @@ tpm2_tools = \
     tools/tpm2_ecdhzgen.c \
     tools/tpm2_zgen2phase.c \
     tools/tpm2_sessionconfig.c \
-    tools/tpm2_getpolicydigest.c
+    tools/tpm2_getpolicydigest.c \
+    tools/tpm2_encapsulate.c \
+    tools/tpm2_decapsulate.c \
+    tools/tpm2_signsequenceflow.c \
+    tools/tpm2_verifysequenceflow.c \
+    tools/tpm2_signdigest.c \
+    tools/tpm2_verifydigestsignature.c
 
 # Create the symlinks for each tool to the tpm2 and optional tss2 bundled executables
 install-exec-hook:
@@ -275,7 +283,7 @@ test_unit_test_tpm2_auth_util_LDFLAGS  = -Wl,--wrap=Esys_TR_SetAuth \
                                          -Wl,--wrap=fread \
                                          -Wl,--wrap=fseek \
                                          -Wl,--wrap=ftell \
-                                         -Wl,--wrap=feof \
+                                         -Wl,--wrap=feof, \
                                          -Wl,--wrap=fclose
 test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
@@ -475,6 +483,12 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_zgen2phase.1 \
     man/man1/tpm2_sessionconfig.1 \
     man/man1/tpm2_getpolicydigest.1 \
+    man/man1/tpm2_encapsulate.1 \
+    man/man1/tpm2_decapsulate.1 \
+    man/man1/tpm2_signsequenceflow.1 \
+    man/man1/tpm2_verifysequenceflow.1 \
+    man/man1/tpm2_signdigest.1 \
+    man/man1/tpm2_verifydigestsignature.1 \
     man/man1/tpm2.1
 
 if HAVE_FAPI
@@ -648,19 +662,13 @@ dist-hook:
 	done;
 
 prepare-check:
-if HAVE_EFIVAR_GE_39
-	cp  $(abs_top_srcdir)/test/integration/fixtures/event-pretty-39/event-*.yaml \
-	    $(abs_top_srcdir)/test/integration/fixtures/
-endif
-if HAVE_EFIVAR_L_39
+if HAVE_EFIVAR_H
 	cp  $(abs_top_srcdir)/test/integration/fixtures/event-pretty/event-*.yaml \
 	    $(abs_top_srcdir)/test/integration/fixtures/
-endif
-if HAVE_EFIVAR_NO
+else
 	cp  $(abs_top_srcdir)/test/integration/fixtures/event-raw/event-*.yaml \
 	    $(abs_top_srcdir)/test/integration/fixtures/
 endif
-
 
 check: prepare-check
 

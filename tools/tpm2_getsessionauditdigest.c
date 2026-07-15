@@ -189,8 +189,8 @@ static tool_rc process_inputs(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * Setup signature scheme
      */
-    rc = tpm2_alg_util_get_signature_scheme(ectx,
-            ctx.key.object.tr_handle, &ctx.sig_hash_algorithm, TPM2_ALG_NULL,
+      rc = tpm2_alg_util_get_signature_scheme(ectx,
+            ctx.key.object.tr_handle, &ctx.sig_hash_algorithm, ctx.sig_scheme,
             &ctx.in_scheme);
     if (rc != tool_rc_success) {
         return rc;
