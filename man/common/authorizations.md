@@ -95,9 +95,14 @@ session:session.ctx+hex:11223344
 
 You can satisfy a PCR policy using the "pcr:" prefix and the PCR minilanguage. The PCR
 minilanguage is as follows:
-`<pcr-spec>=<raw-pcr-file>`
+`<pcr-spec>[@<policy-session-hash>][=<raw-pcr-file>]`
 
 The PCR spec is documented in in the section "PCR bank specifiers".
+
+The `policy-session-hash` is an **optional** argument that selects the hash
+algorithm of the implicit policy session used to satisfy the PCR policy. It
+does not change the PCR bank selected by `pcr-spec`. When omitted, the default
+implicit policy session hash is preserved.
 
 The `raw-pcr-file` is an **optional** argument that contains the output of the raw PCR contents as returned by *tpm2_pcrread(1)*.
 
@@ -108,4 +113,10 @@ The `raw-pcr-file` is an **optional** argument that contains the output of the r
 To satisfy a PCR policy of sha256 on banks 0, 1, 2 and 3 use a specifier of:
 ```
 pcr:sha256:0,1,2,3
+```
+
+To satisfy a PCR policy created with an SM3 policy digest while selecting PCRs
+from the SM3 bank:
+```
+pcr:sm3_256:0,2@sm3_256
 ```
