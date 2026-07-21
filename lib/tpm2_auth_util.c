@@ -302,13 +302,15 @@ static tool_rc handle_session(ESYS_CONTEXT *ectx, const char *path,
     return tool_rc_success;
 }
 
-static bool parse_pcr(const char *policy, char **pcr_str, char **raw_path) {
+static bool parse_pcr(const char *policy, char **pcr_str, char **raw_path,
+        TPMI_ALG_HASH *policy_session_hash) {
     char *split;
 
     policy += PCR_PREFIX_LEN;
 
     *pcr_str = NULL;
     *raw_path = NULL;
+    *policy_session_hash = TPM2_ALG_ERROR;
 
     /* completely empty PCR specification or just raw-pcr-file given */
     if ((policy[0] == '\0') || (policy[0] == '=')) {
@@ -332,6 +334,24 @@ static bool parse_pcr(const char *policy, char **pcr_str, char **raw_path) {
         }
     }
 
+    split = strchr(*pcr_str, '@');
+    if (split) {
+        split[0] = '\0';
+        split++;
+
+        if ((*pcr_str)[0] == '\0' || split[0] == '\0') {
+            return false;
+        }
+
+        *policy_session_hash = tpm2_alg_util_from_optarg(split,
+                tpm2_alg_util_flags_hash);
+        if (*policy_session_hash == TPM2_ALG_ERROR) {
+            LOG_ERR("Invalid PCR policy session hash algorithm, got: \"%s\"",
+                    split);
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -340,10 +360,11 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
     tool_rc rc = tool_rc_general_error;
 
     char *pcr_str, *raw_path;
+    TPMI_ALG_HASH policy_session_hash = TPM2_ALG_ERROR;
     TPML_PCR_SELECTION pcrs;
     bool ret;
 
-    ret = parse_pcr(policy, &pcr_str, &raw_path);
+    ret = parse_pcr(policy, &pcr_str, &raw_path, &policy_session_hash);
     if (!ret) {
         goto out;
     }
@@ -359,7 +380,13 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
         goto out;
     }
 
-    if (ectx) {
+    bool is_policy_session_hash_specified =
+        policy_session_hash != TPM2_ALG_ERROR;
+    if (is_policy_session_hash_specified) {
+        tpm2_session_set_authhash(d, policy_session_hash);
+    }
+
+    if (ectx && !is_policy_session_hash_specified) {
         uint32_t i;
         tool_rc tmp_rc;
         TPM2_CAP capability = TPM2_CAP_ALGS;

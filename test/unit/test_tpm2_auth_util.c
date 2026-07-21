@@ -173,11 +173,13 @@ static void test_parse_pcr_no_raw_file(void **state) {
     const char *policy = "pcr:" PCR_SPECIFICATION;
 
     char *pcr_str, *raw_file;
+    TPMI_ALG_HASH policy_session_hash;
 
-    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file, &policy_session_hash);
     assert_true(ret);
     assert_string_equal(pcr_str, PCR_SPECIFICATION);
     assert_null(raw_file);
+    assert_int_equal(policy_session_hash, TPM2_ALG_ERROR);
 
     free(pcr_str);
 }
@@ -188,11 +190,61 @@ static void test_parse_pcr_with_raw_file(void **state) {
     const char *policy = "pcr:" PCR_SPECIFICATION "=" PCR_FILE;
 
     char *pcr_str, *raw_file;
+    TPMI_ALG_HASH policy_session_hash;
 
-    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file, &policy_session_hash);
     assert_true(ret);
     assert_string_equal(pcr_str, PCR_SPECIFICATION);
     assert_string_equal(raw_file, PCR_FILE);
+    assert_int_equal(policy_session_hash, TPM2_ALG_ERROR);
+
+    free(pcr_str);
+}
+
+static void test_parse_pcr_policy_session_hash(void **state) {
+    UNUSED(state);
+
+    const char *policy = "pcr:sm3_256:0,2@sm3_256";
+
+    char *pcr_str, *raw_file;
+    TPMI_ALG_HASH policy_session_hash;
+
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file, &policy_session_hash);
+    assert_true(ret);
+    assert_string_equal(pcr_str, "sm3_256:0,2");
+    assert_null(raw_file);
+    assert_int_equal(policy_session_hash, TPM2_ALG_SM3_256);
+
+    free(pcr_str);
+}
+
+static void test_parse_pcr_policy_session_hash_with_raw_file(void **state) {
+    UNUSED(state);
+
+    const char *policy = "pcr:sm3_256:0,2@sm3_256=" PCR_FILE;
+
+    char *pcr_str, *raw_file;
+    TPMI_ALG_HASH policy_session_hash;
+
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file, &policy_session_hash);
+    assert_true(ret);
+    assert_string_equal(pcr_str, "sm3_256:0,2");
+    assert_string_equal(raw_file, PCR_FILE);
+    assert_int_equal(policy_session_hash, TPM2_ALG_SM3_256);
+
+    free(pcr_str);
+}
+
+static void test_parse_pcr_bad_policy_session_hash(void **state) {
+    UNUSED(state);
+
+    const char *policy = "pcr:sm3_256:0,2@not-a-hash";
+
+    char *pcr_str, *raw_file;
+    TPMI_ALG_HASH policy_session_hash;
+
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file, &policy_session_hash);
+    assert_false(ret);
 
     free(pcr_str);
 }
@@ -274,8 +326,9 @@ static void test_parse_pcr_empty(void **state) {
     const char *policy = "pcr:";
 
     char *pcr_str, *raw_file;
+    TPMI_ALG_HASH policy_session_hash;
 
-    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file, &policy_session_hash);
     assert_false(ret);
 }
 
@@ -285,8 +338,9 @@ static void test_parse_pcr_empty_pcr_specification(void **state) {
     const char *policy = "pcr:=" PCR_FILE;
 
     char *pcr_str, *raw_file;
+    TPMI_ALG_HASH policy_session_hash;
 
-    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file, &policy_session_hash);
     assert_false(ret);
 }
 
@@ -296,8 +350,9 @@ static void test_parse_pcr_empty_pcr_file(void **state) {
     const char *policy = "pcr:" PCR_SPECIFICATION "=";
 
     char *pcr_str, *raw_file;
+    TPMI_ALG_HASH policy_session_hash;
 
-    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file, &policy_session_hash);
     assert_false(ret);
 
     free(pcr_str);
@@ -384,6 +439,9 @@ int main(int argc, char* argv[]) {
 
             cmocka_unit_test(test_parse_pcr_no_raw_file),
             cmocka_unit_test(test_parse_pcr_with_raw_file),
+            cmocka_unit_test(test_parse_pcr_policy_session_hash),
+            cmocka_unit_test(test_parse_pcr_policy_session_hash_with_raw_file),
+            cmocka_unit_test(test_parse_pcr_bad_policy_session_hash),
 
             /* negative testing */
             cmocka_unit_test(test_tpm2_auth_util_from_optarg_raw_overlength),
