@@ -3,8 +3,8 @@
 
 function get_deps() {
 
-	export TSS_VERSION=${TPM2_TSS_VERSION:-4.1.3}
-	ABRMD_VERSION=2.4.1
+	export TSS_VERSION=${TPM2_TSS_VERSION:-4.2.0}
+	ABRMD_VERSION=3.0.0
 	EXTRA_CONFIG_FLAGS=''
 
 	pkg_conf_path="$(pkg-config --variable pc_path pkg-config | cut -d: -f 1-1)"
