@@ -384,7 +384,7 @@ static bool parse_selection_data_from_file(FILE *pcr_input,
         // Convert TPML_DIGEST from little endian to host endian.
         pcrs->pcr_values[j].count = le32toh( pcrs->pcr_values[j].count);
         if (pcrs->pcr_values[j].count > ARRAY_LEN(pcrs->pcr_values[j].digests)) {
-            LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %" PRIu64,
+            LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %zu",
                     ARRAY_LEN(pcrs->pcr_values[j].digests));
             return false;
         }
@@ -392,7 +392,7 @@ static bool parse_selection_data_from_file(FILE *pcr_input,
             pcrs->pcr_values[j].digests[i].size =
                 le16toh(pcrs->pcr_values[j].digests[i].size);
             if (pcrs->pcr_values[j].digests[i].size > sizeof(TPMU_HA)) {
-                LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %" PRIu64,
+                LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %zu",
                         sizeof(TPMU_HA));
                 return false;
             }
