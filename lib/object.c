@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "files.h"
 #include "log.h"
@@ -354,7 +355,9 @@ static tool_rc tpm2_util_object_load2(ESYS_CONTEXT *ctx, const char *objectstr,
         bool is_restricted_pswd_session, tpm2_handle_flags flags) {
 
     tool_rc rc = tool_rc_success;
-    if (do_auth) {
+    bool defer_pcr_auth = do_auth && !is_restricted_pswd_session && auth &&
+            !strncmp(auth, PCR_PREFIX, PCR_PREFIX_LEN);
+    if (do_auth && !defer_pcr_auth) {
         ESYS_CONTEXT *tmp_ctx = is_restricted_pswd_session ? NULL : ctx;
         tpm2_session *s = NULL;
         rc = tpm2_auth_util_from_optarg(tmp_ctx, auth, &s,
@@ -377,7 +380,7 @@ static tool_rc tpm2_util_object_load2(ESYS_CONTEXT *ctx, const char *objectstr,
         rc = tpm2_util_object_do_ctx_file(ctx, objectstr, f, outobject);
         fclose(f);
         if (rc == tool_rc_success) {
-            return rc;
+            goto setup_deferred_auth;
         }
     }
 
@@ -387,14 +390,25 @@ static tool_rc tpm2_util_object_load2(ESYS_CONTEXT *ctx, const char *objectstr,
     if (result) {
         outobject->handle = handle;
         outobject->path = NULL;
-        return tpm2_util_sys_handle_to_esys_handle(ctx, outobject->handle,
+        rc = tpm2_util_sys_handle_to_esys_handle(ctx, outobject->handle,
             &outobject->tr_handle);
+        goto setup_deferred_auth;
     }
 
     // 3. Attempt objectstr as a file path for TSSPEM/ TSS-PRIVATE-KEY
     rc = tpm2_util_object_load_tsspem(ctx, objectstr, outobject);
     if (rc != tool_rc_success) {
         LOG_ERR("Cannot make sense of object context \"%s\"", objectstr);
+    }
+
+setup_deferred_auth:
+    if (rc == tool_rc_success && defer_pcr_auth) {
+        tpm2_session *s = NULL;
+        rc = tpm2_auth_util_from_optarg_with_auth_handle(ctx, auth, &s, false,
+                outobject->tr_handle);
+        if (rc == tool_rc_success) {
+            outobject->session = s;
+        }
     }
 
     return rc;

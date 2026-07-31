@@ -23,6 +23,56 @@ TSS2_RC __wrap_Esys_TR_SetAuth(ESYS_CONTEXT *esysContext, ESYS_TR handle,
     return TPM2_RC_SUCCESS;
 }
 
+static ESYS_CONTEXT *expected_name_alg_context;
+static ESYS_TR expected_name_alg_handle;
+static TPM2_ALG_ID mocked_name_alg;
+static bool name_alg_expected;
+static bool capability_get_expected;
+
+TPM2_ALG_ID __wrap_tpm2_alg_util_get_name_alg(ESYS_CONTEXT *ectx,
+        ESYS_TR handle) {
+
+    assert_true(name_alg_expected);
+    name_alg_expected = false;
+    assert_ptr_equal(ectx, expected_name_alg_context);
+    assert_int_equal(handle, expected_name_alg_handle);
+    return mocked_name_alg;
+}
+
+tool_rc __wrap_tpm2_capability_get(ESYS_CONTEXT *context,
+        TPM2_CAP capability, UINT32 property, UINT32 count,
+        TPMS_CAPABILITY_DATA **capability_data) {
+
+    assert_true(capability_get_expected);
+    capability_get_expected = false;
+    assert_ptr_equal(context, expected_name_alg_context);
+    assert_int_equal(capability, TPM2_CAP_ALGS);
+    assert_int_equal(property, 0);
+    assert_int_equal(count, TPM2_MAX_CAP_ALGS);
+    assert_non_null(capability_data);
+    *capability_data = NULL;
+
+    return tool_rc_general_error;
+}
+
+tool_rc __wrap_tpm2_policy_build_pcr(ESYS_CONTEXT *context,
+        tpm2_session *policy_session, const char *raw_pcrs_file,
+        TPML_PCR_SELECTION *pcr_selections, TPM2B_DIGEST *raw_pcr_digest,
+        tpm2_forwards *forwards) {
+
+    assert_ptr_equal(context, expected_name_alg_context);
+    assert_non_null(policy_session);
+    assert_null(raw_pcrs_file);
+    assert_null(raw_pcr_digest);
+    assert_null(forwards);
+    assert_int_equal(pcr_selections->count, 1);
+    assert_int_equal(pcr_selections->pcrSelections[0].hash, TPM2_ALG_SHA256);
+    assert_int_equal(pcr_selections->pcrSelections[0].sizeofSelect, 3);
+    assert_true(pcr_selections->pcrSelections[0].pcrSelect[0] & 1);
+
+    return tool_rc_success;
+}
+
 static void test_tpm2_auth_util_from_optarg_raw_noprefix(void **state) {
     (void) state;
 
@@ -160,6 +210,74 @@ static void test_tpm2_auth_util_from_optarg_file(void **state) {
 
     assert_int_equal(auth->size, strlen(mocked_file_data));
     assert_memory_equal(auth->buffer, mocked_file_data, strlen(mocked_file_data));
+
+    tpm2_session_close(&session);
+}
+
+static void test_pcr_auth_with_name_alg(void **state, TPM2_ALG_ID name_alg,
+        TPMI_ALG_HASH expected_session_hash, bool expect_capability_get) {
+
+    ESYS_CONTEXT *ectx = (ESYS_CONTEXT *)*state;
+    ESYS_TR auth_handle = 0x81000000;
+    tpm2_session *session = NULL;
+
+    expected_name_alg_context = ectx;
+    expected_name_alg_handle = auth_handle;
+    mocked_name_alg = name_alg;
+    name_alg_expected = true;
+    capability_get_expected = expect_capability_get;
+
+    TPMT_SYM_DEF symmetric = {
+        .algorithm = TPM2_ALG_NULL,
+    };
+    TPM2B_NONCE nonce_caller = {
+        .size = tpm2_alg_util_get_hash_size(expected_session_hash),
+    };
+    set_expected(ESYS_TR_NONE, ESYS_TR_NONE, TPM2_SE_POLICY, &symmetric,
+            expected_session_hash, &nonce_caller, SESSION_HANDLE,
+            TPM2_RC_SUCCESS);
+
+    tool_rc rc = tpm2_auth_util_from_optarg_with_auth_handle(ectx,
+            "pcr:sha256:0", &session, false, auth_handle);
+    assert_int_equal(rc, tool_rc_success);
+    assert_non_null(session);
+    assert_false(name_alg_expected);
+    assert_false(capability_get_expected);
+
+    tpm2_session_close(&session);
+}
+
+static void test_tpm2_auth_util_from_optarg_with_auth_handle_pcr(void **state) {
+
+    test_pcr_auth_with_name_alg(state, TPM2_ALG_SM3_256,
+            TPM2_ALG_SM3_256, false);
+}
+
+static void test_pcr_auth_name_alg_error_uses_fallback(void **state) {
+
+    test_pcr_auth_with_name_alg(state, TPM2_ALG_ERROR, TPM2_ALG_SHA256, true);
+}
+
+static void test_pcr_auth_non_hash_name_alg_uses_fallback(void **state) {
+
+    test_pcr_auth_with_name_alg(state, TPM2_ALG_RSA, TPM2_ALG_SHA256, true);
+}
+
+static void test_auth_handle_entry_delegates_non_pcr(void **state) {
+
+    ESYS_CONTEXT *ectx = (ESYS_CONTEXT *)*state;
+    expected_name_alg_context = ectx;
+    name_alg_expected = false;
+    capability_get_expected = true;
+    set_expected_defaults(TPM2_SE_HMAC, SESSION_HANDLE, TPM2_RC_SUCCESS);
+
+    tpm2_session *session = NULL;
+    tool_rc rc = tpm2_auth_util_from_optarg_with_auth_handle(ectx, "secret",
+            &session, false, 0x81000000);
+    assert_int_equal(rc, tool_rc_success);
+    assert_non_null(session);
+    assert_false(name_alg_expected);
+    assert_false(capability_get_expected);
 
     tpm2_session_close(&session);
 }
@@ -381,6 +499,18 @@ int main(int argc, char* argv[]) {
             cmocka_unit_test_setup_teardown(test_tpm2_auth_util_get_pw_shandle,
                                             setup, teardown),
             cmocka_unit_test(test_tpm2_auth_util_from_optarg_file),
+            cmocka_unit_test_setup_teardown(
+                    test_tpm2_auth_util_from_optarg_with_auth_handle_pcr,
+                    setup, teardown),
+            cmocka_unit_test_setup_teardown(
+                    test_pcr_auth_name_alg_error_uses_fallback,
+                    setup, teardown),
+            cmocka_unit_test_setup_teardown(
+                    test_pcr_auth_non_hash_name_alg_uses_fallback,
+                    setup, teardown),
+            cmocka_unit_test_setup_teardown(
+                    test_auth_handle_entry_delegates_non_pcr,
+                    setup, teardown),
 
             cmocka_unit_test(test_parse_pcr_no_raw_file),
             cmocka_unit_test(test_parse_pcr_with_raw_file),
