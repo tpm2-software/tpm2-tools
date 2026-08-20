@@ -91,6 +91,8 @@ expect_fail foo bar
 expect_fail ${srcdir}/test/integration/fixtures/event-bad.bin
 
 expect_pass ${srcdir}/test/integration/fixtures/specid-vendordata.bin
+expect_pass ${srcdir}/test/integration/fixtures/specid-vendordata-1.05.bin
+expect_pass ${srcdir}/test/integration/fixtures/specid-vendordata-1.06.bin
 expect_pass ${srcdir}/test/integration/fixtures/event.bin
 expect_pass ${srcdir}/test/integration/fixtures/event-uefivar.bin
 expect_pass ${srcdir}/test/integration/fixtures/event-uefiaction.bin
