@@ -1080,25 +1080,36 @@ void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
                      le32toh(event->eventDataSize));
 }
 
+#define PFP_SPEC_REVISION_1_05 105
+
 void yaml_specid(TCG_SPECID_EVENT* specid) {
 
     /* 'Signature' defined as byte buf, spec treats it like string w/o null. */
     char sig_str[sizeof(specid->Signature) + 1] = { '\0', };
     memcpy(sig_str, specid->Signature, sizeof(specid->Signature));
 
+    const bool pfp_1_05_or_later =
+        specid->specRevision >= PFP_SPEC_REVISION_1_05;
+    const char *version_minor_label =
+        pfp_1_05_or_later ? "familyVersionMinor" : "specVersionMinor";
+    const char *version_major_label =
+        pfp_1_05_or_later ? "familyVersionMajor" : "specVersionMajor";
+    const char *revision_label =
+        pfp_1_05_or_later ? "specRevision" : "specErrata";
+
     tpm2_tool_output("  SpecID:\n"
                      "  - Signature: %s\n"
                      "    platformClass: %" PRIu32 "\n"
-                     "    specVersionMinor: %" PRIu8 "\n"
-                     "    specVersionMajor: %" PRIu8 "\n"
-                     "    specErrata: %" PRIu8 "\n"
+                     "    %s: %" PRIu8 "\n"
+                     "    %s: %" PRIu8 "\n"
+                     "    %s: %" PRIu8 "\n"
                      "    uintnSize: %" PRIu8 "\n"
                      "    numberOfAlgorithms: %" PRIu32 "\n"
                      "    Algorithms:\n",
-                     sig_str,
-                     le32toh(specid->platformClass), specid->specVersionMinor,
-                     specid->specVersionMajor, specid->specErrata,
-                     specid->uintnSize,
+                     sig_str, le32toh(specid->platformClass),
+                     version_minor_label, specid->familyVersionMinor,
+                     version_major_label, specid->familyVersionMajor,
+                     revision_label, specid->specRevision, specid->uintnSize,
                      le32toh(specid->numberOfAlgorithms));
 
 }

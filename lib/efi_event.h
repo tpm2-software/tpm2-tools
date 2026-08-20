@@ -129,9 +129,9 @@ typedef struct {
 typedef struct {
     BYTE Signature[16];
     UINT32 platformClass;
-    UINT8 specVersionMinor;
-    UINT8 specVersionMajor;
-    UINT8 specErrata;
+    UINT8 familyVersionMinor;
+    UINT8 familyVersionMajor;
+    UINT8 specRevision;
     UINT8 uintnSize;
     UINT32 numberOfAlgorithms;
     TCG_SPECID_ALG digestSizes[];
