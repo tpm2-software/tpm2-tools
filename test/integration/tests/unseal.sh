@@ -67,6 +67,21 @@ tpm2 unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
 cmp -s $file_unseal_output_data $file_input_data
 
+# Test -i with a non-seekable input, e.g. a process substitution
+
+rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name \
+$file_unseal_key_ctx
+
+tpm2 create -Q -g $alg_create_obj -u $file_unseal_key_pub \
+-r $file_unseal_key_priv -i <(cat $file_input_data) -C $file_primary_key_ctx
+
+tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
+-r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
+
+tpm2 unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
+
+cmp -s $file_unseal_output_data $file_input_data
+
 # Test using a PCR policy for auth and use file based stdin for -i
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name \

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <setjmp.h>
 #include <cmocka.h>
@@ -184,6 +185,102 @@ static void test_file_read_write_bad_params_bytes(void **state) {
     assert_false(res);
 }
 
+/*
+ * Builds the read end of a pipe that holds the given data. A pipe is not
+ * seekable and therefore stands in for inputs like a process substitution,
+ * a shell pipeline or a character device.
+ */
+static FILE *pipe_file_new(const void *data, size_t len) {
+
+    int fds[2];
+    int rc = pipe(fds);
+    assert_return_code(rc, errno);
+
+    ssize_t wrote = write(fds[1], data, len);
+    assert_int_equal(wrote, (ssize_t) len);
+
+    rc = close(fds[1]);
+    assert_return_code(rc, errno);
+
+    FILE *f = fdopen(fds[0], "rb");
+    assert_non_null(f);
+
+    return f;
+}
+
+static void test_file_read_bytes_from_pipe(void **state) {
+
+    (void) state;
+
+    const char expected[] = "topsecret";
+    UINT16 len = sizeof(expected) - 1;
+
+    FILE *f = pipe_file_new(expected, len);
+
+    UINT8 found[128] = { 0 };
+    UINT16 size = sizeof(found);
+    bool res = file_read_bytes_from_file(f, found, &size, "pipe");
+    assert_true(res);
+
+    assert_int_equal(size, len);
+    assert_memory_equal(expected, found, len);
+
+    fclose(f);
+}
+
+static void test_file_read_bytes_from_pipe_exact_fit(void **state) {
+
+    (void) state;
+
+    UINT8 expected[64];
+    memset(expected, 0xCC, sizeof(expected));
+
+    FILE *f = pipe_file_new(expected, sizeof(expected));
+
+    UINT8 found[sizeof(expected)] = { 0 };
+    UINT16 size = sizeof(found);
+    bool res = file_read_bytes_from_file(f, found, &size, "pipe");
+    assert_true(res);
+
+    assert_int_equal(size, sizeof(expected));
+    assert_memory_equal(expected, found, sizeof(expected));
+
+    fclose(f);
+}
+
+static void test_file_read_bytes_from_pipe_empty(void **state) {
+
+    (void) state;
+
+    FILE *f = pipe_file_new("", 0);
+
+    UINT8 found[16] = { 0 };
+    UINT16 size = sizeof(found);
+    bool res = file_read_bytes_from_file(f, found, &size, "pipe");
+    assert_true(res);
+
+    assert_int_equal(size, 0);
+
+    fclose(f);
+}
+
+static void test_file_read_bytes_from_pipe_too_big(void **state) {
+
+    (void) state;
+
+    UINT8 data[65];
+    memset(data, 0xDD, sizeof(data));
+
+    FILE *f = pipe_file_new(data, sizeof(data));
+
+    UINT8 found[sizeof(data) - 1] = { 0 };
+    UINT16 size = sizeof(found);
+    bool res = file_read_bytes_from_file(f, found, &size, "pipe");
+    assert_false(res);
+
+    fclose(f);
+}
+
 static void test_file_size(void **state) {
 
     test_file *tf = test_file_from_state(state);
@@ -269,6 +366,11 @@ int main(int argc, char* argv[]) {
                 test_setup, test_teardown),
         cmocka_unit_test_setup_teardown(test_file_read_write_bad_params_bytes,
                 test_setup, test_teardown),
+
+        cmocka_unit_test(test_file_read_bytes_from_pipe),
+        cmocka_unit_test(test_file_read_bytes_from_pipe_exact_fit),
+        cmocka_unit_test(test_file_read_bytes_from_pipe_empty),
+        cmocka_unit_test(test_file_read_bytes_from_pipe_too_big),
 
         cmocka_unit_test_setup_teardown(test_file_size,
                 test_setup, test_teardown),

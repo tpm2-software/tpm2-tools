@@ -139,35 +139,39 @@ bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
 bool file_read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
         const char *path) {
 
-    unsigned long file_size;
-    bool result = files_get_file_size(f, &file_size, path);
-    if (!result) {
-        /* get_file_size() logs errors */
-        return false;
-    }
-
-    /* max is bounded on *size */
-    if (file_size > *size) {
-        if (path) {
-            LOG_ERR(
-                    "File \"%s\" size is larger than buffer, got %lu expected "
-                    "less than or equal to %u", path, file_size, *size);
-        }
-        return false;
-    }
-
-    /* The reported file size is not always correct, e.g. for sysfs files
-       generated on the fly by the kernel when they are read, which appear as
-       having size 0. Read as many bytes as we can until EOF is reached or the
-       provided buffer is full. As a small sanity check, fail if the number of
-       bytes read is smaller than the reported file size. */
-    *size = readx(f, buf, *size);
-    if (*size < file_size) {
+    /*
+     * The size of the input is not always known in advance. A pipe or a
+     * character device is not seekable, and a sysfs file generated on the fly
+     * by the kernel reports a size of 0. Therefore do not query the size, but
+     * read as many bytes as the buffer holds and stop at EOF.
+     */
+    size_t bytes = readx(f, buf, *size);
+    if (ferror(f)) {
         if (path) {
             LOG_ERR("Could not read data from file \"%s\"", path);
         }
         return false;
     }
+
+    /* max is bounded on *size, so data left in the stream does not fit */
+    if (bytes == *size) {
+        int c = fgetc(f);
+        if (ferror(f)) {
+            if (path) {
+                LOG_ERR("Could not read data from file \"%s\"", path);
+            }
+            return false;
+        }
+        if (c != EOF) {
+            if (path) {
+                LOG_ERR("File \"%s\" size is larger than buffer, expected less "
+                        "than or equal to %u bytes", path, *size);
+            }
+            return false;
+        }
+    }
+
+    *size = bytes;
 
     return true;
 }
