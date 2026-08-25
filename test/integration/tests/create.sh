@@ -127,6 +127,8 @@ tpm2 create -C primary.ctx -u key.pub -r key.priv -L "$(expected_digest)"
 tpm2 load -C primary.ctx -u key.pub -r key.priv -c key.ctx
 got_digest="$(tpm2 readpublic -c key.ctx | grep "authorization policy" | cut -d ' ' -f3-)"
 test "$expected_digest" == "$got_digest"
+got_policy_digest="$(tpm2 readpublic -c key.ctx | grep "policy-digest" | cut -d ' ' -f2-)"
+test "$expected_digest" == "$got_policy_digest"
 
 
 exit 0

@@ -66,6 +66,13 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
 
     tpm2_util_public_to_yaml(public, NULL);
 
+    if (public->publicArea.authPolicy.size) {
+        tpm2_tool_output("policy-digest: ");
+        tpm2_util_hexdump(public->publicArea.authPolicy.buffer,
+                public->publicArea.authPolicy.size);
+        tpm2_tool_output("\n");
+    }
+
     ret = ctx.output_path ?
             tpm2_convert_pubkey_save(public, ctx.format, ctx.output_path) :
             true;
