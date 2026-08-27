@@ -203,7 +203,7 @@ bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
         .digest2_cb = digest2_accumulator_callback,
     };
     ret = foreach_digest2(&ctx, le32toh(eventhdr->EventType),
-                          le32toh(eventhdr->PCRIndex), 
+                          le32toh(eventhdr->PCRIndex),
                           eventhdr->Digests, le32toh(eventhdr->DigestCount),
                           buf_size - sizeof(*eventhdr), 0);
     if (ret != true) {
@@ -239,10 +239,15 @@ bool parse_sha1_log_event(tpm2_eventlog_context *ctx, TCG_EVENT const *event, si
     }
     *event_size = sizeof(*event);
 
-    pcr = ctx->sha1_pcrs[le32toh(event->pcrIndex)];
+    UINT32 pcr_index = le32toh(event->pcrIndex);
+    if (pcr_index >= TPM2_MAX_PCRS) {
+        LOG_ERR("PCR Index %u out of bounds (max %d)", pcr_index, TPM2_MAX_PCRS - 1);
+        return false;
+    }
+    pcr = ctx->sha1_pcrs[pcr_index];
     if (le32toh(event->eventType) != EV_NO_ACTION && pcr) {
         tpm2_openssl_pcr_extend(TPM2_ALG_SHA1, pcr, &event->digest[0], 20);
-        ctx->sha1_used |= (1 << le32toh(event->pcrIndex));
+        ctx->sha1_used |= (1 << pcr_index);
     }
 
     /* buffer size must be sufficient to hold event and event data */
@@ -579,7 +584,7 @@ bool specid_event(TCG_EVENT const *event, size_t size,
 
     /* buffer size must be sufficient to hold event, specid event & algs */
     if (size < sizeof(*event) + sizeof(*event_specid) +
-               sizeof(event_specid->digestSizes[0]) * 
+               sizeof(event_specid->digestSizes[0]) *
                le32toh(event_specid->numberOfAlgorithms)) {
         LOG_ERR("insufficient size for SpecID algorithms");
         return false;

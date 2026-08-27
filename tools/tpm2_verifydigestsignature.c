@@ -121,48 +121,6 @@ static bool load_signature_file(const char *path, TPMT_SIGNATURE *signature){
 	
 }
 
-static bool save_validation(const char *path, TPMT_TK_VERIFIED *validation){
-	
-	if(!path){
-		return true;
-	}
-	
-	FILE *f = fopen(path, "wb");
-	if (!f){
-		LOG_ERR("Cannot open validation output file");
-		return false;
-	}
-	
-	bool ok = true;
-	
-	if (fwrite(&validation->tag, sizeof(validation->tag), 1, f) != 1){
-		ok = false;
-	}
-	
-	if (ok && fwrite(&validation->hierarchy,sizeof(validation->hierarchy), 1, f) != 1) {
-		ok = false;
-	}
-	
-	if (ok && fwrite(&validation->digest.size,sizeof(validation->digest.size), 1, f) != 1) {
-		ok = false;
-	}
-	
-	if (ok && validation->digest.size > 0){
-		if (fwrite(validation->digest.buffer, 1, validation->digest.size, f) != validation->digest.size) {
-			ok = false;
-		}
-	}
-	
-	fclose(f);
-	
-	if (!ok){
-		LOG_ERR("could not write validation ticket");
-	}
-	
-	return ok;	
-}
-
-
 static tool_rc check_options(ESYS_CONTEXT *ectx){
 	
 	UNUSED(ectx);
@@ -236,9 +194,10 @@ static tool_rc process_output(ESYS_CONTEXT *ectx){
 	
 	UNUSED(ectx);
 	
-	bool result = save_validation(ctx.validation_path, ctx.validation);
-	if(!result){
-		return tool_rc_general_error;
+	if(ctx.validation_path) {
+		if (!files_save_ticket(ctx.validation, ctx.validation_path)) {
+			return tool_rc_general_error;
+		}
 	}
 	
 	return tool_rc_success;

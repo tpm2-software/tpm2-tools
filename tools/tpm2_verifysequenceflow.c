@@ -114,30 +114,6 @@ static bool load_signature_file(const char *path, TPMT_SIGNATURE *signature){
 	
 }
 
-static bool save_ticket_file(const char *path, TPMT_TK_VERIFIED *ticket){
-	
-	if(!path){
-		return true;
-	}
-	
-	FILE *f = fopen(path, "wb");
-	if (!f){
-		LOG_ERR("Cannot open validation output file");
-		return false;
-	}
-	
-	size_t size_file = fwrite(ticket, 1, sizeof(*ticket), f);
-	fclose(f);
-	
-	if(size_file != sizeof(*ticket)){
-		LOG_ERR("Cannot save validation file");
-		return false;
-	}
-	
-	return true;
-	
-}
-
 static tool_rc check_options(void){
 	
 	if (!ctx.context_arg) {
@@ -258,10 +234,11 @@ static tool_rc verify_sequence_complete(ESYS_CONTEXT *ectx, TPMT_SIGNATURE *sign
 		return tool_rc_general_error;
 	}
 	
-	bool ok = save_ticket_file(ctx.ticket_file, validation);
-	if(!ok){
-		Esys_Free(validation);
-		return tool_rc_general_error;
+	if(ctx.ticket_file) {
+		if (!files_save_ticket(validation, ctx.ticket_file)) {
+			Esys_Free(validation);
+			return tool_rc_general_error;
+		}
 	}
 	
 	tpm2_tool_output("signature verified\n");
@@ -439,4 +416,4 @@ static tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
 
 // Register this tool with tpm2_tool.c
-TPM2_TOOL_REGISTER("verifysequence", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)
+TPM2_TOOL_REGISTER("verifysequenceflow", tpm2_tool_onstart, tpm2_tool_onrun, tpm2_tool_onstop, NULL)

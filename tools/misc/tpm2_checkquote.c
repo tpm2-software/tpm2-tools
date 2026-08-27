@@ -205,6 +205,12 @@ static bool verify(void) {
         return false;
     }
 
+    // check type
+    if (ctx.attest.type != TPM2_ST_ATTEST_QUOTE) {
+        LOG_ERR("Attest is not of type TPM2_ST_ATTEST_QUOTE");
+        return false;
+    }
+
     // Also ensure digest from quote matches PCR digest
     if (ctx.flags.pcr) {
         if (!tpm2_util_verify_digests(&ctx.attest.attested.quote.pcrDigest,
@@ -378,7 +384,7 @@ static bool parse_selection_data_from_file(FILE *pcr_input,
         // Convert TPML_DIGEST from little endian to host endian.
         pcrs->pcr_values[j].count = le32toh( pcrs->pcr_values[j].count);
         if (pcrs->pcr_values[j].count > ARRAY_LEN(pcrs->pcr_values[j].digests)) {
-            LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %" PRIu64,
+            LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %zu",
                     ARRAY_LEN(pcrs->pcr_values[j].digests));
             return false;
         }
@@ -386,7 +392,7 @@ static bool parse_selection_data_from_file(FILE *pcr_input,
             pcrs->pcr_values[j].digests[i].size =
                 le16toh(pcrs->pcr_values[j].digests[i].size);
             if (pcrs->pcr_values[j].digests[i].size > sizeof(TPMU_HA)) {
-                LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %" PRIu64,
+                LOG_ERR("Malformed PCR file, TPML_DIGEST count cannot be greater than %zu",
                         sizeof(TPMU_HA));
                 return false;
             }

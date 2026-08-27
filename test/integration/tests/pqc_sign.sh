@@ -23,12 +23,12 @@ test_pqc_sign(){
 	echo -n "This is a test message for verifysequence with MLDSA" > msg.bin
 	
 	tpm2 createprimary -C o -G "$1" -g "$2" -c signkey.ctx -a 'fixedtpm|fixedparent|sensitivedataorigin|userwithauth|sign'
-	tpm2 signsequence -c signkey.ctx -i msg.bin -s signature.bin
+	tpm2 signsequenceflow -c signkey.ctx -i msg.bin -s signature.bin
 	tpm2 readpublic -c signkey.ctx -o signpub.out
 	tpm2 clear
 
 	tpm2 loadexternal -u signpub.out -c verifypub.ctx
-	tpm2 verifysequence -c verifypub.ctx -i msg.bin -s signature.bin -t verified.ticket
+	tpm2 verifysequenceflow -c verifypub.ctx -i msg.bin -s signature.bin -t verified.ticket
 	tpm2 flushcontext -t
 }
 
