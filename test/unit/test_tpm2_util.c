@@ -2,12 +2,57 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <setjmp.h>
 #include <cmocka.h>
 
 #include "tpm2_hierarchy.h"
 #include "tpm2_util.h"
+
+/*
+ * Verifies tpm2_util_secure_mem_zero() actually overwrites the buffer with
+ * zeros (not just that it compiles / runs without crashing) -- this is the
+ * property that distinguishes it from a plain memset() a compiler could
+ * legally elide as a dead store once the buffer isn't read again.
+ */
+static void test_tpm2_util_secure_mem_zero_clears_buffer(void **state) {
+    UNUSED(state);
+
+    unsigned char buf[64];
+    memset(buf, 0xAA, sizeof(buf));
+
+    tpm2_util_secure_mem_zero(buf, sizeof(buf));
+
+    unsigned char zeros[sizeof(buf)] = { 0 };
+    assert_memory_equal(buf, zeros, sizeof(buf));
+}
+
+/*
+ * A NULL buffer / zero size must be a safe no-op, not a crash.
+ *
+ * 'null_ptr' is declared volatile so the compiler can't see, at compile
+ * time, that a known-NULL constant is being passed to explicit_bzero()
+ * (which is declared nonnull) -- the guard inside the macro is what's
+ * actually under test here, not something a static warning should paper
+ * over.
+ */
+static void test_tpm2_util_secure_mem_zero_null_is_noop(void **state) {
+    UNUSED(state);
+
+    void *volatile null_ptr = NULL;
+
+    tpm2_util_secure_mem_zero(null_ptr, 0);
+    tpm2_util_secure_mem_zero(null_ptr, 16);
+
+    unsigned char buf[8];
+    memset(buf, 0x55, sizeof(buf));
+    tpm2_util_secure_mem_zero(buf, 0);
+
+    unsigned char expected[sizeof(buf)];
+    memset(expected, 0x55, sizeof(expected));
+    assert_memory_equal(buf, expected, sizeof(buf));
+}
 
 static void test_tpm2_util_handle_from_optarg_NULL(void **state) {
     UNUSED(state);
@@ -178,6 +223,8 @@ int main(int argc, char* argv[]) {
     (void) argv;
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_tpm2_util_secure_mem_zero_clears_buffer),
+        cmocka_unit_test(test_tpm2_util_secure_mem_zero_null_is_noop),
         cmocka_unit_test(test_tpm2_util_handle_from_optarg_NULL),
         cmocka_unit_test(test_tpm2_util_handle_from_optarg_empty),
         cmocka_unit_test(test_tpm2_util_handle_from_optarg_invalid_id),
