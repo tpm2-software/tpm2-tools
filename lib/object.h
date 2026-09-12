@@ -6,6 +6,7 @@
 #include "tpm2_util.h"
 
 #include <openssl/pem.h>
+#include <openssl/err.h>
 #include <openssl/bio.h>
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
