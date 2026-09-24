@@ -25,7 +25,7 @@ struct tpm_hash_ctx {
 
 static tpm_hash_ctx ctx = {
     .hierarchy_value = TPM2_RH_OWNER,
-    .halg = TPM2_ALG_SHA1,
+    .halg = TPM2_ALG_SHA256,
 };
 
 static tool_rc hash_and_save(ESYS_CONTEXT *context) {

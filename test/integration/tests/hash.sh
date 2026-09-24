@@ -50,12 +50,12 @@ cleanup "no-shut-down"
 # Test stdout output as well as no options.
 # Validate that hash outputs are in hex as expected.
 tpm_hash_val=`echo 1234 | tpm2 hash -C n --hex`
-sha1sum_val=`echo 1234 | shasum -a 1  | cut -d\  -f 1-2 | tr -d '[:space:]'`
-if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
+sha256sum_val=`echo 1234 | shasum -a 256  | cut -d\  -f 1-2 | tr -d '[:space:]'`
+if [ "$tpm_hash_val" != "$sha256sum_val" ]; then
   echo "Expected tpm and sha1sum to produce same hashes."
   echo "Got:"
   echo "  tpm2 hash: $tpm_hash_val"
-  echo "  sha1sum:   $sha1sum_val"
+  echo "  sha256sum: $sha256sum_val"
   exit 1
 fi
 
@@ -63,12 +63,12 @@ fi
 # The tpm works on a 1024 block size.
 dd if=/dev/urandom of=$hash_in_file bs=2093 count=1 2>/dev/null
 tpm_hash_val=`tpm2 hash --hex $hash_in_file`
-sha1sum_val=`shasum -a 1 $hash_in_file | cut -d\  -f 1-2 | tr -d '[:space:]'`
-if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
+sha256sum_val=`shasum -a 256 $hash_in_file | cut -d\  -f 1-2 | tr -d '[:space:]'`
+if [ "$tpm_hash_val" != "$sha256sum_val" ]; then
   echo "Expected tpm and sha1sum to produce same hashes"
   echo "Got:"
   echo "  tpm2 hash: $tpm_hash_val"
-  echo "  sha1sum:   $sha1sum_val"
+  echo "  sha256sum: $sha256sum_val"
   exit 1
 fi
 
