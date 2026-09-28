@@ -32,6 +32,13 @@ information that many users may expect.
     is passed to the TPM to authorize the action. This option can be used to avoid problems
     when unsalted sessions are used in OpenSSL FIPS mode. If auth values are used
     a salted session should be used for authentication.
+
+    Enabled by default in FIPS mode.
+
+  * **-D**, **\--disable-pwd-session**:
+    Disables password session and returns to using a HMAC session for authentication.
+    Use this option if you find something not working under FIPS mode.
+
   * **-R**, **\--autoflush**:
     Enable autoflush for transient objects created by the command. If a parent
     object is loaded from a context file also the transient parent object will

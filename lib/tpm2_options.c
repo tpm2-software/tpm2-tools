@@ -17,6 +17,9 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
+#include <openssl/evp.h>
+#include <openssl/provider.h>
+
 #include "config.h"
 #include "log.h"
 #include "tpm2_options.h"
@@ -274,6 +277,24 @@ static TSS2_RC tcti_fake_transmit (TSS2_TCTI_CONTEXT *tcti_ctx, size_t size,
 	return TSS2_TCTI_RC_NOT_IMPLEMENTED;
 }
 
+static bool is_fips_mode_enabled(void)
+{
+    /* FIPS mode cannot change at runtime, so cache the result. */
+    static int fips_mode = -1;
+
+    if (fips_mode < 0) {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+        /* Both conditions must hold: the default properties must request FIPS
+         * and the FIPS provider must actually be loaded and available. */
+        fips_mode = (EVP_default_properties_is_fips_enabled(NULL)
+                     && OSSL_PROVIDER_available(NULL, "fips")) ? 1 : 0;
+#else
+        fips_mode = 0;
+#endif /* OPENSSL_VERSION_NUMBER >= 0x30000000L */
+    }
+    return fips_mode == 1;
+}
+
 tpm2_option_code tpm2_handle_options(int argc, char **argv,
     tpm2_options *tool_opts, tpm2_option_flags *flags,
     TSS2_TCTI_CONTEXT **tcti) {
@@ -290,6 +311,7 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
         { "version",       no_argument,       NULL, 'v' },
         { "enable-errata", no_argument,       NULL, 'Z' },
         { "pwd-session",   no_argument,       NULL, 'z' },
+        { "disable-pwd-session",   no_argument,       NULL, 'D' },
     };
 
     const char *tcti_conf_option = NULL;
@@ -299,8 +321,13 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
     bool show_help = false;
     bool result = false;
 
+    /* set --pwd-session by default when fips mode is enabled */
+    if (is_fips_mode_enabled()) {
+        flags->restricted_pwd_session = 1;
+    }
+
     /* handle any options */
-    const char* common_short_opts = "T:h::vVQZz";
+    const char* common_short_opts = "T:h::vVQZzD";
     tpm2_options *opts = tpm2_options_new(common_short_opts,
             ARRAY_LEN(long_options), long_options, NULL, NULL, 0);
     if (!opts) {
@@ -377,6 +404,9 @@ tpm2_option_code tpm2_handle_options(int argc, char **argv,
             break;
         case 'z':
             flags->restricted_pwd_session = 1;
+            break;
+        case 'D':
+            flags->restricted_pwd_session = 0;
             break;
         case 'Q':
             flags->quiet = 1;
