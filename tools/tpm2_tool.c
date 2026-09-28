@@ -148,7 +148,11 @@ int main(int argc, char **argv) {
      *   group execute (1)
      *   other write + read + execute (7)
      */
-    umask(0117);
+    mode_t min_mask = 0117;
+    mode_t prev_mask = umask(min_mask);
+    /* if the original umask was more restrictive, combine */
+    if ((prev_mask | min_mask) != min_mask)
+        umask(min_mask | prev_mask);
 
     char *argv0 = basename(argv[0]);
     bool is_str_tpm2 = (strcmp(argv0, "tpm2") == 0);
