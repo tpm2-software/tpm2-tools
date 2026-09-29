@@ -18,21 +18,6 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_capability.h"
 
-#define HEX_PREFIX "hex:"
-#define HEX_PREFIX_LEN sizeof(HEX_PREFIX) - 1
-
-#define STR_PREFIX "str:"
-#define STR_PREFIX_LEN sizeof(STR_PREFIX) - 1
-
-#define SESSION_PREFIX "session:"
-#define SESSION_PREFIX_LEN sizeof(SESSION_PREFIX) - 1
-
-#define FILE_PREFIX "file:"
-#define FILE_PREFIX_LEN sizeof(FILE_PREFIX) - 1
-
-#define PCR_PREFIX "pcr:"
-#define PCR_PREFIX_LEN sizeof(PCR_PREFIX) - 1
-
 static struct termios old;
 
 /* When the program is interrupted during callbacks,
@@ -42,10 +27,6 @@ static void signal_termio_restore(__attribute__((unused)) int signumber) {
 }
 
 static bool handle_hex_password(const char *password, TPM2B_AUTH *auth) {
-
-    /* if it is hex, then skip the prefix */
-    password += HEX_PREFIX_LEN;
-
     auth->size = BUFFER_SIZE(typeof(*auth), buffer);
     int rc = tpm2_util_hex_to_byte_structure(password, &auth->size,
             auth->buffer);
@@ -57,12 +38,15 @@ static bool handle_hex_password(const char *password, TPM2B_AUTH *auth) {
     return true;
 }
 
-bool handle_password(const char *password, TPM2B_AUTH *auth);
+static bool handle_password_rec(const char *password, TPM2B_AUTH *auth,
+        unsigned int depth);
 
-static tool_rc get_auth_for_file_param(const char* password, TPM2B_AUTH *auth) {
+static tool_rc get_auth_for_file_param(const char* password, TPM2B_AUTH *auth,
+        unsigned int depth) {
     const char* path = password;
-    size_t size = (sizeof(auth->buffer) * 2) + HEX_PREFIX_LEN + 2;
+    size_t size = strlen("hex:") + 2 * sizeof(auth->buffer) + strlen("\r\n");
     bool is_a_tty = isatty(STDIN_FILENO);
+    bool is_stdin = strcmp("-", path) == 0;
 
     /* Allocating one extra byte for \0 termination safety */
     UINT8 *buffer = calloc(1, size + 1);
@@ -70,15 +54,11 @@ static tool_rc get_auth_for_file_param(const char* password, TPM2B_AUTH *auth) {
         LOG_ERR("oom");
         return tool_rc_general_error;
     }
-    buffer[size] = '\0';
 
-    if (path) {
-        path = strcmp("-", path) ? path : NULL;
-    }
-    if (!is_a_tty || path) {
-        UINT16 fsize = size - 1;
-        bool ret = files_load_bytes_from_buffer_or_file_or_stdin(NULL, path,
-                                                                 &fsize, buffer);
+    if (!is_a_tty || !is_stdin) {
+        UINT16 fsize = size;
+        bool ret = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+                is_stdin ? NULL : path, &fsize, buffer);
         if (!ret) {
             free(buffer);
             return tool_rc_general_error;
@@ -130,7 +110,7 @@ static tool_rc get_auth_for_file_param(const char* password, TPM2B_AUTH *auth) {
         }
     }
     /* from here the buffer has been populated with the password */
-    bool ret = handle_password((char *) buffer, auth);
+    bool ret = handle_password_rec((char *) buffer, auth, depth);
     if (!ret) {
         free(buffer);
         return tool_rc_general_error;
@@ -142,9 +122,9 @@ static tool_rc get_auth_for_file_param(const char* password, TPM2B_AUTH *auth) {
 bool handle_str_password(const char *password, TPM2B_AUTH *auth) {
 
     /* str may or may not have the str: prefix */
-    bool is_str_prefix = !strncmp(password, STR_PREFIX, STR_PREFIX_LEN);
+    bool is_str_prefix = !strncmp(password, "str:", 4);
     if (is_str_prefix) {
-        password += STR_PREFIX_LEN;
+        password += 4;
     }
 
     /*
@@ -163,26 +143,38 @@ bool handle_str_password(const char *password, TPM2B_AUTH *auth) {
     return true;
 }
 
-bool handle_password(const char *password, TPM2B_AUTH *auth) {
+#define MAX_PASSWORD_FILE_NESTING 16
+static bool handle_password_rec(const char *password, TPM2B_AUTH *auth,
+        unsigned int depth) {
 
-    bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
+    if (depth >= MAX_PASSWORD_FILE_NESTING) {
+        LOG_ERR("Maximum password file redirection depth reached");
+        return false;
+    }
+
+    bool is_file = !strncmp(password, "file:", 5);
 
     if (is_file) {
-        tool_rc rc = get_auth_for_file_param(password + FILE_PREFIX_LEN, auth);
+        tool_rc rc = get_auth_for_file_param(password + 5, auth, depth + 1);
         if (rc != tool_rc_success) {
-            LOG_ERR("get password");
+            LOG_ERR("get password for redirected file");
             return false;
         }
         return true;
     }
 
-    bool is_hex = !strncmp(password, HEX_PREFIX, HEX_PREFIX_LEN);
+    bool is_hex = !strncmp(password, "hex:", 4);
     if (is_hex) {
+        password += 4;
         return handle_hex_password(password, auth);
     }
 
     /* must be string, handle it */
     return handle_str_password(password, auth);
+}
+
+bool handle_password(const char *password, TPM2B_AUTH *auth) {
+    return handle_password_rec(password, auth, 0);
 }
 
 static tool_rc start_hmac_session(ESYS_CONTEXT *ectx, TPM2B_AUTH *auth,
@@ -255,9 +247,6 @@ static tool_rc handle_session(ESYS_CONTEXT *ectx, const char *path,
 
     TPM2B_AUTH auth = { 0 };
 
-    /* if it is session, then skip the prefix */
-    path += SESSION_PREFIX_LEN;
-
     /* Make a local copy for manipulation */
     char tmp[PATH_MAX];
     size_t len = snprintf(tmp, sizeof(tmp), "%s", path);
@@ -304,8 +293,6 @@ static tool_rc handle_session(ESYS_CONTEXT *ectx, const char *path,
 
 static bool parse_pcr(const char *policy, char **pcr_str, char **raw_path) {
     char *split;
-
-    policy += PCR_PREFIX_LEN;
 
     *pcr_str = NULL;
     *raw_path = NULL;
@@ -420,11 +407,9 @@ out:
 static tool_rc handle_file(ESYS_CONTEXT *ectx, const char *path,
         tpm2_session **session) {
 
-    path += FILE_PREFIX_LEN;
-    path = strcmp("-", path) ? path : NULL;
     TPM2B_AUTH auth = { 0 };
 
-    tool_rc rc = get_auth_for_file_param(path, &auth);
+    tool_rc rc = get_auth_for_file_param(path, &auth, 1);
 
     if (rc != tool_rc_success) {
         LOG_ERR("get password");
@@ -439,8 +424,10 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     password = password ? password : "";
 
     /* starts with session: */
-    bool is_session = !strncmp(password, SESSION_PREFIX, SESSION_PREFIX_LEN);
+    bool is_session = !strncmp(password, "session:", 8);
     if (is_session) {
+        /* if it is session, then skip the prefix */
+        password += 8;
 
         if (is_restricted) {
             LOG_ERR("Cannot specify password type \"session:\"");
@@ -451,18 +438,20 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     }
 
     /* starts with "file:" */
-    bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
+    bool is_file = !strncmp(password, "file:", 5);
     if (is_file) {
+        password += 5;
         return handle_file(ectx, password, session);
     }
 
     /* starts with pcr: */
-    bool is_pcr = !strncmp(password, PCR_PREFIX, PCR_PREFIX_LEN);
+    bool is_pcr = !strncmp(password, "pcr:", 4);
     if (is_pcr) {
         if (is_restricted) {
             LOG_ERR("Cannot specify password type \"pcr:\"");
             return tool_rc_general_error;
         }
+        password += 4;
         return handle_pcr(ectx, password, session);
     }
 

@@ -147,13 +147,31 @@ static void test_tpm2_auth_util_from_optarg_file(void **state) {
     unlink(path);
 }
 
+static void test_handle_password_file_redirection_depth(void **state) {
+    UNUSED(state);
+
+    char file_path[] = "file:/tmp/test_tpm2_auth_util_nesting-XXXXXXXXXX";
+    char *path = &file_path[strlen("file:")];
+
+    int fd = mkstemp(path);
+    assert_true(fd >= 0);
+    ssize_t n = write(fd, file_path, strlen(file_path));
+    assert_int_equal(n, strlen(file_path));
+    close(fd);
+
+    TPM2B_AUTH auth = { 0 };
+    assert_false(handle_password(file_path, &auth));
+
+    unlink(path);
+}
+
 #define PCR_SPECIFICATION "sha256:0,1,2,3+sha1:0,1,2,3"
 #define PCR_FILE "raw-pcr-file"
 
 static void test_parse_pcr_no_raw_file(void **state) {
     UNUSED(state);
 
-    const char *policy = "pcr:" PCR_SPECIFICATION;
+    const char *policy = PCR_SPECIFICATION;
 
     char *pcr_str, *raw_file;
 
@@ -168,7 +186,7 @@ static void test_parse_pcr_no_raw_file(void **state) {
 static void test_parse_pcr_with_raw_file(void **state) {
     UNUSED(state);
 
-    const char *policy = "pcr:" PCR_SPECIFICATION "=" PCR_FILE;
+    const char *policy = PCR_SPECIFICATION "=" PCR_FILE;
 
     char *pcr_str, *raw_file;
 
@@ -254,7 +272,7 @@ static void test_tpm2_auth_util_from_optarg_empty_str_hex_prefix(
 static void test_parse_pcr_empty(void **state) {
     UNUSED(state);
 
-    const char *policy = "pcr:";
+    const char *policy = "";
 
     char *pcr_str, *raw_file;
 
@@ -265,7 +283,7 @@ static void test_parse_pcr_empty(void **state) {
 static void test_parse_pcr_empty_pcr_specification(void **state) {
     UNUSED(state);
 
-    const char *policy = "pcr:=" PCR_FILE;
+    const char *policy = "=" PCR_FILE;
 
     char *pcr_str, *raw_file;
 
@@ -364,6 +382,7 @@ int main(int argc, char* argv[]) {
             cmocka_unit_test_setup_teardown(test_tpm2_auth_util_get_pw_shandle,
                                             setup, teardown),
             cmocka_unit_test(test_tpm2_auth_util_from_optarg_file),
+            cmocka_unit_test(test_handle_password_file_redirection_depth),
 
             cmocka_unit_test(test_parse_pcr_no_raw_file),
             cmocka_unit_test(test_parse_pcr_with_raw_file),

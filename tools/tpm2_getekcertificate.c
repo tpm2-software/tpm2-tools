@@ -18,6 +18,7 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_capability.h"
+#include "tpm2_openssl.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
@@ -798,9 +799,6 @@ cleanup:
 #endif
     return rc;
 }
-
-#define EC_POINT_get_affine_coordinates_tss(group, tpm_pub_key, bn_x, bn_y, dmy) \
-        EC_POINT_get_affine_coordinates(group, tpm_pub_key, bn_x, bn_y, dmy)
 
 tool_rc get_ecc_tpm2b_public_from_evp(
     EVP_PKEY *publicKey,

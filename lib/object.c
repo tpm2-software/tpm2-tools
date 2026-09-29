@@ -8,9 +8,6 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_util.h"
 
-#define NULL_OBJECT "null"
-#define NULL_OBJECT_LEN (sizeof(NULL_OBJECT) - 1)
-
 TPM2B_PRIVATE tpm2_util_object_tsspem_priv = { 0 };
 TPM2B_PUBLIC tpm2_util_object_tsspem_pub = { 0 };
 

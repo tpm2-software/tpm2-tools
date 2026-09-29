@@ -16,8 +16,6 @@
 #include "tss2_common.h"
 #include "tss2_mu.h"
 
-#define MAX(a,b) ((a>b)?a:b)
-
 static inline void set_pcr_select_size(TPMS_PCR_SELECTION *pcr_selection,
         UINT8 size) {
 

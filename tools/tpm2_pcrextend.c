@@ -11,7 +11,6 @@
 
 typedef struct tpm_pcr_extend_ctx tpm_pcr_extend_ctx;
 #define MAX_AUX_SESSIONS 2
-#define MAX_SESSIONS 3
 struct tpm_pcr_extend_ctx {
     /*
      * Inputs

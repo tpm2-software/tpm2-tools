@@ -368,6 +368,9 @@ add_c_flag([-D_GNU_SOURCE], [AC_MSG_ERROR([Cannot enable -D_GNU_SOURCE])])
 # Enable gnu99 mode, since we use some of these features.
 add_c_flag([-std=gnu99], [AC_MSG_ERROR([Cannot enable -std=gnu99])])
 
+# Detect unused macro definitions.
+add_c_flag([-Wunused-macros])
+
 # Best attempt compiler options that are on newer versions of GCC that
 # we can't widely enforce without killing other peoples builds.
 # Works with gcc only. Needs to be disabled on BSD and clang
