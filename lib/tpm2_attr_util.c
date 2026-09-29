@@ -381,21 +381,6 @@ static dispatch_table obj_attr_table[] = {         // Bit Index
         dispatch_reserved(31),                     // 31
 };
 
-static bool token_match(const char *name, char *token, bool has_arg,
-        char **sep) {
-
-    /* if it has an argument, we expect a separator */
-    size_t match_len = strlen(token);
-    if (has_arg) {
-        *sep = strchr(token, '=');
-        if (*sep) {
-            match_len = *sep - token;
-        }
-    }
-
-    return !strncmp(name, token, match_len);
-}
-
 static dispatch_error handle_dispatch(dispatch_table *d, char *token,
         TPMA_NV *nvattrs) {
 
@@ -408,32 +393,40 @@ static dispatch_error handle_dispatch(dispatch_table *d, char *token,
         return dispatch_no_match;
     }
 
-    char *sep = NULL;
-    bool match = token_match(name, token, has_arg, &sep);
-    if (!match) {
-        return dispatch_no_match;
-    }
-
-    /*
-     * If it has an argument, match should have found the separator.
-     */
     char *arg = NULL;
-    if (has_arg) {
-        if (!sep) {
+
+    if (!has_arg) {
+        if (strcmp(token, name) != 0) {
+            return dispatch_no_match;
+        }
+    } else {
+        size_t name_len = strlen(name);
+
+        /* check if name is a prefix of token */
+        if (strncmp(token, name, name_len) != 0) {
+            return dispatch_no_match;
+        }
+
+        /* character = is not found despite has_arg is true */
+        if (!token[name_len]) {
+            LOG_ERR("Expected argument for \"%s\", got none.", token);
+            return dispatch_err;
+        }
+        /* name does not match exactly; it is just a prefix */
+        if (token[name_len] != '=') {
+            return dispatch_no_match;
+        }
+        /* otherwise name exactly matches */
+
+        /* check if the argument is non-null */
+        arg = token + name_len + 1;
+        if (!*arg) {
             LOG_ERR("Expected argument for \"%s\", got none.", token);
             return dispatch_err;
         }
 
         /* split token on = */
-        *sep = '\0';
-        sep++;
-        if (!*sep) {
-            LOG_ERR("Expected argument for \"%s\", got none.", token);
-            return dispatch_err;
-        }
-
-        /* valid argument string, assign */
-        arg = sep;
+        token[name_len] = '\0';
     }
 
     bool result = cb(nvattrs, arg);
