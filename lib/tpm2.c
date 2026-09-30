@@ -21,6 +21,117 @@ static inline UINT16 tpm2_error_get(TSS2_RC rc) {
     return ((rc & TPM2_ERROR_TSS2_RC_ERROR_MASK));
 }
 
+tool_rc tpm2_encapsulate(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,
+        TPM2B_KEM_CIPHERTEXT **ciphertext, TPM2B_SHARED_SECRET **sharedSecret) {
+
+    TSS2_RC rval = Esys_Encapsulate(esys_context, object_handle,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            ciphertext, sharedSecret);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_Encapsulate, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_decapsulate(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,
+        TPM2B_KEM_CIPHERTEXT *ciphertext, TPM2B_SHARED_SECRET **sharedSecret) {
+
+    TSS2_RC rval = Esys_Decapsulate(esys_context, object_handle,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            ciphertext, sharedSecret);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_Decapsulate, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_signsequencestart(ESYS_CONTEXT *esys_context, ESYS_TR keyHandle,
+        TPM2B_AUTH *auth, TPM2B_SIGNATURE_CTX *context, ESYS_TR *sequenceHandle) {
+
+    TSS2_RC rval = Esys_SignSequenceStart(esys_context, keyHandle,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            auth, context, sequenceHandle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_SignSequenceStart, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_signsequencecomplete(ESYS_CONTEXT *esys_context, ESYS_TR sequence_handle,
+        ESYS_TR key_handle, TPM2B_MAX_BUFFER *buffer, TPMT_SIGNATURE **signature) {
+
+    TSS2_RC rval = Esys_SignSequenceComplete(esys_context, sequence_handle,
+            key_handle, ESYS_TR_PASSWORD, ESYS_TR_PASSWORD, ESYS_TR_NONE,
+            buffer, signature);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_SignSequenceComplete, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_verifysequencestart(ESYS_CONTEXT *esys_context, ESYS_TR keyHandle,
+        TPM2B_AUTH *auth, TPM2B_SIGNATURE_HINT *hint, TPM2B_SIGNATURE_CTX *context, ESYS_TR *sequenceHandle) {
+
+    TSS2_RC rval = Esys_VerifySequenceStart(esys_context, keyHandle,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            auth, hint, context, sequenceHandle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_VerifySequenceStart, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_verifysequencecomplete(ESYS_CONTEXT *esys_context, ESYS_TR sequenceHandle,
+        ESYS_TR keyHandle, TPMT_SIGNATURE *signature, TPMT_TK_VERIFIED **validation) {
+
+    TSS2_RC rval = Esys_VerifySequenceComplete(esys_context, sequenceHandle, keyHandle,
+            ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
+            signature, validation);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_VerifySequenceComplete, rval);
+        return tool_rc_from_tpm(rval);
+    }
+    return tool_rc_success;
+}
+
+tool_rc tpm2_signdigest(ESYS_CONTEXT *esys_context, ESYS_TR keyHandle,
+        TPM2B_SIGNATURE_CTX *context, TPM2B_DIGEST *digest, TPMT_TK_HASHCHECK *validation,
+        TPMT_SIGNATURE **signature) {
+
+    TSS2_RC rval = Esys_SignDigest(esys_context, keyHandle, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE,
+            context, digest, validation, signature);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_SignDigest, rval);
+        return tool_rc_from_tpm(rval);
+    }
+    return tool_rc_success;
+}
+
+tool_rc tpm2_verifydigestsignature(ESYS_CONTEXT *esys_context, ESYS_TR keyHandle,
+        TPM2B_SIGNATURE_CTX *context, TPM2B_DIGEST *digest, TPMT_SIGNATURE *signature,
+        TPMT_TK_VERIFIED **validation) {
+
+    TSS2_RC rval = Esys_VerifyDigestSignature(esys_context, keyHandle, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE,
+            context, digest, signature, validation);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_VerifyDigestSignature, rval);
+        return tool_rc_from_tpm(rval);
+    }
+    return tool_rc_success;
+}
+
 tool_rc tpm2_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,
         TPM2B_PUBLIC **out_public, TPM2B_NAME **name,
         TPM2B_NAME **qualified_name) {

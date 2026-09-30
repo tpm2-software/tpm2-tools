@@ -717,6 +717,19 @@ UINT8 *tpm2_convert_sig(UINT16 *size, TPMT_SIGNATURE *signature) {
     case TPM2_ALG_SM2: {
         return extract_ecdsa(&signature->signature.ecdsa, size);
     }
+    /*
+     * MLDSA is a valid signature scheme and must be converted here explicitly
+     * instead of falling through to the unknown scheme case
+     */
+    case TPM2_ALG_MLDSA: {
+		*size = signature->signature.mldsa.size;
+		buffer=malloc(*size);
+		if(!buffer){
+			goto nomem;
+		}
+		memcpy(buffer, signature->signature.mldsa.buffer, *size);
+		break;
+	}
     default:
         LOG_ERR("%s: unknown signature scheme: 0x%x", __func__,
                 signature->sigAlg);

@@ -369,6 +369,23 @@ static void tpm2_util_public_to_keydata(TPMT_PUBLIC *public,
         keydata->entries[1].name = "y";
         keydata->entries[1].value = (TPM2B *) &public->unique.ecc.y;
         return;
+    case TPM2_ALG_MLKEM:
+		keydata->len = 1;
+		keydata->entries[0].name = "mlkem";
+		keydata->entries[0].value = (TPM2B *) &public->unique.mlkem;
+		return;
+	case TPM2_ALG_MLDSA:
+		keydata->len = 1;
+		keydata->entries[0].name = tpm2_alg_util_algtostr(
+			public->type, tpm2_alg_util_flags_any);
+		keydata->entries[0].value = (TPM2B *) &public->unique.mldsa;
+		return;
+    case TPM2_ALG_HASH_MLDSA:
+        keydata->len = 1;
+        keydata->entries[0].name = tpm2_alg_util_algtostr(
+            public->type, tpm2_alg_util_flags_any);
+        keydata->entries[0].value = (TPM2B *) &public->unique.mldsa;
+        return;
     default:
         LOG_WARN("The algorithm type(0x%4.4x) is not supported",
             public->type);
@@ -540,6 +557,93 @@ void tpm2_util_tpmt_public_to_yaml(TPMT_PUBLIC *public, char *indent) {
         print_sym(&e->symmetric, indent);
     }
         break;
+    case TPM2_ALG_MLKEM: {
+        TPMS_MLKEM_PARMS *m = &public->parameters.mlkemDetail;
+
+        tpm2_tool_output("%sparameter-set:\n", indent);
+
+        switch (m->parameterSet) {
+            case TPM2_MLKEM_PARMS_512:
+                tpm2_tool_output("%s  value: mlkem512\n", indent);
+                break;
+            case TPM2_MLKEM_PARMS_768:
+                tpm2_tool_output("%s  value: mlkem768\n", indent);
+                break;
+            case TPM2_MLKEM_PARMS_1024:
+                tpm2_tool_output("%s  value: mlkem1024\n", indent);
+                break;
+            default:
+                tpm2_tool_output("%s  value: unknown\n", indent);
+                break;
+        }
+
+        tpm2_tool_output("%s  raw: 0x%x\n", indent, m->parameterSet);
+
+        if (m->symmetric.algorithm != TPM2_ALG_NULL) {
+            print_sym(&m->symmetric, indent);
+        }
+    }
+        break;    
+    case TPM2_ALG_MLDSA: {
+        TPMS_MLDSA_PARMS *m = &public->parameters.mldsaDetail;
+
+        tpm2_tool_output("%sparameter-set:\n", indent);
+
+        switch (m->parameterSet) {
+            case TPM2_MLDSA_PARMS_44:
+                tpm2_tool_output("%s  value: mldsa44\n", indent);
+                break;
+            case TPM2_MLDSA_PARMS_65:
+                tpm2_tool_output("%s  value: mldsa65\n", indent);
+                break;
+            case TPM2_MLDSA_PARMS_87:
+                tpm2_tool_output("%s  value: mldsa87\n", indent);
+                break;
+            default:
+                tpm2_tool_output("%s  value: unknown\n", indent);
+                break;
+        }
+
+        tpm2_tool_output("%s  raw: 0x%x\n", indent, m->parameterSet);
+
+        tpm2_tool_output("%sallow-external-mu:\n", indent);
+        tpm2_tool_output("%s  value: %s\n",
+            indent, m->allowExternalMu ? "yes" : "no");
+        tpm2_tool_output("%s  raw: %u\n",
+            indent, m->allowExternalMu);
+    }
+        break; 
+    case TPM2_ALG_HASH_MLDSA: {
+        TPMS_HASH_MLDSA_PARMS *m =
+            &public->parameters.hash_mldsaDetail;
+
+        tpm2_tool_output("%sparameter-set:\n", indent);
+
+        switch (m->parameterSet) {
+            case TPM2_MLDSA_PARMS_44:
+                tpm2_tool_output("%s  value: mldsa44\n", indent);
+                break;
+            case TPM2_MLDSA_PARMS_65:
+                tpm2_tool_output("%s  value: mldsa65\n", indent);
+                break;
+            case TPM2_MLDSA_PARMS_87:
+                tpm2_tool_output("%s  value: mldsa87\n", indent);
+                break;
+            default:
+                tpm2_tool_output("%s  value: unknown\n", indent);
+                break;
+        }
+
+        tpm2_tool_output("%s  raw: 0x%x\n", indent, m->parameterSet);
+
+        tpm2_tool_output("%shash-alg:\n", indent);
+        tpm2_tool_output("%s  value: %s\n",
+            indent,
+            tpm2_alg_util_algtostr( m->hashAlg, tpm2_alg_util_flags_hash));
+
+        tpm2_tool_output("%s  raw: 0x%x\n", indent, m->hashAlg);
+    }
+        break;            
     }
 
     tpm2_util_keydata keydata = TPM2_UTIL_KEYDATA_INIT
