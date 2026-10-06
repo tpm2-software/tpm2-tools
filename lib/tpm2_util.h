@@ -8,6 +8,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(_WIN32)
+#include <windows.h> /* for SecureZeroMemory */
+#endif
+
 #include <tss2/tss2_esys.h>
 
 #include "config.h"
@@ -35,6 +39,49 @@
 #define PSTR(x) x ? x : "(null)"
 
 #define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->field)))
+
+/*
+ * tpm2_util_secure_mem_zero(buf, size)
+ *
+ * Zeroes a memory region that may hold sensitive data (private key
+ * material, auth values, derived secrets), using a call the compiler
+ * cannot optimize away as a dead store just because the buffer isn't
+ * read again afterward -- unlike a plain memset()/explicit call to
+ * memset. Mirrors the approach taken in tpm2-tss's secure_mem_zero
+ * (src/util/aux_util.h).
+ */
+#if defined(__FreeBSD__) && (__FreeBSD_version >= 1100000) \
+    || (defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25)))
+#define tpm2_util_secure_mem_zero(buf, size) \
+    do { \
+        void *tpm2_util_smz_ptr = (buf); \
+        if (tpm2_util_smz_ptr) { \
+            explicit_bzero(tpm2_util_smz_ptr, (size)); \
+        } \
+    } while (0)
+#elif defined(_WIN32)
+#define tpm2_util_secure_mem_zero(buf, size) \
+    do { \
+        void *tpm2_util_smz_ptr = (buf); \
+        size_t tpm2_util_smz_len = (size); \
+        if (tpm2_util_smz_ptr && tpm2_util_smz_len) { \
+            SecureZeroMemory(tpm2_util_smz_ptr, tpm2_util_smz_len); \
+        } \
+    } while (0)
+#else
+#define tpm2_util_secure_mem_zero(buf, size) \
+    do { \
+        void *tpm2_util_smz_ptr = (buf); \
+        size_t tpm2_util_smz_len = (size); \
+        if (tpm2_util_smz_ptr && tpm2_util_smz_len) { \
+            volatile unsigned char *tpm2_util_smz_p = \
+                (volatile unsigned char *)tpm2_util_smz_ptr; \
+            while (tpm2_util_smz_len--) { \
+                *tpm2_util_smz_p++ = 0; \
+            } \
+        } \
+    } while (0)
+#endif
 
 #define TSS2_APP_RC_LAYER TSS2_RC_LAYER(5)
 

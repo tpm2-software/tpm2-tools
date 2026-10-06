@@ -19,6 +19,7 @@
 #include "tpm2_options.h"
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 #define MAX_SESSIONS 3
 typedef struct tpm_import_ctx tpm_import_ctx;
@@ -377,6 +378,17 @@ static tool_rc process_input_ossl_import(ESYS_CONTEXT *ectx) {
     ctx.sym_alg = parent_pub->publicArea.parameters.rsaDetail.symmetric;
 
 out:
+    /*
+     * private_sensitive holds the plaintext private key/seal data being
+     * imported (plus the duplication seed); hmac_key/enc_key are the
+     * derived duplication keys. Clear them here, on every return path,
+     * rather than leaving key material sitting in this stack frame after
+     * it's no longer needed.
+     */
+    tpm2_util_secure_mem_zero(&private_sensitive, sizeof(private_sensitive));
+    tpm2_util_secure_mem_zero(&hmac_key, sizeof(hmac_key));
+    tpm2_util_secure_mem_zero(&enc_key, sizeof(enc_key));
+
     if (free_ppub) {
         Esys_Free(parent_pub);
     }
