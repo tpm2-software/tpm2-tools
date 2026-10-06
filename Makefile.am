@@ -176,6 +176,7 @@ tpm2_tools = \
     tools/tpm2_quote.c \
     tools/tpm2_readclock.c \
     tools/tpm2_readpublic.c \
+    tools/tpm2_rewrap.c \
     tools/tpm2_rsadecrypt.c \
     tools/tpm2_rsaencrypt.c \
     tools/tpm2_send.c \
@@ -448,6 +449,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_rc_decode.1 \
     man/man1/tpm2_readclock.1 \
     man/man1/tpm2_readpublic.1 \
+    man/man1/tpm2_rewrap.1 \
     man/man1/tpm2_rsadecrypt.1 \
     man/man1/tpm2_rsaencrypt.1 \
     man/man1/tpm2_send.1 \

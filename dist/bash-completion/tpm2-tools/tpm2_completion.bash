@@ -4303,6 +4303,57 @@ _tpm2_readpublic()
     } &&
     complete -F _tpm2_readpublic tpm2_readpublic
 # ex: filetype=sh
+# bash completion for tpm2_rewrap                      -*- shell-script -*-
+_tpm2_rewrap()
+    {
+        local auth_methods=(str: hex: file: file:- session: pcr:)
+
+        local cur prev words cword split
+        _init_completion -s || return
+        case $prev in
+            -h | --help)
+                COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+                return;;
+            -T | --tcti)
+                COMPREPLY=( $(compgen -W "tabrmd mssim device none" -- "$cur") )
+                return;;
+            -c | --parent-context)
+                _filedir
+                return;;
+            -p | --parent-auth)
+                COMPREPLY=($(compgen -W "${auth_methods[*]}" -- "$cur"))
+                return;;
+            -k | --in-key)
+                _filedir
+                return;;
+            -s | --in-seed)
+                _filedir
+                return;;
+            -C | --new-parent-context)
+                _filedir
+                return;;
+            -K | --out-key)
+                _filedir
+                return;;
+            -S | --out-seed)
+                _filedir
+                return;;
+            -u | --public)
+                _filedir
+                return;;
+            --cphash)
+                _filedir
+                return;;
+        esac
+
+        COMPREPLY=($(compgen -W "-h --help -v --version -V --verbose -Q --quiet \
+        -Z --enable-erata -T --tcti --passin --cphash -R --autoflush \
+        -c -p -k -s -C -K -S -u --parent-context --parent-auth --in-key \
+        --in-seed --new-parent-context --out-key --out-seed --public " \
+        -- "$cur"))
+    } &&
+    complete -F _tpm2_rewrap tpm2_rewrap
+# ex: filetype=sh
 # bash completion for tpm2_rsadecrypt                   -*- shell-script -*-
 _tpm2_rsadecrypt()
     {
@@ -5092,7 +5143,7 @@ _tpm2() {
             _init_completion -s || return
 
             if ((cword == 1)); then
-                COMPREPLY=($(compgen -W "activatecredential certify certifyX509certutil certifycreation changeauth changeeps changepps checkquote clear clearcontrol clockrateadjust commit create createak createek createpolicy createprimary dictionarylockout duplicate ecdhkeygen ecdhzgen ecephemeral encryptdecrypt eventlog evictcontrol flushcontext getcap getcommandauditdigest geteccparameters getekcertificate getrandom getsessionauditdigest gettestresult gettime hash hierarchycontrol hmac import incrementalselftest load loadexternal makecredential nvcertify nvdefine nvextend nvincrement nvread nvreadlock nvreadpublic nvsetbits nvundefine nvwrite nvwritelock pcrallocate pcrevent pcrextend pcrread pcrreset policyauthorize policyauthorizenv policyauthvalue policycommandcode policycountertimer policycphash policyduplicationselect policylocality policynamehash policynv policynvwritten policyor policypassword policypcr policyrestart policysecret policysigned policytemplate policyticket print quote rc_decode readclock readpublic rsadecrypt rsaencrypt selftest send setclock setcommandauditstatus setprimarypolicy shutdown sign startauthsession startup stirrandom testparms unseal verifysignature zgen2phase " -- "$cur"))
+                COMPREPLY=($(compgen -W "activatecredential certify certifyX509certutil certifycreation changeauth changeeps changepps checkquote clear clearcontrol clockrateadjust commit create createak createek createpolicy createprimary dictionarylockout duplicate ecdhkeygen ecdhzgen ecephemeral encryptdecrypt eventlog evictcontrol flushcontext getcap getcommandauditdigest geteccparameters getekcertificate getrandom getsessionauditdigest gettestresult gettime hash hierarchycontrol hmac import incrementalselftest load loadexternal makecredential nvcertify nvdefine nvextend nvincrement nvread nvreadlock nvreadpublic nvsetbits nvundefine nvwrite nvwritelock pcrallocate pcrevent pcrextend pcrread pcrreset policyauthorize policyauthorizenv policyauthvalue policycommandcode policycountertimer policycphash policyduplicationselect policylocality policynamehash policynv policynvwritten policyor policypassword policypcr policyrestart policysecret policysigned policytemplate policyticket print quote rc_decode readclock readpublic rewrap rsadecrypt rsaencrypt selftest send setclock setcommandauditstatus setprimarypolicy shutdown sign startauthsession startup stirrandom testparms unseal verifysignature zgen2phase " -- "$cur"))
             else
                 tpmcommand=_tpm2_$prev
                 type $tpmcommand &>/dev/null && $tpmcommand

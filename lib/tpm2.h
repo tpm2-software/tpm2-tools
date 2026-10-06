@@ -318,6 +318,13 @@ tool_rc tpm2_hmac_sequencecomplete(ESYS_CONTEXT *esys_context,
         const TPM2B_MAX_BUFFER *input_buffer, TPM2B_DIGEST **result,
         TPMT_TK_HASHCHECK **validation);
 
+tool_rc tpm2_rewrap(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *parent_obj, tpm2_loaded_object *new_parent_obj,
+        const TPM2B_NAME *name,
+        const TPM2B_PRIVATE *in_duplicate, const TPM2B_ENCRYPTED_SECRET *in_seed,
+        TPM2B_PRIVATE **out_duplicate, TPM2B_ENCRYPTED_SECRET **out_seed,
+        TPM2B_DIGEST *cp_hash, TPMI_ALG_HASH parameter_hash_algorithm);
+
 tool_rc tpm2_import(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
     const TPM2B_DATA *encryption_key, const TPM2B_PUBLIC *object_public,
     const TPM2B_PRIVATE *duplicate, const TPM2B_ENCRYPTED_SECRET *in_sym_seed,
