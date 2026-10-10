@@ -17,13 +17,15 @@ file_unseal_key_ctx=ctx_load_out_"$alg_primary_obj"_"$alg_primary_key"-\
 file_unseal_key_name=name.load_"$alg_primary_obj"_"$alg_primary_key"-\
 "$alg_create_obj"
 file_unseal_output_data=usl_"$file_unseal_key_ctx"
+file_policy_session=policy.session
 
 secret="12345678"
 
 cleanup() {
   rm -f $file_input_data $file_primary_key_ctx $file_unseal_key_pub \
         $file_unseal_key_priv $file_unseal_key_ctx $file_unseal_key_name \
-        $file_unseal_output_data $file_pcr_value $file_policy
+        $file_unseal_output_data $file_pcr_value $file_policy \
+        $file_policy_session
 
   if [ "$1" != "no-shut-down" ]; then
     shut_down
@@ -40,13 +42,13 @@ echo $secret > $file_input_data
 tpm2 clear
 
 tpm2 createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key \
--c $file_primary_key_ctx
+    -c $file_primary_key_ctx
 
 tpm2 create -Q -g $alg_create_obj -u $file_unseal_key_pub \
--r $file_unseal_key_priv -i $file_input_data -C $file_primary_key_ctx
+    -r $file_unseal_key_priv -i $file_input_data -C $file_primary_key_ctx
 
 tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
--r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
+    -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 tpm2 unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
@@ -55,13 +57,13 @@ cmp -s $file_unseal_output_data $file_input_data
 # Test -i using stdin via pipe
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name \
-$file_unseal_key_ctx
+    $file_unseal_key_ctx
 
 cat $file_input_data | tpm2 create -Q -g $alg_create_obj \
--u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx
+    -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx
 
 tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
--r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
+    -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 tpm2 unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
@@ -85,24 +87,68 @@ cmp -s $file_unseal_output_data $file_input_data
 # Test using a PCR policy for auth and use file based stdin for -i
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name \
-$file_unseal_key_ctx
+    $file_unseal_key_ctx
 
 tpm2 pcrread -Q -o $file_pcr_value $pcr_specification
 
 tpm2 createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value \
--L $file_policy
+    -L $file_policy
 
 tpm2 create -Q -g $alg_create_obj -u $file_unseal_key_pub \
--r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
--a 'fixedtpm|fixedparent' <<< $secret
+    -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
+    -a 'fixedtpm|fixedparent' <<< $secret
 
 tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
--r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
+    -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 unsealed=`tpm2 unseal -V --object-context $file_unseal_key_ctx \
--p pcr:$pcr_specification=$file_pcr_value`
+    -p pcr:$pcr_specification=$file_pcr_value`
 
 test "$unsealed" == "$secret"
+
+# Test that implicit PCR authorization uses the object's nameAlg. Also verify
+# that an explicitly created policy session keeps using its requested hash.
+if tpm2 getcap algorithms | grep -q '^sha384:'; then
+  tpm2 flushcontext -Q -t
+
+  rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name \
+      $file_unseal_key_ctx
+
+  tpm2 pcrread -Q -o $file_pcr_value $pcr_specification
+
+  tpm2 createpolicy -Q --policy-pcr -g sha384 -l $pcr_specification \
+      -f $file_pcr_value -L $file_policy
+
+  tpm2 create -Q -g sha384 -u $file_unseal_key_pub \
+      -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
+      -a 'fixedtpm|fixedparent' <<< $secret
+
+  tpm2 flushcontext -Q -t
+
+  tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
+      -r $file_unseal_key_priv -n $file_unseal_key_name \
+      -c $file_unseal_key_ctx
+
+  tpm2 flushcontext -Q -t
+
+  tpm2 startauthsession -Q --policy-session -g sha384 \
+      -S $file_policy_session
+  tpm2 policypcr -Q -S $file_policy_session -l $pcr_specification \
+      -f $file_pcr_value
+
+  unsealed=`tpm2 unseal -Q -c $file_unseal_key_ctx \
+      -p session:$file_policy_session`
+  test "$unsealed" == "$secret"
+
+  tpm2 flushcontext -Q -t
+  tpm2 flushcontext -Q $file_policy_session
+
+  unsealed=`tpm2 unseal -Q -c $file_unseal_key_ctx \
+      -p pcr:$pcr_specification=$file_pcr_value`
+  test "$unsealed" == "$secret"
+
+  tpm2 flushcontext -Q -t
+fi
 
 # Test that unseal fails if a PCR policy isn't provided
 
@@ -129,19 +175,19 @@ fi
 trap onerror ERR
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name \
-$file_unseal_key_ctx
+    $file_unseal_key_ctx
 
 tpm2 pcrread -Q -o $file_pcr_value $pcr_specification
 
 tpm2 createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value \
--L $file_policy
+    -L $file_policy
 
 tpm2 create -Q -g $alg_create_obj -u $file_unseal_key_pub \
--r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
--p secretpass <<< $secret
+    -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
+    -p secretpass <<< $secret
 
 tpm2 load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub \
--r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
+    -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 unsealed=`tpm2 unseal -c $file_unseal_key_ctx -p secretpass`
 
@@ -165,7 +211,7 @@ tpm2 startauthsession -S enc_session.ctx --hmac-session -c prim.ctx
 tpm2 sessionconfig enc_session.ctx --disable-encrypt
 
 tpm2 create -Q -C prim.ctx -u seal_key.pub -r seal_key.priv -c seal_key.ctx \
--p sealkeypass -i- <<< $secret -S enc_session.ctx
+    -p sealkeypass -i- <<< $secret -S enc_session.ctx
 
 tpm2 sessionconfig enc_session.ctx --enable-encrypt --disable-continuesession
 unsealed=`tpm2 unseal -c seal_key.ctx -p sealkeypass -S enc_session.ctx`
