@@ -141,7 +141,10 @@ static void test_tpm2_attr_util_nv_strtoattr_token_unknown(void **state) {
     \
         TPMA_NV attrs = value; \
         char *str = tpm2_attr_util_nv_attrtostr(attrs); \
-        assert_string_equal(str, expected); \
+        if (expected) \
+            assert_string_equal(str, expected); \
+        else \
+            assert_null(str); \
     \
         free(str); \
     }
@@ -172,27 +175,26 @@ test_nv_attrtostr(TPMA_NV_WRITTEN, "written")
 test_nv_attrtostr(TPMA_NV_PLATFORMCREATE, "platformcreate")
 test_nv_attrtostr(TPMA_NV_READ_STCLEAR, "read_stclear")
 
-test_nv_attrtostr(0x100, "<reserved(8)>") //bit 8 - reserved
-test_nv_attrtostr(0x200, "<reserved(9)>") //bit 9 - reserved
+test_nv_attrtostr(0x100, NULL) //bit 8 - reserved
+test_nv_attrtostr(0x200, NULL) //bit 9 - reserved
 
-test_nv_attrtostr(0x100000, "<reserved(20)>")  //bit 20 - reserved
-test_nv_attrtostr(0x200000, "<reserved(21)>")  //bit 21 - reserved
-test_nv_attrtostr(0x400000, "<reserved(22)>")  //bit 22 - reserved
-test_nv_attrtostr(0x800000, "<reserved(23)>")  //bit 23- reserved
-test_nv_attrtostr(0x1000000, "<reserved(24)>") //bit 24- reserved
+test_nv_attrtostr(0x100000, NULL)  //bit 20 - reserved
+test_nv_attrtostr(0x200000, NULL)  //bit 21 - reserved
+test_nv_attrtostr(0x400000, NULL)  //bit 22 - reserved
+test_nv_attrtostr(0x800000, NULL)  //bit 23- reserved
+test_nv_attrtostr(0x1000000, NULL) //bit 24- reserved
 
-test_nv_attrtostr(0x30, "nt=0x3") //bit 24- reserved
-test_nv_attrtostr(0x90, "nt=0x9") //bit 24- reserved
+test_nv_attrtostr(0x10, "counter") //bit 24- reserved
+test_nv_attrtostr(0x90, "pinpass") //bit 24- reserved
 
 #define NV_ALL_FIELDS \
-        "ppwrite|ownerwrite|authwrite|policywrite|nt=0xF|<reserved(8)>"  \
-        "|<reserved(9)>|policydelete|writelocked|writeall|writedefine"   \
-        "|write_stclear|globallock|ppread|ownerread|authread|policyread" \
-        "|<reserved(20)>|<reserved(21)>|<reserved(22)>|<reserved(23)>"   \
-        "|<reserved(24)>|no_da|orderly|clear_stclear|readlocked|written" \
-        "|platformcreate|read_stclear"
+        "ppwrite|ownerwrite|authwrite|policywrite|" \
+        "policydelete|writelocked|writeall|writedefine" \
+        "|write_stclear|globallock|ppread|ownerread|" \
+        "authread|policyread|no_da|orderly|clear_stclear|" \
+        "readlocked|written|platformcreate|read_stclear"
 
-test_nv_attrtostr(0xFFFFFFFF, NV_ALL_FIELDS);
+test_nv_attrtostr(0xFE0FFC0F, NV_ALL_FIELDS);
 
 #define test_nv_attrtostr_compound(id, value, expected) \
     static void test_tpm2_nv_util_attrtostr_##id(void **state) { \
@@ -201,6 +203,7 @@ test_nv_attrtostr(0xFFFFFFFF, NV_ALL_FIELDS);
     \
         TPMA_NV attrs = value; \
         char *str = tpm2_attr_util_nv_attrtostr(attrs); \
+        assert_non_null(str); \
         assert_string_equal(str, expected); \
     \
         free(str); \
@@ -209,11 +212,8 @@ test_nv_attrtostr(0xFFFFFFFF, NV_ALL_FIELDS);
 test_nv_attrtostr_compound(stclear_ppwrite,
         TPMA_NV_WRITE_STCLEAR | TPMA_NV_PPWRITE, "ppwrite|write_stclear")
 test_nv_attrtostr_compound(stclear_ppwrite_0x30,
-        TPMA_NV_WRITE_STCLEAR | TPMA_NV_PPWRITE | 0x30,
-        "ppwrite|nt=0x3|write_stclear")
-test_nv_attrtostr_compound(platformcreate_ownerread_nt_0x90_0x20000,
-        TPMA_NV_PLATFORMCREATE | TPMA_NV_AUTHWRITE | 0x90 | 0x200000,
-        "authwrite|nt=0x9|<reserved(21)>|platformcreate")
+        TPMA_NV_WRITE_STCLEAR | TPMA_NV_PPWRITE | 0x10,
+        "ppwrite|counter|write_stclear")
 
 /*
  * TPMA_OBJECT Tests
@@ -247,14 +247,9 @@ obj_single_item_test("decrypt", TPMA_OBJECT_DECRYPT);
 obj_single_item_test("sign", TPMA_OBJECT_SIGN_ENCRYPT);
 
 #define OBJ_ALL_FIELDS \
-        "<reserved(0)>|fixedtpm|stclear|<reserved(3)>|fixedparent" \
-        "|sensitivedataorigin|userwithauth|adminwithpolicy|<reserved(8)>|" \
-        "<reserved(9)>|noda|encryptedduplication|<reserved(12)>|" \
-        "<reserved(13)>|<reserved(14)>|<reserved(15)>|restricted|decrypt|" \
-        "sign|<reserved(19)>|<reserved(20)>|<reserved(21)>|<reserved(22)>|" \
-        "<reserved(23)>|<reserved(24)>|<reserved(25)>|<reserved(26)>|" \
-        "<reserved(27)>|<reserved(28)>|<reserved(29)>|<reserved(30)>|" \
-        "<reserved(31)>"
+        "fixedtpm|stclear|fixedparent|sensitivedataorigin|" \
+        "userwithauth|adminwithpolicy|noda|encryptedduplication|" \
+        "restricted|decrypt|sign"
 
 #define test_obj_attrtostr(value, expected) \
     static void test_tpm2_obj_util_attrtostr_##value(void **state) { \
@@ -263,7 +258,10 @@ obj_single_item_test("sign", TPMA_OBJECT_SIGN_ENCRYPT);
     \
         TPMA_OBJECT attrs = value; \
         char *str = tpm2_attr_util_obj_attrtostr(attrs); \
-        assert_string_equal(str, expected); \
+        if (expected) \
+            assert_string_equal(str, expected); \
+        else \
+            assert_null(str); \
     \
         free(str); \
     }
@@ -271,7 +269,7 @@ obj_single_item_test("sign", TPMA_OBJECT_SIGN_ENCRYPT);
 #define test_obj_attrtostr_get(value) \
         cmocka_unit_test(test_tpm2_obj_util_attrtostr_##value)
 
-test_obj_attrtostr(0xFFFFFFFF, OBJ_ALL_FIELDS);
+test_obj_attrtostr(0x00070cf6, OBJ_ALL_FIELDS);
 
 test_obj_attrtostr(TPMA_OBJECT_FIXEDTPM, "fixedtpm");
 test_obj_attrtostr(TPMA_OBJECT_STCLEAR, "stclear");
@@ -285,15 +283,11 @@ test_obj_attrtostr(TPMA_OBJECT_RESTRICTED, "restricted");
 test_obj_attrtostr(TPMA_OBJECT_DECRYPT, "decrypt");
 test_obj_attrtostr(TPMA_OBJECT_SIGN_ENCRYPT, "sign");
 
-test_obj_attrtostr(TPMA_OBJECT_RESERVED1_MASK, "<reserved(0)>");
-test_obj_attrtostr(TPMA_OBJECT_RESERVED2_MASK, "<reserved(3)>");
-test_obj_attrtostr(TPMA_OBJECT_RESERVED3_MASK, "<reserved(8)>|<reserved(9)>");
-test_obj_attrtostr(TPMA_OBJECT_RESERVED4_MASK, "<reserved(12)>|<reserved(13)>|" \
-        "<reserved(14)>|<reserved(15)>");
-test_obj_attrtostr(TPMA_OBJECT_RESERVED5_MASK, "<reserved(19)>|<reserved(20)>|" \
-        "<reserved(21)>|<reserved(22)>|<reserved(23)>|<reserved(24)>|" \
-        "<reserved(25)>|<reserved(26)>|<reserved(27)>|<reserved(28)>|" \
-        "<reserved(29)>|<reserved(30)>|<reserved(31)>");
+test_obj_attrtostr(TPMA_OBJECT_RESERVED1_MASK, NULL);
+test_obj_attrtostr(TPMA_OBJECT_RESERVED2_MASK, NULL);
+test_obj_attrtostr(TPMA_OBJECT_RESERVED3_MASK, NULL);
+test_obj_attrtostr(TPMA_OBJECT_RESERVED4_MASK, NULL);
+test_obj_attrtostr(TPMA_OBJECT_RESERVED5_MASK, NULL);
 
 static void test_tpm2_attr_util_obj_strtoattr_multiple_good(void **state) {
     (void) state;
@@ -323,6 +317,10 @@ static void test_tpm2_attr_util_obj_strtoattr_token_unknown(void **state) {
 
     char arg1[] = "foo";
     res = tpm2_attr_util_obj_strtoattr(arg1, &objattrs);
+    assert_false(res);
+
+    char arg2[] = "fixedtpm=1";
+    res = tpm2_attr_util_obj_strtoattr(arg2, &objattrs);
     assert_false(res);
 }
 
@@ -401,7 +399,7 @@ int main(int argc, char* argv[]) {
             test_nv_attrtostr_get(TPMA_NV_PLATFORMCREATE),
             test_nv_attrtostr_get(TPMA_NV_READ_STCLEAR),
             test_nv_attrtostr_get(0),
-            test_nv_attrtostr_get(0xFFFFFFFF),
+            test_nv_attrtostr_get(0xFE0FFC0F),
             test_nv_attrtostr_get(0x100),     // bit 8 - reserved
             test_nv_attrtostr_get(0x200),     // bit 9 - reserved
             test_nv_attrtostr_get(0x100000),  //bit 20 - reserved
@@ -409,11 +407,10 @@ int main(int argc, char* argv[]) {
             test_nv_attrtostr_get(0x400000),  //bit 22 - reserved
             test_nv_attrtostr_get(0x800000),  //bit 23- reserved
             test_nv_attrtostr_get(0x1000000), //bit 24- reserved
-            test_nv_attrtostr_get(0x30), //nt=0x3
-            test_nv_attrtostr_get(0x90), //nt=0x9
+            test_nv_attrtostr_get(0x10), //counter
+            test_nv_attrtostr_get(0x90), //pinpass
             test_nv_attrtostr_get(stclear_ppwrite),
             test_nv_attrtostr_get(stclear_ppwrite_0x30),
-            test_nv_attrtostr_get(platformcreate_ownerread_nt_0x90_0x20000),
             /* TPMA_OBJECT Tests */
 
             /* From String to Attribute value */
@@ -431,7 +428,7 @@ int main(int argc, char* argv[]) {
             test_obj_strtoattr_get(TPMA_OBJECT_SIGN_ENCRYPT),
 
             /* From attribute to string value */
-            test_obj_attrtostr_get(0xFFFFFFFF),
+            test_obj_attrtostr_get(0x00070cf6),
             test_obj_attrtostr_get(TPMA_OBJECT_FIXEDTPM),
             test_obj_attrtostr_get(TPMA_OBJECT_STCLEAR),
             test_obj_attrtostr_get(TPMA_OBJECT_FIXEDPARENT),
