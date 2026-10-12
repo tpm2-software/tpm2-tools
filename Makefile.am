@@ -276,7 +276,10 @@ test_unit_test_tpm2_auth_util_LDFLAGS  = -Wl,--wrap=Esys_TR_SetAuth \
                                          -Wl,--wrap=fseek \
                                          -Wl,--wrap=ftell \
                                          -Wl,--wrap=feof \
-                                         -Wl,--wrap=fclose
+                                         -Wl,--wrap=fclose \
+                                         -Wl,--wrap=tpm2_alg_util_get_name_alg \
+                                         -Wl,--wrap=tpm2_capability_get \
+                                         -Wl,--wrap=tpm2_policy_build_pcr
 test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_errata_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)

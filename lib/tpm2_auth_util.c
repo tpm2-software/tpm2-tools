@@ -30,8 +30,6 @@
 #define FILE_PREFIX "file:"
 #define FILE_PREFIX_LEN sizeof(FILE_PREFIX) - 1
 
-#define PCR_PREFIX "pcr:"
-#define PCR_PREFIX_LEN sizeof(PCR_PREFIX) - 1
 
 static struct termios old;
 
@@ -336,7 +334,7 @@ static bool parse_pcr(const char *policy, char **pcr_str, char **raw_path) {
 }
 
 static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
-        tpm2_session **session) {
+        TPMI_ALG_HASH policy_session_hash, tpm2_session **session) {
     tool_rc rc = tool_rc_general_error;
 
     char *pcr_str, *raw_path;
@@ -359,7 +357,13 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
         goto out;
     }
 
-    if (ectx) {
+    bool is_policy_session_hash_specified =
+            tpm2_alg_util_get_hash_size(policy_session_hash) > 0;
+    if (is_policy_session_hash_specified) {
+        tpm2_session_set_authhash(d, policy_session_hash);
+    }
+
+    if (ectx && !is_policy_session_hash_specified) {
         uint32_t i;
         tool_rc tmp_rc;
         TPM2_CAP capability = TPM2_CAP_ALGS;
@@ -463,7 +467,7 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
             LOG_ERR("Cannot specify password type \"pcr:\"");
             return tool_rc_general_error;
         }
-        return handle_pcr(ectx, password, session);
+        return handle_pcr(ectx, password, TPM2_ALG_ERROR, session);
     }
 
     /* must be a password */
@@ -474,6 +478,23 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
         /* A hmac session will be created. */
         return handle_password_session(ectx, password, session);
     }
+}
+
+tool_rc tpm2_auth_util_from_optarg_with_auth_handle(ESYS_CONTEXT *ectx,
+        const char *password, tpm2_session **session, bool is_restricted,
+        ESYS_TR auth_handle) {
+
+    password = password ? password : "";
+
+    bool is_pcr = !strncmp(password, PCR_PREFIX, PCR_PREFIX_LEN);
+    if (!is_pcr || is_restricted || !ectx || auth_handle == ESYS_TR_NONE) {
+        return tpm2_auth_util_from_optarg(ectx, password, session,
+                is_restricted);
+    }
+
+    TPMI_ALG_HASH name_alg =
+            tpm2_alg_util_get_name_alg(ectx, auth_handle);
+    return handle_pcr(ectx, password, name_alg, session);
 }
 
 tool_rc tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR object,

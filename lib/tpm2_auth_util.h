@@ -7,6 +7,9 @@
 
 #include "tpm2_session.h"
 
+#define PCR_PREFIX "pcr:"
+#define PCR_PREFIX_LEN (sizeof(PCR_PREFIX) - 1)
+
 /**
  * Convert a password argument to a valid TPM2B_AUTH structure. Passwords can
  * be specified in two forms: string and hex-string and are identified by a
@@ -41,6 +44,31 @@
  */
 tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx, const char *password,
         tpm2_session **session, bool is_restricted);
+
+/**
+ * Convert an authorization argument to a session, using the authorization
+ * entity's name algorithm for an implicit PCR policy session.
+ *
+ * All authorization forms other than "pcr:" are handled identically to
+ * tpm2_auth_util_from_optarg(). If the entity has no valid hash name
+ * algorithm, the existing implicit-session fallback is preserved.
+ *
+ * @param ctx
+ *  Enhanced System API (ESAPI) context.
+ * @param password
+ *  The authorization argument.
+ * @param session
+ *  The resulting authorization session.
+ * @param is_restricted
+ *  True if restricted to password session data.
+ * @param auth_handle
+ *  The ESYS handle for the object, NV index, or hierarchy being authorized.
+ * @return
+ *  tool_rc indicating status.
+ */
+tool_rc tpm2_auth_util_from_optarg_with_auth_handle(
+        ESYS_CONTEXT *ctx, const char *password, tpm2_session **session,
+        bool is_restricted, ESYS_TR auth_handle);
 
 /**
  * Set up authorisation for a handle and return a session handle for use in
