@@ -51,6 +51,7 @@ def_eventtype_to_string(EV_EFI_HANDOFF_TABLES)
 def_eventtype_to_string(EV_EFI_PLATFORM_FIRMWARE_BLOB2)
 def_eventtype_to_string(EV_EFI_HANDOFF_TABLES2)
 def_eventtype_to_string(EV_EFI_VARIABLE_BOOT2)
+def_eventtype_to_string(EV_EFI_HCRTM_EVENT)
 def_eventtype_to_string(EV_EFI_VARIABLE_AUTHORITY)
 
 static void eventtype_to_string_default(void **state) {
@@ -154,6 +155,7 @@ int main(void) {
         cmocka_unit_test(eventtype_to_string_EV_EFI_PLATFORM_FIRMWARE_BLOB2),
         cmocka_unit_test(eventtype_to_string_EV_EFI_HANDOFF_TABLES2),
         cmocka_unit_test(eventtype_to_string_EV_EFI_VARIABLE_BOOT2),
+        cmocka_unit_test(eventtype_to_string_EV_EFI_HCRTM_EVENT),
         cmocka_unit_test(eventtype_to_string_EV_EFI_VARIABLE_AUTHORITY),
         cmocka_unit_test(eventtype_to_string_default),
         cmocka_unit_test(test_yaml_event2hdr_callback),
