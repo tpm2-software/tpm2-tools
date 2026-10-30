@@ -16,7 +16,8 @@
 #define def_eventtype_to_string(ev) \
 static void eventtype_to_string_##ev(void **state){ \
     (void)state; \
-    assert_string_equal(eventtype_to_string(ev), #ev); \
+    char buffer[EVENT_TYPE_UNKNOWN_STRING_SIZE]; \
+    assert_string_equal(eventtype_to_string(ev, buffer, sizeof(buffer)), #ev); \
 }
 
 def_eventtype_to_string(EV_PREBOOT_CERT)
@@ -50,11 +51,18 @@ def_eventtype_to_string(EV_EFI_HANDOFF_TABLES)
 def_eventtype_to_string(EV_EFI_PLATFORM_FIRMWARE_BLOB2)
 def_eventtype_to_string(EV_EFI_HANDOFF_TABLES2)
 def_eventtype_to_string(EV_EFI_VARIABLE_BOOT2)
+def_eventtype_to_string(EV_EFI_HCRTM_EVENT)
 def_eventtype_to_string(EV_EFI_VARIABLE_AUTHORITY)
 
 static void eventtype_to_string_default(void **state) {
     (void)state;
-    assert_string_equal(eventtype_to_string(666), "Unknown event type");
+    char buffer[EVENT_TYPE_UNKNOWN_STRING_SIZE];
+    assert_ptr_equal(eventtype_to_string(0x15, buffer, sizeof(buffer)), buffer);
+    assert_string_equal(buffer, "Unknown event type 0x15");
+    assert_ptr_equal(eventtype_to_string(0x29a, buffer, sizeof(buffer)), buffer);
+    assert_string_equal(buffer, "Unknown event type 0x29a");
+    assert_ptr_equal(eventtype_to_string(0xffffffff, buffer, sizeof(buffer)), buffer);
+    assert_string_equal(buffer, "Unknown event type 0xffffffff");
 }
 
 static void test_yaml_digest2_callback(void **state) {
@@ -147,6 +155,7 @@ int main(void) {
         cmocka_unit_test(eventtype_to_string_EV_EFI_PLATFORM_FIRMWARE_BLOB2),
         cmocka_unit_test(eventtype_to_string_EV_EFI_HANDOFF_TABLES2),
         cmocka_unit_test(eventtype_to_string_EV_EFI_VARIABLE_BOOT2),
+        cmocka_unit_test(eventtype_to_string_EV_EFI_HCRTM_EVENT),
         cmocka_unit_test(eventtype_to_string_EV_EFI_VARIABLE_AUTHORITY),
         cmocka_unit_test(eventtype_to_string_default),
         cmocka_unit_test(test_yaml_event2hdr_callback),

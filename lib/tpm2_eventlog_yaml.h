@@ -11,7 +11,14 @@
 #define MIN_EVLOG_YAML_VERSION 1
 #define MAX_EVLOG_YAML_VERSION 2
 
-char const *eventtype_to_string (UINT32 event_type);
+#define EVENT_TYPE_UNKNOWN_STRING_SIZE sizeof("Unknown event type 0xffffffff")
+
+/*
+ * Unknown types write the into the buffer to include `event_type`
+ * in the message. Known types use string literals.
+ */
+char const *eventtype_to_string(UINT32 event_type, char *buffer,
+                                size_t buffer_size);
 void yaml_event2hdr(TCG_EVENT_HEADER2 const *event_hdr, size_t size);
 bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size);
 bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type, uint32_t eventlog_version);

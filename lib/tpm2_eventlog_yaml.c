@@ -54,7 +54,8 @@ static void guid_unparse_lower(EFI_GUID guid, char guid_buf[37]) {
             guid.Data4[5], guid.Data4[6], guid.Data4[7]);
 }
 
-char const *eventtype_to_string (UINT32 event_type) {
+char const *eventtype_to_string(UINT32 event_type, char *buffer,
+        size_t buffer_size) {
 
     switch (event_type) {
     case EV_PREBOOT_CERT:
@@ -124,7 +125,9 @@ char const *eventtype_to_string (UINT32 event_type) {
     case EV_EFI_VARIABLE_AUTHORITY:
         return "EV_EFI_VARIABLE_AUTHORITY";
     default:
-        return "Unknown event type";
+        snprintf(buffer, buffer_size, "Unknown event type 0x%" PRIx32,
+                event_type);
+        return buffer;
     }
 }
 void bytes_to_str(uint8_t const *buf, size_t size, char *dest, size_t dest_size) {
@@ -140,11 +143,13 @@ void yaml_event2hdr(TCG_EVENT_HEADER2 const *eventhdr, size_t size) {
 
     (void)size;
 
+    char event_type_buf[EVENT_TYPE_UNKNOWN_STRING_SIZE];
     tpm2_tool_output("  PCRIndex: %d\n"
                      "  EventType: %s\n"
                      "  DigestCount: %d\n",
                      le32toh(eventhdr->PCRIndex),
-                     eventtype_to_string(le32toh(eventhdr->EventType)),
+                     eventtype_to_string(le32toh(eventhdr->EventType),
+                             event_type_buf, sizeof(event_type_buf)),
                      le32toh(eventhdr->DigestCount));
 
     return;
@@ -153,10 +158,12 @@ void yaml_sha1_log_eventhdr(TCG_EVENT const *eventhdr, size_t size) {
 
     (void)size;
 
+    char event_type_buf[EVENT_TYPE_UNKNOWN_STRING_SIZE];
     tpm2_tool_output("  PCRIndex: %d\n"
                      "  EventType: %s\n",
                      le32toh(eventhdr->pcrIndex),
-                     eventtype_to_string(le32toh(eventhdr->eventType)));
+                     eventtype_to_string(le32toh(eventhdr->eventType),
+                             event_type_buf, sizeof(event_type_buf)));
 
     return;
 }
@@ -1066,6 +1073,7 @@ bool yaml_sha1_log_eventhdr_callback(TCG_EVENT const *eventhdr, size_t size,
 }
 void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
 
+    char event_type_buf[EVENT_TYPE_UNKNOWN_STRING_SIZE];
     /* digest is 20 bytes, 2 chars / byte and null terminator for string*/
     char digest_hex[2*sizeof(event->digest) + 1] = {};
     bytes_to_str(event->digest, sizeof(event->digest), digest_hex, sizeof(digest_hex));
@@ -1076,7 +1084,8 @@ void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
                      "  Digest: \"%s\"\n"
                      "  EventSize: %" PRIu32 "\n",
                      (*count)++, le32toh(event->pcrIndex),
-                     eventtype_to_string(le32toh(event->eventType)), digest_hex,
+                     eventtype_to_string(le32toh(event->eventType),
+                             event_type_buf, sizeof(event_type_buf)), digest_hex,
                      le32toh(event->eventDataSize));
 }
 
